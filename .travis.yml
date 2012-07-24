@@ -4,5 +4,5 @@ python:
   - "2.7"
 before_script: sudo apt-get install graphviz  
 install: pip install -r requirements.txt --use-mirrors
-script: bootstrap
+script: ./bootstrap
 
