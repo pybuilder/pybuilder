@@ -5,4 +5,6 @@ user
 .project
 .pydevproject
 ve
+*~
+.*~
 
