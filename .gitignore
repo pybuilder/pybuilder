@@ -2,4 +2,7 @@
 target
 .coverage
 user
+.project
+.pydevproject
+ve
 
