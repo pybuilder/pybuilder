@@ -38,7 +38,7 @@ def assert_flake8_is_executable (logger):
         Asserts that the flake8 script is executable.
     """
 
-    logger.debug('Checking if "%s" is executable.' % 'flake8')
+    logger.debug('Checking if "flake8" is executable.')
     assert_can_execute(command_and_arguments=('flake8',),
                        prerequisite='flake8',
                        caller='plugin python.flake8')
@@ -60,4 +60,4 @@ def analyze (project, logger):
     count_of_warnings = len(report_lines)
 
     if count_of_warnings > 0:
-        logger.warn('flake8 found %d warning(s).' % count_of_warnings)
+        logger.warn('flake8 found %d warning(s).', count_of_warnings)
