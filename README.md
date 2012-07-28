@@ -12,14 +12,16 @@ Pybuilder emphasizes simplicity. If you want to build a pure Python project and
 use the recommended directory layout, all you have to do is create a file 
 build.py with the following content:
 
-    from pythonbuilder.core import use_plugin
-    
-    use_plugin("python.core")
-    use_plugin("python.unittest")
-    use_plugin("python.coverage")
-    use_plugin("python.distutils")
-    
-    default_task = "publish"
+```python
+from pythonbuilder.core import use_plugin
+
+use_plugin("python.core")
+use_plugin("python.unittest")
+use_plugin("python.coverage")
+use_plugin("python.distutils")
+
+default_task = "publish"
+```
 
 If you want to get started using Python Builder for your Python project, please
 read the Tutorial.
