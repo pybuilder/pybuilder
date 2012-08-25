@@ -35,7 +35,7 @@ use_plugin("python.pylint")
 use_plugin("python.pymetrics")
 use_plugin("python.snakefood")
 
-version = "0.6.4"
+version = "0.6.5"
 default_task = "publish"
 
 summary = "An extendible, easy to use continuous build tool for Python"
