@@ -35,7 +35,7 @@ use_plugin("python.pylint")
 use_plugin("python.pymetrics")
 use_plugin("python.snakefood")
 
-version = "0.6.3"
+version = "0.6.4"
 default_task = "publish"
 
 summary = "An extendible, easy to use continuous build tool for Python"
@@ -50,17 +50,21 @@ python-builder features a powerful yet easy to use plugin mechanism which
 allows programmers to extend the tool in an unlimited way.  
 """
 
-authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com")]
+authors = [
+           Author("Alexander Metzner", "alexander.metzner@gmail.com"),
+           Author("Michael Gruber", "aelgru@gmail.com"),
+           Author("Udo Juettner", "udo.juettner@gmail.com"),
+           ]
 
-url = "http://code.google.com/p/python-builder"
+url = "https://github.com/pybuilder/pybuilder"
 license = "Apache License"
 
 @init
 def init (project):
-    project.depends_on("coverage")
-    project.depends_on("pymetrics")
-    project.depends_on("snakefood")
-    project.depends_on("pep8")
+    project.build_depends_on("coverage")
+    project.build_depends_on("pymetrics")
+    project.build_depends_on("snakefood")
+    project.build_depends_on("pep8")
     
     project.set_property("coverage_break_build", False)
     project.get_property("coverage_exceptions").append("pythonbuilder.cli")

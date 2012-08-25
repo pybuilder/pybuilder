@@ -5,13 +5,19 @@ from integrationtest_support import IntegrationTestSupport
 class Test (IntegrationTestSupport):
     def test (self):
         self.write_build_file("""
-from pythonbuilder.core import use_plugin
+from pythonbuilder.core import use_plugin, init
 
 use_plugin("python.core")
 use_plugin("python.distutils")
 
 name = "integration-test"
 default_task = "publish"
+
+@init
+def init (project):
+    project.depends_on("spam")
+    project.build_depends_on("eggs")
+
 """)
         self.create_directory("src/main/python/spam")
         self.write_file("src/main/python/spam/__init__.py", "")
@@ -56,7 +62,8 @@ if __name__ == '__main__':
           classifiers = ['Development Status :: 3 - Alpha', 'Programming Language :: Python'],
           
           
-          
+          install_requires = [ "spam" ],
+          tests_requires = [ "eggs" ],
           zip_safe=True
     )
 """)

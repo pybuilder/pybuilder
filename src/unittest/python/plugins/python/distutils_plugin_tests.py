@@ -1,34 +1,58 @@
 import unittest
 
 from pythonbuilder.core import Project, Author
-from pythonbuilder.plugins.python.distutils_plugin import build_dependencies_string, \
+from pythonbuilder.plugins.python.distutils_plugin import build_install_dependencies_string, \
         build_data_files_string, default, build_package_data_string, render_setup_script, \
-        render_manifest_file
+        render_manifest_file, build_build_dependencies_string
 
 
-class BuildDependenciesString (unittest.TestCase):
+class InstallDependenciesTest (unittest.TestCase):
     def setUp(self):
         unittest.TestCase.setUp(self)
         self.project = Project(".")
         
     def test_should_return_empty_string_when_no_dependency_is_given (self):
-        self.assertEquals("", build_dependencies_string(self.project))
+        self.assertEquals("", build_install_dependencies_string(self.project))
         
     def test_should_return_single_dependency_string (self):
         self.project.depends_on("spam")
         self.assertEquals('install_requires = [ "spam" ],',
-                          build_dependencies_string(self.project))
+                          build_install_dependencies_string(self.project))
 
     def test_should_return_single_dependency_string_with_version (self):
         self.project.depends_on("spam", "0.7")
         self.assertEquals('install_requires = [ "spam>=0.7" ],',
-                          build_dependencies_string(self.project))
+                          build_install_dependencies_string(self.project))
 
     def test_should_return_multiple_dependencies_string_with_versions (self):
         self.project.depends_on("spam", "0.7")
         self.project.depends_on("eggs")
         self.assertEquals('install_requires = [ "eggs", "spam>=0.7" ],',
-                          build_dependencies_string(self.project))
+                          build_install_dependencies_string(self.project))
+
+class BuildDependenciesTest (unittest.TestCase):
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        self.project = Project(".")
+        
+    def test_should_return_empty_string_when_no_dependency_is_given (self):
+        self.assertEquals("", build_build_dependencies_string(self.project))
+        
+    def test_should_return_single_dependency_string (self):
+        self.project.build_depends_on("spam")
+        self.assertEquals('tests_requires = [ "spam" ],',
+                          build_build_dependencies_string(self.project))
+
+    def test_should_return_single_dependency_string_with_version (self):
+        self.project.build_depends_on("spam", "0.7")
+        self.assertEquals('tests_requires = [ "spam>=0.7" ],',
+                          build_build_dependencies_string(self.project))
+
+    def test_should_return_multiple_dependencies_string_with_versions (self):
+        self.project.build_depends_on("spam", "0.7")
+        self.project.build_depends_on("eggs")
+        self.assertEquals('tests_requires = [ "eggs", "spam>=0.7" ],',
+                          build_build_dependencies_string(self.project))
 
 
 class DefaultTest (unittest.TestCase):
@@ -131,6 +155,7 @@ if __name__ == '__main__':
           data_files = [('dir', ['file1', 'file2'])],
           package_data = {'spam': ['eggs']},
           install_requires = [ "sometool" ],
+          
           zip_safe=True
     )
 """

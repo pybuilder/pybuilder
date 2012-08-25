@@ -157,7 +157,8 @@ class Project (object):
         self.license = ""
         self.url = ""
         self._properties = {}
-        self._dependencies = set()
+        self._install_dependencies = set()
+        self._build_dependencies = set()
         self._manifest_included_files = []
         self._package_data = {}
         self._files_to_install = []
@@ -173,10 +174,17 @@ class Project (object):
     
     @property
     def dependencies (self):
-        return list(sorted(self._dependencies))
+        return list(sorted(self._install_dependencies))
+
+    @property
+    def build_dependencies (self):
+        return list(sorted(self._build_dependencies))
     
     def depends_on (self, name, version=None):
-        self._dependencies.add(Dependency(name, version))
+        self._install_dependencies.add(Dependency(name, version))
+
+    def build_depends_on (self, name, version=None):
+        self._build_dependencies.add(Dependency(name, version))
     
     @property
     def manifest_included_files (self):
