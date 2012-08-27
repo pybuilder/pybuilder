@@ -1,6 +1,4 @@
-pep8
 coverage
-pylint
 mockito
 pymetrics
 
