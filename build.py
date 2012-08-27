@@ -33,7 +33,6 @@ use_plugin("python.pep8")
 use_plugin("python.pychecker")
 use_plugin("python.pylint")
 use_plugin("python.pymetrics")
-#use_plugin("python.snakefood")
 
 version = "0.7.1"
 default_task = "publish"

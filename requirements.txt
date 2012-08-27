@@ -1,7 +1,6 @@
 pep8
 coverage
 pylint
-snakefood
 mockito
 pymetrics
 
