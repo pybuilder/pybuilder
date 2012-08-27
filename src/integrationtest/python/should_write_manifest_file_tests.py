@@ -36,7 +36,7 @@ def init (project):
         manifest_in = 'target/dist/integration-test-1.0-SNAPSHOT/MANIFEST.in'
         
         self.assert_file_exists(manifest_in)
-        self.assert_file_permissions(0664, manifest_in)
+        self.assert_file_permissions(0o664, manifest_in)
         self.assert_file_content(manifest_in, """include spam/eggs
 include more_spam
 include more_eggs

@@ -19,7 +19,10 @@ import stat
 import tempfile
 import unittest
 
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except (ImportError) as e:
+    from io import StringIO
 
 from pythonbuilder.core import Logger
 from pythonbuilder.cli import StdOutLogger

@@ -13,7 +13,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import StringIO
+
+try:
+    from StringIO import StringIO
+except (ImportError) as e:
+    from io import StringIO
+
 import sys
 import unittest
 
@@ -58,7 +63,7 @@ def run_unit_tests (project, logger):
         raise BuildFailedException("Unable to execute unit tests.")
 
 def execute_tests (test_source, suffix):
-    output_log_file = StringIO.StringIO()
+    output_log_file = StringIO()
     
     try:
         test_modules = discover_modules(test_source, suffix)

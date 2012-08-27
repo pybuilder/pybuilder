@@ -18,7 +18,11 @@ import string
 import subprocess
 import sys
 
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except (ImportError) as e:
+    from io import StringIO
+
 from pythonbuilder.core import after, before, use_plugin, init
 from pythonbuilder.errors import BuildFailedException
 from pythonbuilder.utils import as_list
@@ -80,8 +84,8 @@ def write_setup_script (project, logger):
     
 
 def render_setup_script (project):
-    author = ", ".join(map(lambda (a): a.name, project.authors))
-    author_email = ", ".join(map(lambda (a): a.email, project.authors))
+    author = ", ".join(map(lambda a: a.name, project.authors))
+    author_email = ", ".join(map(lambda a: a.email, project.authors))
 
     template_values = {
         "module": 

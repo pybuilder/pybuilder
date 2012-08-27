@@ -131,6 +131,9 @@ class Dependency (object):
     def __cmp__ (self, other):
         return cmp(self.name, other.name)
 
+    def __lt__ (self, other):
+        return self.name < other.name
+
         
 class Project (object):
     """
@@ -210,7 +213,7 @@ class Project (object):
         full_filename = os.path.join(package_name, filename)
         self._manifest_include(full_filename)
         
-        if not self._package_data.has_key(package_name):
+        if package_name not in self._package_data:
             self._package_data[package_name] = [filename]
             return
         self._package_data[package_name].append(filename)
@@ -270,7 +273,7 @@ class Project (object):
         return self.get_property(key)
     
     def has_property (self, key):
-        return self.properties.has_key(key)
+        return key in self.properties
     
     def set_property (self, key, value):
         self.properties[key] = value

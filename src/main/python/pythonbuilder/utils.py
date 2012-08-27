@@ -29,7 +29,7 @@ def format_timestamp (timestamp):
     return timestamp.strftime("%Y-%m-%d %H:%M:%S")
 
 def timedelta_in_millis (timedelta):
-    return ((timedelta.days * 24 * 60 * 60) + timedelta.seconds) * 1000 + timedelta.microseconds / 1000
+    return ((timedelta.days * 24 * 60 * 60) + timedelta.seconds) * 1000 + round(timedelta.microseconds / 1000)
 
 def as_list (*whatever):
     """
@@ -138,7 +138,7 @@ class Timer (object):
         return int((self.end_time - self.start_time) * 1000)
 
 def apply_on_files (start_directory, closure, globs, *additional_closure_arguments, **keyword_closure_arguments):
-    glob_expressions = map(lambda g: GlobExpression(g), globs)
+    glob_expressions = list(map(lambda g: GlobExpression(g), globs))
     
     for root, _, file_names in os.walk(start_directory):
         for file_name in file_names:
@@ -151,7 +151,6 @@ def apply_on_files (start_directory, closure, globs, *additional_closure_argumen
                             relative_file_name, 
                             *additional_closure_arguments, 
                             **keyword_closure_arguments)
-                    break
 
 class GlobExpression (object):
     def __init__ (self, expression):

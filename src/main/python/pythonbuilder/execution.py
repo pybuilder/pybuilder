@@ -59,7 +59,7 @@ class Executable (object):
     def execute (self, argument_dict):
         arguments = []
         for parameter in self.parameters:
-            if not argument_dict.has_key(parameter):
+            if parameter not in argument_dict:
                 raise ValueError("Invalid parameter '%s' for %s %s" % (parameter, self.__class__.__name__, self.name))
             arguments.append(argument_dict[parameter])
         
@@ -124,7 +124,7 @@ class ExecutionManager (object):
     
     @property
     def tasks (self):
-        return self._tasks.values() 
+        return list(self._tasks.values())
 
     @property
     def task_names (self):
@@ -141,7 +141,7 @@ class ExecutionManager (object):
     def register_task (self, *tasks):
         for task in tasks:
             self.logger.debug("Registering task '%s'", task.name)
-            if self._tasks.has_key(task.name):
+            if task.name in self._tasks:
                 self._tasks[task.name].extend(task)
             else:
                 self._tasks[task.name] = task
@@ -205,7 +205,7 @@ class ExecutionManager (object):
         return self._tasks[name]
     
     def has_task (self, name):
-        return self._tasks.has_key(name)
+        return name in self._tasks
     
     def build_execution_plan (self, task_names):
         self.assert_dependencies_resolved()

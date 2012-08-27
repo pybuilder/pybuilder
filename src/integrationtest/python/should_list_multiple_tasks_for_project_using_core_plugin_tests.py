@@ -30,7 +30,7 @@ use_plugin("core")
         
         self.assertEquals(8, len(tasks))
         
-        task_names = map(lambda (task): task.name, tasks)
+        task_names = list(map(lambda task: task.name, tasks))
         
         self.assertTrue("clean" in task_names)
         self.assertTrue("publish" in task_names)

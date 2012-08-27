@@ -13,9 +13,16 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import __builtin__
 import unittest
 import sys
+
+builtin_module = None
+try:
+    import __builtin__
+    builtin_module = __builtin__
+except (ImportError) as e:
+    import builtins
+    builtin_module = builtins
 
 from mockito import when, verify, unstub, never
 from test_utils import mock
@@ -34,22 +41,22 @@ class BuiltinPluginLoaderTest (unittest.TestCase):
         unstub()
     
     def test_should_raise_exception_when_requiring_plugin_and_plugin_is_not_found (self):
-        when(__builtin__).__import__("pythonbuilder.plugins.spam_plugin").thenRaise(ImportError())
+        when(builtin_module).__import__("pythonbuilder.plugins.spam_plugin").thenRaise(ImportError())
         
         self.assertRaises(MissingPluginException, self.loader.load_plugin, self.project, "spam")
         
-        verify(__builtin__).__import__("pythonbuilder.plugins.spam_plugin")
+        verify(builtin_module).__import__("pythonbuilder.plugins.spam_plugin")
 
     def test_should_import_plugin_when_requiring_plugin_and_plugin_is_found_as_builtin (self):
         old_module = sys.modules.get("pythonbuilder.plugins.spam_plugin")
         try:
             plugin_module = mock()
             sys.modules["pythonbuilder.plugins.spam_plugin"] = plugin_module
-            when(__builtin__).__import__("pythonbuilder.plugins.spam_plugin").thenReturn(plugin_module)
+            when(builtin_module).__import__("pythonbuilder.plugins.spam_plugin").thenReturn(plugin_module)
             
             self.loader.load_plugin(self.project, "spam")
             
-            verify(__builtin__).__import__("pythonbuilder.plugins.spam_plugin")
+            verify(builtin_module).__import__("pythonbuilder.plugins.spam_plugin")
         finally:
             del sys.modules["pythonbuilder.plugins.spam_plugin"]
             if old_module:

@@ -13,8 +13,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import compiler
-import fnmatch
 import os
 import re
 import shutil
@@ -69,23 +67,11 @@ def package (project, logger):
                 project.expand_path("$" + DISTRIBUTION_PROPERTY))
 
     copy_python_sources(project, logger)
-    compile_python_files(project, logger)    
     copy_scripts(project, logger)
     
-def compile_python_files (project, logger):
-    dist_target = project.expand_path("$" + DISTRIBUTION_PROPERTY)
-    logger.info("Compiling python source files in %s", dist_target)
-    for root, _, filenames in os.walk(dist_target):
-        for filename in fnmatch.filter(filenames, '*.py'):
-            filename = os.path.join(root, filename)
-            logger.debug("Compiling source file %s", filename)
-            compiler.compileFile(filename)
-
 def copy_scripts(project, logger):
     scripts_target = project.expand_path("$" + DISTRIBUTION_PROPERTY)
     if project.get_property(SCRIPTS_TARGET_PROPERTY):
-#        scripts_target = os.path.join(scripts_target, 
-#                                      project.get_property(SCRIPTS_TARGET_PROPERTY))
         scripts_target = project.expand_path("$" + DISTRIBUTION_PROPERTY + "/$" + SCRIPTS_TARGET_PROPERTY)
         
     if not os.path.exists(scripts_target):

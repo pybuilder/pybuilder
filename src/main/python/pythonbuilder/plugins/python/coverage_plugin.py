@@ -16,8 +16,12 @@
 import coverage
 import imp
 import multiprocessing
-import StringIO
 import sys
+
+try:
+    from StringIO import StringIO
+except (ImportError) as e:
+    from io import StringIO
 
 from pythonbuilder.core import init, after, use_plugin
 from pythonbuilder.utils import discover_modules, render_report
@@ -155,7 +159,7 @@ def build_module_report (module):
             code_coverage)
     
 def write_summary_report(project, modules):
-    summary = StringIO.StringIO()
+    summary = StringIO()
     coverage.report(modules, file=summary)
     project.write_report("coverage", summary.getvalue())
     summary.close()

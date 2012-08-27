@@ -44,8 +44,6 @@ def spam ():
 def spam ():
     pass
 """)
-        self.assert_file_exists("target/dist/integration-test-1.0-SNAPSHOT/spam/eggs.pyc")
-        self.assert_file_exists("target/dist/integration-test-1.0-SNAPSHOT/spam/__init__.pyc")
-        
+
 if __name__ == '__main__':
     unittest.main()

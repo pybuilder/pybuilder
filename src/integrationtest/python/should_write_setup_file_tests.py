@@ -36,13 +36,11 @@ def spam ():
 def spam ():
     pass
 """)
-        self.assert_file_exists("target/dist/integration-test-1.0-SNAPSHOT/spam/eggs.pyc")
-        self.assert_file_exists("target/dist/integration-test-1.0-SNAPSHOT/spam/__init__.pyc")
-        
+
         setup_py = 'target/dist/integration-test-1.0-SNAPSHOT/setup.py'
         
         self.assert_file_exists(setup_py)
-        self.assert_file_permissions(0755, setup_py)
+        self.assert_file_permissions(0o755, setup_py)
         self.assert_file_content(setup_py, """#!/usr/bin/env python
 
 from setuptools import setup

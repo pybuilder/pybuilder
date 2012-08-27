@@ -89,7 +89,7 @@ class PycheckerModuleReport (object):
     def to_json_dict (self):
         return {
             "name": self.name, 
-            "warnings": map(lambda w: w.to_json_dict(), self.warnings)
+            "warnings": list(map(lambda w: w.to_json_dict(), self.warnings))
         }         
             
 class PycheckerReport (object):
@@ -109,7 +109,7 @@ class PycheckerReport (object):
         self.module_reports.append(module_report)
     
     def to_json_dict (self):
-        return {"modules": map(lambda (m): m.to_json_dict(), self.module_reports)}            
+        return {"modules": list(map(lambda m: m.to_json_dict(), self.module_reports))}
                 
 def parse_pychecker_output (project, warnings):
     report = PycheckerReport()
