@@ -3,7 +3,7 @@ python:
   - "2.6"
   - "2.7"
   - "3.2"
-before_script: sudo apt-get install graphviz pymetrics
+before_script: sudo apt-get install graphviz pymetrics pychecker
 install: pip install -r requirements.txt --use-mirrors
 script: ./bootstrap
 
