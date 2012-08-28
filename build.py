@@ -62,7 +62,6 @@ license = "Apache License"
 def init (project):
     project.build_depends_on("coverage")
     project.build_depends_on("pymetrics")
-    project.build_depends_on("snakefood")
     project.build_depends_on("pep8")
     
     project.set_property("coverage_break_build", False)

@@ -69,3 +69,15 @@ In addition, a few common plugins are provided:
 * **copy_resources** - Copies files.
 * **filter_resources** - Filters files by replacing tokens with configuration values.
 * **source_distribution** - Bundles a source distribution for shipping.
+
+## Release Notes
+### Version 0.7.1
+* pybuilder is now compatible with Python 3
+* snakefood plugin has been discontinued because snakefood seems rather unmaintained and is not compatible to Python 3
+
+### Version 0.6.5
+* Introduced build dependencies that do not get added as install_requires to setup.py files
+
+### Version 0.6.4
+* Added flake8 plugin
+* Added support for installing files
