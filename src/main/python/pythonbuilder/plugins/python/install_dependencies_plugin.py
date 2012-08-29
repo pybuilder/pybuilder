@@ -59,8 +59,12 @@ def create_install_log_directory (logger, project):
     mkdir(log_dir)
 
 def install_dependency (logger, project, dependency):
-    name_and_version = "%s%s" % (dependency.name, dependency.version if dependency.version else "")
-    logger.info("Installing dependency '%s'", name_and_version)
+    logger.info("Installing dependency '%s'%s", dependency.name, " from %s" % dependency.url if dependency.url else "")
     log_file = project.expand_path("$dir_install_logs", dependency.name)
 
-    execute_command("pip install %s" %name_and_version, log_file, shell=True)
+    execute_command("pip install %s" % as_pip_argument(dependency), log_file, shell=True)
+
+def as_pip_argument (dependency):
+    if dependency.url:
+        return dependency.url
+    return "%s%s" % (dependency.name, dependency.version if dependency.version else "")

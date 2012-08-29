@@ -115,10 +115,11 @@ class Dependency (object):
         depends_on
     method from class Project to add a dependency to a project.
     """
-    def __init__ (self, name, version=None):
+    def __init__ (self, name, version=None, url=None):
         self.name = name
         self.version = version
-        
+        self.url = url
+
     def __eq__ (self, other):
         return self.name == other.name and self.version == other.version
     
@@ -183,11 +184,11 @@ class Project (object):
     def build_dependencies (self):
         return list(sorted(self._build_dependencies))
     
-    def depends_on (self, name, version=None):
-        self._install_dependencies.add(Dependency(name, version))
+    def depends_on (self, name, version=None, url=None):
+        self._install_dependencies.add(Dependency(name, version, url))
 
-    def build_depends_on (self, name, version=None):
-        self._build_dependencies.add(Dependency(name, version))
+    def build_depends_on (self, name, version=None, url=None):
+        self._build_dependencies.add(Dependency(name, version, url))
     
     @property
     def manifest_included_files (self):
