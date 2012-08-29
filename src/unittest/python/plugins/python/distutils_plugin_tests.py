@@ -3,7 +3,7 @@ import unittest
 from pythonbuilder.core import Project, Author
 from pythonbuilder.plugins.python.distutils_plugin import build_install_dependencies_string, \
         build_data_files_string, default, build_package_data_string, render_setup_script, \
-        render_manifest_file, build_build_dependencies_string
+        render_manifest_file
 
 
 class InstallDependenciesTest (unittest.TestCase):
@@ -29,30 +29,6 @@ class InstallDependenciesTest (unittest.TestCase):
         self.project.depends_on("eggs")
         self.assertEquals('install_requires = [ "eggs", "spam>=0.7" ],',
                           build_install_dependencies_string(self.project))
-
-class BuildDependenciesTest (unittest.TestCase):
-    def setUp(self):
-        unittest.TestCase.setUp(self)
-        self.project = Project(".")
-        
-    def test_should_return_empty_string_when_no_dependency_is_given (self):
-        self.assertEquals("", build_build_dependencies_string(self.project))
-        
-    def test_should_return_single_dependency_string (self):
-        self.project.build_depends_on("spam")
-        self.assertEquals('tests_requires = [ "spam" ],',
-                          build_build_dependencies_string(self.project))
-
-    def test_should_return_single_dependency_string_with_version (self):
-        self.project.build_depends_on("spam", "0.7")
-        self.assertEquals('tests_requires = [ "spam>=0.7" ],',
-                          build_build_dependencies_string(self.project))
-
-    def test_should_return_multiple_dependencies_string_with_versions (self):
-        self.project.build_depends_on("spam", "0.7")
-        self.project.build_depends_on("eggs")
-        self.assertEquals('tests_requires = [ "eggs", "spam>=0.7" ],',
-                          build_build_dependencies_string(self.project))
 
 
 class DefaultTest (unittest.TestCase):
@@ -148,43 +124,20 @@ if __name__ == '__main__':
           author = "Udo Juettner, Michael Gruber",
           author_email = "udo.juettner@gmail.com, aelgru@gmail.com",
           license = 'WTFPL',
-          url = 'http://code.google.com/p/python-builder',
+          url = 'http://github.com/pybuilder/pybuilder',
           scripts = ['spam', 'eggs'],
           packages = ['spam', 'eggs'],
           classifiers = ['Development Status :: 5 - Beta', 'Environment :: Console'],
           data_files = [('dir', ['file1', 'file2'])],
           package_data = {'spam': ['eggs']},
           install_requires = [ "sometool" ],
-          
           zip_safe=True
     )
 """
 
 class RenderSetupScriptTest (unittest.TestCase):
     def test_should_render_setup_file (self):
-        project = Project('/')
-        project.depends_on('sometool')
-        project.name = 'Spam and Eggs'        
-        project.version = '1.2.3'
-        project.summary = 'This is a simple integration-test for distutils plugin.'
-        project.description = 'As you might have guessed we have nothing to say here.'
-        project.authors = [Author('Udo Juettner', 'udo.juettner@gmail.com'),
-                           Author('Michael Gruber', 'aelgru@gmail.com')]
-        project.license = 'WTFPL'
-        project.url = 'http://code.google.com/p/python-builder'
-
-        def return_dummy_list ():
-            return ['spam', 'eggs']
-
-        project.list_scripts = return_dummy_list
-        project.list_packages = return_dummy_list
-        project.set_property('distutils_classifiers', [
-                                                       'Development Status :: 5 - Beta',
-                                                       'Environment :: Console'])
-        project.install_file('dir', 'file1')
-        project.install_file('dir', 'file2')
-        project.include_file('spam', 'eggs')
-
+        project = create_project()
 
         actual_setup_script = render_setup_script(project)
 
@@ -197,31 +150,34 @@ include spam/eggs
 
 class RenderManifestFileTest (unittest.TestCase):
     def test_should_render_manifest_file (self):
-        project = Project('/')
-        project.depends_on('sometool')
-        project.name = 'Spam and Eggs'        
-        project.version = '1.2.3'
-        project.summary = 'This is a simple integration-test for distutils plugin.'
-        project.description = 'As you might have guessed we have nothing to say here.'
-        project.authors = [Author('Udo Juettner', 'udo.juettner@gmail.com'),
-                           Author('Michael Gruber', 'aelgru@gmail.com')]
-        project.license = 'WTFPL'
-        project.url = 'http://code.google.com/p/python-builder'
-
-        def return_dummy_list ():
-            return ['spam', 'eggs']
-
-        project.list_scripts = return_dummy_list
-        project.list_packages = return_dummy_list
-        project.set_property('distutils_classifiers', [
-                                                       'Development Status :: 5 - Beta',
-                                                       'Environment :: Console'])
-        project.install_file('dir', 'file1')
-        project.install_file('dir', 'file2')
-        project.include_file('spam', 'eggs')
-
+        project = create_project()
 
         actual_manifest_file = render_manifest_file(project)
 
         self.assertEquals(EXPECTED_MANIFEST_FILE, actual_manifest_file)
         
+def create_project():
+    project = Project('/')
+    project.depends_on('sometool')
+    project.build_depends_on('testingframework')
+    project.name = 'Spam and Eggs'
+    project.version = '1.2.3'
+    project.summary = 'This is a simple integration-test for distutils plugin.'
+    project.description = 'As you might have guessed we have nothing to say here.'
+    project.authors = [Author('Udo Juettner', 'udo.juettner@gmail.com'), Author('Michael Gruber', 'aelgru@gmail.com')]
+    project.license = 'WTFPL'
+    project.url = 'http://github.com/pybuilder/pybuilder'
+    
+    def return_dummy_list ():
+        return ['spam', 'eggs']
+    
+    project.list_scripts = return_dummy_list
+    project.list_packages = return_dummy_list
+    
+    project.set_property('distutils_classifiers', ['Development Status :: 5 - Beta', 'Environment :: Console'])
+    project.install_file('dir', 'file1')
+    project.install_file('dir', 'file2')
+    project.include_file('spam', 'eggs')
+    
+    return project
+

@@ -61,7 +61,6 @@ if __name__ == '__main__':
           
           
           install_requires = [ "spam" ],
-          tests_requires = [ "eggs" ],
           zip_safe=True
     )
 """)

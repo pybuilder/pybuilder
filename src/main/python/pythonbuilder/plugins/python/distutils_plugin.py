@@ -51,7 +51,6 @@ if __name__ == '__main__':
           $data_files
           $package_data
           $dependencies
-          $build_dependencies
           zip_safe=True
     )
 """)
@@ -104,7 +103,6 @@ def render_setup_script (project):
         "data_files": build_data_files_string(project),
         "package_data": build_package_data_string(project),
         "dependencies": build_install_dependencies_string(project),
-        "build_dependencies": build_build_dependencies_string(project)
     }
     
     return SETUP_TEMPLATE.substitute(template_values)
@@ -167,19 +165,6 @@ def build_install_dependencies_string (project):
                            build_dependency_version_string(dependency))
     
     result += ", ".join(map(format_single_dependency, project.dependencies))
-    result += " ],"
-    return result
-
-def build_build_dependencies_string (project):
-    if not project.build_dependencies:
-        return ""
-    result = "tests_requires = [ "
-    
-    def format_single_dependency (dependency):
-        return '"%s%s"' % (dependency.name, 
-                           build_dependency_version_string(dependency))
-    
-    result += ", ".join(map(format_single_dependency, project.build_dependencies))
     result += " ],"
     return result
 
