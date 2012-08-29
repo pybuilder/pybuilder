@@ -16,12 +16,14 @@
 import datetime
 import os
 import re
+import tempfile
 import time
 import unittest
+import shutil
 
 from mockito import when, verify, unstub
 
-from pythonbuilder.utils import format_timestamp, as_list, timedelta_in_millis, discover_modules, render_report, Timer, GlobExpression, apply_on_files
+from pythonbuilder.utils import format_timestamp, as_list, timedelta_in_millis, discover_modules, render_report, Timer, GlobExpression, apply_on_files, mkdir
 from pythonbuilder.errors import PythonbuilderException
 
 class TimerTest (unittest.TestCase):
@@ -227,3 +229,45 @@ class ApplyOnFilesTest (unittest.TestCase):
         self.assertEquals(["spam/a"], called_on_file)
         
         verify(os).walk("spam")
+
+
+class MkdirTest (unittest.TestCase):
+    def setUp (self):
+        unittest.TestCase.setUp(self)
+        self.basedir = tempfile.mkdtemp(self.__class__.__name__)
+        self.any_directory = os.path.join(self.basedir, "any_dir")
+
+    def tearDown (self):
+        shutil.rmtree(self.basedir)
+        unittest.TestCase.tearDown(self)
+
+    def test_should_make_directory_if_it_does_not_exist (self):
+        mkdir(self.any_directory)
+
+        self.assertTrue(os.path.exists(self.any_directory))
+        self.assertTrue(os.path.isdir(self.any_directory))
+
+    def test_should_make_directory_with_parents_if_it_does_not_exist (self):
+        self.any_directory = os.path.join(self.any_directory, "any_child")
+
+        mkdir(self.any_directory)
+
+        self.assertTrue(os.path.exists(self.any_directory))
+        self.assertTrue(os.path.isdir(self.any_directory))
+
+    def test_should_not_make_directory_if_it_already_exists (self):
+        os.mkdir(self.any_directory)
+
+        mkdir(self.any_directory)
+
+        self.assertTrue(os.path.exists(self.any_directory))
+        self.assertTrue(os.path.isdir(self.any_directory))
+
+    def test_raise_exception_when_file_with_dirname_already_exists (self):
+        with open(self.any_directory, "w") as existing_file:
+            existing_file.write("caboom")
+
+        self.assertRaises(PythonbuilderException, mkdir, self.any_directory)
+
+        self.assertTrue(os.path.exists(self.any_directory))
+        self.assertFalse(os.path.isdir(self.any_directory))

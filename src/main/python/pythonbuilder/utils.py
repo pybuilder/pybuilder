@@ -97,7 +97,7 @@ def execute_command (command_and_arguments, outfile_name, env=None, cwd=None,
                                        stderr=error_file,
                                        env=env,
                                        cwd=cwd,
-                                       shell=False)
+                                       shell=True)
             return process.wait()
     
 def assert_can_execute (command_and_arguments, prerequisite, caller):
@@ -162,3 +162,19 @@ class GlobExpression (object):
         if self.pattern.match(path):
             return True
         return False
+
+def mkdir (directory):
+    """
+    Tries to create the directory denoted by the given name. If it exists and is a directory, nothing will be created
+    and no error is raised. If it exists as a file a PythonbuilderException is raised. Otherwise the directory incl.
+    all parents is created.
+
+
+    """
+
+    if os.path.exists(directory):
+        if os.path.isfile(directory):
+            raise PythonbuilderException("Unable to created directory '%s': A file with that name already exists",
+                directory)
+        return
+    os.makedirs(directory)

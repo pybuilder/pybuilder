@@ -22,6 +22,7 @@ from pythonbuilder.core import init, task, description, depends
 def init (project):
     project.set_property("dir_target", "target")
     project.set_property("dir_reports", "$dir_target/reports")
+    project.set_property("dir_logs", "$dir_target/logs")
     
     def write_report (file, *content):
         with open(project.expand_path("$dir_reports", file), "w") as report_file:
