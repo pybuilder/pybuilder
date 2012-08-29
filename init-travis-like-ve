@@ -1,0 +1,9 @@
+#!/bin/bash
+
+python_version=$(python --version 2>&1 | cut -d ' ' -f 2)
+ve_directory="ve$python_version"
+
+virtualenv $ve_directory
+
+. ./$ve_directory/bin/activate
+

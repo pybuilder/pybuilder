@@ -40,15 +40,15 @@ def install_dependencies (logger, project):
 @task
 @description("Installs all build dependencies specified in the build descriptor")
 def install_build_dependencies (logger, project):
-    logger.info("Installing all build dependencies")
+    logger.info("Installing build dependencies")
     for dependency in project.build_dependencies:
         install_dependency(logger, project, dependency)
 
 @task
 @description("Installs all runtime dependencies specified in the build descriptor")
 def install_runtime_dependencies (logger, project):
-    logger.info("Installing all runtime dependencies")
-    for dependency in project.build_dependencies:
+    logger.info("Installing runtime dependencies")
+    for dependency in project.dependencies:
         install_dependency(logger, project, dependency)
 
 @before((install_build_dependencies, install_runtime_dependencies, install_dependencies), only_once=True)
@@ -63,4 +63,4 @@ def install_dependency (logger, project, dependency):
     logger.info("Installing dependency '%s'", name_and_version)
     log_file = project.expand_path("$dir_install_logs", dependency.name)
 
-    execute_command("pip install %s" %name_and_version, log_file)
+    execute_command("pip install %s" %name_and_version, log_file, shell=True)

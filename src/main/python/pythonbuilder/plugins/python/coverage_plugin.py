@@ -13,7 +13,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import coverage
 import imp
 import multiprocessing
 import sys
@@ -38,13 +37,13 @@ def init_coverage_properties (project):
     project.set_property_if_unset("coverage_exceptions", [])
     project.set_property_if_unset("coverage_fork", False)
         
-def start_coverage  ():
-    coverage.erase()
-    coverage.start()
+def start_coverage  (coverage_module):
+    coverage_module.erase()
+    coverage_module.start()
 
-def stop_coverage  (project, logger):
+def stop_coverage  (coverage_module, project, logger):
     reimport_source_modules(project, logger)
-    coverage.stop()
+    coverage_module.stop()
     
 @after(("analyze", "verify"), only_once=True)
 def verify_coverage (project, logger, reactor):
@@ -60,9 +59,11 @@ def verify_coverage (project, logger, reactor):
         do_coverage(project, logger, reactor)
 
 def do_coverage (project, logger, reactor):
-    start_coverage()
+    import coverage
+
+    start_coverage(coverage)
     reactor.execute_task("run_unit_tests")
-    stop_coverage(project, logger)
+    stop_coverage(coverage, project, logger)
     
     coverage_too_low = False
     threshold = project.get_property("coverage_threshold_warn")
@@ -87,7 +88,7 @@ def do_coverage (project, logger, reactor):
 
         modules.append(module)
         
-        module_report_data = build_module_report(module)
+        module_report_data = build_module_report(coverage, module)
         
         sum_lines += module_report_data[0]
         sum_lines_not_covered += module_report_data[2]
@@ -126,7 +127,7 @@ def do_coverage (project, logger, reactor):
     
     project.write_report("coverage.json", render_report(report))
     
-    write_summary_report(project, modules)
+    write_summary_report(coverage, project, modules)
 
     if coverage_too_low and project.get_property("coverage_break_build"):
         raise BuildFailedException("Test coverage for at least one module is below %d%%",
@@ -140,8 +141,8 @@ def reimport_source_modules(project, logger):
             if module in sys.modules:
                 imp.reload(sys.modules[module])
 
-def build_module_report (module):
-    analysis_result = coverage.analysis(module)
+def build_module_report (coverage_module, module):
+    analysis_result = coverage_module.analysis(module)
     
     lines_total = len(analysis_result[1])
     lines_not_covered = len(analysis_result[2])
@@ -158,9 +159,9 @@ def build_module_report (module):
             lines_not_covered, analysis_result[2],
             code_coverage)
     
-def write_summary_report(project, modules):
+def write_summary_report(coverage_module, project, modules):
     summary = StringIO()
-    coverage.report(modules, file=summary)
+    coverage_module.report(modules, file=summary)
     project.write_report("coverage", summary.getvalue())
     summary.close()
     

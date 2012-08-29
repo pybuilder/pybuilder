@@ -86,7 +86,7 @@ def discover_files (start_dir, suffix):
     
 
 def execute_command (command_and_arguments, outfile_name, env=None, cwd=None,
-                     error_file_name=None):
+                     error_file_name=None, shell=False):
     if error_file_name is None:
         error_file_name = outfile_name + ".err"
     
@@ -97,7 +97,7 @@ def execute_command (command_and_arguments, outfile_name, env=None, cwd=None,
                                        stderr=error_file,
                                        env=env,
                                        cwd=cwd,
-                                       shell=True)
+                                       shell=shell)
             return process.wait()
     
 def assert_can_execute (command_and_arguments, prerequisite, caller):

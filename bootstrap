@@ -1,4 +1,3 @@
 #!/bin/bash
 
-PYTHONPATH=src/main/python python src/main/scripts/pyb
-
+PYTHONPATH=src/main/python python src/main/scripts/pyb $@ clean install_dependencies publish
