@@ -70,6 +70,17 @@ In addition, a few common plugins are provided:
 * **source_distribution** - Bundles a source distribution for shipping.
 
 ## Release Notes
+
+### Version 0.7.4
+* distutils plugin supports URLs for dependencies and adds a dependency_links parameter to setup()
+
+### Version 0.7.3
+* bugfix release for install_dependencies plugin
+* dependencies take an optional URL which is used for installation
+
+### Version 0.7.2
+* added install_dependencies plugin which provides capabilities to install build and runtime dependencies for Python projects
+
 ### Version 0.7.1
 * pybuilder is now compatible with Python 3
 * snakefood plugin has been discontinued because snakefood seems rather unmaintained and is not compatible to Python 3
