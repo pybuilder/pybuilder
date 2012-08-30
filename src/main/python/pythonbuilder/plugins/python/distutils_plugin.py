@@ -29,7 +29,7 @@ from pythonbuilder.utils import as_list
 
 use_plugin("python.core")
 
-DATA_FILES_PROPERTY = 'distutils_data_files'
+DATA_FILES_PROPERTY = "distutils_data_files"
 SETUP_TEMPLATE = string.Template(
 """#!/usr/bin/env python
 
@@ -65,8 +65,8 @@ def default (value, default=""):
 def initialize_distutils_plugin (project):
     project.set_property_if_unset("distutils_commands", ["sdist", "bdist_dumb"])
     project.set_property_if_unset("distutils_classifiers", [
-      'Development Status :: 3 - Alpha',
-      'Programming Language :: Python'
+      "Development Status :: 3 - Alpha",
+      "Programming Language :: Python"
       ])
     project.set_property_if_unset("distutils_use_setuptools", True)
 
@@ -201,14 +201,14 @@ def build_data_files_string (project):
     data_files = project.files_to_install
     
     if data_files == []:
-        return ''
+        return ""
 
-    return 'data_files = %s,' % str(data_files)
+    return "data_files = %s," % str(data_files)
 
 def build_package_data_string (project):
     package_data = project.package_data
     if package_data == {}:
-        return ''
+        return ""
     package_data_string = "package_data = {"
     
     sorted_keys = sorted(package_data.keys())
@@ -218,7 +218,7 @@ def build_package_data_string (project):
         package_data_string += "'%s': %s" % (key, str(package_data[key]))
         
         if key is not last_element:
-            package_data_string += ', '
+            package_data_string += ", "
     
     package_data_string += "},"
     return package_data_string
