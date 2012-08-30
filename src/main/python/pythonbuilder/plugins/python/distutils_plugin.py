@@ -112,10 +112,11 @@ def render_setup_script (project):
 
 @after("package")
 def write_manifest_file (project, logger):
-    logger.debug("MANIFEST.in: %s " % project.manifest_included_files)
     if len(project.manifest_included_files) == 0:
-        logger.debug("no data to write into MANIFEST.in")
+        logger.debug("No data to write into MANIFEST.in")
         return
+    
+    logger.debug("Files included in MANIFEST.in: %s" % project.manifest_included_files)
      
     manifest_filename = project.expand_path("$dir_dist/MANIFEST.in")
     logger.info("Writing MANIFEST.in as %s", manifest_filename)

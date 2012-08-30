@@ -40,5 +40,5 @@ def any_method_name (): pass
         self.assertEquals("a_task_with_overridden_name", tasks[1].name)
         self.assertEquals("another_task", tasks[2].name)
         
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

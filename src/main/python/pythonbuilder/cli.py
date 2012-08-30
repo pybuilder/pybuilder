@@ -63,8 +63,7 @@ def parse_options (args):
                                    version="%prog " + VERSION)
     
     def error (msg):
-        raise CommandLineUsageException(parser.get_usage() + parser.format_option_help(), 
-                                        msg)
+        raise CommandLineUsageException(parser.get_usage() + parser.format_option_help(), msg)
     parser.error = error
     
     parser.add_option("-t", "--list-tasks", 
@@ -195,7 +194,7 @@ def main (*args):
             
             if options.list_tasks:
                 for task in sorted(reactor.get_tasks()):
-                    sys.stdout.write("%20s\t%s\n" % (task.name, 
+                    sys.stdout.write("%20s\t%s\n" % (task.name,
                                                      task.description or "<no description available>"))
                     if task.dependencies:
                         sys.stdout.write("\t\t\tdepends on tasks: %s\n" % " ".join(task.dependencies))

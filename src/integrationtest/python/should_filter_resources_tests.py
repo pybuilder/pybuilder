@@ -40,5 +40,5 @@ def init (project):
         self.assert_file_content("target/spam", "1.0-SNAPSHOT")
         self.assert_file_content("target/eggs", "${version}")
         
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

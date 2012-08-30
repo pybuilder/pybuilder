@@ -73,13 +73,13 @@ class IntegrationTestSupport (unittest.TestCase):
     def assert_file_empty (self, name):
         self.assert_file_exists(name)
         full_path = self.full_path(name)
-        self.assertEquals(0, os.path.getsize(full_path), msg='File %s is not empty.' % (full_path))
+        self.assertEquals(0, os.path.getsize(full_path), msg="File %s is not empty." % (full_path))
         
     def assert_file_content (self, name, expected_file_content):
-        if expected_file_content == '':
+        if expected_file_content == "":
             self.assert_file_empty(name)
             
-        count_of_new_lines = expected_file_content.count('\n')
+        count_of_new_lines = expected_file_content.count("\n")
       
         if count_of_new_lines == 0:
             expected_lines = 1
@@ -93,10 +93,10 @@ class IntegrationTestSupport (unittest.TestCase):
         with open(full_path) as file:
             for actual_line in file:
                 actual_line_number += 1
-                actual_line_showing_escaped_new_line = actual_line.replace('\n', '\\n')
+                actual_line_showing_escaped_new_line = actual_line.replace("\n", "\\n")
                 
                 expected_line = expected_content.readline()
-                expected_line_showing_escaped_new_line = expected_line.replace('\n', '\\n')
+                expected_line_showing_escaped_new_line = expected_line.replace("\n", "\\n")
                 
                 self.assertEquals(expected_line, actual_line, \
                     'line %s is not as expected.\n   expected: "%s"\n    but got: "%s"' %

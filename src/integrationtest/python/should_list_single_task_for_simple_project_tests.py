@@ -31,5 +31,5 @@ def my_task (): pass
         self.assertEquals(1, len(tasks))
         self.assertEquals("my_task", tasks[0].name)
     
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -71,7 +71,7 @@ def discover_modules (source_path, suffix=".py"):
     result = []
     for module in discover_files(source_path, suffix):
         module = module.replace(source_path, "")
-        module = module.replace(os.sep, '.')
+        module = module.replace(os.sep, ".")
         module = module[1:-3]
         if module.endswith(".__init__"):
             module = module.replace(".__init__", "")

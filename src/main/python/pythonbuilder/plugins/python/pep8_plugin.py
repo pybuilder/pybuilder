@@ -27,8 +27,7 @@ def check_pep8_available (logger):
 @task
 def analyze (project, logger):
     logger.info("Executing pep8 on project sources")
-    _, report_file = \
-        execute_tool_on_source_files(project, "pep8", ["pep8"])
+    _, report_file = execute_tool_on_source_files(project, "pep8", ["pep8"])
     
     reports = read_file(report_file)
     

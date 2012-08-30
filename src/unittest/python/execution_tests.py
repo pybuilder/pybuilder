@@ -436,5 +436,3 @@ class ExecutionManagerExecuteExecutionPlanTest (ExecutionManagerTestBase):
         
         verify(one).execute(any(), {})
         verify(two).execute(any(), {})
-        
-            

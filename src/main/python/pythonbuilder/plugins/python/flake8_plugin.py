@@ -25,23 +25,22 @@ __author__ = 'Michael Gruber'
 
 from pythonbuilder.core import after, task, use_plugin
 from pythonbuilder.utils import assert_can_execute, read_file
-from pythonbuilder.plugins.python.python_plugin_helper import \
-                                            execute_tool_on_source_files
+from pythonbuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
 
 
-use_plugin('python.core')
+use_plugin("python.core")
 
 
-@after('prepare')
+@after("prepare")
 def assert_flake8_is_executable (logger):
     """
         Asserts that the flake8 script is executable.
     """
 
-    logger.debug('Checking if "flake8" is executable.')
-    assert_can_execute(command_and_arguments=('flake8',),
-                       prerequisite='flake8',
-                       caller='plugin python.flake8')
+    logger.debug("Checking if flake8 is executable.")
+    assert_can_execute(command_and_arguments=("flake8",),
+                       prerequisite="flake8",
+                       caller="plugin python.flake8")
 
 
 @task
@@ -50,14 +49,14 @@ def analyze (project, logger):
         Applies the flake8 script to the sources of the given project.
     """
 
-    logger.info('Applying flake8 to project sources.')
-    execution_result  = execute_tool_on_source_files(
-                                           project=project,
-                                           name='flake8',
-                                           command_and_arguments=['flake8'])
+    logger.info("Applying flake8 to project sources.")
+    execution_result  = execute_tool_on_source_files(project=project,
+                                                     name="flake8",
+                                                     command_and_arguments=["flake8"])
+                                           
     report_file       = execution_result[1]
     report_lines      = read_file(report_file)
     count_of_warnings = len(report_lines)
 
     if count_of_warnings > 0:
-        logger.warn('flake8 found %d warning(s).', count_of_warnings)
+        logger.warn("flake8 found %d warning(s).", count_of_warnings)

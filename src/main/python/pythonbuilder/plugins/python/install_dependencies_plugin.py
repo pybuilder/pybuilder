@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-__author__ = 'Alexander Metzner'
+__author__ = "Alexander Metzner"
 
 from pythonbuilder.core import before, after, task, description, use_plugin, init
 from pythonbuilder.utils import assert_can_execute, execute_command, mkdir

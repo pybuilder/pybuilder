@@ -35,5 +35,5 @@ use_plugin("core")
         self.assertTrue("clean" in task_names)
         self.assertTrue("publish" in task_names)
         
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

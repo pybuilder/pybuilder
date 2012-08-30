@@ -97,8 +97,7 @@ def copy_python_sources (project, logger):
         if os.path.isdir(source):
             shutil.copytree(source, target, 
                             symlinks=False, 
-                            ignore=shutil.ignore_patterns("*.pyc", 
-                                                          ".*"))
+                            ignore=shutil.ignore_patterns("*.pyc", ".*"))
         else:
             shutil.copyfile(source, target)
 

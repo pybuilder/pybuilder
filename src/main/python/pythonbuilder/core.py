@@ -143,7 +143,7 @@ class Project (object):
     """
     def __init__(self,
                  basedir,
-                 version='1.0-SNAPSHOT',
+                 version="1.0-SNAPSHOT",
                  name=None):
         self.name = name
         self.version = version
@@ -195,8 +195,8 @@ class Project (object):
         return self._manifest_included_files
     
     def _manifest_include (self, glob_pattern):
-        if not glob_pattern or glob_pattern.strip() == '':
-            raise ValueError('Missing glob_pattern argument.')
+        if not glob_pattern or glob_pattern.strip() == "":
+            raise ValueError("Missing glob_pattern argument.")
         
         self._manifest_included_files.append(glob_pattern)
     
@@ -205,11 +205,11 @@ class Project (object):
         return self._package_data
     
     def include_file(self, package_name, filename):
-        if not package_name or package_name.strip() == '':
-            raise ValueError('Missing argument package name.')
+        if not package_name or package_name.strip() == "":
+            raise ValueError("Missing argument package name.")
         
-        if not filename or filename.strip() == '':
-            raise ValueError('Missing argument filename.')
+        if not filename or filename.strip() == "":
+            raise ValueError("Missing argument filename.")
         
         full_filename = os.path.join(package_name, filename)
         self._manifest_include(full_filename)
@@ -226,10 +226,10 @@ class Project (object):
     
     def install_file(self, destination, filename):
         if not destination:
-            raise ValueError('Missing argument destination')
+            raise ValueError("Missing argument destination")
         
-        if not filename or filename.strip() == '':
-            raise ValueError('Missing argument filename')
+        if not filename or filename.strip() == "":
+            raise ValueError("Missing argument filename")
         
         current_tuple = None
         for installation_tuple in self.files_to_install:
