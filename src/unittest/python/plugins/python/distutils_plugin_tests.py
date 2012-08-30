@@ -1,9 +1,12 @@
 import unittest
 
 from pythonbuilder.core import Project, Author
-from pythonbuilder.plugins.python.distutils_plugin import build_install_dependencies_string, \
-        build_data_files_string, default, build_package_data_string, render_setup_script, \
-        render_manifest_file
+from pythonbuilder.plugins.python.distutils_plugin import (build_data_files_string, 
+                                                           build_install_dependencies_string,
+                                                           build_package_data_string, 
+                                                           default, 
+                                                           render_manifest_file,
+                                                           render_setup_script)
 
 
 class InstallDependenciesTest (unittest.TestCase):
@@ -12,23 +15,23 @@ class InstallDependenciesTest (unittest.TestCase):
         self.project = Project(".")
         
     def test_should_return_empty_string_when_no_dependency_is_given (self):
-        self.assertEquals("", build_install_dependencies_string(self.project))
+        self.assertEqual("", build_install_dependencies_string(self.project))
         
     def test_should_return_single_dependency_string (self):
         self.project.depends_on("spam")
-        self.assertEquals('install_requires = [ "spam" ],',
-                          build_install_dependencies_string(self.project))
+        self.assertEqual('install_requires = [ "spam" ],',
+                         build_install_dependencies_string(self.project))
 
     def test_should_return_single_dependency_string_with_version (self):
         self.project.depends_on("spam", "0.7")
-        self.assertEquals('install_requires = [ "spam>=0.7" ],',
-                          build_install_dependencies_string(self.project))
+        self.assertEqual('install_requires = [ "spam>=0.7" ],',
+                         build_install_dependencies_string(self.project))
 
     def test_should_return_multiple_dependencies_string_with_versions (self):
         self.project.depends_on("spam", "0.7")
         self.project.depends_on("eggs")
-        self.assertEquals('install_requires = [ "eggs", "spam>=0.7" ],',
-                          build_install_dependencies_string(self.project))
+        self.assertEqual('install_requires = [ "eggs", "spam>=0.7" ],',
+                         build_install_dependencies_string(self.project))
 
 
 class DefaultTest (unittest.TestCase):
@@ -51,7 +54,7 @@ class BuildDataFilesStringTest (unittest.TestCase):
         self.project = Project(".")
         
     def test_should_return_empty_data_files_string (self):
-        self.assertEquals('', build_data_files_string(self.project))
+        self.assertEqual('', build_data_files_string(self.project))
     
     def test_should_return_data_files_string_including_several_files (self):
         self.project.install_file('bin', 'activate')
@@ -59,17 +62,17 @@ class BuildDataFilesStringTest (unittest.TestCase):
         self.project.install_file('bin', 'rsync')
         self.project.install_file('bin', 'ssh')
         
-        self.assertEquals("data_files = [('bin', ['activate', 'command-stub', 'rsync', 'ssh'])],", \
-                          build_data_files_string(self.project))
+        self.assertEqual("data_files = [('bin', ['activate', 'command-stub', 'rsync', 'ssh'])],", \
+                         build_data_files_string(self.project))
 
     def test_should_return_data_files_string_with_files_to_be_installed_in_several_destinations (self):
         self.project.install_file('/usr/bin', 'pyb')
         self.project.install_file('/etc', 'pyb.cfg')
         self.project.install_file('data', 'pyb.dat')
         self.project.install_file('data', 'howto.txt')
-        self.assertEquals("data_files = [('/usr/bin', ['pyb']), ('/etc', ['pyb.cfg'])," \
-                          " ('data', ['pyb.dat', 'howto.txt'])],", \
-                          build_data_files_string(self.project))
+        self.assertEqual("data_files = [('/usr/bin', ['pyb']), ('/etc', ['pyb.cfg'])," \
+                         " ('data', ['pyb.dat', 'howto.txt'])],", \
+                         build_data_files_string(self.project))
 
 class BuildPackageDataStringTest (unittest.TestCase):
     def setUp(self):
@@ -77,20 +80,20 @@ class BuildPackageDataStringTest (unittest.TestCase):
         self.project = Project('.')
         
     def test_should_return_empty_package_data_string_when_no_files_to_include_given (self):
-        self.assertEquals('', build_package_data_string(self.project))
+        self.assertEqual('', build_package_data_string(self.project))
         
     def test_should_return_package_data_string_when_including_file (self):
         self.project.include_file('spam', 'egg')
         
-        self.assertEquals("package_data = {'spam': ['egg']},", build_package_data_string(self.project))
+        self.assertEqual("package_data = {'spam': ['egg']},", build_package_data_string(self.project))
         
     def test_should_return_package_data_string_when_including_three_files (self):
         self.project.include_file('spam', 'egg')
         self.project.include_file('ham', 'eggs')
         self.project.include_file('monty', 'python')
         
-        self.assertEquals("package_data = {'ham': ['eggs'], 'monty': ['python'], " \
-                          "'spam': ['egg']},", build_package_data_string(self.project))
+        self.assertEqual("package_data = {'ham': ['eggs'], 'monty': ['python'], " \
+                         "'spam': ['egg']},", build_package_data_string(self.project))
     
     def test_should_return_package_data_string_with_keys_in_alphabetical_order (self):
         self.project.include_file('b', 'beta')
@@ -106,12 +109,18 @@ class BuildPackageDataStringTest (unittest.TestCase):
         self.project.include_file('l', 'lambda')
         self.project.include_file('x', 'chi')
         
-        self.assertEquals("package_data = {'a': ['alpha'], 'b': ['beta'], 'd': ['delta'], " \
-                          "'e': ['epsilon'], 'i': ['Iota'], 'k': ['Kappa'], 'l': ['lambda'], " \
-                          "'m': ['Mu'], 'p': ['psi'], 't': ['theta'], 'x': ['chi'], " \
-                          "'z': ['Zeta']},", build_package_data_string(self.project))
+        self.assertEqual("package_data = {'a': ['alpha'], 'b': ['beta'], 'd': ['delta'], " \
+                         "'e': ['epsilon'], 'i': ['Iota'], 'k': ['Kappa'], 'l': ['lambda'], " \
+                         "'m': ['Mu'], 'p': ['psi'], 't': ['theta'], 'x': ['chi'], " \
+                         "'z': ['Zeta']},", build_package_data_string(self.project))
 
-EXPECTED_SETUP_SCRIPT = """#!/usr/bin/env python
+class RenderSetupScriptTest (unittest.TestCase):
+    def test_should_render_setup_file (self):
+        project = create_project()
+
+        actual_setup_script = render_setup_script(project)
+
+        self.assertEqual("""#!/usr/bin/env python
 
 from distutils.core import setup
 
@@ -133,20 +142,7 @@ if __name__ == '__main__':
           install_requires = [ "sometool" ],
           zip_safe=True
     )
-"""
-
-class RenderSetupScriptTest (unittest.TestCase):
-    def test_should_render_setup_file (self):
-        project = create_project()
-
-        actual_setup_script = render_setup_script(project)
-
-        self.assertEquals(EXPECTED_SETUP_SCRIPT, actual_setup_script)
-
-EXPECTED_MANIFEST_FILE = """include file1
-include file2
-include spam/eggs
-"""
+""", actual_setup_script)
 
 class RenderManifestFileTest (unittest.TestCase):
     def test_should_render_manifest_file (self):
@@ -154,7 +150,10 @@ class RenderManifestFileTest (unittest.TestCase):
 
         actual_manifest_file = render_manifest_file(project)
 
-        self.assertEquals(EXPECTED_MANIFEST_FILE, actual_manifest_file)
+        self.assertEqual("""include file1
+include file2
+include spam/eggs
+""", actual_manifest_file)
         
 def create_project():
     project = Project('/')
