@@ -127,7 +127,7 @@ class ProjectManifestTests (unittest.TestCase):
         self.assertRaises(ValueError, self.project._manifest_include, None)
         
     def test_should_raise_exception_when_given_glob_pattern_is_empty_string (self):
-        self.assertRaises(ValueError, self.project._manifest_include, '       \n')
+        self.assertRaises(ValueError, self.project._manifest_include, "       \n")
         
     def test_should_add_filename_to_list_of_included_files (self):
         self.project._manifest_include("spam")
@@ -145,43 +145,43 @@ class ProjectPackageDataTests (unittest.TestCase):
         self.project = Project(basedir="/imaginary", name="Unittest")
     
     def test_should_raise_exception_when_package_name_not_given (self):
-        self.assertRaises(ValueError, self.project.include_file, None, 'spam')
+        self.assertRaises(ValueError, self.project.include_file, None, "spam")
         
     def test_should_raise_exception_when_filename_not_given (self):
-        self.assertRaises(ValueError, self.project.include_file, 'my_package', None)
+        self.assertRaises(ValueError, self.project.include_file, "my_package", None)
 
     def test_should_raise_exception_when_package_name_is_empty_string (self):
-        self.assertRaises(ValueError, self.project.include_file, '    \n', 'spam')
+        self.assertRaises(ValueError, self.project.include_file, "    \n", "spam")
         
     def test_should_raise_exception_when_filename_is_empty_string (self):
-        self.assertRaises(ValueError, self.project.include_file, 'eggs', '\t    \n')
+        self.assertRaises(ValueError, self.project.include_file, "eggs", "\t    \n")
         
     def test_should_package_data_dictionary_is_empty (self):
         self.assertEquals({}, self.project.package_data)
         
     def test_should_add_filename_to_list_of_included_files_for_package_spam (self):
-        self.project.include_file('spam', 'eggs')
+        self.project.include_file("spam", "eggs")
         
-        self.assertEquals({'spam': ['eggs']}, self.project.package_data)
+        self.assertEquals({"spam": ["eggs"]}, self.project.package_data)
 
     def test_should_add_two_filenames_to_list_of_included_files_for_package_spam (self):
-        self.project.include_file('spam', 'eggs')
-        self.project.include_file('spam', 'ham')
+        self.project.include_file("spam", "eggs")
+        self.project.include_file("spam", "ham")
         
-        self.assertEquals({'spam': ['eggs', 'ham']}, self.project.package_data)
+        self.assertEquals({"spam": ["eggs", "ham"]}, self.project.package_data)
         
     def test_should_add_two_filenames_to_list_of_included_files_for_two_different_packages (self):
-        self.project.include_file('spam', 'eggs')
-        self.project.include_file('monty', 'ham')
+        self.project.include_file("spam", "eggs")
+        self.project.include_file("monty", "ham")
         
-        self.assertEquals({'monty': ['ham'], 'spam': ['eggs']}, self.project.package_data)
+        self.assertEquals({"monty": ["ham"], "spam": ["eggs"]}, self.project.package_data)
 
     def test_should_add_two_filenames_to_list_of_included_files_and_to_manifest (self):
-        self.project.include_file('spam', 'eggs')
-        self.project.include_file('monty', 'ham')
+        self.project.include_file("spam", "eggs")
+        self.project.include_file("monty", "ham")
         
-        self.assertEquals({'monty': ['ham'], 'spam': ['eggs']}, self.project.package_data)
-        self.assertEquals(['spam/eggs', 'monty/ham'], self.project.manifest_included_files)
+        self.assertEquals({"monty": ["ham"], "spam": ["eggs"]}, self.project.package_data)
+        self.assertEquals(["spam/eggs", "monty/ham"], self.project.manifest_included_files)
 
 
 class ProjectDataFilesTests (unittest.TestCase):
@@ -192,41 +192,41 @@ class ProjectDataFilesTests (unittest.TestCase):
         self.assertEquals([], self.project.files_to_install)
         
     def test_should_return_file_to_install (self):
-        self.project.install_file('destination', 'filename')
+        self.project.install_file("destination", "filename")
         
-        self.assertEquals([('destination', ['filename'])], self.project.files_to_install)
+        self.assertEquals([("destination", ["filename"])], self.project.files_to_install)
         
     def test_should_raise_exception_when_no_destination_given (self):
-        self.assertRaises(ValueError, self.project.install_file, None, 'Hello world.')
+        self.assertRaises(ValueError, self.project.install_file, None, "Hello world.")
     
     def test_should_raise_exception_when_no_filename_given (self):
-        self.assertRaises(ValueError, self.project.install_file, 'destination', None)
+        self.assertRaises(ValueError, self.project.install_file, "destination", None)
     
     def test_should_raise_exception_when_filename_empty (self):
-        self.assertRaises(ValueError, self.project.install_file, 'destination', '\t   \n')
+        self.assertRaises(ValueError, self.project.install_file, "destination", "\t   \n")
     
     def test_should_return_files_to_install_into_same_destination (self):
-        self.project.install_file('destination', 'filename1')
-        self.project.install_file('destination', 'filename2')
+        self.project.install_file("destination", "filename1")
+        self.project.install_file("destination", "filename2")
         
-        self.assertEquals([('destination', ['filename1', 'filename2'])], self.project.files_to_install)
+        self.assertEquals([("destination", ["filename1", "filename2"])], self.project.files_to_install)
     
     def test_should_return_files_to_install_into_different_destinations (self):
-        self.project.install_file('destination_a', 'filename_a_1')
-        self.project.install_file('destination_a', 'filename_a_2')
-        self.project.install_file('destination_b', 'filename_b')
+        self.project.install_file("destination_a", "filename_a_1")
+        self.project.install_file("destination_a", "filename_a_2")
+        self.project.install_file("destination_b", "filename_b")
         
-        self.assertEquals([('destination_a', ['filename_a_1', 'filename_a_2']),
-                           ('destination_b', ['filename_b'])], self.project.files_to_install)
+        self.assertEquals([("destination_a", ["filename_a_1", "filename_a_2"]),
+                           ("destination_b", ["filename_b"])], self.project.files_to_install)
     
     def test_should_return_files_to_install_into_different_destinations_and_add_them_to_manifest (self):
-        self.project.install_file('destination_a', 'somepackage1/filename1')
-        self.project.install_file('destination_a', 'somepackage2/filename2')
-        self.project.install_file('destination_b', 'somepackage3/filename3')
+        self.project.install_file("destination_a", "somepackage1/filename1")
+        self.project.install_file("destination_a", "somepackage2/filename2")
+        self.project.install_file("destination_b", "somepackage3/filename3")
         
-        self.assertEquals([('destination_a', ['somepackage1/filename1', 'somepackage2/filename2']),
-                           ('destination_b', ['somepackage3/filename3'])], self.project.files_to_install)
-        self.assertEquals(['somepackage1/filename1', 'somepackage2/filename2', 'somepackage3/filename3'], self.project.manifest_included_files)
+        self.assertEquals([("destination_a", ["somepackage1/filename1", "somepackage2/filename2"]),
+                           ("destination_b", ["somepackage3/filename3"])], self.project.files_to_install)
+        self.assertEquals(["somepackage1/filename1", "somepackage2/filename2", "somepackage3/filename3"], self.project.manifest_included_files)
         
 class LoggerTest (unittest.TestCase):
     class LoggerMock (Logger):

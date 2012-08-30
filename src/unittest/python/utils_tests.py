@@ -68,7 +68,7 @@ class FormatTimestampTest (unittest.TestCase):
             self.fail(message)
     
     def test_should_format_timestamp (self):
-        self.assert_matches(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$', 
+        self.assert_matches(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$", 
                             format_timestamp(datetime.datetime.now()))
 
 class AsListTest (unittest.TestCase):

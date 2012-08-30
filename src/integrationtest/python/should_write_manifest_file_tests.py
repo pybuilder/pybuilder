@@ -19,21 +19,21 @@ def init (project):
     project.install_file('spam_dir', 'more_spam')
     project.install_file('eggs_dir', 'more_eggs')
 """)
-        self.create_directory('src/main/python/spam')
-        self.write_file('src/main/python/spam/eggs', '')
-        self.write_file('src/main/python/more_spam', '')
-        self.write_file('src/main/python/more_eggs', '')
+        self.create_directory("src/main/python/spam")
+        self.write_file("src/main/python/spam/eggs", "")
+        self.write_file("src/main/python/more_spam", "")
+        self.write_file("src/main/python/more_eggs", "")
         
         reactor = self.prepare_reactor()
         reactor.build()
         
-        self.assert_directory_exists('target/dist/integration-test-1.0-SNAPSHOT')
-        self.assert_directory_exists('target/dist/integration-test-1.0-SNAPSHOT/spam')
-        self.assert_file_empty('target/dist/integration-test-1.0-SNAPSHOT/spam/eggs')
-        self.assert_file_empty('target/dist/integration-test-1.0-SNAPSHOT/more_spam')
-        self.assert_file_empty('target/dist/integration-test-1.0-SNAPSHOT/more_eggs')
+        self.assert_directory_exists("target/dist/integration-test-1.0-SNAPSHOT")
+        self.assert_directory_exists("target/dist/integration-test-1.0-SNAPSHOT/spam")
+        self.assert_file_empty("target/dist/integration-test-1.0-SNAPSHOT/spam/eggs")
+        self.assert_file_empty("target/dist/integration-test-1.0-SNAPSHOT/more_spam")
+        self.assert_file_empty("target/dist/integration-test-1.0-SNAPSHOT/more_eggs")
         
-        manifest_in = 'target/dist/integration-test-1.0-SNAPSHOT/MANIFEST.in'
+        manifest_in = "target/dist/integration-test-1.0-SNAPSHOT/MANIFEST.in"
         
         self.assert_file_exists(manifest_in)
         self.assert_file_permissions(0o664, manifest_in)
@@ -43,5 +43,5 @@ include more_eggs
 """)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

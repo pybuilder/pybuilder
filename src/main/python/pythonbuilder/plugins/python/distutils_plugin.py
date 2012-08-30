@@ -154,8 +154,7 @@ def build_binary_distribution (project, logger):
                                         shell=False)
             return_code = process.wait()
             if return_code != 0:
-                raise BuildFailedException("Error while executing setup command %s",
-                                           command)
+                raise BuildFailedException("Error while executing setup command %s", command)
                 
 def build_install_dependencies_string (project):
     dependencies = [dependency for dependency in project.dependencies if not dependency.url]

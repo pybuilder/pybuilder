@@ -19,9 +19,7 @@ from pythonbuilder.errors import PythonbuilderException
 
 class PythonbuilderExceptionTest (unittest.TestCase):
     def test_should_format_exception_message_without_arguments (self):
-        self.assertEquals("spam and eggs", 
-                          str(PythonbuilderException("spam and eggs")))
+        self.assertEquals("spam and eggs", str(PythonbuilderException("spam and eggs")))
         
     def test_should_format_exception_message_with_arguments (self):
-        self.assertEquals("spam and eggs", 
-                          str(PythonbuilderException("%s and %s", "spam", "eggs")))
+        self.assertEquals("spam and eggs", str(PythonbuilderException("%s and %s", "spam", "eggs")))
