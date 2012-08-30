@@ -130,8 +130,7 @@ def do_coverage (project, logger, reactor):
     write_summary_report(coverage, project, modules)
 
     if coverage_too_low and project.get_property("coverage_break_build"):
-        raise BuildFailedException("Test coverage for at least one module is below %d%%",
-                                   threshold)
+        raise BuildFailedException("Test coverage for at least one module is below %d%%", threshold)
 
 def reimport_source_modules(project, logger):
     if project.get_property("coverage_reload_modules"):

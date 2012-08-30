@@ -20,11 +20,12 @@ from pythonbuilder.plugins.python.python_plugin_helper import execute_tool_on_mo
 use_plugin("python.core")
 use_plugin("analysis")
 
+DEFAULT_PYLINT_OPTIONS = ["--max-line-length=100", "--no-docstring-rgx=.*"]
+
+
 @init
 def init_pylint (project):
-    project.set_property_if_unset("pylint_options", 
-                                  ["--max-line-length=100", 
-                                   "--no-docstring-rgx=.*"])
+    project.set_property_if_unset("pylint_options", DEFAULT_PYLINT_OPTIONS)
 
 @after("prepare")
 def check_pylint_availability (logger):

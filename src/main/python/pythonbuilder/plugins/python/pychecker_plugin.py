@@ -21,6 +21,11 @@ from pythonbuilder.errors import BuildFailedException
 from pythonbuilder.utils import assert_can_execute, read_file, render_report
 from pythonbuilder.plugins.python.python_plugin_helper import execute_tool_on_modules
 
+
+DEFAULT_PYCHECKER_ARGUMENTS = ["-Q"]
+PYCHECKER_WARNING_PATTERN = re.compile(r'^(.+?):([0-9]+): (.+)$')         
+
+
 use_plugin("python.core")
 use_plugin("analysis")
 
@@ -36,12 +41,12 @@ def check_pychecker_available (logger):
 
 def build_command_line(project):
     command_line = ["pychecker"]
-    command_args = project.get_property('pychecker_args')
+    command_args = project.get_property("pychecker_args")
     
     if command_args:
         command_line += command_args
     else:
-        command_line += ["-Q"]
+        command_line += DEFAULT_PYCHECKER_ARGUMENTS
         
     return command_line
 
@@ -68,7 +73,6 @@ def execute_pychecker (project, logger):
         if project.get_property("pychecker_break_build") and len(warnings) > threshold:
             raise BuildFailedException("Found warnings produced by pychecker")
         
-PYCHECKER_WARNING_PATTERN = re.compile(r'^(.+?):([0-9]+): (.+)$')         
         
 class PycheckerWarning (object):
     def __init__ (self, message, line_number):

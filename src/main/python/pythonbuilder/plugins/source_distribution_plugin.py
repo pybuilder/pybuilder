@@ -23,7 +23,8 @@ use_plugin("core")
 @init
 def init_source_distribution (project):
     project.set_property_if_unset("dir_source_dist", 
-                                  "$dir_target/dist/%s-%s-src" % (project.name, project.version))
+                                  "$dir_target/dist/%s-%s-src" % (project.name,
+                                                                  project.version))
     project.set_property_if_unset("source_dist_ignore_patterns",
                                   [ "*.pyc", ".hg*", ".svn", ".CVS"]) 
 

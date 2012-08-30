@@ -75,7 +75,6 @@ def initialize_distutils_plugin (project):
 def write_setup_script (project, logger):
     setup_script = project.expand_path("$dir_dist/setup.py")
     logger.info("Writing setup.py as %s", setup_script)
-
    
     with open(setup_script, "w") as setup_file:    
         setup_file.write(render_setup_script(project))
@@ -222,4 +221,3 @@ def build_package_data_string (project):
     
     package_data_string += "},"
     return package_data_string
-

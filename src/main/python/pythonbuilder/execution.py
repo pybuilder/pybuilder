@@ -185,8 +185,7 @@ class ExecutionManager (object):
                               action.name)
             return False
                     
-        self.logger.debug("Executing action '%s' from '%s' before task", 
-                          action.name, action.source)
+        self.logger.debug("Executing action '%s' from '%s' before task", action.name, action.source)
         action.execute(arguments)
         self._actions_executed.append(action)
         return True

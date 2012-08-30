@@ -168,8 +168,6 @@ def mkdir (directory):
     Tries to create the directory denoted by the given name. If it exists and is a directory, nothing will be created
     and no error is raised. If it exists as a file a PythonbuilderException is raised. Otherwise the directory incl.
     all parents is created.
-
-
     """
 
     if os.path.exists(directory):

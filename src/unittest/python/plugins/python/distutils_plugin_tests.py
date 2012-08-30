@@ -216,4 +216,3 @@ def create_project():
     project.include_file("spam", "eggs")
     
     return project
-
