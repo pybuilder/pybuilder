@@ -60,7 +60,6 @@ pybuilder provides a lot of plugins out ot the box that utilize tools and librar
 * **Pychecker** - Provides support for [pychecker](http://pychecker.sourceforge.net/)
 * **Pydev** - Generates project files to import projects into [Eclipse PyDev](http://pydev.org/)
 * **Pylint** - Executes [pylint](http://www.logilab.org/857/) on your sources.
-* **Pymetrics** - Calculates several metrics using
 * **Pymetrics** - Calculates several metrics using [pymetrics](http://sourceforge.net/projects/pymetrics/)
 * **Unittest** - Executes [unittest](http://docs.python.org/library/unittest.html) test cases
 
