@@ -51,6 +51,7 @@ if __name__ == '__main__':
           $data_files
           $package_data
           $dependencies
+          $dependency_links
           zip_safe=True
     )
 """)
@@ -103,6 +104,7 @@ def render_setup_script (project):
         "data_files": build_data_files_string(project),
         "package_data": build_package_data_string(project),
         "dependencies": build_install_dependencies_string(project),
+        "dependency_links": build_dependency_links_string(project),
     }
     
     return SETUP_TEMPLATE.substitute(template_values)
@@ -156,15 +158,28 @@ def build_binary_distribution (project, logger):
                                            command)
                 
 def build_install_dependencies_string (project):
-    if not project.dependencies:
+    dependencies = [dependency for dependency in project.dependencies if not dependency.url]
+    if not dependencies:
         return ""
-    result = "install_requires = [ "
     
     def format_single_dependency (dependency):
-        return '"%s%s"' % (dependency.name, 
-                           build_dependency_version_string(dependency))
+        return '"%s%s"' % (dependency.name, build_dependency_version_string(dependency))
     
-    result += ", ".join(map(format_single_dependency, project.dependencies))
+    result = "install_requires = [ "
+    result += ", ".join(map(format_single_dependency, dependencies))
+    result += " ],"
+    return result
+
+def build_dependency_links_string (project):
+    dependency_links = [dependency for dependency in project.dependencies if dependency.url]
+    if not dependency_links:
+        return ""
+    
+    def format_single_dependency (dependency):
+        return '"%s"' % (dependency.url)
+    
+    result = "dependency_links = [ "
+    result += ", ".join(map(format_single_dependency, dependency_links))
     result += " ],"
     return result
 
@@ -181,7 +196,6 @@ def build_scripts_string (project):
         scripts = map(lambda s: os.path.join(scripts_dir, s), scripts)
         
     return str(scripts)
-
 
 def build_data_files_string (project):
     data_files = project.files_to_install

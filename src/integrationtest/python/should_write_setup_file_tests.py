@@ -16,6 +16,7 @@ default_task = "publish"
 @init
 def init (project):
     project.depends_on("spam")
+    project.depends_on("pyassert", url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz")
     project.build_depends_on("eggs")
 
 """)
@@ -37,7 +38,7 @@ def spam ():
     pass
 """)
 
-        setup_py = 'target/dist/integration-test-1.0-SNAPSHOT/setup.py'
+        setup_py = "target/dist/integration-test-1.0-SNAPSHOT/setup.py"
         
         self.assert_file_exists(setup_py)
         self.assert_file_permissions(0o755, setup_py)
@@ -61,10 +62,11 @@ if __name__ == '__main__':
           
           
           install_requires = [ "spam" ],
+          dependency_links = [ "https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz" ],
           zip_safe=True
     )
 """)
         
         
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
