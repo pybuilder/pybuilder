@@ -17,6 +17,7 @@
 __author__ = "Alexander Metzner"
 
 from pythonbuilder.core import before, after, task, description, use_plugin, init
+from pythonbuilder.errors import BuildFailedException
 from pythonbuilder.utils import assert_can_execute, execute_command, mkdir
 
 use_plugin("core")
@@ -62,7 +63,9 @@ def install_dependency (logger, project, dependency):
     logger.info("Installing dependency '%s'%s", dependency.name, " from %s" % dependency.url if dependency.url else "")
     log_file = project.expand_path("$dir_install_logs", dependency.name)
 
-    execute_command("pip install %s" % as_pip_argument(dependency), log_file, shell=True)
+    exit_code = execute_command("pip install %s" % as_pip_argument(dependency), log_file, shell=True)
+    if exit_code != 0:
+        raise BuildFailedException("Unable to install dependency '%s'. See %s for details.", dependency.name, log_file)
 
 def as_pip_argument (dependency):
     if dependency.url:
