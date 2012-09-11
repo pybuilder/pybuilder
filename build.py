@@ -36,7 +36,7 @@ use_plugin("python.pychecker")
 use_plugin("python.pylint")
 use_plugin("python.pymetrics")
 
-version = "0.7.5"
+version = "0.7.6"
 default_task = "publish"
 
 summary = "An extendible, easy to use continuous build tool for Python"
@@ -66,7 +66,8 @@ def init (project):
     project.build_depends_on("coverage")
     project.build_depends_on("pymetrics")
     project.build_depends_on("pep8")
-    
+    project.build_depends_on("pyassert")
+
     project.set_property("coverage_break_build", False)
     project.get_property("coverage_exceptions").append("pythonbuilder.cli")
     project.get_property("coverage_exceptions").append("pythonbuilder.plugins.core_plugin")

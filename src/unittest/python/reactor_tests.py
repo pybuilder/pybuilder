@@ -22,7 +22,7 @@ from mockito.matchers import Matcher
 from test_utils import mock
 
 from pythonbuilder.core import TASK_ATTRIBUTE, ACTION_ATTRIBUTE, BEFORE_ATTRIBUTE, AFTER_ATTRIBUTE, INITIALIZER_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, Project, NAME_ATTRIBUTE
-from pythonbuilder.errors import MissingPluginException, PythonbuilderException
+from pythonbuilder.errors import MissingPluginException, PythonbuilderException, BuildFailedException, ProjectValidationFailedException
 from pythonbuilder.reactor import Reactor
 from pythonbuilder.execution import Task, Action, Initializer
 
@@ -137,8 +137,6 @@ class ReactorTest (unittest.TestCase):
         self.execution_manager.register_action = register_action
 
         self.reactor.collect_tasks_and_actions_and_initializers(module)
-        
-        #verify(self.execution_manager).register_action(any(Action))
 
     def test_should_collect_single_initializer (self):        
         def init (): pass
@@ -290,3 +288,16 @@ class ReactorTest (unittest.TestCase):
         verify(self.logger).debug("Project properties: %s", contains("basedir : spam"))
         verify(self.logger).debug("Project properties: %s", contains("eggs : eggs"))
         verify(self.logger).debug("Project properties: %s", contains("spam : spam"))
+
+    def test_should_raise_exception_when_project_is_not_valid (self):
+        when(os.path).abspath("spam").thenReturn("spam")
+        when(os.path).exists("spam").thenReturn(True)
+        when(os.path).isdir("spam").thenReturn(True)
+        when(os.path).exists("spam/build.py").thenReturn(True)
+        when(os.path).isfile("spam/build.py").thenReturn(True)
+        when(imp).load_source(any(), any()).thenReturn(mock())
+
+        self.reactor.project = mock(properties={})
+        when(self.reactor.project).validate().thenReturn(["spam"])
+
+        self.assertRaises(ProjectValidationFailedException, self.reactor.build)

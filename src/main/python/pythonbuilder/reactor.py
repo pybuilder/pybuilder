@@ -20,7 +20,7 @@ from pythonbuilder.core import TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE, \
 DESCRIPTION_ATTRIBUTE, AFTER_ATTRIBUTE, BEFORE_ATTRIBUTE, \
 INITIALIZER_ATTRIBUTE, ACTION_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, Project, \
 NAME_ATTRIBUTE
-from pythonbuilder.errors import PythonbuilderException
+from pythonbuilder.errors import PythonbuilderException, ProjectValidationFailedException
 from pythonbuilder.pluginloader import BuiltinPluginLoader 
 from pythonbuilder.utils import as_list
 from pythonbuilder.execution import Action, Initializer, Task
@@ -60,7 +60,12 @@ class Reactor (object):
         
     def get_tasks (self):
         return self.execution_manager.tasks
-        
+
+    def validate_project(self):
+        validation_messages = self.project.validate()
+        if len(validation_messages) > 0:
+            raise ProjectValidationFailedException(validation_messages)
+
     def prepare_build (self,
                        property_overrides={},
                        project_directory=".",
@@ -85,7 +90,7 @@ class Reactor (object):
         self.collect_tasks_and_actions_and_initializers(self.project_module)
 
         self.execution_manager.resolve_dependencies()
-        
+
     def build (self, tasks=[]):
         Reactor._current_instance = self
         
@@ -97,13 +102,14 @@ class Reactor (object):
             else:
                 raise PythonbuilderException("No default task given.")
         
-        execution_plan = self.execution_manager.build_execution_plan(tasks)
-        
-        self.logger.debug("Execution plan is %s", ", ".join([task.name for task in execution_plan]))
-            
         self.execution_manager.execute_initializers(logger=self.logger, project=self.project)
 
         self.log_project_properties()
+
+        self.validate_project()
+
+        execution_plan = self.execution_manager.build_execution_plan(tasks)
+        self.logger.debug("Execution plan is %s", ", ".join([task.name for task in execution_plan]))
 
         self.logger.info("Building %s version %s", self.project.name, self.project.version)
         self.logger.info("Executing build in %s", self.project.basedir)

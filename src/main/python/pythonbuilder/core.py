@@ -15,6 +15,7 @@
 #  limitations under the License.
 import os
 import string
+import sets
 
 from pythonbuilder.errors import MissingPropertyException
 
@@ -121,7 +122,7 @@ class Dependency (object):
         self.url = url
 
     def __eq__ (self, other):
-        return self.name == other.name and self.version == other.version
+        return self.name == other.name and self.version == other.version and self.url == other.url
     
     def __ne__ (self, other):
         return not(self == other)
@@ -169,7 +170,43 @@ class Project (object):
 
     def __str__ (self):
         return "[Project name=%s basedir=%s]" % (self.name, self.basedir)
-    
+
+    def validate (self):
+        """
+        Validates the project returning a list of validation error messages if the project is not valid.
+        Returns an empty list if the project is valid.
+        """
+        result = self.validate_dependencies()
+
+        return result
+
+    def validate_dependencies (self):
+        result = []
+
+        build_dependencies_found = {}
+
+        for dependency in self.build_dependencies:
+            if dependency.name in build_dependencies_found:
+                if build_dependencies_found[dependency.name] == 1:
+                    result.append("Build dependency '%s' has been defined multiple times." % dependency.name)
+                build_dependencies_found[dependency.name] += 1
+            else:
+                build_dependencies_found[dependency.name] = 1
+
+        runtime_dependencies_found = {}
+
+        for dependency in self.dependencies:
+            if dependency.name in runtime_dependencies_found:
+                if runtime_dependencies_found[dependency.name] == 1:
+                    result.append("Runtime dependency '%s' has been defined multiple times." % dependency.name)
+                runtime_dependencies_found[dependency.name] += 1
+            else:
+                runtime_dependencies_found[dependency.name] = 1
+            if dependency.name in build_dependencies_found:
+                result.append("Runtime dependency '%s' has also been given as build dependency." % dependency.name)
+
+        return result
+
     @property
     def properties (self):
         result = self._properties

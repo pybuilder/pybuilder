@@ -66,5 +66,10 @@ class MissingPropertyException (PythonbuilderException):
     def __init__ (self, property):
         super(MissingPropertyException, self).__init__("No such property: %s", property)
 
+class ProjectValidationFailedException (BuildFailedException):
+    def __init__ (self, validation_messages):
+        BuildFailedException.__init__(self, "Project validation failed: " + "\n-".join(validation_messages))
+        self.validation_messages = validation_messages
+
 class InternalException (PythonbuilderException):
     pass
