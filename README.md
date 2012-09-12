@@ -42,7 +42,7 @@ use_plugin("python.distutils")
 default_task = "publish"
 ```
 
-See the [documentation](http://pybuilder.github.com/#/documentation) for more details.
+See the [documentation](http://pybuilder.github.com/documentation/) for more details.
 
 ## Plugins
 
@@ -67,4 +67,4 @@ In addition, a few common plugins are provided:
 
 ## Release Notes
 
-The release notes can be found [here](http://pybuilder.github.com/#/releasenotes)
+The release notes can be found [here](http://pybuilder.github.com/releasenotes/)
