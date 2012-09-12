@@ -15,7 +15,6 @@
 #  limitations under the License.
 import os
 import string
-import sets
 
 from pythonbuilder.errors import MissingPropertyException
 

@@ -290,13 +290,6 @@ class ReactorTest (unittest.TestCase):
         verify(self.logger).debug("Project properties: %s", contains("spam : spam"))
 
     def test_should_raise_exception_when_project_is_not_valid (self):
-        when(os.path).abspath("spam").thenReturn("spam")
-        when(os.path).exists("spam").thenReturn(True)
-        when(os.path).isdir("spam").thenReturn(True)
-        when(os.path).exists("spam/build.py").thenReturn(True)
-        when(os.path).isfile("spam/build.py").thenReturn(True)
-        when(imp).load_source(any(), any()).thenReturn(mock())
-
         self.reactor.project = mock(properties={})
         when(self.reactor.project).validate().thenReturn(["spam"])
 
