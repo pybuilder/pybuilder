@@ -20,4 +20,4 @@ import pythonbuilder.cli
 import sys
 
 if __name__ == '__main__':
-    pythonbuilder.cli.main(*sys.argv[1:])
+    sys.exit(pythonbuilder.cli.main(*sys.argv[1:]))

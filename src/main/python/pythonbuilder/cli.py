@@ -155,7 +155,7 @@ def main (*args):
     except CommandLineUsageException as e:
         sys.stderr.write("Usage error: %s\n" % e)
         sys.stderr.write(e.usage)
-        sys.exit(1)
+        return 1
         
     start = datetime.datetime.now()
     
@@ -243,4 +243,4 @@ def main (*args):
         sys.stdout.write("Build finished at %s\n" % format_timestamp(end))
         sys.stdout.write("Build took %d seconds (%d ms)\n" % (time_needed.seconds, millis))
         
-        sys.exit(0 if successful else 1)
+        return 0 if successful else 1
