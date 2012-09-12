@@ -42,11 +42,7 @@ use_plugin("python.distutils")
 default_task = "publish"
 ```
 
-If you want to get started using Python Builder for your Python project, please
-read the [Tutorial](http://code.google.com/p/python-builder/wiki/Tutorial).
-
-There is also a [UsersGuide](http://code.google.com/p/python-builder/wiki/UsersGuide)
-which is highly work in progress.
+See the [documentation](http://pybuilder.github.com/#/documentation) for more details.
 
 ## Plugins
 
@@ -71,23 +67,4 @@ In addition, a few common plugins are provided:
 
 ## Release Notes
 
-### Version 0.7.4
-* distutils plugin supports URLs for dependencies and adds a dependency_links parameter to setup()
-
-### Version 0.7.3
-* bugfix release for install_dependencies plugin
-* dependencies take an optional URL which is used for installation
-
-### Version 0.7.2
-* added install_dependencies plugin which provides capabilities to install build and runtime dependencies for Python projects
-
-### Version 0.7.1
-* pybuilder is now compatible with Python 3
-* snakefood plugin has been discontinued because snakefood seems rather unmaintained and is not compatible to Python 3
-
-### Version 0.6.5
-* Introduced build dependencies that do not get added as install_requires to setup.py files
-
-### Version 0.6.4
-* Added flake8 plugin
-* Added support for installing files
+The release notes can be found [here](http://pybuilder.github.com/#/releasenotes)
