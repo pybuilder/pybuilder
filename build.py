@@ -57,7 +57,7 @@ authors = [
            Author("Udo Juettner", "udo.juettner@gmail.com"),
            ]
 
-url = "https://github.com/pybuilder/pybuilder"
+url     = "http://pybuilder.github.com"
 license = "Apache License"
 
 @init
