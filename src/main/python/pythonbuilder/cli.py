@@ -176,7 +176,7 @@ def main (*args):
         return 0
 
     banner = "PYTHON BUILDER Version %s\n" % VERSION
-    if not should_colorize(options):
+    if should_colorize(options):
         banner = bold(banner)
 
     sys.stdout.write(banner)
