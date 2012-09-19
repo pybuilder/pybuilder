@@ -183,9 +183,13 @@ def build_dependency_links_string (project):
     return result
 
 def build_dependency_version_string (dependency):
-    if dependency.version:
-        return ">=%s" % dependency.version
-    return ""
+    if not dependency.version:
+        return ""
+
+    if dependency.version[0] in ("<", ">", "="):
+        return dependency.version
+
+    return ">=%s" % dependency.version
 
 def build_scripts_string (project):
     scripts = [ script for script in project.list_scripts() ]
@@ -199,7 +203,7 @@ def build_scripts_string (project):
 def build_data_files_string (project):
     data_files = project.files_to_install
     
-    if data_files == []:
+    if not len(data_files):
         return ""
 
     return "data_files = %s," % str(data_files)

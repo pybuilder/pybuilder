@@ -32,7 +32,8 @@ default_task = "publish"
 def init (project):
     project.depends_on("spam")
     project.depends_on("pyassert", url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz")
-    project.build_depends_on("eggs")
+    project.depends_on("eggs", "==0.2.3")
+    project.build_depends_on("eggy")
 
 """)
         self.create_directory("src/main/python/spam")
@@ -76,7 +77,7 @@ if __name__ == '__main__':
           classifiers = ['Development Status :: 3 - Alpha', 'Programming Language :: Python'],
           
           
-          install_requires = [ "spam" ],
+          install_requires = [ "eggs==0.2.3", "spam" ],
           dependency_links = [ "https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz" ],
           zip_safe=True
     )

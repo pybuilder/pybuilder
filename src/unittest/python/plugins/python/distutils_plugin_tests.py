@@ -51,6 +51,11 @@ class InstallDependenciesTest (unittest.TestCase):
         
         self.assertEqual('install_requires = [ "spam" ],', build_install_dependencies_string(self.project))
 
+    def test_should_not_insert_default_version_operator_when_project_contains_operator_in_version (self):
+        self.project.depends_on("spam", "==0.7")
+        self.assertEqual('install_requires = [ "spam==0.7" ],', build_install_dependencies_string(self.project))
+
+
 class DependencyLinksTest (unittest.TestCase):
     def setUp(self):
         self.project = Project(".")
