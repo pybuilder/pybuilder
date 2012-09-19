@@ -80,7 +80,13 @@ def parse_options (args):
                              help="Root directory to execute in", 
                              metavar="<project directory>", 
                              default=".")
-    project_group.add_option("-P", 
+    project_group.add_option("-E", "--environment",
+                             dest="environments",
+                             help="Activate the given environment for this build. Can be used multiple times",
+                             metavar="<environment>",
+                             action="append",
+                             default=[])
+    project_group.add_option("-P",
                              action="append",
                              dest="property_overrides",
                              default=[],
@@ -158,7 +164,7 @@ def main (*args):
         return 1
         
     start = datetime.datetime.now()
-    
+
     logger = init_logger(options)
     reactor = init_reactor(logger)        
 
@@ -200,7 +206,7 @@ def main (*args):
                         sys.stdout.write("\t\t\tdepends on tasks: %s\n" % " ".join(task.dependencies))
                     sys.stdout.write("\n")
             else:
-                summary = reactor.build(arguments)
+                summary = reactor.build(environments=options.environments, tasks=arguments)
         except KeyboardInterrupt:
             raise PythonbuilderException("Build aborted")
         
@@ -230,7 +236,8 @@ def main (*args):
             sys.stdout.write("%20s: %s\n" % ("Project", summary.project.name))
             sys.stdout.write("%20s: %s\n" % ("Version", summary.project.version))
             sys.stdout.write("%20s: %s\n" % ("Base directory", summary.project.basedir))
-            
+            sys.stdout.write("%20s: %s\n" % ("Environments", ", ".join(options.environments)))
+
             task_summary = ""
             for task in summary.task_summaries:
                 task_summary += " %s [%d ms]" % (task.task, task.execution_time)

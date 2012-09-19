@@ -14,12 +14,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import os
+import types
 import unittest 
 
 from pyassert import assert_that
 from mockito import when, verify, unstub
 
-from pythonbuilder.core import Project, Logger
+from pythonbuilder.core import Project, Logger, init, INITIALIZER_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE
 from pythonbuilder.errors import MissingPropertyException 
 
 class ProjectTest (unittest.TestCase):
@@ -363,3 +364,37 @@ class LoggerTest (unittest.TestCase):
         logger = LoggerTest.LoggerMock(Logger.WARN)
         logger.info("message", "argument one", "argument two")
         logger.assert_not_logged(Logger.INFO, "message", "argument one", "argument two")        
+
+
+def is_callable (function_or_object):
+    return isinstance(function_or_object, types.FunctionType) or hasattr(function_or_object, "__call__")
+
+
+class InitTest (unittest.TestCase):
+    def test_ensure_that_init_can_be_used_without_invocation_parenthesis (self):
+        @init
+        def fun ():
+            pass
+
+        self.assertTrue(hasattr(fun, INITIALIZER_ATTRIBUTE))
+        self.assertTrue(is_callable(fun))
+
+    def test_ensure_that_init_can_be_used_with_invocation_parenthesis (self):
+        @init()
+        def fun ():
+            pass
+
+        self.assertTrue(hasattr(fun, INITIALIZER_ATTRIBUTE))
+        self.assertTrue(is_callable(fun))
+
+    def test_ensure_that_init_can_be_used_with_named_arguments (self):
+        @init(environments="spam")
+        def fun ():
+            pass
+
+        self.assertTrue(hasattr(fun, INITIALIZER_ATTRIBUTE))
+        self.assertTrue(hasattr(fun, ENVIRONMENTS_ATTRIBUTE))
+        self.assertTrue(getattr(fun, ENVIRONMENTS_ATTRIBUTE), ["spam"])
+
+        self.assertTrue(is_callable(fun))
+

@@ -16,38 +16,39 @@
 import imp
 import os.path
 
-from pythonbuilder.core import TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE, \
-DESCRIPTION_ATTRIBUTE, AFTER_ATTRIBUTE, BEFORE_ATTRIBUTE, \
-INITIALIZER_ATTRIBUTE, ACTION_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, Project, \
-NAME_ATTRIBUTE
+from pythonbuilder.core import TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE,\
+    DESCRIPTION_ATTRIBUTE, AFTER_ATTRIBUTE, BEFORE_ATTRIBUTE,\
+    INITIALIZER_ATTRIBUTE, ACTION_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, Project,\
+    NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE
 from pythonbuilder.errors import PythonbuilderException, ProjectValidationFailedException
-from pythonbuilder.pluginloader import BuiltinPluginLoader 
+from pythonbuilder.pluginloader import BuiltinPluginLoader
 from pythonbuilder.utils import as_list
 from pythonbuilder.execution import Action, Initializer, Task
 
-class BuildSummary (object):
-    def __init__ (self, project, task_execution_summaries):
+class BuildSummary(object):
+    def __init__(self, project, task_execution_summaries):
         self.project = project
         self.task_summaries = task_execution_summaries
-        
-class Reactor (object):
+
+
+class Reactor(object):
     _current_instance = None
-    
+
     @staticmethod
-    def current_instance ():
+    def current_instance():
         return Reactor._current_instance
-    
-    def __init__ (self, logger, execution_manager, plugin_loader=None):
+
+    def __init__(self, logger, execution_manager, plugin_loader=None):
         self.logger = logger
         self.execution_manager = execution_manager
         if not plugin_loader:
             self.plugin_loader = BuiltinPluginLoader(self.logger)
-        else: 
+        else:
             self.plugin_loader = plugin_loader
         self._plugins = []
         self.project = None
 
-    def require_plugin (self, plugin):
+    def require_plugin(self, plugin):
         if plugin not in self._plugins:
             try:
                 self._plugins.append(plugin)
@@ -55,10 +56,11 @@ class Reactor (object):
             except:
                 self._plugins.remove(plugin)
                 raise
-    def get_plugins (self):
+
+    def get_plugins(self):
         return self._plugins
-        
-    def get_tasks (self):
+
+    def get_tasks(self):
         return self.execution_manager.tasks
 
     def validate_project(self):
@@ -66,43 +68,45 @@ class Reactor (object):
         if len(validation_messages) > 0:
             raise ProjectValidationFailedException(validation_messages)
 
-    def prepare_build (self,
-                       property_overrides={},
-                       project_directory=".",
-                       project_descriptor="build.py"):
-        
+    def prepare_build(self,
+                      property_overrides={},
+                      project_directory=".",
+                      project_descriptor="build.py"):
         Reactor._current_instance = self
-        
-        project_directory, project_descriptor = \
-            self.verify_project_directory(project_directory, project_descriptor)
-        
+
+        project_directory, project_descriptor =\
+        self.verify_project_directory(project_directory, project_descriptor)
+
         self.logger.debug("Loading project module from %s", project_descriptor)
-        
+
         self.project = Project(basedir=project_directory)
 
         self.project_module = self.load_project_module(project_descriptor)
-        
+
         self.apply_project_attributes()
         self.override_properties(property_overrides)
 
-        self.logger.debug("Have loaded plugins %s", ", ".join(self._plugins)) 
-        
+        self.logger.debug("Have loaded plugins %s", ", ".join(self._plugins))
+
         self.collect_tasks_and_actions_and_initializers(self.project_module)
 
         self.execution_manager.resolve_dependencies()
 
-    def build (self, tasks=[]):
+    def build(self, tasks=[], environments=[]):
         Reactor._current_instance = self
-        
+
         tasks = as_list(tasks)
-        
+
         if len(tasks) == 0:
             if self.project.default_task:
                 tasks += as_list(self.project.default_task)
             else:
                 raise PythonbuilderException("No default task given.")
-        
-        self.execution_manager.execute_initializers(logger=self.logger, project=self.project)
+
+        if environments:
+            self.logger.info("Activated environments: %s", ", ".join(environments))
+
+        self.execution_manager.execute_initializers(environments, logger=self.logger, project=self.project)
 
         self.log_project_properties()
 
@@ -114,42 +118,42 @@ class Reactor (object):
         self.logger.info("Building %s version %s", self.project.name, self.project.version)
         self.logger.info("Executing build in %s", self.project.basedir)
         self.logger.info("Going to execute task%s %s",
-                         "s" if len(tasks) != 1 else "",
-                         ", ".join(tasks))
-        
-        task_execution_summaries = \
-            self.execution_manager.execute_execution_plan(execution_plan,
-                                                          logger=self.logger,
-                                                          project=self.project,
-                                                          reactor=self)
-        
-        return BuildSummary(self.project, task_execution_summaries)
-    
-    def execute_task (self, task_name):
-        execution_plan = self.execution_manager.build_execution_plan(task_name)
-        
+            "s" if len(tasks) != 1 else "",
+            ", ".join(tasks))
+
+        task_execution_summaries =\
         self.execution_manager.execute_execution_plan(execution_plan,
-                                                      logger=self.logger,
-                                                      project=self.project,
-                                                      reactor=self)
-        
-    def override_properties (self, property_overrides):
+            logger=self.logger,
+            project=self.project,
+            reactor=self)
+
+        return BuildSummary(self.project, task_execution_summaries)
+
+    def execute_task(self, task_name):
+        execution_plan = self.execution_manager.build_execution_plan(task_name)
+
+        self.execution_manager.execute_execution_plan(execution_plan,
+            logger=self.logger,
+            project=self.project,
+            reactor=self)
+
+    def override_properties(self, property_overrides):
         for property_override in property_overrides:
             self.project.set_property(property_override,
-                                      property_overrides[property_override])
-        
-    def log_project_properties (self):
+                property_overrides[property_override])
+
+    def log_project_properties(self):
         formatted = ""
         for key in sorted(self.project.properties):
             formatted += "\n%40s : %s" % (key, self.project.get_property(key))
         self.logger.debug("Project properties: %s", formatted)
-        
-    def import_plugin (self, plugin):
+
+    def import_plugin(self, plugin):
         self.logger.debug("Loading plugin '%s'", plugin)
         plugin_module = self.plugin_loader.load_plugin(self.project, plugin)
-        self.collect_tasks_and_actions_and_initializers(plugin_module) 
-        
-    def collect_tasks_and_actions_and_initializers (self, project_module):
+        self.collect_tasks_and_actions_and_initializers(plugin_module)
+
+    def collect_tasks_and_actions_and_initializers(self, project_module):
         for name in dir(project_module):
             candidate = getattr(project_module, name)
 
@@ -158,7 +162,7 @@ class Reactor (object):
             elif hasattr(candidate, "__name__"):
                 name = candidate.__name__
             description = getattr(candidate, DESCRIPTION_ATTRIBUTE) if hasattr(candidate, DESCRIPTION_ATTRIBUTE) else ""
-            
+
             if hasattr(candidate, TASK_ATTRIBUTE) and getattr(candidate, TASK_ATTRIBUTE):
                 dependencies = getattr(candidate, DEPENDS_ATTRIBUTE) if hasattr(candidate, DEPENDS_ATTRIBUTE) else None
 
@@ -168,15 +172,20 @@ class Reactor (object):
             elif hasattr(candidate, ACTION_ATTRIBUTE) and getattr(candidate, ACTION_ATTRIBUTE):
                 before = getattr(candidate, BEFORE_ATTRIBUTE) if hasattr(candidate, BEFORE_ATTRIBUTE) else None
                 after = getattr(candidate, AFTER_ATTRIBUTE) if hasattr(candidate, AFTER_ATTRIBUTE) else None
-                only_once = getattr(candidate, ONLY_ONCE_ATTRIBUTE) if hasattr(candidate, ONLY_ONCE_ATTRIBUTE) else False
-                
+                only_once = getattr(candidate, ONLY_ONCE_ATTRIBUTE) if hasattr(candidate,
+                    ONLY_ONCE_ATTRIBUTE) else False
+
                 self.logger.debug("Found action %s", name)
                 self.execution_manager.register_action(Action(name, candidate, before, after, description, only_once))
 
             elif hasattr(candidate, INITIALIZER_ATTRIBUTE) and getattr(candidate, INITIALIZER_ATTRIBUTE):
-                self.execution_manager.register_initializer(Initializer(name, candidate, description))
-                
-    def apply_project_attributes (self):
+                environments = []
+                if hasattr(candidate, ENVIRONMENTS_ATTRIBUTE):
+                    environments = getattr(candidate, ENVIRONMENTS_ATTRIBUTE)
+
+                self.execution_manager.register_initializer(Initializer(name, candidate, environments, description))
+
+    def apply_project_attributes(self):
         self.propagate_property("name")
         self.propagate_property("version")
         self.propagate_property("default_task")
@@ -186,31 +195,32 @@ class Reactor (object):
         self.propagate_property("authors")
         self.propagate_property("license")
         self.propagate_property("url")
-        
-    def propagate_property (self, property):
+
+    def propagate_property(self, property):
         if hasattr(self.project_module, property):
             value = getattr(self.project_module, property)
             setattr(self.project, property, value)
-        
+
     def load_project_module(self, project_descriptor):
         try:
             return imp.load_source("build", project_descriptor)
         except ImportError as e:
             raise PythonbuilderException("Error importing project descriptor %s: %s" % (project_descriptor, e))
 
-    def verify_project_directory (self, project_directory, project_descriptor):
+    def verify_project_directory(self, project_directory, project_descriptor):
         project_directory = os.path.abspath(project_directory)
-        
+
         if not os.path.exists(project_directory):
             raise PythonbuilderException("Project directory does not exist: %s", project_directory)
         if not os.path.isdir(project_directory):
             raise PythonbuilderException("Project directory is not a directory: %s", project_directory)
 
         project_descriptor_full_path = os.path.join(project_directory, project_descriptor)
-        
+
         if not os.path.exists(project_descriptor_full_path):
-            raise PythonbuilderException("Project directory does not contain descriptor file: %s", project_descriptor_full_path)
+            raise PythonbuilderException("Project directory does not contain descriptor file: %s",
+                project_descriptor_full_path)
         if not os.path.isfile(project_descriptor_full_path):
             raise PythonbuilderException("Project descriptor is not a file: %s", project_descriptor_full_path)
-        
+
         return project_directory, project_descriptor_full_path

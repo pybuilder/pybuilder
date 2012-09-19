@@ -21,10 +21,11 @@ from mockito import when, verify, unstub, any, times, contains
 from mockito.matchers import Matcher
 from test_utils import mock
 
-from pythonbuilder.core import TASK_ATTRIBUTE, ACTION_ATTRIBUTE, BEFORE_ATTRIBUTE, AFTER_ATTRIBUTE, INITIALIZER_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, Project, NAME_ATTRIBUTE
+from pythonbuilder.core import TASK_ATTRIBUTE, ACTION_ATTRIBUTE, BEFORE_ATTRIBUTE, AFTER_ATTRIBUTE, INITIALIZER_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, Project, NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE
 from pythonbuilder.errors import MissingPluginException, PythonbuilderException, BuildFailedException, ProjectValidationFailedException
 from pythonbuilder.reactor import Reactor
-from pythonbuilder.execution import Task, Action, Initializer
+from pythonbuilder.execution import Task, Action, Initializer, ExecutionManager
+from pythonbuilder.pluginloader import PluginLoader
 
 class TaskNameMatcher (Matcher):
     def __init__(self, task_name):
@@ -40,9 +41,9 @@ class TaskNameMatcher (Matcher):
 
 class ReactorTest (unittest.TestCase):
     def setUp (self):
-        self.plugin_loader_mock = mock()
+        self.plugin_loader_mock = mock(PluginLoader)
         self.logger = mock()
-        self.execution_manager = mock()
+        self.execution_manager = mock(ExecutionManager)
         self.reactor = Reactor(self.logger, self.execution_manager, self.plugin_loader_mock)
     
     def tearDown (self):
@@ -144,10 +145,29 @@ class ReactorTest (unittest.TestCase):
         
         module = mock()
         module.task = init
-        
+
         self.reactor.collect_tasks_and_actions_and_initializers(module)
-        
+
         verify(self.execution_manager).register_initializer(any(Initializer))
+
+    def test_should_collect_single_initializer_with_environments (self):
+        def init (): pass
+        setattr(init, INITIALIZER_ATTRIBUTE, True)
+        setattr(init, ENVIRONMENTS_ATTRIBUTE, ["any_environment"])
+
+        module = mock()
+        module.task = init
+
+        class ExecutionManagerMock (object):
+            def register_initializer (self, initializer):
+                self.initializer = initializer
+
+        execution_manager_mock = ExecutionManagerMock()
+        self.reactor.execution_manager =  execution_manager_mock
+
+        self.reactor.collect_tasks_and_actions_and_initializers(module)
+
+        self.assertEquals(execution_manager_mock.initializer.environments, ["any_environment"])
 
     def test_should_raise_exception_when_verifying_project_directory_and_directory_does_not_exist (self):
         when(os.path).abspath("spam").thenReturn("spam")

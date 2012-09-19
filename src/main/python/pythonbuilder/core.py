@@ -17,8 +17,11 @@ import os
 import string
 
 from pythonbuilder.errors import MissingPropertyException
+from .utils import as_list
 
 INITIALIZER_ATTRIBUTE = "_python_builder_initializer"
+
+ENVIRONMENTS_ATTRIBUTE = "_python_builder_environments"
 
 NAME_ATTRIBUTE = "_python_builder_name"
 ACTION_ATTRIBUTE = "_python_builder_action"
@@ -31,16 +34,45 @@ DEPENDS_ATTRIBUTE = "_python_builder_depends"
 
 DESCRIPTION_ATTRIBUTE = "_python_builder_description"
 
-def init (callable):
+def init (*possible_callable, **additional_arguments):
     """
     Decorator for functions that wish to perform initialization steps.
     The decorated functions are called "initializers".
     
     Initializers are executed after all plugins and projects have been loaded
     but before any task is executed.
+
+    Initializers may take an additional named argument "environments" which should contain a string or list of strings
+    naming the environments this initializer applies for.
+
+    Examples:
+
+    @init
+    def some_initializer (): pass
+
+    @init()
+    def some_initializer (): pass
+
+    @init(environments="spam")
+    def some_initializer (): pass
+
+    @init(environments=["spam", "eggs"])
+    def some_initializer (): pass
     """
-    setattr(callable, INITIALIZER_ATTRIBUTE, True)
-    return callable
+
+    def do_decoration (callable):
+        setattr(callable, INITIALIZER_ATTRIBUTE, True)
+
+        if "environments" in additional_arguments:
+            setattr(callable, ENVIRONMENTS_ATTRIBUTE, as_list(additional_arguments["environments"]))
+
+        return callable
+
+    if possible_callable:
+        return do_decoration(possible_callable[0])
+
+    return do_decoration
+
 
 def task (callable_or_string):
     """

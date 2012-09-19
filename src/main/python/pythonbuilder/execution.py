@@ -90,7 +90,16 @@ class Task (object):
             executable.execute(argument_dict)
     
 class Initializer (Executable):
-    pass
+    def __init__ (self, name, callable, environments=None, description=""):
+        super(Initializer, self).__init__(name, callable, description)
+        self.environments = environments
+
+    def is_applicable (self, environments=None):
+        if not self.environments:
+            return True
+        for environment in as_list(environments):
+            if environment in self.environments:
+                return True
 
 class DependenciesNotResolvedException (InternalException):
     def __init__ (self):
@@ -146,11 +155,16 @@ class ExecutionManager (object):
             else:
                 self._tasks[task.name] = task
         
-    def execute_initializers (self, **keywordArguments):
+    def execute_initializers (self, environments=None, **keywordArguments):
         for initializer in self._initializers:
-            self.logger.debug("Executing initializer '%s' from '%s'", 
-                              initializer.name, initializer.source)
-            initializer.execute(keywordArguments) 
+            if not initializer.is_applicable(environments):
+                self.logger.debug("Not going to execute initializer '%s' from '%s' as environments do not match.",
+                    initializer.name, initializer.source)
+
+            else:
+                self.logger.debug("Executing initializer '%s' from '%s'",
+                                  initializer.name, initializer.source)
+                initializer.execute(keywordArguments)
         
 
     def assert_dependencies_resolved(self):

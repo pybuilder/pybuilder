@@ -116,4 +116,21 @@ class ParseOptionsTest (unittest.TestCase):
 
     def test_should_abort_execution_when_property_definition_has_syntax_error (self):
         self.assertRaises(CommandLineUsageException, parse_options, ["-P", "spam"])
-        
+
+    def test_should_parse_single_environment (self):
+        options, arguments = parse_options(["-E", "spam"])
+
+        self.assert_options(options, environments=["spam"])
+        self.assertEquals([], arguments)
+
+    def test_should_parse_multiple_environments (self):
+        options, arguments = parse_options(["-E", "spam", "-E", "eggs"])
+
+        self.assert_options(options, environments=["spam", "eggs"])
+        self.assertEquals([], arguments)
+
+    def test_should_parse_empty_environments (self):
+        options, arguments = parse_options([])
+
+        self.assert_options(options, environments=[])
+        self.assertEquals([], arguments)
