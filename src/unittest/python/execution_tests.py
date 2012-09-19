@@ -208,6 +208,11 @@ class InitializerTest(unittest.TestCase):
         initializer = Initializer("initialzer", self.callable, "any_environment")
         self.assertFalse(initializer.is_applicable())
 
+    def test_should_return_true_when_invoking_is_applicable_with_environment_and_initializer_defines_multiple_environments(
+            self):
+        initializer = Initializer("initialzer", self.callable, ["any_environment", "any_other_environment"])
+        self.assertTrue(initializer.is_applicable(["any_environment"]))
+
 
 class ExecutionManagerTestBase(unittest.TestCase):
     def setUp(self):
