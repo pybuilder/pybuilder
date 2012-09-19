@@ -36,7 +36,7 @@ use_plugin("python.pychecker")
 use_plugin("python.pylint")
 use_plugin("python.pymetrics")
 
-version = "0.8.0"
+version = "0.8.1"
 default_task = "publish"
 
 summary = "An extendible, easy to use continuous build tool for Python"

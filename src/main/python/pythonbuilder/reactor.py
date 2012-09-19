@@ -95,14 +95,6 @@ class Reactor(object):
     def build(self, tasks=[], environments=[]):
         Reactor._current_instance = self
 
-        tasks = as_list(tasks)
-
-        if len(tasks) == 0:
-            if self.project.default_task:
-                tasks += as_list(self.project.default_task)
-            else:
-                raise PythonbuilderException("No default task given.")
-
         if environments:
             self.logger.info("Activated environments: %s", ", ".join(environments))
 
@@ -111,6 +103,14 @@ class Reactor(object):
         self.log_project_properties()
 
         self.validate_project()
+
+        tasks = as_list(tasks)
+
+        if not len(tasks):
+            if self.project.default_task:
+                tasks += as_list(self.project.default_task)
+            else:
+                raise PythonbuilderException("No default task given.")
 
         execution_plan = self.execution_manager.build_execution_plan(tasks)
         self.logger.debug("Execution plan is %s", ", ".join([task.name for task in execution_plan]))
