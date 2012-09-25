@@ -59,7 +59,7 @@ def run_unit_tests (project, logger):
             raise BuildFailedException("There were test errors.")
         logger.info("All unittests passed.")
     except ImportError as e:
-        logger.error("Error import unittests: %s", e)
+        logger.error("Error importing unittests: %s", e)
         raise BuildFailedException("Unable to execute unit tests.")
 
 def execute_tests (test_source, suffix):
