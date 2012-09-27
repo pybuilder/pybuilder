@@ -28,6 +28,10 @@ use_plugin("core")
 @init
 def initialized_install_dependencies_plugin(project):
     project.set_property_if_unset("dir_install_logs", "$dir_logs/install_dependencies")
+    project.set_property_if_unset("install_dependencies_index_url", None)
+    project.set_property_if_unset("install_dependencies_extra_index_url", None)
+    project.set_property_if_unset("install_dependencies_use_mirrors", True)
+    project.set_property_if_unset("install_dependencies_upgrade", False)
 
 
 @after("prepare")
@@ -62,12 +66,8 @@ def install_runtime_dependencies(logger, project):
 
 @task
 @description("Displays all dependencies the project requires")
-def list_dependencies (project):
-    print("Build Dependencies:")
-    print("\n".join(map(lambda d: "\t{0}".format(as_pip_argument(d)), project.build_dependencies)))
-
-    print("Runtime Dependencies:")
-    print("\n".join(map(lambda d: "\t{0}".format(as_pip_argument(d)), project.dependencies)))
+def list_dependencies(project):
+    print("\n".join(map(lambda d: "{0}".format(as_pip_argument(d)), project.build_dependencies + project.dependencies)))
 
 
 @before((install_build_dependencies, install_runtime_dependencies, install_dependencies), only_once=True)
@@ -82,9 +82,28 @@ def install_dependency(logger, project, dependency):
     logger.info("Installing dependency '%s'%s", dependency.name, " from %s" % dependency.url if dependency.url else "")
     log_file = project.expand_path("$dir_install_logs", dependency.name)
 
-    exit_code = execute_command("pip install %s" % as_pip_argument(dependency), log_file, shell=True)
+    pip_command_line = "pip install {0}{1}".format(build_pip_install_options(project), as_pip_argument(dependency))
+    exit_code = execute_command(pip_command_line, log_file, shell=True)
     if exit_code != 0:
         raise BuildFailedException("Unable to install dependency '%s'. See %s for details.", dependency.name, log_file)
+
+
+def build_pip_install_options(project):
+    options = []
+    if project.get_property("install_dependencies_index_url"):
+        options.append("--index-url " + project.get_property("install_dependencies_index_url"))
+        if project.get_property("install_dependencies_extra_index_url"):
+            options.append("--extra-index-url " + project.get_property("install_dependencies_extra_index_url"))
+    if project.get_property("install_dependencies_use_mirrors"):
+        options.append("--use-mirrors")
+
+    if project.get_property("install_dependencies_upgrade"):
+        options.append("--upgrade")
+
+    result = " ".join(options)
+    if result:
+        result += " "
+    return result
 
 
 def as_pip_argument(dependency):
