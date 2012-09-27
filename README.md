@@ -54,6 +54,7 @@ pybuilder provides a lot of plugins out ot the box that utilize tools and librar
 * **Django** - Provides support for developing [Django](https://www.djangoproject.com/) applications.
 * **Flake8** - Provides support for [flake8](http://pypi.python.org/pypi/flake8/)
 * **Pep8** - Provides support for [pep8](http://pypi.python.org/pypi/pep8)
+* **Pip** - Provides support for installing dependencies using `pip`
 * **Pychecker** - Provides support for [pychecker](http://pychecker.sourceforge.net/)
 * **Pydev** - Generates project files to import projects into [Eclipse PyDev](http://pydev.org/)
 * **Pylint** - Executes [pylint](http://www.logilab.org/857/) on your sources.
