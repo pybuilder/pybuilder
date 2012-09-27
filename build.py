@@ -63,10 +63,11 @@ license = "Apache License"
 @init
 def initialize (project):
     project.build_depends_on("mockito")
-    project.build_depends_on("coverage")
     project.build_depends_on("pymetrics")
     project.build_depends_on("pep8")
     project.build_depends_on("pyassert")
+
+    # Need to define that manually, because the pyfix plugin is not used directly.
     project.build_depends_on("pyfix")
 
     project.set_property("coverage_break_build", False)

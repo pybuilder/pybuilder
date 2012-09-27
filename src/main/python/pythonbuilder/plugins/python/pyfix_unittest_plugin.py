@@ -29,6 +29,8 @@ use_plugin("python.core")
 
 @init
 def init_test_source_directory(project):
+    project.build_depends_on("pyfix")
+
     project.set_property_if_unset("dir_source_unittest_python", "src/unittest/python")
     project.set_property_if_unset("pyfix_unittest_file_suffix", "_pyfix_tests.py")
 
@@ -104,6 +106,6 @@ def write_report(project, test_results):
     for test_result in test_results.test_results:
         if test_result.success:
             continue
-        report["failures"].append({"test": test_result.test_definition.name, "message": test_result.message})
+        report["failures"].append({"test": test_result.test_definition.name, "message": test_result.message, "traceback": test_result.traceback_as_string})
 
     project.write_report("pyfix_unittest.json", render_report(report))
