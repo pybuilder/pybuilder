@@ -43,7 +43,7 @@ def copy_resource (absolute_file_name, relative_file_name, target, logger):
     logger.debug("Copying resource %s", relative_file_name)
     
     absolute_target_file_name = os.path.join(target, relative_file_name)
-    parent = os.path.dirname(absolute_file_name)
+    parent = os.path.dirname(absolute_target_file_name)
     if not os.path.exists(parent):
         os.makedirs(parent)
     shutil.copy(absolute_file_name, absolute_target_file_name)
