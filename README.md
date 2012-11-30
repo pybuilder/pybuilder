@@ -43,7 +43,7 @@ use_plugin("python.distutils")
 default_task = "publish"
 ```
 
-See the [documentation](http://pybuilder.github.com/documentation/) for more details.
+See the [pybuilder homepage](http://pybuilder.github.com/) for more details.
 
 ## Plugins
 
