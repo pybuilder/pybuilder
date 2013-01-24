@@ -52,7 +52,8 @@ def analyze (project, logger):
     logger.info("Applying flake8 to project sources.")
     execution_result  = execute_tool_on_source_files(project=project,
                                                      name="flake8",
-                                                     command_and_arguments=["flake8"])
+                                                     command_and_arguments=["flake8"],
+                                                     logger=logger)
                                            
     report_file       = execution_result[1]
     report_lines      = read_file(report_file)

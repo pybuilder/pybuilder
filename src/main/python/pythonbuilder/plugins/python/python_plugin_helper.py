@@ -16,16 +16,29 @@
 
 import os
 
-from pythonbuilder.utils import discover_modules, discover_files, execute_command, as_list
+from pythonbuilder.utils import discover_modules, discover_files, execute_command, as_list, read_file
 
-def execute_tool_on_source_files (project, name, command_and_arguments):
+def execute_tool_on_source_files (project, name, command_and_arguments,
+                                      logger=None):
     source_dir = project.expand_path("$dir_source_main_python")
     files = discover_files(source_dir, ".py")
     command = as_list(command_and_arguments) + [f for f in files]
 
     report_file = project.expand_path("$dir_reports/%s" % name)
 
-    return execute_command(command, report_file), report_file
+    execution_result = execute_command(command, report_file), report_file
+
+    report_file       = execution_result[1]
+    report_lines      = read_file(report_file)
+    count_of_warnings = len(report_lines)
+
+    if count_of_warnings > 0:
+        if project.get_property(name + "_verbose_output") and logger:
+            for report_line in report_lines:
+                logger.warn(name + ': ' + report_line[:-1])
+
+    return execution_result
+
 
 def execute_tool_on_modules (project, name, command_and_arguments, extend_pythonpath=True):
     source_dir = project.expand_path("$dir_source_main_python")
