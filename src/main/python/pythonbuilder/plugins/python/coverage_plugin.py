@@ -84,8 +84,7 @@ def do_coverage (project, logger, reactor):
         try:
             module = sys.modules[module_name]
         except KeyError:
-            logger.warn("Module not imported: %s. No coverage information available.",
-                        module_name)
+            logger.warn("Module not imported: {0}. No coverage information available.".format(module_name))
             continue
 
         modules.append(module)

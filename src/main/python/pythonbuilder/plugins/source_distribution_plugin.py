@@ -22,19 +22,17 @@ use_plugin("core")
 
 @init
 def init_source_distribution (project):
-    project.set_property_if_unset("dir_source_dist", 
-                                  "$dir_target/dist/%s-%s-src" % (project.name,
-                                                                  project.version))
-    project.set_property_if_unset("source_dist_ignore_patterns",
-                                  [ "*.pyc", ".hg*", ".svn", ".CVS"]) 
+    source_distribution_directory = "$dir_target/dist/%s-%s-src" % (project.name, project.version)
+    project.set_property_if_unset("dir_source_dist", source_distribution_directory)
+    project.set_property_if_unset("source_dist_ignore_patterns", ["*.pyc", ".hg*", ".svn", ".CVS"])
 
 @task
 def build_source_distribution (project, logger):
-    dist = project.expand_path("$dir_source_dist")
-    logger.info("Building source distribution in %s", dist)
+    source_distribution_directory = project.expand_path("$dir_source_dist")
+    logger.info("Building source distribution in {0}".format(source_distribution_directory))
     
-    if os.path.exists(dist):
-        shutil.rmtree(dist)
+    if os.path.exists(source_distribution_directory):
+        shutil.rmtree(source_distribution_directory)
         
     ignore_patterns = ["target"]
     configured_patterns = project.get_property("source_dist_ignore_patterns")
@@ -42,5 +40,5 @@ def build_source_distribution (project, logger):
         ignore_patterns += configured_patterns
         
     shutil.copytree(project.basedir, 
-                    dist,
+                    source_distribution_directory,
                     ignore=shutil.ignore_patterns(*ignore_patterns))

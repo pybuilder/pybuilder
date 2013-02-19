@@ -28,7 +28,7 @@ def django_run_server (project, logger):
     
     logger.info("Running Django development server for %s", django_module)
     
-    module = "%s.settings" % django_module
+    module = "{0}.settings".format(django_module)
     sys.path.append(project.expand_path("$dir_source_main_python"))
     try:
         __import__(module)

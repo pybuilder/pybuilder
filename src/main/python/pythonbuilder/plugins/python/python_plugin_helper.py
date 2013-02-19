@@ -24,12 +24,12 @@ def execute_tool_on_source_files (project, name, command_and_arguments,
     files = discover_files(source_dir, ".py")
     command = as_list(command_and_arguments) + [f for f in files]
 
-    report_file = project.expand_path("$dir_reports/%s" % name)
+    report_file = project.expand_path("$dir_reports/{0}".format(name))
 
     execution_result = execute_command(command, report_file), report_file
 
-    report_file       = execution_result[1]
-    report_lines      = read_file(report_file)
+    report_file = execution_result[1]
+    report_lines = read_file(report_file)
     count_of_warnings = len(report_lines)
 
     if count_of_warnings > 0:

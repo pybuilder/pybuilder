@@ -79,7 +79,6 @@ def pydev_generate (project, logger):
         if os.path.exists(path):
             paths_string += _DOT_PYDEVPROJECT_PATH_LINE_TEMPLATE.substitute({"project_name": project.name, "path": path})
     
-
     values = {
         "project_name": project.name,
         "interpreter": project.expand("$pydev_interpreter_name"),

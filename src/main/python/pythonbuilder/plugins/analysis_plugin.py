@@ -19,4 +19,5 @@ use_plugin("core")
 
 @task
 @depends("run_unit_tests")
-def analyze (): pass
+def analyze ():
+    pass

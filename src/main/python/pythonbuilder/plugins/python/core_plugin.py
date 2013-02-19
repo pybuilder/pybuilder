@@ -33,7 +33,7 @@ def init_python_directories (project):
     project.set_property_if_unset(PYTHON_SOURCES_PROPERTY, "src/main/python")
     project.set_property_if_unset(SCRIPTS_SOURCES_PROPERTY, "src/main/scripts")
     project.set_property_if_unset(SCRIPTS_TARGET_PROPERTY, None)
-    project.set_property_if_unset(DISTRIBUTION_PROPERTY, "$dir_target/dist/%s-%s" % (project.name, project.version))
+    project.set_property_if_unset(DISTRIBUTION_PROPERTY, "$dir_target/dist/{0}-{1}".format(project.name, project.version))
     
     def list_packages ():
         source_path = project.expand_path("$dir_source_main_python")
@@ -62,7 +62,7 @@ def init_python_directories (project):
 def package (project, logger):
     init_dist_target(project, logger)
     
-    logger.info("Building distribution in %s", project.expand_path("$" + DISTRIBUTION_PROPERTY))
+    logger.info("Building distribution in {0}".format(project.expand_path("$" + DISTRIBUTION_PROPERTY)))
 
     copy_python_sources(project, logger)
     copy_scripts(project, logger)

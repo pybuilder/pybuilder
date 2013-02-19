@@ -33,5 +33,4 @@ def analyze (project, logger):
     
     if len(reports) > 0:
         logger.warn("Found %d warning%s produced by pep8", 
-                    len(reports), "" if len(reports) == 1 else "s")    
-    
+                    len(reports), "" if len(reports) == 1 else "s")
