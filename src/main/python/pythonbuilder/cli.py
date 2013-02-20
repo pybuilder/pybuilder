@@ -230,7 +230,7 @@ def main(*args):
             sys.stdout.write("\n")
         return 0
 
-    banner = "PYTHON BUILDER Version %s\n" % VERSION
+    banner = "PYBUILDER Version %s\n" % VERSION
     if should_colorize(options):
         banner = bold(banner)
 
