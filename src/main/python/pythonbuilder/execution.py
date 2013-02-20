@@ -16,11 +16,15 @@
 import inspect
 import re
 import types
+from pythonbuilder.errors import (
+    InternalException,
+    NoSuchTaskException,
+    CircularTaskDependencyException,
+    MissingTaskDependencyException,
+    MissingActionDependencyException,
+    InvalidNameException
+    )
 
-from pythonbuilder.errors import InternalException,\
-NoSuchTaskException, CircularTaskDependencyException,\
-MissingTaskDependencyException, MissingActionDependencyException, \
-InvalidNameException 
 from pythonbuilder.utils import as_list, Timer
 
 def as_task_name_list (mixed):

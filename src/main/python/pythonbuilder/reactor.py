@@ -120,11 +120,10 @@ class Reactor(object):
             "s" if len(tasks) != 1 else "",
             ", ".join(tasks))
 
-        task_execution_summaries =\
-        self.execution_manager.execute_execution_plan(execution_plan,
-            logger=self.logger,
-            project=self.project,
-            reactor=self)
+        task_execution_summaries = self.execution_manager.execute_execution_plan(execution_plan,
+                                                                                 logger=self.logger,
+                                                                                 project=self.project,
+                                                                                 reactor=self)
 
         return BuildSummary(self.project, task_execution_summaries)
 

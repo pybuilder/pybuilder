@@ -77,7 +77,7 @@ def initialize (project):
     
     project.get_property("filter_resources_glob").append("**/pythonbuilder/__init__.py")
 
-    project.set_property("flake8_ignore", "E122,E123,E126,E127,E128,E201,E211,E231,E302,E303,E501,W291,W292,W293,W801")
+    project.set_property("flake8_ignore", "E123,E126,E127,E128,E201,E211,E231,E302,E303,E501,W291,W292,W293,W801")
 
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
