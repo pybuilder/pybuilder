@@ -192,6 +192,7 @@ class Project (object):
         self.authors = []
         self.license = ""
         self.url = ""
+        self.verbose = False
         self._properties = {}
         self._install_dependencies = set()
         self._build_dependencies = set()
@@ -199,7 +200,7 @@ class Project (object):
         self._package_data = {}
         self._files_to_install = []
 
-    def __str__ (self):
+    def __str__(self):
         return "[Project name=%s basedir=%s]" % (self.name, self.basedir)
 
     def validate (self):
@@ -239,17 +240,17 @@ class Project (object):
         return result
 
     @property
-    def properties (self):
+    def properties(self):
         result = self._properties
         result["basedir"] = self.basedir 
         return result
     
     @property
-    def dependencies (self):
+    def dependencies(self):
         return list(sorted(self._install_dependencies))
 
     @property
-    def build_dependencies (self):
+    def build_dependencies(self):
         return list(sorted(self._build_dependencies))
     
     def depends_on (self, name, version=None, url=None):

@@ -25,6 +25,7 @@ from pythonbuilder.pluginloader import BuiltinPluginLoader
 from pythonbuilder.utils import as_list
 from pythonbuilder.execution import Action, Initializer, Task
 
+
 class BuildSummary(object):
     def __init__(self, project, task_execution_summaries):
         self.project = project

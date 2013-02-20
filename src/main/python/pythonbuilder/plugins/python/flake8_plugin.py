@@ -32,7 +32,10 @@ use_plugin("python.core")
 
 @init
 def initialize_flake8_plugin(project):
-    project.set_property("flake8_verbose_output", False)
+    if project.verbose:
+        project.set_property("flake8_verbose_output", True)
+    else:
+        project.set_property("flake8_verbose_output", False)
 
 
 @after("prepare")
@@ -48,7 +51,7 @@ def assert_flake8_is_executable(logger):
 
 
 @task
-def analyze (project, logger):
+def analyze(project, logger):
     """
         Applies the flake8 script to the sources of the given project.
     """

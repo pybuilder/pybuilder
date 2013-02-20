@@ -76,6 +76,12 @@ def parse_options(args):
                       default=False,
                       help="List tasks")
 
+    parser.add_option("-v", "--verbose",
+                      action="store_true",
+                      dest="verbose",
+                      default=False,
+                      help="Enable verbose output")
+
     project_group = optparse.OptionGroup(parser, "Project Options", "Customizes the project to build.")
 
     project_group.add_option("-D", "--project-directory",
@@ -169,7 +175,7 @@ def drawLine():
     return sys.stdout.write("-" * 60 + "\n")
 
 
-def print_summary (successful, summary, start, end, options, failure_message):
+def print_summary(successful, summary, start, end, options, failure_message):
     sys.stdout.write("\n")
     drawLine()
     if successful:
@@ -216,7 +222,8 @@ def main(*args):
     reactor = init_reactor(logger)
 
     if options.list_tasks:
-        reactor.prepare_build(property_overrides=options.property_overrides, project_directory=options.project_directory)
+        reactor.prepare_build(property_overrides=options.property_overrides,
+                              project_directory=options.project_directory)
 
         sys.stdout.write("Tasks found in %s building in %s:\n\n" % (reactor.project.name, reactor.project.basedir))
         for task in sorted(reactor.get_tasks()):
@@ -234,7 +241,7 @@ def main(*args):
     if not options.very_quiet:
         sys.stdout.write(banner)
         sys.stdout.write("Build started at %s\n" % format_timestamp(start))
-        sys.stdout.write(("-" * 60) + "\n\n")
+        sys.stdout.write(("-" * 60) + "\n")
 
     successful = True
     failure_message = None
@@ -245,6 +252,10 @@ def main(*args):
             reactor.prepare_build(property_overrides=options.property_overrides,
                                   project_directory=options.project_directory)
 
+            if options.verbose:
+                logger.debug("Verbose output enabled.\n")
+                reactor.project.verbose = True
+
             if options.list_tasks:
                 for task in sorted(reactor.get_tasks()):
                     sys.stdout.write("%20s\t%s\n" % (task.name,
@@ -254,6 +265,7 @@ def main(*args):
                     sys.stdout.write("\n")
             else:
                 summary = reactor.build(environments=options.environments, tasks=arguments)
+
         except KeyboardInterrupt:
             raise PythonbuilderException("Build aborted")
 
