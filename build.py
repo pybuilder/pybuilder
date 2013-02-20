@@ -78,6 +78,16 @@ def initialize (project):
     project.get_property("filter_resources_glob").append("**/pythonbuilder/__init__.py")
 
     project.set_property("flake8_ignore", "E211,E302,E303,E501,W291,W292,W293,W801")
+    #
+    #   E211 whitespace before '('
+    #   E302 expected 2 blank lines
+    #   E303 too many blank lines
+    #   E501 line too long
+    #
+    #   W291 trailing whitespace
+    #   W292 no newline at end of file
+    #
+    #   W801 redefinition of unused 'StringIO'
 
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
