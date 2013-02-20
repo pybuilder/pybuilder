@@ -76,9 +76,9 @@ def execute_tests (test_source, suffix):
 def write_report(name, project, logger, result, console_out):
     project.write_report("%s" % name, console_out)    
     
-    report = {"tests-run":result.testsRun, 
-              "errors":[],
-              "failures":[]}
+    report = {"tests-run": result.testsRun,
+              "errors": [],
+              "failures": []}
     for error in result.errors:
         report["errors"].append({"test": error[0].id(), "traceback": error[1]})
         logger.error("Test has error: %s", error[0].id())
