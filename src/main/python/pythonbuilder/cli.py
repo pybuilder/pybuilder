@@ -61,6 +61,14 @@ class ColoredStdOutLogger(StdOutLogger):
         return styled_text("[ERROR]", BOLD, fg(RED))
 
 
+def write(text):
+    sys.stdout.write(text)
+
+def write_line(text=""):
+    write(text)
+    write("\n")
+
+
 def parse_options(args):
     parser = optparse.OptionParser(usage="%prog [options] task1 [[task2] ...]",
                                    version="%prog " + VERSION)
@@ -171,13 +179,13 @@ def init_logger(options):
     return logger
 
 
-def drawLine():
-    return sys.stdout.write("-" * 60 + "\n")
+def draw_line():
+    return write("-" * 60 + "\n")
 
 
 def print_summary(successful, summary, start, end, options, failure_message):
-    sys.stdout.write("\n")
-    drawLine()
+    write_line()
+    draw_line()
     if successful:
         msg = "BUILD SUCCESSFUL\n"
         if should_colorize(options):
@@ -186,27 +194,27 @@ def print_summary(successful, summary, start, end, options, failure_message):
         msg = "BUILD FAILED - %s\n" % failure_message
         if should_colorize(options):
             msg = styled_text(msg, BOLD, fg(RED))
-    sys.stdout.write(msg)
-    drawLine()
+    write(msg)
+    draw_line()
 
     if successful and summary:
-        sys.stdout.write("Build Summary\n")
-        sys.stdout.write("%20s: %s\n" % ("Project", summary.project.name))
-        sys.stdout.write("%20s: %s\n" % ("Version", summary.project.version))
-        sys.stdout.write("%20s: %s\n" % ("Base directory", summary.project.basedir))
-        sys.stdout.write("%20s: %s\n" % ("Environments", ", ".join(options.environments)))
+        write_line("Build Summary")
+        write_line("%20s: %s" % ("Project", summary.project.name))
+        write_line("%20s: %s" % ("Version", summary.project.version))
+        write_line("%20s: %s" % ("Base directory", summary.project.basedir))
+        write_line("%20s: %s" % ("Environments", ", ".join(options.environments)))
 
         task_summary = ""
         for task in summary.task_summaries:
             task_summary += " %s [%d ms]" % (task.task, task.execution_time)
 
-        sys.stdout.write("%20s:%s\n" % ("Tasks", task_summary))
+        write_line("%20s:%s" % ("Tasks", task_summary))
 
     time_needed = end - start
     millis = ((time_needed.days * 24 * 60 * 60) + time_needed.seconds) * 1000 + time_needed.microseconds / 1000
 
-    sys.stdout.write("Build finished at %s\n" % format_timestamp(end))
-    sys.stdout.write("Build took %d seconds (%d ms)\n" % (time_needed.seconds, millis))
+    write_line("Build finished at %s" % format_timestamp(end))
+    write_line("Build took %d seconds (%d ms)" % (time_needed.seconds, millis))
 
 def main(*args):
     try:
@@ -225,23 +233,23 @@ def main(*args):
         reactor.prepare_build(property_overrides=options.property_overrides,
                               project_directory=options.project_directory)
 
-        sys.stdout.write("Tasks found in %s building in %s:\n\n" % (reactor.project.name, reactor.project.basedir))
+        write_line("Tasks found in %s building in %s:" % (reactor.project.name, reactor.project.basedir))
+        write_line()
         for task in sorted(reactor.get_tasks()):
-            sys.stdout.write("%20s\t%s\n" % (task.name,
-                                             " ".join(task.description) or "<no description available>"))
+            write_line("%20s\t%s" % (task.name, " ".join(task.description) or "<no description available>"))
             if task.dependencies:
-                sys.stdout.write("\t\t\tdepends on tasks: %s\n" % " ".join(task.dependencies))
-            sys.stdout.write("\n")
+                write_line("\t\t\tdepends on tasks: %s" % " ".join(task.dependencies))
+            write_line()
         return 0
 
-    banner = "PYBUILDER Version %s\n" % VERSION
+    banner = "PYBUILDER Version %s" % VERSION
     if should_colorize(options):
         banner = bold(banner)
 
     if not options.very_quiet:
-        sys.stdout.write(banner)
-        sys.stdout.write("Build started at %s\n" % format_timestamp(start))
-        sys.stdout.write(("-" * 60) + "\n")
+        write_line(banner)
+        write_line("Build started at %s" % format_timestamp(start))
+        draw_line()
 
     successful = True
     failure_message = None
@@ -258,11 +266,10 @@ def main(*args):
 
             if options.list_tasks:
                 for task in sorted(reactor.get_tasks()):
-                    sys.stdout.write("%20s\t%s\n" % (task.name,
-                                                     task.description or "<no description available>"))
+                    write_line("%20s\t%s" % (task.name,task.description or "<no description available>"))
                     if task.dependencies:
-                        sys.stdout.write("\t\t\tdepends on tasks: %s\n" % " ".join(task.dependencies))
-                    sys.stdout.write("\n")
+                        write_line("\t\t\tdepends on tasks: %s" % " ".join(task.dependencies))
+                    write_line()
             else:
                 summary = reactor.build(environments=options.environments, tasks=arguments)
 
