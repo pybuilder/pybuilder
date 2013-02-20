@@ -40,7 +40,6 @@ def filter_resources (project, logger):
     apply_on_files(target, filter_resource, globs, project_dict_wrapper, logger)
 
 def filter_resource (absolute_file_name, relative_file_name, dict, logger):
-    __pychecker__ = "unusednames=relative_file_name"
     logger.debug("Filtering resource %s", absolute_file_name)
     content = "".join(read_file(absolute_file_name))
     filtered = string.Template(content).safe_substitute(dict)

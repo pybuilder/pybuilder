@@ -31,13 +31,10 @@ use_plugin("python.pydev")
 use_plugin("python.install_dependencies")
 
 use_plugin("python.coverage")
-use_plugin("python.pep8")
-use_plugin("python.pychecker")
+use_plugin("python.flake8")
 use_plugin("python.pylint")
 use_plugin("python.pymetrics")
 
-version = "0.9.3"
-default_task = "publish"
 
 summary = "An extendible, easy to use continuous build tool for Python"
 description =\
@@ -51,20 +48,21 @@ python-builder features a powerful yet easy to use plugin mechanism which
 allows programmers to extend the tool in an unlimited way.  
 """
 
-authors = [
-           Author("Alexander Metzner", "alexander.metzner@gmail.com"),
+authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            Author("Michael Gruber", "aelgru@gmail.com"),
-           Author("Udo Juettner", "udo.juettner@gmail.com"),
-           ]
+           Author("Udo Juettner", "udo.juettner@gmail.com")]
 
-url     = "http://pybuilder.github.com"
+url = "http://pybuilder.github.com"
 license = "Apache License"
+version = "0.9.3"
+
+default_task = ["analyze", "publish"]
 
 @init
 def initialize (project):
     project.build_depends_on("mockito")
     project.build_depends_on("pymetrics")
-    project.build_depends_on("pep8")
+    project.build_depends_on("flake8")
     project.build_depends_on("pyassert")
 
     # Need to define that manually, because the pyfix plugin is not used directly.
@@ -78,7 +76,9 @@ def initialize (project):
     project.get_property("copy_resources_glob").append("LICENSE")
     
     project.get_property("filter_resources_glob").append("**/pythonbuilder/__init__.py")
-    
+
+    project.set_property("flake8_ignore", "E,W,W801")
+
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
     project.get_property("source_dist_ignore_patterns").append(".settings")

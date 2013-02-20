@@ -23,22 +23,26 @@
 
 __author__ = 'Michael Gruber'
 
-from pythonbuilder.core import after, task, use_plugin
+from pythonbuilder.core import after, task, init, use_plugin
 from pythonbuilder.utils import assert_can_execute, read_file
 from pythonbuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
 
 
 use_plugin("python.core")
 
+@init
+def initialize_flake8_plugin(project):
+    project.set_property("flake8_verbose_output", True)
+
 
 @after("prepare")
-def assert_flake8_is_executable (logger):
+def assert_flake8_is_executable(logger):
     """
         Asserts that the flake8 script is executable.
     """
-
     logger.debug("Checking if flake8 is executable.")
-    assert_can_execute(command_and_arguments=("flake8",),
+
+    assert_can_execute(command_and_arguments=["flake8"],
                        prerequisite="flake8",
                        caller="plugin python.flake8")
 
@@ -48,11 +52,18 @@ def analyze (project, logger):
     """
         Applies the flake8 script to the sources of the given project.
     """
+    logger.info("Executing flake8 on project sources.")
 
-    logger.info("Applying flake8 to project sources.")
+    command_and_arguments = ["flake8"]
+
+    property_flake8_ignore = project.get_property("flake8_ignore")
+    if property_flake8_ignore is not None:
+        ignore_option = "--ignore={0}".format(property_flake8_ignore)
+        command_and_arguments.append(ignore_option)
+
     execution_result = execute_tool_on_source_files(project=project,
                                                     name="flake8",
-                                                    command_and_arguments=["flake8"],
+                                                    command_and_arguments=command_and_arguments,
                                                     logger=logger)
                                            
     report_file = execution_result[1]
