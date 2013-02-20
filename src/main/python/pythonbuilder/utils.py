@@ -172,7 +172,7 @@ def mkdir (directory):
 
     if os.path.exists(directory):
         if os.path.isfile(directory):
-            raise PythonbuilderException("Unable to created directory '%s': A file with that name already exists",
-                directory)
+            message = "Unable to created directory '%s': A file with that name already exists"
+            raise PythonbuilderException(message, directory)
         return
     os.makedirs(directory)

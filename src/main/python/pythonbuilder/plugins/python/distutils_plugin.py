@@ -151,10 +151,10 @@ def build_binary_distribution(project, logger):
         logger.debug("Executing distutils command %s", command)
         with open(os.path.join(reports_dir, command), "w") as output_file:
             process = subprocess.Popen((sys.executable, setup_script, command),
-                cwd=project.expand_path("$dir_dist"),
-                stdout=output_file,
-                stderr=output_file,
-                shell=False)
+                                       cwd=project.expand_path("$dir_dist"),
+                                       stdout=output_file,
+                                       stderr=output_file,
+                                       shell=False)
             return_code = process.wait()
             if return_code != 0:
                 raise BuildFailedException("Error while executing setup command %s", command)

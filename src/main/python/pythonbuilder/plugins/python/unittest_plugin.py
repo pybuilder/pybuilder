@@ -69,7 +69,7 @@ def execute_tests (test_source, suffix):
         test_modules = discover_modules(test_source, suffix)
         tests = unittest.defaultTestLoader.loadTestsFromNames(test_modules)
         result = unittest.TextTestRunner(stream=output_log_file).run(tests)
-        return (result, output_log_file.getvalue())
+        return result, output_log_file.getvalue()
     finally:
         output_log_file.close()
         
@@ -77,14 +77,14 @@ def write_report(name, project, logger, result, console_out):
     project.write_report("%s" % name, console_out)    
     
     report = {"tests-run":result.testsRun, 
-        "errors":[], 
-        "failures":[]}
+              "errors":[],
+              "failures":[]}
     for error in result.errors:
-        report["errors"].append({"test":error[0].id(), "traceback":error[1]})
+        report["errors"].append({"test": error[0].id(), "traceback": error[1]})
         logger.error("Test has error: %s", error[0].id())
     
     for failure in result.failures:
-        report["failures"].append({"test":failure[0].id(), "traceback":failure[1]})
+        report["failures"].append({"test": failure[0].id(), "traceback": failure[1]})
         logger.error("Test failed: %s", failure[0].id())
     
     project.write_report("%s.json" % name, render_report(report))

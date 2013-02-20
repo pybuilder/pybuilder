@@ -116,9 +116,12 @@ class Reactor(object):
 
         self.logger.info("Building %s version %s", self.project.name, self.project.version)
         self.logger.info("Executing build in %s", self.project.basedir)
-        self.logger.info("Going to execute task%s %s",
-            "s" if len(tasks) != 1 else "",
-            ", ".join(tasks))
+
+        if len(tasks) == 1:
+            self.logger.info("Going to execute task %s", tasks[0])
+        else:
+            list_of_tasks = ", ".join(tasks)
+            self.logger.info("Going to execute tasks: %s", list_of_tasks)
 
         task_execution_summaries = self.execution_manager.execute_execution_plan(execution_plan,
                                                                                  logger=self.logger,
@@ -131,14 +134,13 @@ class Reactor(object):
         execution_plan = self.execution_manager.build_execution_plan(task_name)
 
         self.execution_manager.execute_execution_plan(execution_plan,
-            logger=self.logger,
-            project=self.project,
-            reactor=self)
+                                                      logger=self.logger,
+                                                      project=self.project,
+                                                      reactor=self)
 
     def override_properties(self, property_overrides):
         for property_override in property_overrides:
-            self.project.set_property(property_override,
-                property_overrides[property_override])
+            self.project.set_property(property_override, property_overrides[property_override])
 
     def log_project_properties(self):
         formatted = ""
@@ -170,8 +172,7 @@ class Reactor(object):
             elif hasattr(candidate, ACTION_ATTRIBUTE) and getattr(candidate, ACTION_ATTRIBUTE):
                 before = getattr(candidate, BEFORE_ATTRIBUTE) if hasattr(candidate, BEFORE_ATTRIBUTE) else None
                 after = getattr(candidate, AFTER_ATTRIBUTE) if hasattr(candidate, AFTER_ATTRIBUTE) else None
-                only_once = getattr(candidate, ONLY_ONCE_ATTRIBUTE) if hasattr(candidate,
-                    ONLY_ONCE_ATTRIBUTE) else False
+                only_once = getattr(candidate, ONLY_ONCE_ATTRIBUTE) if hasattr(candidate, ONLY_ONCE_ATTRIBUTE) else False
 
                 self.logger.debug("Found action %s", name)
                 self.execution_manager.register_action(Action(name, candidate, before, after, description, only_once))
@@ -216,8 +217,7 @@ class Reactor(object):
         project_descriptor_full_path = os.path.join(project_directory, project_descriptor)
 
         if not os.path.exists(project_descriptor_full_path):
-            raise PythonbuilderException("Project directory does not contain descriptor file: %s",
-                project_descriptor_full_path)
+            raise PythonbuilderException("Project directory does not contain descriptor file: %s", project_descriptor_full_path)
         if not os.path.isfile(project_descriptor_full_path):
             raise PythonbuilderException("Project descriptor is not a file: %s", project_descriptor_full_path)
 

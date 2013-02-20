@@ -116,9 +116,9 @@ def run_single_test(logger, project, reports_dir, test, ):
     logger.info("Running integration test %s", name)
     env = prepare_environment(project)
     test_time = Timer.start()
-    return_code = execute_command((sys.executable, test),
-        os.path.join(reports_dir, name),
-        env)
+    command_and_arguments = (sys.executable, test)
+    report_file_name = os.path.join(reports_dir, name)
+    return_code = execute_command(command_and_arguments, report_file_name, env)
     test_time.stop()
     report_item = {
         "test": name,

@@ -63,7 +63,7 @@ class ColoredStdOutLogger(StdOutLogger):
 
 def parse_options(args):
     parser = optparse.OptionParser(usage="%prog [options] task1 [[task2] ...]",
-        version="%prog " + VERSION)
+                                   version="%prog " + VERSION)
 
     def error(msg):
         raise CommandLineUsageException(parser.get_usage() + parser.format_option_help(), msg)
@@ -71,57 +71,55 @@ def parse_options(args):
     parser.error = error
 
     parser.add_option("-t", "--list-tasks",
-        action="store_true",
-        dest="list_tasks",
-        default=False,
-        help="List tasks")
+                      action="store_true",
+                      dest="list_tasks",
+                      default=False,
+                      help="List tasks")
 
-    project_group = optparse.OptionGroup(parser, "Project Options",
-        "Customizes the project to build.")
+    project_group = optparse.OptionGroup(parser, "Project Options", "Customizes the project to build.")
 
     project_group.add_option("-D", "--project-directory",
-        dest="project_directory",
-        help="Root directory to execute in",
-        metavar="<project directory>",
-        default=".")
+                             dest="project_directory",
+                             help="Root directory to execute in",
+                             metavar="<project directory>",
+                             default=".")
     project_group.add_option("-E", "--environment",
-        dest="environments",
-        help="Activate the given environment for this build. Can be used multiple times",
-        metavar="<environment>",
-        action="append",
-        default=[])
+                             dest="environments",
+                             help="Activate the given environment for this build. Can be used multiple times",
+                             metavar="<environment>",
+                             action="append",
+                             default=[])
     project_group.add_option("-P",
-        action="append",
-        dest="property_overrides",
-        default=[],
-        metavar="<property>=<value>",
-        help="Set/ override a property value")
+                             action="append",
+                             dest="property_overrides",
+                             default=[],
+                             metavar="<property>=<value>",
+                             help="Set/ override a property value")
 
     parser.add_option_group(project_group)
 
-    output_group = optparse.OptionGroup(parser, "Output Options",
-        "Modifies the messages printed during a build.")
+    output_group = optparse.OptionGroup(parser, "Output Options", "Modifies the messages printed during a build.")
 
     output_group.add_option("-X", "--debug",
-        action="store_true",
-        dest="debug",
-        default=False,
-        help="Print debug messages")
+                            action="store_true",
+                            dest="debug",
+                            default=False,
+                            help="Print debug messages")
     output_group.add_option("-q", "--quiet",
-        action="store_true",
-        dest="quiet",
-        default=False,
-        help="Quiet mode; print only warnings and errors")
+                            action="store_true",
+                            dest="quiet",
+                            default=False,
+                            help="Quiet mode; print only warnings and errors")
     output_group.add_option("-Q", "--very-quiet",
-        action="store_true",
-        dest="very_quiet",
-        default=False,
-        help="Very quiet mode; print only errors")
+                            action="store_true",
+                            dest="very_quiet",
+                            default=False,
+                            help="Very quiet mode; print only errors")
     output_group.add_option("-C", "--no-color",
-        action="store_true",
-        dest="no_color",
-        default=False,
-        help="Disable colored output")
+                            action="store_true",
+                            dest="no_color",
+                            default=False,
+                            help="Disable colored output")
 
     parser.add_option_group(output_group)
 
@@ -218,8 +216,7 @@ def main(*args):
     reactor = init_reactor(logger)
 
     if options.list_tasks:
-        reactor.prepare_build(property_overrides=options.property_overrides,
-            project_directory=options.project_directory)
+        reactor.prepare_build(property_overrides=options.property_overrides, project_directory=options.project_directory)
 
         sys.stdout.write("Tasks found in %s building in %s:\n\n" % (reactor.project.name, reactor.project.basedir))
         for task in sorted(reactor.get_tasks()):
@@ -246,7 +243,7 @@ def main(*args):
     try:
         try:
             reactor.prepare_build(property_overrides=options.property_overrides,
-                project_directory=options.project_directory)
+                                  project_directory=options.project_directory)
 
             if options.list_tasks:
                 for task in sorted(reactor.get_tasks()):

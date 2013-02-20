@@ -161,8 +161,8 @@ class ExecutionManager (object):
     def execute_initializers (self, environments=None, **keywordArguments):
         for initializer in self._initializers:
             if not initializer.is_applicable(environments):
-                self.logger.debug("Not going to execute initializer '%s' from '%s' as environments do not match.",
-                    initializer.name, initializer.source)
+                message = "Not going to execute initializer '%s' from '%s' as environments do not match."
+                self.logger.debug(message, initializer.name, initializer.source)
 
             else:
                 self.logger.debug("Executing initializer '%s' from '%s'",
