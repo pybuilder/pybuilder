@@ -77,6 +77,7 @@ def initialize (project):
     
     project.get_property("filter_resources_glob").append("**/pythonbuilder/__init__.py")
 
+    project.set_property("flake8_verbose_output", True)
     project.set_property("flake8_ignore", "E211,E302,E303,E501,W291,W292,W293,W801")
     #
     #   E211 whitespace before '('
