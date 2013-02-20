@@ -26,7 +26,7 @@ from pythonbuilder.errors import PythonbuilderException
 from pythonbuilder.execution import ExecutionManager
 from pythonbuilder.reactor import Reactor
 from pythonbuilder.terminal import BOLD, BROWN, RED, GREEN, bold, styled_text, fg, italic, \
-    write, write_line, write_error, write_error_line
+    write, write_line, write_error, write_error_line, draw_line
 from pythonbuilder.utils import format_timestamp
 
 PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
@@ -171,10 +171,6 @@ def init_logger(options):
         logger = ColoredStdOutLogger(threshold)
 
     return logger
-
-
-def draw_line():
-    return write("-" * 60 + "\n")
 
 
 def print_summary(successful, summary, start, end, options, failure_message):

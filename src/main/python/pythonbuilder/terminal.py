@@ -104,6 +104,11 @@ def write_line(text=""):
     write(text)
     write("\n")
 
+
+def draw_line():
+    return write("-" * 60 + "\n")
+
+
 def write_error(text):
     sys.stderr.write(text)
 
