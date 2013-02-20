@@ -26,9 +26,6 @@ class PluginLoader (object):
     
 class BuiltinPluginLoader (PluginLoader):
     def load_plugin (self, project, name):
-        # The parameter project is a required attribute due to inheritance. 
-        # We need to tell pychecker to ignore it.
-
         self.logger.debug("Trying to load builtin plugin '%s'", name)
         builtin_plugin_name = "pythonbuilder.plugins.%s_plugin" % name
         try:
