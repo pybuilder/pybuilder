@@ -161,9 +161,6 @@ class Dependency (object):
     def __hash__(self):
         return 13 * hash(self.name) + 17 * hash(self.version)
     
-    def __cmp__ (self, other):
-        return cmp(self.name, other.name)
-
     def __lt__ (self, other):
         return self.name < other.name
 
