@@ -79,8 +79,8 @@ class PycheckerWarning (object):
         self.message = message
         self.line_number = int(line_number)
         
-    def to_json_dict (self):
-        return { "message": self.message, "line_number": self.line_number}         
+    def to_json_dict(self):
+        return {"message": self.message, "line_number": self.line_number}
         
 class PycheckerModuleReport (object):
     def __init__ (self, name):
