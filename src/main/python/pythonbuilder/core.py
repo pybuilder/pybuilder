@@ -328,9 +328,9 @@ class Project (object):
                 raise MissingPropertyException(e)
 
     def expand_path(self, format_string, *additional_path_elements):
-        elements = [self.basedir] \
-                   + self.expand(format_string).split("/") \
-                   + list(additional_path_elements)
+        elements = [self.basedir]
+        elements += self.expand(format_string).split("/")
+        elements += list(additional_path_elements)
         return os.path.join(*elements)
         
     def get_property (self, key, default_value=None):

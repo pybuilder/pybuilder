@@ -74,8 +74,7 @@ class Reactor(object):
                       project_descriptor="build.py"):
         Reactor._current_instance = self
 
-        project_directory, project_descriptor =\
-        self.verify_project_directory(project_directory, project_descriptor)
+        project_directory, project_descriptor = self.verify_project_directory(project_directory, project_descriptor)
 
         self.logger.debug("Loading project module from %s", project_descriptor)
 
