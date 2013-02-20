@@ -90,8 +90,7 @@ def render_setup_script(project):
     author_email = ", ".join(map(lambda a: a.email, project.authors))
 
     template_values = {
-        "module":
-            "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
+        "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
         "name": project.name,
         "version": project.version,
         "summary": default(project.summary),
@@ -107,7 +106,7 @@ def render_setup_script(project):
         "package_data": build_package_data_string(project),
         "dependencies": build_install_dependencies_string(project),
         "dependency_links": build_dependency_links_string(project),
-        }
+    }
 
     return SETUP_TEMPLATE.substitute(template_values)
 
