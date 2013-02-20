@@ -33,7 +33,6 @@ def execute_tool_on_source_files (project, name, command_and_arguments, logger=N
     count_of_warnings = len(report_lines)
 
     if count_of_warnings > 0:
-        logger.info("{0} is {1}".format(name + "_verbose_output", project.get_property(name + "_verbose_output")))
         if project.get_property(name + "_verbose_output") and logger:
             for report_line in report_lines:
                 logger.warn(name + ': ' + report_line[:-1])

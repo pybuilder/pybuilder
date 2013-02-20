@@ -24,6 +24,7 @@
 __author__ = 'Michael Gruber'
 
 from pythonbuilder.core import after, task, init, use_plugin
+from pythonbuilder.errors import BuildFailedException
 from pythonbuilder.utils import assert_can_execute, read_file
 from pythonbuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
 
@@ -36,7 +37,7 @@ def initialize_flake8_plugin(project):
         project.set_property("flake8_verbose_output", True)
     else:
         project.set_property("flake8_verbose_output", False)
-
+    project.set_property("flake8_break_build", False)
 
 @after("prepare")
 def assert_flake8_is_executable(logger):
@@ -74,4 +75,7 @@ def analyze(project, logger):
     count_of_warnings = len(report_lines)
 
     if count_of_warnings > 0:
-        logger.warn("flake8 found %d warning(s).", count_of_warnings)
+        if project.get_property("flake8_break_build"):
+            raise BuildFailedException("flake8 found {0} warning(s)".format(count_of_warnings))
+        else:
+            logger.warn("flake8 found %d warning(s).", count_of_warnings)
