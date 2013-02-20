@@ -5,5 +5,5 @@ python:
   - "3.2"
   - "pypy"
 before_script: sudo apt-get install pymetrics pychecker pylint pep8
-script: ./bootstrap
+script: ./bootstrap -v
 

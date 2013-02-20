@@ -86,5 +86,9 @@ def write_report(name, project, logger, result, console_out):
     for failure in result.failures:
         report["failures"].append({"test": failure[0].id(), "traceback": failure[1]})
         logger.error("Test failed: %s", failure[0].id())
+        
+        if project.verbose:
+            print "\n" + failure[1].replace("Traceback (most recent call last):\n", "") \
+                                   .replace("AssertionError", "\nAssertionError")
     
     project.write_report("%s.json" % name, render_report(report))
