@@ -174,7 +174,6 @@ def init_logger(options):
 
 
 def print_summary(successful, summary, start, end, options, failure_message):
-    write_line()
     draw_line()
     if successful:
         msg = "BUILD SUCCESSFUL\n"
