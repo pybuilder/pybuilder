@@ -13,6 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 """
     Python module providing easy to use text styling for terminals
     being able to understand standard escape sequences.
@@ -25,6 +26,8 @@
         print bold("eggs")
         print underline(bold("eggs"))
 """
+
+import sys
 
 _ESCAPE_SEQUENCE_PATTERN = "\033[%sm"
 _ESCAPE_SEQUENCE_SEPARATOR = ";"
@@ -91,3 +94,20 @@ def underline (text):
             styled_text(text, UNDERLINE)
     """
     return styled_text(text, UNDERLINE)
+
+
+def write(text):
+    sys.stdout.write(text)
+
+
+def write_line(text=""):
+    write(text)
+    write("\n")
+
+def write_error(text):
+    sys.stderr.write(text)
+
+
+def write_error_line(text=""):
+    write_error(text)
+    write_error("\n")

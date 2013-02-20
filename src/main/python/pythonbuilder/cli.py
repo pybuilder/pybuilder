@@ -25,7 +25,8 @@ from pythonbuilder.core import Logger
 from pythonbuilder.errors import PythonbuilderException
 from pythonbuilder.execution import ExecutionManager
 from pythonbuilder.reactor import Reactor
-from pythonbuilder.terminal import bold, styled_text, fg, BOLD, italic, BROWN, RED, GREEN
+from pythonbuilder.terminal import BOLD, BROWN, RED, GREEN, bold, styled_text, fg, italic, \
+    write, write_line, write_error, write_error_line
 from pythonbuilder.utils import format_timestamp
 
 PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
@@ -60,22 +61,6 @@ class ColoredStdOutLogger(StdOutLogger):
             return styled_text("[WARN] ", BOLD, fg(BROWN))
         return styled_text("[ERROR]", BOLD, fg(RED))
 
-
-def write(text):
-    sys.stdout.write(text)
-
-
-def write_line(text=""):
-    write(text)
-    write("\n")
-
-def write_error(text):
-    sys.stderr.write(text)
-
-
-def write_error_line(text=""):
-    write_error(text)
-    write_error("\n")
 
 
 def parse_options(args):
@@ -275,7 +260,7 @@ def main(*args):
 
             if options.list_tasks:
                 for task in sorted(reactor.get_tasks()):
-                    write_line("%20s\t%s" % (task.name,task.description or "<no description available>"))
+                    write_line("%20s\t%s" % (task.name, task.description or "<no description available>"))
                     if task.dependencies:
                         write_line("\t\t\tdepends on tasks: %s" % " ".join(task.dependencies))
                     write_line()
