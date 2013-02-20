@@ -64,9 +64,18 @@ class ColoredStdOutLogger(StdOutLogger):
 def write(text):
     sys.stdout.write(text)
 
+
 def write_line(text=""):
     write(text)
     write("\n")
+
+def write_error(text):
+    sys.stderr.write(text)
+
+
+def write_error_line(text=""):
+    write_error(text)
+    write_error("\n")
 
 
 def parse_options(args):
@@ -220,8 +229,8 @@ def main(*args):
     try:
         options, arguments = parse_options(args)
     except CommandLineUsageException as e:
-        sys.stderr.write("Usage error: %s\n" % e)
-        sys.stderr.write(e.usage)
+        write_error_line("Usage error: %s\n" % e)
+        write_error(e.usage)
         return 1
 
     start = datetime.datetime.now()
