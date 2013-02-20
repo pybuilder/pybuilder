@@ -18,8 +18,7 @@ import os
 
 from pythonbuilder.utils import discover_modules, discover_files, execute_command, as_list, read_file
 
-def execute_tool_on_source_files (project, name, command_and_arguments,
-                                      logger=None):
+def execute_tool_on_source_files (project, name, command_and_arguments, logger=None):
     source_dir = project.expand_path("$dir_source_main_python")
     files = discover_files(source_dir, ".py")
     command = as_list(command_and_arguments) + [f for f in files]
