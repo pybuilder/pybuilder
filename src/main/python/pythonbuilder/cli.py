@@ -268,4 +268,7 @@ def main(*args):
         if not options.very_quiet:
             print_summary(successful, summary, start, end, options, failure_message)
 
-        return 0 if successful else 1
+        if not successful:
+            return 1
+
+        return 0
