@@ -20,7 +20,7 @@ import re
 import sys
 import traceback
 
-from pythonbuilder import VERSION
+from pythonbuilder import __version__
 from pythonbuilder.core import Logger
 from pythonbuilder.errors import PythonbuilderException
 from pythonbuilder.execution import ExecutionManager
@@ -65,7 +65,7 @@ class ColoredStdOutLogger(StdOutLogger):
 
 def parse_options(args):
     parser = optparse.OptionParser(usage="%prog [options] task1 [[task2] ...]",
-                                   version="%prog " + VERSION)
+                                   version="%prog " + __version__)
 
     def error(msg):
         raise CommandLineUsageException(parser.get_usage() + parser.format_option_help(), msg)
@@ -232,7 +232,7 @@ def main(*args):
             write_line()
         return 0
 
-    banner = "PYBUILDER Version %s" % VERSION
+    banner = "PYBUILDER Version {0}".format(__version__)
     if should_colorize(options):
         banner = bold(banner)
 
