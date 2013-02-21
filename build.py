@@ -68,10 +68,10 @@ def initialize(project):
     project.set_property("coverage_break_build", False)
     project.get_property("coverage_exceptions").append("pybuilder.cli")
     project.get_property("coverage_exceptions").append("pybuilder.plugins.core_plugin")
-    
+
     project.set_property("copy_resources_target", "$dir_dist")
     project.get_property("copy_resources_glob").append("LICENSE")
-    
+
     project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
 
     project.set_property("flake8_verbose_output", True)
@@ -83,14 +83,13 @@ def initialize(project):
     #   E501 line too long
     #
     #   W291 trailing whitespace
-    #   W293 blank line contains whitespace
-    #
+    #   W404 'from pybuilder.core import *' used; unable to detect undefined names
     #   W801 redefinition of unused 'StringIO'
 
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
     project.get_property("source_dist_ignore_patterns").append(".settings")
-    
+
     project.get_property("distutils_commands").append("bdist_egg")
     project.set_property("distutils_classifiers", [    
           'Development Status :: 3 - Alpha',
