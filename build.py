@@ -13,7 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from pythonbuilder.core import init, use_plugin, Author
+from pybuilder.core import init, use_plugin, Author
 
 use_plugin("python.core")
 
