@@ -1,5 +1,5 @@
 #  This file is part of Python Builder
-#
+#   
 #  Copyright 2011-2013 PyBuilder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,8 +42,8 @@ description = """python-builder is a continuous build tool for multiple language
 python-builder primarily targets Python projects but due to its extensible
 nature it can be used for other languages as well.
 
-python-builder features a powerful yet easy to use plugin mechanism which
-allows programmers to extend the tool in an unlimited way.
+python-builder features a powerful yet easy to use plugin mechanism which 
+allows programmers to extend the tool in an unlimited way.  
 """
 
 authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
@@ -68,15 +68,15 @@ def initialize(project):
     project.set_property("coverage_break_build", False)
     project.get_property("coverage_exceptions").append("pybuilder.cli")
     project.get_property("coverage_exceptions").append("pybuilder.plugins.core_plugin")
-
+    
     project.set_property("copy_resources_target", "$dir_dist")
     project.get_property("copy_resources_glob").append("LICENSE")
-
+    
     project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
 
     project.set_property("flake8_verbose_output", True)
     project.set_property("flake8_break_build", True)
-    project.set_property("flake8_ignore", "E211,E302,E501,W293,W404,W801")
+    project.set_property("flake8_ignore", "E211,E302,E501,W404,W801")
     #
     #   E211 whitespace before '('
     #   E302 expected 2 blank lines
@@ -90,9 +90,9 @@ def initialize(project):
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
     project.get_property("source_dist_ignore_patterns").append(".settings")
-
+    
     project.get_property("distutils_commands").append("bdist_egg")
-    project.set_property("distutils_classifiers", [
+    project.set_property("distutils_classifiers", [    
           'Development Status :: 3 - Alpha',
           'Environment :: Console',
           'Intended Audience :: Developers',

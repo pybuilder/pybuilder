@@ -71,7 +71,7 @@ def analyze(project, logger):
                                                     name="flake8",
                                                     command_and_arguments=command_and_arguments,
                                                     logger=logger)
-                                           
+
     report_file = execution_result[1]
     report_lines = read_file(report_file)
     count_of_warnings = len(report_lines)
