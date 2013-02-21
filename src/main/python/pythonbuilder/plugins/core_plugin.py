@@ -18,27 +18,30 @@ import shutil
 
 from pythonbuilder.core import init, task, description, depends
 
+
 @init
-def init (project):
+def init(project):
     project.set_property("dir_target", "target")
     project.set_property("dir_reports", "$dir_target/reports")
     project.set_property("dir_logs", "$dir_target/logs")
     
-    def write_report (file, *content):
+    def write_report(file, *content):
         with open(project.expand_path("$dir_reports", file), "w") as report_file:
             report_file.writelines(content)
     project.write_report = write_report
 
+
 @task
 @description("Cleans the generated output.")
-def clean (project, logger):
+def clean(project, logger):
     target_directory = project.expand_path("$dir_target")
     logger.info("Removing target directory %s", target_directory)
     shutil.rmtree(target_directory, ignore_errors=True)
 
+
 @task
 @description("Prepares the project for building.")
-def prepare (project, logger):
+def prepare(project, logger):
     target_directory = project.expand_path("$dir_target")
     if not os.path.exists(target_directory):
         logger.debug("Creating target directory %s", target_directory)
@@ -49,38 +52,44 @@ def prepare (project, logger):
         logger.debug("Creating reports directory %s", reports_directory)
         os.mkdir(reports_directory)
 
+
 @task
 @depends(prepare)
 @description("Compiles source files that need compilation.")
-def compile_sources ():
+def compile_sources():
     pass
+
 
 @task
 @depends(compile_sources)
 @description("Runs all unit tests.")
-def run_unit_tests ():
+def run_unit_tests():
     pass
+
 
 @task
 @depends(run_unit_tests)
 @description("Packages the application.")
-def package ():
+def package():
     pass
+
 
 @task
 @depends(package)
 @description("Runs integration tests on the packaged application.")
-def run_integration_tests ():
+def run_integration_tests():
     pass
+
 
 @task
 @depends(run_integration_tests)
 @description("Verifies the project and possibly integration tests.")
-def verify ():
+def verify():
     pass
+
 
 @task
 @depends(verify)
 @description("Publishes the project.")
-def publish ():
+def publish():
     pass
