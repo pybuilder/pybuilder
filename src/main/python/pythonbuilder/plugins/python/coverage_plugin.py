@@ -30,7 +30,7 @@ use_plugin("python.core")
 use_plugin("analysis")
 
 @init
-def init_coverage_properties (project):
+def init_coverage_properties(project):
     project.build_depends_on("coverage")
 
     project.set_property_if_unset("coverage_threshold_warn", 70)
@@ -38,17 +38,20 @@ def init_coverage_properties (project):
     project.set_property_if_unset("coverage_reload_modules", True)
     project.set_property_if_unset("coverage_exceptions", [])
     project.set_property_if_unset("coverage_fork", False)
-        
-def start_coverage  (coverage_module):
+
+
+def start_coverage(coverage_module):
     coverage_module.erase()
     coverage_module.start()
 
-def stop_coverage  (coverage_module, project, logger):
+
+def stop_coverage(coverage_module, project, logger):
     reimport_source_modules(project, logger)
     coverage_module.stop()
-    
+
+
 @after(("analyze", "verify"), only_once=True)
-def verify_coverage (project, logger, reactor):
+def verify_coverage(project, logger, reactor):
     logger.info("Collecting coverage information")
     
     if project.get_property("coverage_fork"):

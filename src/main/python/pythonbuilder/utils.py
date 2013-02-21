@@ -85,15 +85,14 @@ def discover_files (start_dir, suffix):
                 yield os.path.join(root, file_name)
     
 
-def execute_command (command_and_arguments, outfile_name, env=None, cwd=None,
-                     error_file_name=None, shell=False):
+def execute_command(command_and_arguments, outfile_name, env=None, cwd=None, error_file_name=None, shell=False):
     if error_file_name is None:
         error_file_name = outfile_name + ".err"
     
     with open(outfile_name, "w") as out_file:
         with open(error_file_name, "w") as error_file:
             process = subprocess.Popen(command_and_arguments, 
-                                       stdout=out_file, 
+                                       stdout=out_file,
                                        stderr=error_file,
                                        env=env,
                                        cwd=cwd,

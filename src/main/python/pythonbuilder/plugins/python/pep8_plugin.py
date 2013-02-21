@@ -13,19 +13,27 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from pythonbuilder.core import use_plugin, task, after
+
+from pythonbuilder.core import use_plugin, task, after, init
 from pythonbuilder.utils import assert_can_execute, read_file
 from pythonbuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
 
 use_plugin("python.core")
 
+
+@init
+def init_pep8_properties(project):
+    project.build_depends_on("pep8")
+
+
 @after("prepare")
-def check_pep8_available (logger):
+def check_pep8_available(logger):
     logger.debug("Checking availability of pep8")
     assert_can_execute(("pep8", ), "pep8", "plugin python.pep8")
 
+
 @task
-def analyze (project, logger):
+def analyze(project, logger):
     logger.info("Executing pep8 on project sources")
     _, report_file = execute_tool_on_source_files(project, "pep8", ["pep8"])
     

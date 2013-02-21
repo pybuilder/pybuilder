@@ -33,6 +33,8 @@ use_plugin("python.core")
 
 @init
 def initialize_flake8_plugin(project):
+    project.build_depends_on("flake8")
+
     if project.verbose:
         project.set_property("flake8_verbose_output", True)
     else:
