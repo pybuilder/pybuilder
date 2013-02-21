@@ -1,6 +1,6 @@
 #  This file is part of Python Builder
-#   
-#  Copyright 2011 The Python Builder Team
+#
+#  Copyright 2011-2013 PyBuilder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -30,15 +30,15 @@ def init (project):
     project.get_property("copy_resources_glob").append("*")
     project.get_property("filter_resources_glob").append("spam")
         """)
-        
+
         self.write_file("spam", "${version}")
         self.write_file("eggs", "${version}")
-        
+
         reactor = self.prepare_reactor()
         reactor.build("package")
-        
+
         self.assert_file_content("target/spam", "1.0-SNAPSHOT")
         self.assert_file_content("target/eggs", "${version}")
-        
+
 if __name__ == "__main__":
     unittest.main()

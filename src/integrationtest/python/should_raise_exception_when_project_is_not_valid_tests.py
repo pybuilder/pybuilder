@@ -1,6 +1,6 @@
 #  This file is part of Python Builder
-#   
-#  Copyright 2011 The Python Builder Team
+#
+#  Copyright 2011-2013 PyBuilder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ def init (project):
     project.build_depends_on("spam")
         """)
         reactor = self.prepare_reactor()
-        
+
         self.assertRaises(ProjectValidationFailedException, reactor.build, ["clean"])
-        
+
 if __name__ == "__main__":
     unittest.main()

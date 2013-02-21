@@ -1,6 +1,6 @@
 #  This file is part of Python Builder
-#   
-#  Copyright 2011 The Python Builder Team
+#
+#  Copyright 2011-2013 PyBuilder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ from pybuilder.core import Logger
 class StdOutLoggerTest (unittest.TestCase):
     def setUp(self):
         self.stdOutLogger = StdOutLogger(Logger)
-        
+
     def test_should_return_debug_message_when_debug_level_given(self):
         actualMessage = self.stdOutLogger._level_to_string(Logger.DEBUG)
         self.assertEqual(actualMessage, "[DEBUG]")
@@ -43,7 +43,7 @@ class StdOutLoggerTest (unittest.TestCase):
 class ColoredStdOutLoggerTest (unittest.TestCase):
     def setUp(self):
         self.coloredStdOutLogger = ColoredStdOutLogger(Logger)
-        
+
     def test_should_return_italic_debug_message_when_debug_level_given(self):
         actualMessage = self.coloredStdOutLogger._level_to_string(Logger.DEBUG)
         self.assertEqual(actualMessage, "\x1b[2m[DEBUG]\x1b[0;0m")
@@ -63,7 +63,7 @@ class ColoredStdOutLoggerTest (unittest.TestCase):
 
 class ParseOptionsTest (unittest.TestCase):
     def assert_options(self, options, **overrides):
-        self.assertEquals(options.project_directory, 
+        self.assertEquals(options.project_directory,
                           overrides.get("project_directory", "."))
         self.assertEquals(options.debug,
                           overrides.get("debug", False))
@@ -78,39 +78,39 @@ class ParseOptionsTest (unittest.TestCase):
 
     def test_should_parse_empty_arguments (self):
         options, arguments = parse_options([])
-        
+
         self.assert_options(options)
         self.assertEquals([], arguments)
 
     def test_should_parse_task_list_without_options (self):
         options, arguments = parse_options(["clean", "spam"])
-        
+
         self.assert_options(options)
         self.assertEquals(["clean", "spam"], arguments)
 
     def test_should_parse_empty_arguments_with_option (self):
         options, arguments = parse_options(["-X"])
-        
+
         self.assert_options(options, debug=True)
         self.assertEquals([], arguments)
 
     def test_should_parse_arguments_and_option (self):
         options, arguments = parse_options(["-X", "-D", "spam", "eggs"])
-        
+
         self.assert_options(options, debug=True, project_directory="spam")
         self.assertEquals(["eggs"], arguments)
 
     def test_should_set_property (self):
         options, arguments = parse_options(["-P", "spam=eggs"])
-        
+
         self.assert_options(options, property_overrides={"spam": "eggs"})
         self.assertEquals([], arguments)
 
     def test_should_set_multiple_properties (self):
-        options, arguments = parse_options(["-P", "spam=eggs", 
+        options, arguments = parse_options(["-P", "spam=eggs",
                                             "-P", "foo=bar"])
-        
-        self.assert_options(options, property_overrides={"spam": "eggs", 
+
+        self.assert_options(options, property_overrides={"spam": "eggs",
                                                          "foo":"bar"})
         self.assertEquals([], arguments)
 

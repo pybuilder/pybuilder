@@ -1,6 +1,6 @@
 #  This file is part of Python Builder
-#   
-#  Copyright 2011 The Python Builder Team
+#
+#  Copyright 2011-2013 PyBuilder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -23,15 +23,15 @@ from pybuilder.core import Project
 class InitPythonDirectoriesTest (unittest.TestCase):
     def setUp(self):
         self.project = Project(".")
-        
+
     def test_should_set_python_sources_property(self):
         init_python_directories(self.project)
         self.assertEquals("src/main/python", self.project.get_property(PYTHON_SOURCES_PROPERTY, "caboom"))
-        
+
     def test_should_set_scripts_sources_property(self):
         init_python_directories(self.project)
         self.assertEquals("src/main/scripts", self.project.get_property(SCRIPTS_SOURCES_PROPERTY, "caboom"))
-        
+
     def test_should_set_dist_scripts_property(self):
         init_python_directories(self.project)
         self.assertEquals(None, self.project.get_property(SCRIPTS_TARGET_PROPERTY, "caboom"))

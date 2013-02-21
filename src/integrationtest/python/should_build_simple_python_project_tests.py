@@ -1,6 +1,6 @@
 #  This file is part of Python Builder
-#   
-#  Copyright 2011 The Python Builder Team
+#
+#  Copyright 2011-2013 PyBuilder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -33,10 +33,10 @@ default_task = "publish"
 def spam ():
     pass
 """)
-        
+
         reactor = self.prepare_reactor()
         reactor.build()
-        
+
         self.assert_directory_exists("target/dist/integration-test-1.0-SNAPSHOT")
         self.assert_directory_exists("target/dist/integration-test-1.0-SNAPSHOT/spam")
         self.assert_file_empty("target/dist/integration-test-1.0-SNAPSHOT/spam/__init__.py")

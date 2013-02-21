@@ -1,6 +1,6 @@
 #  This file is part of Python Builder
-#   
-#  Copyright 2011 The Python Builder Team
+#
+#  Copyright 2011-2013 PyBuilder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -32,13 +32,13 @@ def another_task (): pass
 def any_method_name (): pass
         """)
         reactor = self.prepare_reactor()
-        
+
         tasks = reactor.get_tasks()
 
         self.assertEquals(3, len(tasks))
         self.assertEquals("my_task", tasks[0].name)
         self.assertEquals("a_task_with_overridden_name", tasks[1].name)
         self.assertEquals("another_task", tasks[2].name)
-        
+
 if __name__ == "__main__":
     unittest.main()

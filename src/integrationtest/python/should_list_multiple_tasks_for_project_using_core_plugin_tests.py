@@ -1,6 +1,6 @@
 #  This file is part of Python Builder
-#   
-#  Copyright 2011 The Python Builder Team
+#
+#  Copyright 2011-2013 PyBuilder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -25,15 +25,15 @@ from pybuilder.core import use_plugin
 use_plugin("core")
         """)
         reactor = self.prepare_reactor()
-        
+
         tasks = reactor.get_tasks()
-        
+
         self.assertEquals(8, len(tasks))
-        
+
         task_names = list(map(lambda task: task.name, tasks))
-        
+
         self.assertTrue("clean" in task_names)
         self.assertTrue("publish" in task_names)
-        
+
 if __name__ == "__main__":
     unittest.main()

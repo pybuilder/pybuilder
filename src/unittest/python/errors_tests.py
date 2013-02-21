@@ -1,6 +1,6 @@
 #  This file is part of Python Builder
-#   
-#  Copyright 2011 The Python Builder Team
+#
+#  Copyright 2011-2013 PyBuilder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -20,6 +20,6 @@ from pybuilder.errors import PythonbuilderException
 class PythonbuilderExceptionTest (unittest.TestCase):
     def test_should_format_exception_message_without_arguments (self):
         self.assertEquals("spam and eggs", str(PythonbuilderException("spam and eggs")))
-        
+
     def test_should_format_exception_message_with_arguments (self):
         self.assertEquals("spam and eggs", str(PythonbuilderException("%s and %s", "spam", "eggs")))

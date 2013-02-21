@@ -1,6 +1,6 @@
 #  This file is part of Python Builder
-#   
-#  Copyright 2011 The Python Builder Team
+#
+#  Copyright 2011-2013 PyBuilder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -25,15 +25,15 @@ from pybuilder.plugins.filter_resources_plugin import ProjectDictWrapper
 class ProjectDictWrapperTest (unittest.TestCase):
     def test_should_return_project_property_when_property_is_defined (self):
         project_mock = mock(Project, name="my name")
-        
-        self.assertEquals("my name", ProjectDictWrapper(project_mock)["name"]) 
+
+        self.assertEquals("my name", ProjectDictWrapper(project_mock)["name"])
 
         verify(project_mock, never).get_property("name", "name")
-            
+
     def test_should_delegate_to_project_get_property_when_attribute_is_not_defined (self):
         project_mock = Project(".")
         when(project_mock).get_property("spam", "spam").thenReturn("eggs")
-        
-        self.assertEquals("eggs", ProjectDictWrapper(project_mock)["spam"]) 
+
+        self.assertEquals("eggs", ProjectDictWrapper(project_mock)["spam"])
 
         verify(project_mock).get_property("spam", "spam")

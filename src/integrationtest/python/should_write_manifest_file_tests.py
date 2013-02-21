@@ -1,6 +1,6 @@
 #  This file is part of Python Builder
-#   
-#  Copyright 2011 The Python Builder Team
+#
+#  Copyright 2011-2013 PyBuilder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -38,18 +38,18 @@ def init (project):
         self.write_file("src/main/python/spam/eggs", "")
         self.write_file("src/main/python/more_spam", "")
         self.write_file("src/main/python/more_eggs", "")
-        
+
         reactor = self.prepare_reactor()
         reactor.build()
-        
+
         self.assert_directory_exists("target/dist/integration-test-1.0-SNAPSHOT")
         self.assert_directory_exists("target/dist/integration-test-1.0-SNAPSHOT/spam")
         self.assert_file_empty("target/dist/integration-test-1.0-SNAPSHOT/spam/eggs")
         self.assert_file_empty("target/dist/integration-test-1.0-SNAPSHOT/more_spam")
         self.assert_file_empty("target/dist/integration-test-1.0-SNAPSHOT/more_eggs")
-        
+
         manifest_in = "target/dist/integration-test-1.0-SNAPSHOT/MANIFEST.in"
-        
+
         self.assert_file_exists(manifest_in)
         self.assert_file_permissions(0o664, manifest_in)
         self.assert_file_content(manifest_in, """include spam/eggs
