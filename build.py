@@ -36,12 +36,10 @@ use_plugin("python.pylint")
 use_plugin("python.pymetrics")
 
 
-summary = "An extendible, easy to use continuous build tool for Python"
-description =\
-"""
-python-builder is a continuous build tool for multiple languages.
+summary = "An extensible, easy to use continuous build tool for Python"
+description = """python-builder is a continuous build tool for multiple languages.
 
-python-builder primarily targets Python projects but due to its extendible
+python-builder primarily targets Python projects but due to its extensible
 nature it can be used for other languages as well.
 
 python-builder features a powerful yet easy to use plugin mechanism which 
