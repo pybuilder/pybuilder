@@ -16,7 +16,7 @@
 import os
 import string
 
-from pythonbuilder.core import init, task, description
+from pybuilder.core import init, task, description
 
 _DOT_PROJECT_TEMPLATE = string.Template("""<?xml version="1.0" encoding="UTF-8"?>
 

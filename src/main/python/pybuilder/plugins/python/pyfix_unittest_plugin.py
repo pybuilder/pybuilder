@@ -16,7 +16,7 @@
 
 __author__ = "Alexander Metzner"
 
-from pythonbuilder.core import init, task, description, use_plugin
+from pybuilder.core import init, task, description, use_plugin
 
 use_plugin("python.core")
 
@@ -31,6 +31,6 @@ def init_test_source_directory(project):
 @task
 @description("Runs unit tests written using the pyfix test framework")
 def run_unit_tests(project, logger):
-    import pythonbuilder.plugins.python.pyfix_plugin_impl
+    import pybuilder.plugins.python.pyfix_plugin_impl
 
-    pythonbuilder.plugins.python.pyfix_plugin_impl.run_unit_tests(project, logger)
+    pybuilder.plugins.python.pyfix_plugin_impl.run_unit_tests(project, logger)

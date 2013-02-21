@@ -13,11 +13,5 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from pythonbuilder.core import task, depends, use_plugin
 
-use_plugin("core")
-
-@task
-@depends("run_unit_tests")
-def analyze ():
-    pass
+__version__ = "${version}"

@@ -17,10 +17,10 @@ from mockito import verify, unstub, any, times, when
 import unittest
 from test_utils import mock
 
-from pythonbuilder.errors import MissingTaskDependencyException, CircularTaskDependencyException, NoSuchTaskException,\
+from pybuilder.errors import MissingTaskDependencyException, CircularTaskDependencyException, NoSuchTaskException,\
     MissingActionDependencyException, InvalidNameException
-from pythonbuilder.core import Logger
-from pythonbuilder.execution import as_task_name_list, Action, Executable, ExecutionManager, Task,\
+from pybuilder.core import Logger
+from pybuilder.execution import as_task_name_list, Action, Executable, ExecutionManager, Task,\
     DependenciesNotResolvedException, Initializer
 
 class AsTaskNameList(unittest.TestCase):

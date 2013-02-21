@@ -16,14 +16,14 @@
 import imp
 import os.path
 
-from pythonbuilder.core import TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE,\
+from pybuilder.core import TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE,\
     DESCRIPTION_ATTRIBUTE, AFTER_ATTRIBUTE, BEFORE_ATTRIBUTE,\
     INITIALIZER_ATTRIBUTE, ACTION_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, Project,\
     NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE
-from pythonbuilder.errors import PythonbuilderException, ProjectValidationFailedException
-from pythonbuilder.pluginloader import BuiltinPluginLoader
-from pythonbuilder.utils import as_list
-from pythonbuilder.execution import Action, Initializer, Task
+from pybuilder.errors import PythonbuilderException, ProjectValidationFailedException
+from pybuilder.pluginloader import BuiltinPluginLoader
+from pybuilder.utils import as_list
+from pybuilder.execution import Action, Initializer, Task
 
 
 class BuildSummary(object):

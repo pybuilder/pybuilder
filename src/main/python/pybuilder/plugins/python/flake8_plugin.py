@@ -23,10 +23,10 @@
 
 __author__ = 'Michael Gruber'
 
-from pythonbuilder.core import after, task, init, use_plugin
-from pythonbuilder.errors import BuildFailedException
-from pythonbuilder.utils import assert_can_execute, read_file
-from pythonbuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
+from pybuilder.core import after, task, init, use_plugin
+from pybuilder.errors import BuildFailedException
+from pybuilder.utils import assert_can_execute, read_file
+from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
 
 
 use_plugin("python.core")

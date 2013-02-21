@@ -14,9 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from pythonbuilder.core import use_plugin, task, after, init
-from pythonbuilder.utils import assert_can_execute, read_file
-from pythonbuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
+from pybuilder.core import use_plugin, task, after, init
+from pybuilder.utils import assert_can_execute, read_file
+from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
 
 use_plugin("python.core")
 

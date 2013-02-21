@@ -16,7 +16,7 @@
 import os
 import shutil
 
-from pythonbuilder.core import init, task, use_plugin
+from pybuilder.core import init, task, use_plugin
 
 use_plugin("core")
 

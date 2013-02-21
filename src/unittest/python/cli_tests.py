@@ -15,8 +15,8 @@
 #  limitations under the License.
 import unittest
 
-from pythonbuilder.cli import parse_options, ColoredStdOutLogger, CommandLineUsageException, StdOutLogger
-from pythonbuilder.core import Logger
+from pybuilder.cli import parse_options, ColoredStdOutLogger, CommandLineUsageException, StdOutLogger
+from pybuilder.core import Logger
 
 
 class StdOutLoggerTest (unittest.TestCase):

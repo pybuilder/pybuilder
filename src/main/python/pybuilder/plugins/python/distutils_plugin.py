@@ -23,9 +23,9 @@ try:
 except (ImportError) as e:
     from io import StringIO
 
-from pythonbuilder.core import after, before, use_plugin, init
-from pythonbuilder.errors import BuildFailedException
-from pythonbuilder.utils import as_list
+from pybuilder.core import after, before, use_plugin, init
+from pybuilder.errors import BuildFailedException
+from pybuilder.utils import as_list
 
 from .setuptools_plugin_helper import build_dependency_version_string
 

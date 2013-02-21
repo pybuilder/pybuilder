@@ -20,7 +20,7 @@ from integrationtest_support import IntegrationTestSupport
 class Test (IntegrationTestSupport):
     def test (self):
         self.write_build_file("""
-from pythonbuilder.core import use_plugin
+from pybuilder.core import use_plugin
 
 use_plugin("python.pyfix_unittest")
 

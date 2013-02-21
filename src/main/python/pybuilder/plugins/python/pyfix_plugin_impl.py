@@ -6,8 +6,8 @@ import sys
 from pyfix.testcollector import TestCollector
 from pyfix.testrunner import TestRunner, TestRunListener
 
-from pythonbuilder.errors import BuildFailedException
-from pythonbuilder.utils import discover_modules, render_report
+from pybuilder.errors import BuildFailedException
+from pybuilder.utils import discover_modules, render_report
 
 def run_unit_tests(project, logger):
     sys.path.append(project.expand_path("$dir_source_main_python"))

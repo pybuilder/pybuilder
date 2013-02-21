@@ -27,8 +27,8 @@ except (ImportError) as e:
 from mockito import when, verify, unstub, never
 from test_utils import mock
 
-from pythonbuilder.errors import MissingPluginException
-from pythonbuilder.pluginloader import BuiltinPluginLoader, DispatchingPluginLoader
+from pybuilder.errors import MissingPluginException
+from pybuilder.pluginloader import BuiltinPluginLoader, DispatchingPluginLoader
 
 class BuiltinPluginLoaderTest (unittest.TestCase):
     def setUp (self):
@@ -41,26 +41,26 @@ class BuiltinPluginLoaderTest (unittest.TestCase):
         unstub()
     
     def test_should_raise_exception_when_requiring_plugin_and_plugin_is_not_found (self):
-        when(builtin_module).__import__("pythonbuilder.plugins.spam_plugin").thenRaise(ImportError())
+        when(builtin_module).__import__("pybuilder.plugins.spam_plugin").thenRaise(ImportError())
         
         self.assertRaises(MissingPluginException, self.loader.load_plugin, self.project, "spam")
         
-        verify(builtin_module).__import__("pythonbuilder.plugins.spam_plugin")
+        verify(builtin_module).__import__("pybuilder.plugins.spam_plugin")
 
     def test_should_import_plugin_when_requiring_plugin_and_plugin_is_found_as_builtin (self):
-        old_module = sys.modules.get("pythonbuilder.plugins.spam_plugin")
+        old_module = sys.modules.get("pybuilder.plugins.spam_plugin")
         try:
             plugin_module = mock()
-            sys.modules["pythonbuilder.plugins.spam_plugin"] = plugin_module
-            when(builtin_module).__import__("pythonbuilder.plugins.spam_plugin").thenReturn(plugin_module)
+            sys.modules["pybuilder.plugins.spam_plugin"] = plugin_module
+            when(builtin_module).__import__("pybuilder.plugins.spam_plugin").thenReturn(plugin_module)
             
             self.loader.load_plugin(self.project, "spam")
             
-            verify(builtin_module).__import__("pythonbuilder.plugins.spam_plugin")
+            verify(builtin_module).__import__("pybuilder.plugins.spam_plugin")
         finally:
-            del sys.modules["pythonbuilder.plugins.spam_plugin"]
+            del sys.modules["pybuilder.plugins.spam_plugin"]
             if old_module:
-                sys.modules["pythonbuilder.plugins.spam_plugin"] = old_module
+                sys.modules["pybuilder.plugins.spam_plugin"] = old_module
                 
 class DispatchingPluginLoaderTest (unittest.TestCase):
     def setUp (self):

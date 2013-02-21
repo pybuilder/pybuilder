@@ -18,10 +18,10 @@ from __future__ import print_function
 
 __author__ = "Alexander Metzner"
 
-from pythonbuilder.core import before, after, task, description, use_plugin, init
-from pythonbuilder.errors import BuildFailedException
-from pythonbuilder.utils import assert_can_execute, execute_command, mkdir
-from pythonbuilder.plugins.python.setuptools_plugin_helper import build_dependency_version_string
+from pybuilder.core import before, after, task, description, use_plugin, init
+from pybuilder.errors import BuildFailedException
+from pybuilder.utils import assert_can_execute, execute_command, mkdir
+from pybuilder.plugins.python.setuptools_plugin_helper import build_dependency_version_string
 
 use_plugin("core")
 

@@ -17,8 +17,8 @@ import sys
 
 from django.core.management import execute_manager
 
-from pythonbuilder.core import use_plugin, task
-from pythonbuilder.errors import PythonbuilderException
+from pybuilder.core import use_plugin, task
+from pybuilder.errors import PythonbuilderException
 
 use_plugin("python.core")
 

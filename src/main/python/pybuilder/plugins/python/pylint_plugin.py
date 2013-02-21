@@ -13,9 +13,9 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from pythonbuilder.core import use_plugin, after, init, task
-from pythonbuilder.utils import assert_can_execute
-from pythonbuilder.plugins.python.python_plugin_helper import execute_tool_on_modules
+from pybuilder.core import use_plugin, after, init, task
+from pybuilder.utils import assert_can_execute
+from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_modules
 
 use_plugin("python.core")
 use_plugin("analysis")

@@ -15,7 +15,7 @@
 #  limitations under the License.
 import unittest
 
-from pythonbuilder.errors import PythonbuilderException
+from pybuilder.errors import PythonbuilderException
 
 class PythonbuilderExceptionTest (unittest.TestCase):
     def test_should_format_exception_message_without_arguments (self):

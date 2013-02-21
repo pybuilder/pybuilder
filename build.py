@@ -66,17 +66,17 @@ def initialize(project):
     project.build_depends_on("pyfix")
 
     project.set_property("coverage_break_build", False)
-    project.get_property("coverage_exceptions").append("pythonbuilder.cli")
-    project.get_property("coverage_exceptions").append("pythonbuilder.plugins.core_plugin")
+    project.get_property("coverage_exceptions").append("pybuilder.cli")
+    project.get_property("coverage_exceptions").append("pybuilder.plugins.core_plugin")
     
     project.set_property("copy_resources_target", "$dir_dist")
     project.get_property("copy_resources_glob").append("LICENSE")
     
-    project.get_property("filter_resources_glob").append("**/pythonbuilder/__init__.py")
+    project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
 
     project.set_property("flake8_verbose_output", True)
     project.set_property("flake8_break_build", True)
-    project.set_property("flake8_ignore", "E211,E302,E501,W291,W292,W293,W801")
+    project.set_property("flake8_ignore", "E211,E302,E501,W291,W292,W293,W404,W801")
     #
     #   E211 whitespace before '('
     #   E302 expected 2 blank lines

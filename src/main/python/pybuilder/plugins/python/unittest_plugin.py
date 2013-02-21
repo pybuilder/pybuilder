@@ -22,9 +22,9 @@ except (ImportError) as e:
 import sys
 import unittest
 
-from pythonbuilder.core import init, task, description, use_plugin
-from pythonbuilder.errors import BuildFailedException
-from pythonbuilder.utils import discover_modules, render_report
+from pybuilder.core import init, task, description, use_plugin
+from pybuilder.errors import BuildFailedException
+from pybuilder.utils import discover_modules, render_report
 
 use_plugin("python.core")
 

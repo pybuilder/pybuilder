@@ -20,7 +20,7 @@ from integrationtest_support import IntegrationTestSupport
 class Test (IntegrationTestSupport):
     def test (self):
         self.write_build_file("""
-from pythonbuilder.core import task
+from pybuilder.core import task
 
 @task
 def my_task (): pass

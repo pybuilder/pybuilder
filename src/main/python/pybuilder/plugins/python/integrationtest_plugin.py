@@ -16,9 +16,9 @@
 import os
 import sys
 
-from pythonbuilder.errors import BuildFailedException
-from pythonbuilder.core import init, use_plugin, task, description
-from pythonbuilder.utils import execute_command, render_report, Timer
+from pybuilder.errors import BuildFailedException
+from pybuilder.core import init, use_plugin, task, description
+from pybuilder.utils import execute_command, render_report, Timer
 
 use_plugin("python.core")
 

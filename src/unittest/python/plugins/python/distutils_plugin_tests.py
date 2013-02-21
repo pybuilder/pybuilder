@@ -15,8 +15,8 @@
 #  limitations under the License.
 import unittest
 
-from pythonbuilder.core import Project, Author
-from pythonbuilder.plugins.python.distutils_plugin import (build_data_files_string,
+from pybuilder.core import Project, Author
+from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                            build_dependency_links_string,
                                                            build_install_dependencies_string,
                                                            build_package_data_string,

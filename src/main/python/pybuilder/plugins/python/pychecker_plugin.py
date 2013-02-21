@@ -16,10 +16,10 @@
 import os
 import re
 
-from pythonbuilder.core import use_plugin, after, init, task
-from pythonbuilder.errors import BuildFailedException
-from pythonbuilder.utils import assert_can_execute, read_file, render_report
-from pythonbuilder.plugins.python.python_plugin_helper import execute_tool_on_modules
+from pybuilder.core import use_plugin, after, init, task
+from pybuilder.errors import BuildFailedException
+from pybuilder.utils import assert_can_execute, read_file, render_report
+from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_modules
 
 
 DEFAULT_PYCHECKER_ARGUMENTS = ["-Q"]

@@ -20,13 +20,13 @@ import unittest
 
 from mockito import mock, when, verify, unstub, any as any_value
 
-from pythonbuilder.core import Project, Logger, Dependency
-from pythonbuilder.plugins.python.install_dependencies_plugin import (install_runtime_dependencies,
+from pybuilder.core import Project, Logger, Dependency
+from pybuilder.plugins.python.install_dependencies_plugin import (install_runtime_dependencies,
                                                                       install_build_dependencies,
                                                                       install_dependencies,
                                                                       install_dependency)
 
-import pythonbuilder.plugins.python.install_dependencies_plugin
+import pybuilder.plugins.python.install_dependencies_plugin
 
 
 class InstallDependencyTest(unittest.TestCase):
@@ -34,7 +34,7 @@ class InstallDependencyTest(unittest.TestCase):
         self.project = Project("unittest", ".")
         self.project.set_property("dir_install_logs", "any_directory")
         self.logger = mock(Logger)
-        when(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command(any_value(), any_value(),
+        when(pybuilder.plugins.python.install_dependencies_plugin).execute_command(any_value(), any_value(),
             shell=True).thenReturn(0)
 
     def tearDown(self):
@@ -45,7 +45,7 @@ class InstallDependencyTest(unittest.TestCase):
 
         install_dependency(self.logger, self.project, dependency)
 
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command("pip install spam", any_value()
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install spam", any_value()
             , shell=True)
 
     def test_should_install_dependency_using_custom_index_url(self):
@@ -54,7 +54,7 @@ class InstallDependencyTest(unittest.TestCase):
 
         install_dependency(self.logger, self.project, dependency)
 
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command(
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
             "pip install --index-url some_index_url spam", any_value()
             , shell=True)
 
@@ -64,7 +64,7 @@ class InstallDependencyTest(unittest.TestCase):
 
         install_dependency(self.logger, self.project, dependency)
 
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command(
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
             "pip install spam", any_value()
             , shell=True)
 
@@ -75,7 +75,7 @@ class InstallDependencyTest(unittest.TestCase):
 
         install_dependency(self.logger, self.project, dependency)
 
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command(
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
             "pip install --index-url some_index_url --extra-index-url some_extra_index_url spam", any_value()
             , shell=True)
 
@@ -85,7 +85,7 @@ class InstallDependencyTest(unittest.TestCase):
 
         install_dependency(self.logger, self.project, dependency)
 
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command(
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
             "pip install --use-mirrors spam", any_value()
             , shell=True)
 
@@ -95,7 +95,7 @@ class InstallDependencyTest(unittest.TestCase):
 
         install_dependency(self.logger, self.project, dependency)
 
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command(
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
             "pip install --upgrade spam", any_value()
             , shell=True)
 
@@ -104,7 +104,7 @@ class InstallDependencyTest(unittest.TestCase):
 
         install_dependency(self.logger, self.project, dependency)
 
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command("pip install spam>=0.1.2",
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install spam>=0.1.2",
             any_value()
             , shell=True)
 
@@ -113,7 +113,7 @@ class InstallDependencyTest(unittest.TestCase):
 
         install_dependency(self.logger, self.project, dependency)
 
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command("pip install spam==0.1.2",
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install spam==0.1.2",
             any_value()
             , shell=True)
 
@@ -122,7 +122,7 @@ class InstallDependencyTest(unittest.TestCase):
 
         install_dependency(self.logger, self.project, dependency)
 
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command("pip install some_url",
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install some_url",
             any_value()
             , shell=True)
 
@@ -131,7 +131,7 @@ class InstallDependencyTest(unittest.TestCase):
 
         install_dependency(self.logger, self.project, dependency)
 
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command("pip install some_url",
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install some_url",
             any_value()
             , shell=True)
 
@@ -141,7 +141,7 @@ class InstallRuntimeDependenciesTest(unittest.TestCase):
         self.project = Project("unittest", ".")
         self.project.set_property("dir_install_logs", "any_directory")
         self.logger = mock(Logger)
-        when(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command(any_value(), any_value(),
+        when(pybuilder.plugins.python.install_dependencies_plugin).execute_command(any_value(), any_value(),
             shell=True).thenReturn(0)
 
     def tearDown(self):
@@ -153,10 +153,10 @@ class InstallRuntimeDependenciesTest(unittest.TestCase):
 
         install_runtime_dependencies(self.logger, self.project)
 
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command("pip install spam",
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install spam",
             any_value()
             , shell=True)
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command("pip install eggs",
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install eggs",
             any_value()
             , shell=True)
 
@@ -166,7 +166,7 @@ class InstallBuildDependenciesTest(unittest.TestCase):
         self.project = Project("unittest", ".")
         self.project.set_property("dir_install_logs", "any_directory")
         self.logger = mock(Logger)
-        when(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command(any_value(), any_value(),
+        when(pybuilder.plugins.python.install_dependencies_plugin).execute_command(any_value(), any_value(),
             shell=True).thenReturn(0)
 
     def tearDown(self):
@@ -179,10 +179,10 @@ class InstallBuildDependenciesTest(unittest.TestCase):
 
         install_build_dependencies(self.logger, self.project)
 
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command("pip install spam",
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install spam",
             any_value()
             , shell=True)
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command("pip install eggs",
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install eggs",
             any_value()
             , shell=True)
 
@@ -192,7 +192,7 @@ class InstallDependenciesTest(unittest.TestCase):
         self.project = Project("unittest", ".")
         self.project.set_property("dir_install_logs", "any_directory")
         self.logger = mock(Logger)
-        when(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command(any_value(), any_value(),
+        when(pybuilder.plugins.python.install_dependencies_plugin).execute_command(any_value(), any_value(),
             shell=True).thenReturn(0)
 
     def tearDown(self):
@@ -205,9 +205,9 @@ class InstallDependenciesTest(unittest.TestCase):
 
         install_dependencies(self.logger, self.project)
 
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command("pip install spam",
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install spam",
             any_value()
             , shell=True)
-        verify(pythonbuilder.plugins.python.install_dependencies_plugin).execute_command("pip install eggs",
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install eggs",
             any_value()
             , shell=True)

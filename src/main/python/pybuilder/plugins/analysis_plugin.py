@@ -13,25 +13,11 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import unittest
+from pybuilder.core import task, depends, use_plugin
 
-from integrationtest_support import IntegrationTestSupport
+use_plugin("core")
 
-from pybuilder.errors import ProjectValidationFailedException
-
-class Test (IntegrationTestSupport):
-    def test (self):
-        self.write_build_file("""
-from pybuilder.core import init
-
-@init
-def init (project):
-    project.depends_on("spam")
-    project.build_depends_on("spam")
-        """)
-        reactor = self.prepare_reactor()
-        
-        self.assertRaises(ProjectValidationFailedException, reactor.build, ["clean"])
-        
-if __name__ == "__main__":
-    unittest.main()
+@task
+@depends("run_unit_tests")
+def analyze ():
+    pass

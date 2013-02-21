@@ -15,10 +15,10 @@
 #  limitations under the License.
 import unittest
 
-from pythonbuilder.plugins.python.core_plugin import init_python_directories
-from pythonbuilder.plugins.python.core_plugin import DISTRIBUTION_PROPERTY, PYTHON_SOURCES_PROPERTY, SCRIPTS_SOURCES_PROPERTY, SCRIPTS_TARGET_PROPERTY
+from pybuilder.plugins.python.core_plugin import init_python_directories
+from pybuilder.plugins.python.core_plugin import DISTRIBUTION_PROPERTY, PYTHON_SOURCES_PROPERTY, SCRIPTS_SOURCES_PROPERTY, SCRIPTS_TARGET_PROPERTY
 
-from pythonbuilder.core import Project
+from pybuilder.core import Project
 
 class InitPythonDirectoriesTest (unittest.TestCase):
     def setUp(self):

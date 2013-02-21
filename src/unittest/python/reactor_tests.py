@@ -21,11 +21,11 @@ from mockito import when, verify, unstub, any, times, contains
 from mockito.matchers import Matcher
 from test_utils import mock
 
-from pythonbuilder.core import TASK_ATTRIBUTE, ACTION_ATTRIBUTE, BEFORE_ATTRIBUTE, AFTER_ATTRIBUTE, INITIALIZER_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, Project, NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE
-from pythonbuilder.errors import MissingPluginException, PythonbuilderException, BuildFailedException, ProjectValidationFailedException
-from pythonbuilder.reactor import Reactor
-from pythonbuilder.execution import Task, Action, Initializer, ExecutionManager
-from pythonbuilder.pluginloader import PluginLoader
+from pybuilder.core import TASK_ATTRIBUTE, ACTION_ATTRIBUTE, BEFORE_ATTRIBUTE, AFTER_ATTRIBUTE, INITIALIZER_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, Project, NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE
+from pybuilder.errors import MissingPluginException, PythonbuilderException, BuildFailedException, ProjectValidationFailedException
+from pybuilder.reactor import Reactor
+from pybuilder.execution import Task, Action, Initializer, ExecutionManager
+from pybuilder.pluginloader import PluginLoader
 
 class TaskNameMatcher (Matcher):
     def __init__(self, task_name):

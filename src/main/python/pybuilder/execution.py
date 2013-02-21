@@ -18,13 +18,13 @@ import inspect
 import re
 import types
 
-from pythonbuilder.errors import (CircularTaskDependencyException,
-                                  InternalException,
-                                  InvalidNameException,
-                                  MissingTaskDependencyException,
-                                  MissingActionDependencyException,
-                                  NoSuchTaskException)
-from pythonbuilder.utils import as_list, Timer
+from pybuilder.errors import (CircularTaskDependencyException,
+                              InternalException,
+                              InvalidNameException,
+                              MissingTaskDependencyException,
+                              MissingActionDependencyException,
+                              NoSuchTaskException)
+from pybuilder.utils import as_list, Timer
 
 def as_task_name_list (mixed):
     result = []
@@ -104,15 +104,18 @@ class Initializer (Executable):
             if environment in self.environments:
                 return True
 
+
 class DependenciesNotResolvedException (InternalException):
     def __init__ (self):
         super(DependenciesNotResolvedException, self).__init__("Dependencies have not been resolved.")
-        
+
+
 class TaskExecutionSummary (object):
     def __init__ (self, task, number_of_actions, execution_time):
         self.task = task
         self.number_of_actions = number_of_actions
         self.execution_time = execution_time        
+
 
 class ExecutionManager (object):
     def __init__ (self, logger):
@@ -146,11 +149,11 @@ class ExecutionManager (object):
         self.logger.debug("Registering initializer '%s'", initializer.name)
         self._initializers.append(initializer)
     
-    def register_action (self, action):
+    def register_action(self, action):
         self.logger.debug("Registering action '%s'", action.name)
         self._actions[action.name] = action
     
-    def register_task (self, *tasks):
+    def register_task(self, *tasks):
         for task in tasks:
             self.logger.debug("Registering task '%s'", task.name)
             if task.name in self._tasks:
@@ -158,7 +161,7 @@ class ExecutionManager (object):
             else:
                 self._tasks[task.name] = task
         
-    def execute_initializers (self, environments=None, **keywordArguments):
+    def execute_initializers(self, environments=None, **keywordArguments):
         for initializer in self._initializers:
             if not initializer.is_applicable(environments):
                 message = "Not going to execute initializer '%s' from '%s' as environments do not match."

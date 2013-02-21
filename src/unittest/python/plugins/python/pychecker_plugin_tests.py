@@ -17,7 +17,7 @@ import unittest
 
 from mockito import mock, when
 
-from pythonbuilder.plugins.python.pychecker_plugin import parse_pychecker_output, PycheckerWarning, PycheckerModuleReport, PycheckerReport
+from pybuilder.plugins.python.pychecker_plugin import parse_pychecker_output, PycheckerWarning, PycheckerModuleReport, PycheckerReport
 
 class PycheckerWarningTest (unittest.TestCase):
     def test_to_json_dict (self):

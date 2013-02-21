@@ -20,7 +20,7 @@ from integrationtest_support import IntegrationTestSupport
 class Test (IntegrationTestSupport):
     def test (self):
         self.write_build_file("""
-from pythonbuilder.core import use_plugin, init
+from pybuilder.core import use_plugin, init
 
 use_plugin("copy_resources")
 use_plugin("filter_resources")

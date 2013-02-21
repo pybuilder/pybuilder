@@ -20,8 +20,8 @@ import unittest
 from pyassert import assert_that
 from mockito import when, verify, unstub
 
-from pythonbuilder.core import Project, Logger, init, INITIALIZER_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE
-from pythonbuilder.errors import MissingPropertyException 
+from pybuilder.core import Project, Logger, init, INITIALIZER_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE
+from pybuilder.errors import MissingPropertyException
 
 class ProjectTest (unittest.TestCase):
     def setUp (self):

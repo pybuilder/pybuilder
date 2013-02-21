@@ -24,10 +24,10 @@ try:
 except (ImportError) as e:
     from io import StringIO
 
-from pythonbuilder.core import Logger
-from pythonbuilder.cli import StdOutLogger
-from pythonbuilder.execution import ExecutionManager
-from pythonbuilder.reactor import Reactor
+from pybuilder.core import Logger
+from pybuilder.cli import StdOutLogger
+from pybuilder.execution import ExecutionManager
+from pybuilder.reactor import Reactor
 
 class IntegrationTestSupport(unittest.TestCase):
     def setUp(self):

@@ -17,12 +17,12 @@ import unittest
 
 from integrationtest_support import IntegrationTestSupport
 
-from pythonbuilder.errors import PythonbuilderException
+from pybuilder.errors import PythonbuilderException
 
 class Test (IntegrationTestSupport):
     def test (self):
         self.write_build_file("""
-from pythonbuilder.core import task
+from pybuilder.core import task
 
 @task
 def spam (): pass         

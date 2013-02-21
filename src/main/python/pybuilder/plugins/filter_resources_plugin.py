@@ -15,8 +15,8 @@
 #  limitations under the License.
 import string
 
-from pythonbuilder.core import init, after, use_plugin
-from pythonbuilder.utils import apply_on_files, read_file, write_file
+from pybuilder.core import init, after, use_plugin
+from pybuilder.utils import apply_on_files, read_file, write_file
 
 use_plugin("core")
 

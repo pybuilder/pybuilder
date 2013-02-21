@@ -17,7 +17,7 @@ import os
 import re
 import shutil
 
-from pythonbuilder.core import init, task, description, use_plugin
+from pybuilder.core import init, task, description, use_plugin
 
 HIDDEN_FILE_NAME_PATTERN = re.compile(r'^\..*$')
 

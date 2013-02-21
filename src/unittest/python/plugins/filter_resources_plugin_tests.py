@@ -19,8 +19,8 @@ import unittest
 from mockito import when, verify, never
 from test_utils import mock
 
-from pythonbuilder.core import Project
-from pythonbuilder.plugins.filter_resources_plugin import ProjectDictWrapper
+from pybuilder.core import Project
+from pybuilder.plugins.filter_resources_plugin import ProjectDictWrapper
 
 class ProjectDictWrapperTest (unittest.TestCase):
     def test_should_return_project_property_when_property_is_defined (self):

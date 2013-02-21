@@ -20,7 +20,7 @@ import subprocess
 import tempfile
 import time
 
-from pythonbuilder.errors import MissingPrerequisiteException, PythonbuilderException
+from pybuilder.errors import MissingPrerequisiteException, PythonbuilderException
 
 def render_report (report_dict):
     return json.dumps(report_dict, indent=2)

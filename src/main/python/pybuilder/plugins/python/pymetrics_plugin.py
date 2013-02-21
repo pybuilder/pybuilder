@@ -15,8 +15,8 @@
 #  limitations under the License.
 import os
 
-from pythonbuilder.core import use_plugin, after, task
-from pythonbuilder.utils import assert_can_execute, execute_command
+from pybuilder.core import use_plugin, after, task
+from pybuilder.utils import assert_can_execute, execute_command
 
 use_plugin("python.core")
 use_plugin("analysis")

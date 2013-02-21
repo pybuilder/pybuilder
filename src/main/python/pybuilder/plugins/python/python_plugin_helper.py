@@ -16,7 +16,7 @@
 
 import os
 
-from pythonbuilder.utils import discover_modules, discover_files, execute_command, as_list, read_file
+from pybuilder.utils import discover_modules, discover_files, execute_command, as_list, read_file
 
 
 def execute_tool_on_source_files (project, name, command_and_arguments, logger=None):

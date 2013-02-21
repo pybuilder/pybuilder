@@ -15,7 +15,7 @@
 #  limitations under the License.
 import sys
 
-from pythonbuilder.errors import MissingPluginException
+from pybuilder.errors import MissingPluginException
 
 class PluginLoader (object):
     def __init__ (self, logger):
@@ -27,7 +27,7 @@ class PluginLoader (object):
 class BuiltinPluginLoader (PluginLoader):
     def load_plugin (self, project, name):
         self.logger.debug("Trying to load builtin plugin '%s'", name)
-        builtin_plugin_name = "pythonbuilder.plugins.%s_plugin" % name
+        builtin_plugin_name = "pybuilder.plugins.%s_plugin" % name
         try:
             __import__(builtin_plugin_name)
             self.logger.debug("Found builtin plugin '%s'", builtin_plugin_name)
