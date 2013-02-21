@@ -267,7 +267,7 @@ class Project (object):
         self._manifest_included_files.append(glob_pattern)
     
     @property
-    def package_data (self):
+    def package_data(self):
         return self._package_data
     
     def include_file(self, package_name, filename):
@@ -284,10 +284,9 @@ class Project (object):
             self._package_data[package_name] = [filename]
             return
         self._package_data[package_name].append(filename)
-        
-    
+
     @property
-    def files_to_install (self):
+    def files_to_install(self):
         return self._files_to_install
     
     def install_file(self, destination, filename):
@@ -313,8 +312,7 @@ class Project (object):
             
         self._manifest_include(filename)
 
-    
-    def expand (self, format_string):
+    def expand(self, format_string):
         result = format_string
         while True:
             try:

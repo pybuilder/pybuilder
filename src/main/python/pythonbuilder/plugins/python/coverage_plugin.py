@@ -128,7 +128,6 @@ def do_coverage (project, logger, reactor):
     else:
         logger.info("Overall coverage is %2d%%", overall_coverage)
 
-    
     project.write_report("coverage.json", render_report(report))
     
     write_summary_report(coverage, project, modules)
@@ -144,7 +143,7 @@ def reimport_source_modules(project, logger):
             if module in sys.modules:
                 imp.reload(sys.modules[module])
 
-def build_module_report (coverage_module, module):
+def build_module_report(coverage_module, module):
     analysis_result = coverage_module.analysis(module)
     
     lines_total = len(analysis_result[1])

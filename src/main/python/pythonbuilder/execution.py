@@ -168,7 +168,6 @@ class ExecutionManager (object):
                 self.logger.debug("Executing initializer '%s' from '%s'",
                                   initializer.name, initializer.source)
                 initializer.execute(keywordArguments)
-        
 
     def assert_dependencies_resolved(self):
         if not self._dependencies_resolved:

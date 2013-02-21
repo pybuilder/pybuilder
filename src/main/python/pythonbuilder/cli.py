@@ -62,7 +62,6 @@ class ColoredStdOutLogger(StdOutLogger):
         return styled_text("[ERROR]", BOLD, fg(RED))
 
 
-
 def parse_options(args):
     parser = optparse.OptionParser(usage="%prog [options] task1 [[task2] ...]",
                                    version="%prog " + __version__)
