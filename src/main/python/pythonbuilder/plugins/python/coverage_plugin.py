@@ -13,6 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 import imp
 import multiprocessing
 import sys
@@ -28,6 +29,7 @@ from pythonbuilder.errors import BuildFailedException
 
 use_plugin("python.core")
 use_plugin("analysis")
+
 
 @init
 def init_coverage_properties(project):
@@ -62,6 +64,7 @@ def verify_coverage(project, logger, reactor):
         process.join()
     else:
         do_coverage(project, logger, reactor)
+
 
 def do_coverage (project, logger, reactor):
     import coverage
@@ -135,6 +138,7 @@ def do_coverage (project, logger, reactor):
     if coverage_too_low and project.get_property("coverage_break_build"):
         raise BuildFailedException("Test coverage for at least one module is below %d%%", threshold)
 
+
 def reimport_source_modules(project, logger):
     if project.get_property("coverage_reload_modules"):
         modules = discover_modules_to_cover(project)
@@ -142,6 +146,7 @@ def reimport_source_modules(project, logger):
             logger.debug("Reloading module %s", module)
             if module in sys.modules:
                 imp.reload(sys.modules[module])
+
 
 def build_module_report(coverage_module, module):
     analysis_result = coverage_module.analysis(module)
@@ -160,12 +165,14 @@ def build_module_report(coverage_module, module):
     return (lines_total, analysis_result[1],
             lines_not_covered, analysis_result[2],
             code_coverage)
-    
+
+
 def write_summary_report(coverage_module, project, modules):
     summary = StringIO()
     coverage_module.report(modules, file=summary)
     project.write_report("coverage", summary.getvalue())
     summary.close()
-    
-def discover_modules_to_cover (project):
+
+
+def discover_modules_to_cover(project):
     return discover_modules(project.expand_path("$dir_source_main_python"))        

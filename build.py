@@ -59,10 +59,9 @@ version = "0.9.4"
 default_task = ["analyze", "publish"]
 
 @init
-def initialize (project):
+def initialize(project):
     project.build_depends_on("mockito")
     project.build_depends_on("pymetrics")
-    project.build_depends_on("flake8")
     project.build_depends_on("pyassert")
 
     # Need to define that manually, because the pyfix plugin is not used directly.
