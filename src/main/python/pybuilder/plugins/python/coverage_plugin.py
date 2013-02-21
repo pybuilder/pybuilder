@@ -1,18 +1,18 @@
-#  This file is part of Python Builder
-#   
-#  Copyright 2011 The Python Builder Team
+#   This file is part of Python Builder
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   Copyright 2011 The Python Builder Team
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
 #
 #      http://www.apache.org/licenses/LICENSE-2.0
 #
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
 
 import imp
 import multiprocessing
@@ -55,10 +55,10 @@ def stop_coverage(coverage_module, project, logger):
 @after(("analyze", "verify"), only_once=True)
 def verify_coverage(project, logger, reactor):
     logger.info("Collecting coverage information")
-    
+
     if project.get_property("coverage_fork"):
         logger.debug("Forking process to do coverage analysis")
-        process = multiprocessing.Process(target=do_coverage, 
+        process = multiprocessing.Process(target=do_coverage,
                                           args=(project, logger, reactor))
         process.start()
         process.join()
@@ -72,7 +72,7 @@ def do_coverage (project, logger, reactor):
     start_coverage(coverage)
     reactor.execute_task("run_unit_tests")
     stop_coverage(coverage, project, logger)
-    
+
     coverage_too_low = False
     threshold = project.get_property("coverage_threshold_warn")
     exceptions = project.get_property("coverage_exceptions")
@@ -83,7 +83,7 @@ def do_coverage (project, logger, reactor):
 
     sum_lines = 0
     sum_lines_not_covered = 0
-    
+
     module_names = discover_modules_to_cover(project)
     modules = []
     for module_name in module_names:
@@ -94,12 +94,12 @@ def do_coverage (project, logger, reactor):
             continue
 
         modules.append(module)
-        
+
         module_report_data = build_module_report(coverage, module)
-        
+
         sum_lines += module_report_data[0]
         sum_lines_not_covered += module_report_data[2]
-        
+
         module_report = {
             "module": module_name,
             "coverage": module_report_data[4],
@@ -108,9 +108,9 @@ def do_coverage (project, logger, reactor):
             "sum_lines_not_covered": module_report_data[2],
             "lines_not_covered": module_report_data[3],
         }
-        
+
         report["module_names"].append(module_report)
-        
+
         if module_report_data[4] < threshold:
             msg = "Test coverage below %2d%% for %s: %2d%%" % (threshold, module_name, module_report_data[4])
             if module_name not in exceptions:
@@ -118,21 +118,21 @@ def do_coverage (project, logger, reactor):
                 coverage_too_low = True
             else:
                 logger.info(msg)
-    
+
     if sum_lines == 0:
         overall_coverage = 0
     else:
         overall_coverage = (sum_lines - sum_lines_not_covered) * 100 / sum_lines
     report["overall_coverage"] = overall_coverage
-    
+
     if overall_coverage < threshold:
         logger.warn("Overall coverage is below %2d%%: %2d%%", threshold, overall_coverage)
-        coverage_too_low = True 
+        coverage_too_low = True
     else:
         logger.info("Overall coverage is %2d%%", overall_coverage)
 
     project.write_report("coverage.json", render_report(report))
-    
+
     write_summary_report(coverage, project, modules)
 
     if coverage_too_low and project.get_property("coverage_break_build"):
@@ -150,18 +150,18 @@ def reimport_source_modules(project, logger):
 
 def build_module_report(coverage_module, module):
     analysis_result = coverage_module.analysis(module)
-    
+
     lines_total = len(analysis_result[1])
     lines_not_covered = len(analysis_result[2])
     lines_covered = lines_total - lines_not_covered
-    
+
     if lines_total == 0:
         code_coverage = 100
     elif lines_covered == 0:
         code_coverage = 0
     else:
         code_coverage = lines_covered * 100 / lines_total
-        
+
     return (lines_total, analysis_result[1],
             lines_not_covered, analysis_result[2],
             code_coverage)
@@ -175,4 +175,4 @@ def write_summary_report(coverage_module, project, modules):
 
 
 def discover_modules_to_cover(project):
-    return discover_modules(project.expand_path("$dir_source_main_python"))        
+    return discover_modules(project.expand_path("$dir_source_main_python"))

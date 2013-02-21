@@ -1,5 +1,5 @@
 #  This file is part of Python Builder
-#   
+#
 #  Copyright 2011 The Python Builder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,7 +25,7 @@ def init(project):
     project.set_property("dir_target", "target")
     project.set_property("dir_reports", "$dir_target/reports")
     project.set_property("dir_logs", "$dir_target/logs")
-    
+
     def write_report(file, *content):
         with open(project.expand_path("$dir_reports", file), "w") as report_file:
             report_file.writelines(content)
@@ -47,7 +47,7 @@ def prepare(project, logger):
     if not os.path.exists(target_directory):
         logger.debug("Creating target directory %s", target_directory)
         os.mkdir(target_directory)
-    
+
     reports_directory = project.expand_path("$dir_reports")
     if not os.path.exists(reports_directory):
         logger.debug("Creating reports directory %s", reports_directory)

@@ -1,18 +1,19 @@
-#  This file is part of Python Builder
-#   
-#  Copyright 2011 The Python Builder Team
+#   This file is part of Python Builder
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   Copyright 2011 The Python Builder Team
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
 #
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
 import os
 import shutil
 
@@ -32,16 +33,16 @@ def package (project, logger):
     if not globs:
         logger.warn("No resources to copy configured. Consider removing plugin.")
         return
-    
+
     source = project.basedir
     target = project.expand_path("$copy_resources_target")
     logger.info("Copying resources matching '%s' from %s to %s", " ".join(globs), source, target)
-    
+
     apply_on_files(source, copy_resource, globs, target, logger)
 
 def copy_resource (absolute_file_name, relative_file_name, target, logger):
     logger.debug("Copying resource %s", relative_file_name)
-    
+
     absolute_target_file_name = os.path.join(target, relative_file_name)
     parent = os.path.dirname(absolute_target_file_name)
     if not os.path.exists(parent):

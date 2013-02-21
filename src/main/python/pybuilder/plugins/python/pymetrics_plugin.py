@@ -1,5 +1,5 @@
 #  This file is part of Python Builder
-#   
+#
 #  Copyright 2011 The Python Builder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 import os
 
 from pybuilder.core import use_plugin, after, task
@@ -31,17 +32,17 @@ def check_pymetrics_available (logger):
 def execute_pymetrics (project, logger):
     logger.info("Executing pymetrics on project sources")
     source_dir = project.expand_path("$dir_source_main_python")
-    
+
     files_to_scan = []
     for root, _, files in os.walk(source_dir):
         for file_name in files:
             if file_name.endswith(".py"):
                 files_to_scan.append(os.path.join(root, file_name))
-    
+
     csv_file = project.expand_path("$dir_reports/pymetrics.csv")
-    
+
     command = ["pymetrics", "--nosql", "-c", csv_file] + files_to_scan
-    
+
     report_file = project.expand_path("$dir_reports/pymetrics")
 
     env = {"PYTHONPATH": source_dir}

@@ -1,5 +1,5 @@
 #  This file is part of Python Builder
-#   
+#
 #  Copyright 2011 The Python Builder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,7 @@ class PythonbuilderException (Exception):
     def __init__(self, message, *arguments):
         self._message = message
         self._arguments = arguments
-    
+
     @property
     def message (self):
         return self._message % self._arguments
@@ -43,30 +43,30 @@ class CircularTaskDependencyException(PythonbuilderException):
             super(CircularTaskDependencyException, self).__init__("Circular task dependency detected between %s and %s", first, second)
         self.first = first
         self.second = second
-        
+
 
 class MissingPrerequisiteException(PythonbuilderException):
     def __init__(self, prerequisite, caller="n/a"):
-        super(MissingPrerequisiteException, self).__init__("Missing prerequisite %s required by %s", 
+        super(MissingPrerequisiteException, self).__init__("Missing prerequisite %s required by %s",
                                                            prerequisite, caller)
 
 
 class MissingTaskDependencyException(PythonbuilderException):
     def __init__(self, source, dependency):
-        super(MissingTaskDependencyException, self).__init__("Missing task '%s' required for task '%s'", 
-                                                             dependency, source)    
+        super(MissingTaskDependencyException, self).__init__("Missing task '%s' required for task '%s'",
+                                                             dependency, source)
 
 
 class MissingActionDependencyException(PythonbuilderException):
     def __init__(self, source, dependency):
-        super(MissingActionDependencyException, self).__init__("Missing task '%s' required for action '%s'", 
-                                                               dependency, source)    
+        super(MissingActionDependencyException, self).__init__("Missing task '%s' required for action '%s'",
+                                                               dependency, source)
 
 
 class MissingPluginException(PythonbuilderException):
     def __init__(self, plugin, message=""):
         super(MissingPluginException, self).__init__("Missing plugin '%s': %s", plugin, message)
-                    
+
 
 class BuildFailedException(PythonbuilderException):
     pass

@@ -1,5 +1,5 @@
 #  This file is part of Python Builder
-#   
+#
 #  Copyright 2011 The Python Builder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,17 +24,19 @@ DEFAULT_PYLINT_OPTIONS = ["--max-line-length=100", "--no-docstring-rgx=.*"]
 
 
 @init
-def init_pylint (project):
+def init_pylint(project):
     project.set_property_if_unset("pylint_options", DEFAULT_PYLINT_OPTIONS)
 
+
 @after("prepare")
-def check_pylint_availability (logger):
+def check_pylint_availability(logger):
     logger.debug("Checking availability of pychecker")
     assert_can_execute(("pylint", ), "pylint", "plugin python.pylint")
     logger.debug("pylint has been found")
 
+
 @task("analyze")
-def execute_pylint (project, logger):
+def execute_pylint(project, logger):
     logger.info("Executing pylint on project sources")
-    
+
     execute_tool_on_modules(project, "pylint", "pylint", True)

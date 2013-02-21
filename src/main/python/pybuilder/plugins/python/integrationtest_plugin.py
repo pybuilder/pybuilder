@@ -1,5 +1,5 @@
 #  This file is part of Python Builder
-#   
+#
 #  Copyright 2011 The Python Builder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,7 @@ from pybuilder.utils import execute_command, render_report, Timer
 use_plugin("python.core")
 
 @init
-def init_test_source_directory (project):
+def init_test_source_directory(project):
     project.set_property_if_unset("dir_source_integrationtest_python", "src/integrationtest/python")
     project.set_property_if_unset("integrationtest_file_suffix", "_tests.py")
     project.set_property_if_unset("integrationtest_additional_environment", {})
@@ -33,9 +33,9 @@ def init_test_source_directory (project):
 
 @task
 @description("Runs integration tests based on Python's unittest module")
-def run_integration_tests (project, logger):
+def run_integration_tests(project, logger):
     reports_dir = prepare_reports_directory(project)
-    
+
     test_failed = 0
     tests_executed = 0
     report_items = []
@@ -52,9 +52,9 @@ def run_integration_tests (project, logger):
             test_failed += 1
 
         tests_executed += 1
-    
+
     total_time.stop()
-    
+
     test_report = {
         "time": total_time.get_millis(),
         "success": test_failed == 0,
@@ -62,14 +62,14 @@ def run_integration_tests (project, logger):
         "tests_failed": test_failed,
         "tests": report_items
     }
-    
+
     project.write_report("integrationtest.json", render_report(test_report))
-    
+
     logger.info("Executed %d integration tests.", tests_executed)
     if test_failed:
         raise BuildFailedException("Integration test(s) failed.")
-    
-def discover_integration_tests (source_path, suffix=".py"):
+
+def discover_integration_tests(source_path, suffix=".py"):
     result = []
     for root, _, files in os.walk(source_path):
         for file_name in files:
@@ -85,7 +85,7 @@ def add_additional_environment_keys(env, project):
         env[key] = additional_environment[key]
 
 
-def inherit_environment (env, project):
+def inherit_environment(env, project):
     if project.get_property("integrationtest_inherit_environment", False):
         for key in os.environ:
             if key not in env:

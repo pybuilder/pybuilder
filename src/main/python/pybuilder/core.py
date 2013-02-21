@@ -1,5 +1,5 @@
 #  This file is part of Python Builder
-#   
+#
 #  Copyright 2011 The Python Builder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 import os
 import string
 
@@ -38,7 +39,7 @@ def init (*possible_callable, **additional_arguments):
     """
     Decorator for functions that wish to perform initialization steps.
     The decorated functions are called "initializers".
-    
+
     Initializers are executed after all plugins and projects have been loaded
     but before any task is executed.
 
@@ -94,31 +95,31 @@ def task (callable_or_string):
 class description (object):
     def __init__ (self, description):
         self._description = description
-    
+
     def __call__(self, callable):
         setattr(callable, DESCRIPTION_ATTRIBUTE, self._description)
         return callable
-    
+
 class depends (object):
     def __init__ (self, *depends):
         self._depends = depends
-    
+
     def __call__(self, callable):
         setattr(callable, DEPENDS_ATTRIBUTE, self._depends)
         return callable
-    
+
 class BaseAction (object):
     def __init__ (self, attribute, only_once, tasks):
         self.tasks = tasks
         self.attribute = attribute
         self.only_once = only_once
-    
+
     def __call__(self, callable):
         setattr(callable, ACTION_ATTRIBUTE, True)
         setattr(callable, self.attribute, self.tasks)
         if self.only_once:
             setattr(callable, ONLY_ONCE_ATTRIBUTE, True)
-             
+
         return callable
 
 class before (BaseAction):
@@ -140,7 +141,7 @@ class Author (object):
         self.name = name
         self.email = email
         self.roles = roles
-        
+
 class Dependency (object):
     """
     Defines a dependency to another module. Use the
@@ -154,17 +155,17 @@ class Dependency (object):
 
     def __eq__ (self, other):
         return self.name == other.name and self.version == other.version and self.url == other.url
-    
+
     def __ne__ (self, other):
         return not(self == other)
-    
+
     def __hash__(self):
         return 13 * hash(self.name) + 17 * hash(self.version)
-    
+
     def __lt__ (self, other):
         return self.name < other.name
 
-        
+
 class Project (object):
     """
     Descriptor for a project to be built. A project has a number of attributes
@@ -179,9 +180,9 @@ class Project (object):
         self.basedir = basedir
         if not self.name:
             self.name = os.path.basename(basedir)
-        
+
         self.default_task = None
-            
+
         self.summary = ""
         self.home_page = ""
         self.description = ""
@@ -239,9 +240,9 @@ class Project (object):
     @property
     def properties(self):
         result = self._properties
-        result["basedir"] = self.basedir 
+        result["basedir"] = self.basedir
         return result
-    
+
     @property
     def dependencies(self):
         return list(sorted(self._install_dependencies))
@@ -249,37 +250,37 @@ class Project (object):
     @property
     def build_dependencies(self):
         return list(sorted(self._build_dependencies))
-    
+
     def depends_on (self, name, version=None, url=None):
         self._install_dependencies.add(Dependency(name, version, url))
 
     def build_depends_on (self, name, version=None, url=None):
         self._build_dependencies.add(Dependency(name, version, url))
-    
+
     @property
     def manifest_included_files (self):
         return self._manifest_included_files
-    
+
     def _manifest_include (self, glob_pattern):
         if not glob_pattern or glob_pattern.strip() == "":
             raise ValueError("Missing glob_pattern argument.")
-        
+
         self._manifest_included_files.append(glob_pattern)
-    
+
     @property
     def package_data(self):
         return self._package_data
-    
+
     def include_file(self, package_name, filename):
         if not package_name or package_name.strip() == "":
             raise ValueError("Missing argument package name.")
-        
+
         if not filename or filename.strip() == "":
             raise ValueError("Missing argument filename.")
-        
+
         full_filename = os.path.join(package_name, filename)
         self._manifest_include(full_filename)
-        
+
         if package_name not in self._package_data:
             self._package_data[package_name] = [filename]
             return
@@ -288,18 +289,18 @@ class Project (object):
     @property
     def files_to_install(self):
         return self._files_to_install
-    
+
     def install_file(self, destination, filename):
         if not destination:
             raise ValueError("Missing argument destination")
-        
+
         if not filename or filename.strip() == "":
             raise ValueError("Missing argument filename")
-        
+
         current_tuple = None
         for installation_tuple in self.files_to_install:
             destination_name = installation_tuple[0]
-            
+
             if destination_name == destination:
                     current_tuple = installation_tuple
 
@@ -309,7 +310,7 @@ class Project (object):
         else:
             initial_tuple = (destination, [filename])
             self.files_to_install.append(initial_tuple)
-            
+
         self._manifest_include(filename)
 
     def expand(self, format_string):
@@ -318,7 +319,7 @@ class Project (object):
             try:
                 previous = result
                 result = string.Template(result).substitute(self.properties)
-                if previous == result: 
+                if previous == result:
                     return result
             except KeyError as e:
                 raise MissingPropertyException(e)
@@ -328,54 +329,54 @@ class Project (object):
         elements += self.expand(format_string).split("/")
         elements += list(additional_path_elements)
         return os.path.join(*elements)
-        
+
     def get_property (self, key, default_value=None):
         return self.properties.get(key, default_value)
-    
+
     def get_mandatory_property (self, key):
         if not self.has_property(key):
             raise MissingPropertyException(key)
         return self.get_property(key)
-    
+
     def has_property (self, key):
         return key in self.properties
-    
+
     def set_property (self, key, value):
         self.properties[key] = value
-        
+
     def set_property_if_unset (self, key, value):
         if not self.has_property(key):
             self.set_property(key, value)
-            
+
 class Logger (object):
     DEBUG = 1
     INFO = 2
     WARN = 3
     ERROR = 4
-    
+
     def __init__ (self, threshold=INFO):
         self.threshold = threshold
-    
+
     def _do_log (self, level, message, *arguments):
         pass
-    
+
     def _format_message (self, message, *arguments):
         if arguments:
             return message % arguments
         return message
-    
+
     def log (self, level, message, *arguments):
         if level >= self.threshold:
             self._do_log(level, message, *arguments)
-    
+
     def debug (self, message, *arguments):
         self.log(Logger.DEBUG, message, *arguments)
 
     def info (self, message, *arguments):
         self.log(Logger.INFO, message, *arguments)
-        
+
     def warn (self, message, *arguments):
         self.log(Logger.WARN, message, *arguments)
-        
+
     def error (self, message, *arguments):
-        self.log(Logger.ERROR, message, *arguments)            
+        self.log(Logger.ERROR, message, *arguments)

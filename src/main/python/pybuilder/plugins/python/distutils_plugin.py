@@ -1,5 +1,5 @@
 #  This file is part of Python Builder
-#   
+#
 #  Copyright 2011 The Python Builder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 import os
 import string
 import subprocess
@@ -32,8 +33,7 @@ from .setuptools_plugin_helper import build_dependency_version_string
 use_plugin("python.core")
 
 DATA_FILES_PROPERTY = "distutils_data_files"
-SETUP_TEMPLATE = string.Template(
-    """#!/usr/bin/env python
+SETUP_TEMPLATE = string.Template("""#!/usr/bin/env python
 
 from $module import setup
 
