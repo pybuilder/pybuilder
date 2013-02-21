@@ -13,6 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 import os
 import re
 
@@ -81,7 +82,8 @@ class PycheckerWarning (object):
         
     def to_json_dict(self):
         return {"message": self.message, "line_number": self.line_number}
-        
+
+
 class PycheckerModuleReport (object):
     def __init__ (self, name):
         self.name = name
@@ -95,8 +97,9 @@ class PycheckerModuleReport (object):
             "name": self.name, 
             "warnings": list(map(lambda w: w.to_json_dict(), self.warnings))
         }         
-            
-class PycheckerReport (object):
+
+
+class PycheckerReport(object):
     def __init__ (self):
         self.module_reports = []
         
@@ -115,7 +118,8 @@ class PycheckerReport (object):
     def to_json_dict (self):
         return {"modules": list(map(lambda m: m.to_json_dict(), self.module_reports))}
                 
-def parse_pychecker_output (project, warnings):
+
+def parse_pychecker_output(project, warnings):
     report = PycheckerReport()
     
     sources_base_dir = project.expand_path("$dir_source_main_python")
