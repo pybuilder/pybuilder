@@ -91,7 +91,7 @@ def initialize(project):
     project.get_property("source_dist_ignore_patterns").append(".settings")
 
     project.get_property("distutils_commands").append("bdist_egg")
-    project.set_property("distutils_classifiers", [    
+    project.set_property("distutils_classifiers", [
           'Development Status :: 3 - Alpha',
           'Environment :: Console',
           'Intended Audience :: Developers',
