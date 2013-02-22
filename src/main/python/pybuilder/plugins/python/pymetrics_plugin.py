@@ -22,11 +22,13 @@ from pybuilder.utils import assert_can_execute, execute_command
 use_plugin("python.core")
 use_plugin("analysis")
 
+
 @after("prepare")
 def check_pymetrics_available(logger):
     logger.debug("Checking availability of pymetrics")
     assert_can_execute(("pymetrics", "--nosql", "--nocsv"), "pymetrics", "plugin python.pymetrics")
     logger.debug("pymetrics has been found")
+
 
 @task("analyze")
 def execute_pymetrics(project, logger):

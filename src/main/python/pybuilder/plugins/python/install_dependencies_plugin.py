@@ -25,6 +25,7 @@ from pybuilder.plugins.python.setuptools_plugin_helper import build_dependency_v
 
 use_plugin("core")
 
+
 @init
 def initialized_install_dependencies_plugin(project):
     project.set_property_if_unset("dir_install_logs", "$dir_logs/install_dependencies")

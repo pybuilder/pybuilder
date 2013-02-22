@@ -58,6 +58,7 @@ if __name__ == '__main__':
     )
 """)
 
+
 def default(value, default=""):
     if value is None:
         return default

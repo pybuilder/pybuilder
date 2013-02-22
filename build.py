@@ -73,7 +73,7 @@ def initialize(project):
 
     project.set_property("flake8_verbose_output", True)
     project.set_property("flake8_break_build", True)
-    project.set_property("flake8_ignore", "E302,E501,W404,W801")
+    project.set_property("flake8_ignore", "E501,W404,W801")
 
     #   E302 expected 2 blank lines
     #   E501 line too long

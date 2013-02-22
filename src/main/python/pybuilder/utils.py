@@ -72,6 +72,7 @@ def as_list(*whatever):
             result.append(w)
     return result
 
+
 def discover_modules(source_path, suffix=".py"):
     result = []
     for module in discover_files(source_path, suffix):
@@ -82,6 +83,7 @@ def discover_modules(source_path, suffix=".py"):
             module = module.replace(".__init__", "")
         result.append(module)
     return result
+
 
 def discover_files(start_dir, suffix):
     for root, _, files in os.walk(start_dir):
@@ -104,6 +106,7 @@ def execute_command(command_and_arguments, outfile_name, env=None, cwd=None, err
                                        shell=shell)
             return process.wait()
 
+
 def assert_can_execute(command_and_arguments, prerequisite, caller):
     _, outfile = tempfile.mkstemp()
     f = open(outfile, "w")
@@ -116,13 +119,16 @@ def assert_can_execute(command_and_arguments, prerequisite, caller):
         f.close()
         os.unlink(outfile)
 
+
 def read_file(file_name):
     with open(file_name, "r") as file_handle:
         return file_handle.readlines()
 
+
 def write_file(file_name, *lines):
     with open(file_name, "w") as file_handle:
         file_handle.writelines(lines)
+
 
 class Timer(object):
     @staticmethod
@@ -141,6 +147,7 @@ class Timer(object):
             raise PythonbuilderException("Timer is running.")
         return int((self.end_time - self.start_time) * 1000)
 
+
 def apply_on_files(start_directory, closure, globs, *additional_closure_arguments, **keyword_closure_arguments):
     glob_expressions = list(map(lambda g: GlobExpression(g), globs))
 
@@ -156,6 +163,7 @@ def apply_on_files(start_directory, closure, globs, *additional_closure_argument
                             *additional_closure_arguments,
                             **keyword_closure_arguments)
 
+
 class GlobExpression(object):
     def __init__(self, expression):
         self.expression = expression
@@ -166,6 +174,7 @@ class GlobExpression(object):
         if self.pattern.match(path):
             return True
         return False
+
 
 def mkdir(directory):
     """

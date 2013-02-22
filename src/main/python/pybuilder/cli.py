@@ -31,6 +31,7 @@ from pybuilder.utils import format_timestamp
 
 PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
 
+
 class CommandLineUsageException(PythonbuilderException):
     def __init__(self, usage, message):
         super(CommandLineUsageException, self).__init__(message)
@@ -203,6 +204,7 @@ def print_summary(successful, summary, start, end, options, failure_message):
 
     write_line("Build finished at %s" % format_timestamp(end))
     write_line("Build took %d seconds (%d ms)" % (time_needed.seconds, millis))
+
 
 def main(*args):
     try:

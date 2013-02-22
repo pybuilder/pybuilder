@@ -23,6 +23,7 @@ from pybuilder.errors import PythonbuilderException
 
 use_plugin("python.core")
 
+
 @task
 def django_run_server(project, logger):
     django_module = project.get_mandatory_property("django_module")

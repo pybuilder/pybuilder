@@ -35,6 +35,7 @@ DEPENDS_ATTRIBUTE = "_python_builder_depends"
 
 DESCRIPTION_ATTRIBUTE = "_python_builder_description"
 
+
 def init(*possible_callable, **additional_arguments):
     """
     Decorator for functions that wish to perform initialization steps.
@@ -92,6 +93,7 @@ def task(callable_or_string):
         setattr(callable_or_string, TASK_ATTRIBUTE, True)
         return callable_or_string
 
+
 class description(object):
     def __init__(self, description):
         self._description = description
@@ -100,6 +102,7 @@ class description(object):
         setattr(callable, DESCRIPTION_ATTRIBUTE, self._description)
         return callable
 
+
 class depends(object):
     def __init__(self, *depends):
         self._depends = depends
@@ -107,6 +110,7 @@ class depends(object):
     def __call__(self, callable):
         setattr(callable, DEPENDS_ATTRIBUTE, self._depends)
         return callable
+
 
 class BaseAction(object):
     def __init__(self, attribute, only_once, tasks):
@@ -122,13 +126,16 @@ class BaseAction(object):
 
         return callable
 
+
 class before(BaseAction):
     def __init__(self, tasks, only_once=False):
         super(before, self).__init__(BEFORE_ATTRIBUTE, only_once, tasks)
 
+
 class after(BaseAction):
     def __init__(self, tasks, only_once=False):
         super(after, self).__init__(AFTER_ATTRIBUTE, only_once, tasks)
+
 
 def use_plugin(name):
     from pybuilder.reactor import Reactor
@@ -136,11 +143,13 @@ def use_plugin(name):
     if reactor is not None:
         reactor.require_plugin(name)
 
+
 class Author(object):
     def __init__(self, name, email=None, roles=[]):
         self.name = name
         self.email = email
         self.roles = roles
+
 
 class Dependency(object):
     """
@@ -171,10 +180,7 @@ class Project(object):
     Descriptor for a project to be built. A project has a number of attributes
     as well as some convenience methods to access these properties.
     """
-    def __init__(self,
-                 basedir,
-                 version="1.0-SNAPSHOT",
-                 name=None):
+    def __init__(self, basedir, version="1.0-SNAPSHOT", name=None):
         self.name = name
         self.version = version
         self.basedir = basedir
@@ -347,6 +353,7 @@ class Project(object):
     def set_property_if_unset(self, key, value):
         if not self.has_property(key):
             self.set_property(key, value)
+
 
 class Logger(object):
     DEBUG = 1

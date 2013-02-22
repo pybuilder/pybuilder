@@ -9,6 +9,7 @@ from pyfix.testrunner import TestRunner, TestRunListener
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import discover_modules, render_report
 
+
 def run_unit_tests(project, logger):
     sys.path.append(project.expand_path("$dir_source_main_python"))
     test_dir = project.expand_path("$dir_source_unittest_python")

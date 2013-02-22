@@ -29,6 +29,7 @@ SCRIPTS_TARGET_PROPERTY = "dir_dist_scripts"
 
 use_plugin("core")
 
+
 @init
 def init_python_directories(project):
     project.set_property_if_unset(PYTHON_SOURCES_PROPERTY, "src/main/python")
@@ -58,6 +59,7 @@ def init_python_directories(project):
 
     project.list_scripts = list_scripts
 
+
 @task
 @description("Package a python application.")
 def package(project, logger):
@@ -67,6 +69,7 @@ def package(project, logger):
 
     copy_python_sources(project, logger)
     copy_scripts(project, logger)
+
 
 def copy_scripts(project, logger):
     scripts_target = project.expand_path("$" + DISTRIBUTION_PROPERTY)
@@ -86,6 +89,7 @@ def copy_scripts(project, logger):
         source_file = project.expand_path("$" + SCRIPTS_SOURCES_PROPERTY, script)
         shutil.copy(source_file, scripts_target)
 
+
 def copy_python_sources(project, logger):
     for package in os.listdir(project.expand_path("$" + PYTHON_SOURCES_PROPERTY)):
         if HIDDEN_FILE_NAME_PATTERN.match(package):
@@ -99,6 +103,7 @@ def copy_python_sources(project, logger):
                             ignore=shutil.ignore_patterns("*.pyc", ".*"))
         else:
             shutil.copyfile(source, target)
+
 
 def init_dist_target(project, logger):
     dist_target = project.expand_path("$" + DISTRIBUTION_PROPERTY)

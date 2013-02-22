@@ -74,6 +74,7 @@ def styled_text(text, *style_attributes):
         text,
         _ESCAPE_SEQUENCE_PATTERN % "0;0")
 
+
 def bold(text):
     """
         Convenience function to format the given text in bold font face.
@@ -82,6 +83,7 @@ def bold(text):
     """
     return styled_text(text, BOLD)
 
+
 def italic(text):
     """
         Convenience function to format the given text in italic font face.
@@ -89,6 +91,7 @@ def italic(text):
             styled_text(text, ITALIC)
     """
     return styled_text(text, ITALIC)
+
 
 def underline(text):
     """

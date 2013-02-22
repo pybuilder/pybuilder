@@ -20,6 +20,7 @@ from pybuilder.core import init, task, description, use_plugin
 
 use_plugin("python.core")
 
+
 @init
 def init_test_source_directory(project):
     project.build_depends_on("pyfix")

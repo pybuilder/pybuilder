@@ -31,6 +31,7 @@ from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_source
 
 use_plugin("python.core")
 
+
 @init
 def initialize_flake8_plugin(project):
     project.build_depends_on("flake8")
@@ -40,6 +41,7 @@ def initialize_flake8_plugin(project):
     else:
         project.set_property("flake8_verbose_output", False)
     project.set_property("flake8_break_build", False)
+
 
 @after("prepare")
 def assert_flake8_is_executable(logger):

@@ -23,6 +23,7 @@ from pybuilder.utils import execute_command, render_report, Timer
 
 use_plugin("python.core")
 
+
 @init
 def init_test_source_directory(project):
     project.set_property_if_unset("dir_source_integrationtest_python", "src/integrationtest/python")
@@ -68,6 +69,7 @@ def run_integration_tests(project, logger):
     logger.info("Executed %d integration tests.", tests_executed)
     if test_failed:
         raise BuildFailedException("Integration test(s) failed.")
+
 
 def discover_integration_tests(source_path, suffix=".py"):
     result = []

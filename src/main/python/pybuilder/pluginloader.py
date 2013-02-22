@@ -18,12 +18,14 @@ import sys
 
 from pybuilder.errors import MissingPluginException
 
+
 class PluginLoader (object):
     def __init__(self, logger):
         self.logger = logger
 
     def load_plugin(self, project, name):
         pass
+
 
 class BuiltinPluginLoader(PluginLoader):
     def load_plugin(self, project, name):
@@ -35,6 +37,7 @@ class BuiltinPluginLoader(PluginLoader):
             return sys.modules[builtin_plugin_name]
         except ImportError as import_error:
             raise MissingPluginException(name, import_error)
+
 
 class DispatchingPluginLoader(PluginLoader):
     def __init__(self, logger, *loader):

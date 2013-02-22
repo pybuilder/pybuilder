@@ -30,15 +30,18 @@ PYCHECKER_WARNING_PATTERN = re.compile(r'^(.+?):([0-9]+): (.+)$')
 use_plugin("python.core")
 use_plugin("analysis")
 
+
 @init
 def init_pychecker(project):
     project.set_property_if_unset("pychecker_break_build", True)
     project.set_property_if_unset("pychecker_break_build_threshold", 0)
 
+
 @after("prepare")
 def check_pychecker_available(logger):
     logger.debug("Checking availability of pychecker")
     assert_can_execute(("pychecker", ), "pychecker", "plugin python.pychecker")
+
 
 def build_command_line(project):
     command_line = ["pychecker"]
@@ -50,6 +53,7 @@ def build_command_line(project):
         command_line += DEFAULT_PYCHECKER_ARGUMENTS
 
     return command_line
+
 
 @task("analyze")
 def execute_pychecker(project, logger):

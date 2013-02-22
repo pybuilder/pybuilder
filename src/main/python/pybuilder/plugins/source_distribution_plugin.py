@@ -21,11 +21,13 @@ from pybuilder.core import init, task, use_plugin
 
 use_plugin("core")
 
+
 @init
 def init_source_distribution(project):
     source_distribution_directory = "$dir_target/dist/%s-%s-src" % (project.name, project.version)
     project.set_property_if_unset("dir_source_dist", source_distribution_directory)
     project.set_property_if_unset("source_dist_ignore_patterns", ["*.pyc", ".hg*", ".svn", ".CVS"])
+
 
 @task
 def build_source_distribution(project, logger):

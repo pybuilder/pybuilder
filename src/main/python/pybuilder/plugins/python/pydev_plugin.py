@@ -57,10 +57,12 @@ $paths
 </pydev_project>
 """)
 
+
 @init
 def init_pydev_plugin(project):
     project.set_property_if_unset("pydev_interpreter_name", "Default")
     project.set_property_if_unset("pydev_version", "python 2.6")
+
 
 @task
 @description("Generates eclipse-pydev development files")
@@ -92,6 +94,7 @@ def pydev_generate(project, logger):
     with open(project.expand_path(".pydevproject"), "w") as pydevproject_file:
         logger.debug("Writing %s", pydevproject_file.name)
         pydevproject_file.write(_DOT_PYDEVPROJECT_TEMPLATE.substitute(values))
+
 
 def add_property_value_if_present(list, project, property_name):
     if project.has_property(property_name):

@@ -28,10 +28,12 @@ from pybuilder.utils import discover_modules, render_report
 
 use_plugin("python.core")
 
+
 @init
 def init_test_source_directory(project):
     project.set_property_if_unset("dir_source_unittest_python", "src/unittest/python")
     project.set_property_if_unset("unittest_file_suffix", "_tests.py")
+
 
 @task
 @description("Runs unit tests based on Python's unittest module")
@@ -62,6 +64,7 @@ def run_unit_tests(project, logger):
         logger.error("Error importing unittests: %s", e)
         raise BuildFailedException("Unable to execute unit tests.")
 
+
 def execute_tests(test_source, suffix):
     output_log_file = StringIO()
 
@@ -72,6 +75,7 @@ def execute_tests(test_source, suffix):
         return result, output_log_file.getvalue()
     finally:
         output_log_file.close()
+
 
 def write_report(name, project, logger, result, console_out):
     project.write_report("%s" % name, console_out)

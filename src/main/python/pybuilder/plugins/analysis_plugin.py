@@ -18,6 +18,7 @@ from pybuilder.core import task, depends, use_plugin
 
 use_plugin("core")
 
+
 @task
 @depends("run_unit_tests")
 def analyze():

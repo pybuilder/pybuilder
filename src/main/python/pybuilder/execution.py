@@ -26,6 +26,7 @@ from pybuilder.errors import (CircularTaskDependencyException,
                               NoSuchTaskException)
 from pybuilder.utils import as_list, Timer
 
+
 def as_task_name_list(mixed):
     result = []
     for d in as_list(mixed):
@@ -34,6 +35,7 @@ def as_task_name_list(mixed):
         else:
             result.append(str(d))
     return result
+
 
 class Executable(object):
     NAME_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]+$")
@@ -68,12 +70,14 @@ class Executable(object):
 
         self.callable(*arguments)
 
+
 class Action(Executable):
     def __init__(self, name, callable, before=None, after=None, description="", only_once=False):
         super(Action, self).__init__(name, callable, description)
         self.execute_before = as_task_name_list(before)
         self.execute_after = as_task_name_list(after)
         self.only_once = only_once
+
 
 class Task(object):
     def __init__(self, name, callable, dependencies=None, description=""):
@@ -91,6 +95,7 @@ class Task(object):
         for executable in self.executables:
             logger.debug("Executing subtask from %s", executable.source)
             executable.execute(argument_dict)
+
 
 class Initializer(Executable):
     def __init__(self, name, callable, environments=None, description=""):

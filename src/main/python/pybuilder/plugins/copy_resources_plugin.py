@@ -22,10 +22,12 @@ from pybuilder.utils import apply_on_files
 
 use_plugin("core")
 
+
 @init
 def init_copy_resources_plugin(project):
     project.set_property_if_unset("copy_resources_target", "$dir_target")
     project.set_property_if_unset("copy_resources_glob", [])
+
 
 @task
 def package(project, logger):
@@ -39,6 +41,7 @@ def package(project, logger):
     logger.info("Copying resources matching '%s' from %s to %s", " ".join(globs), source, target)
 
     apply_on_files(source, copy_resource, globs, target, logger)
+
 
 def copy_resource(absolute_file_name, relative_file_name, target, logger):
     logger.debug("Copying resource %s", relative_file_name)
