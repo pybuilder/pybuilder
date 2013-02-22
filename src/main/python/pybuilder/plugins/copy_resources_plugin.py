@@ -23,12 +23,12 @@ from pybuilder.utils import apply_on_files
 use_plugin("core")
 
 @init
-def init_copy_resources_plugin (project):
+def init_copy_resources_plugin(project):
     project.set_property_if_unset("copy_resources_target", "$dir_target")
     project.set_property_if_unset("copy_resources_glob", [])
 
 @task
-def package (project, logger):
+def package(project, logger):
     globs = project.get_mandatory_property("copy_resources_glob")
     if not globs:
         logger.warn("No resources to copy configured. Consider removing plugin.")
@@ -40,7 +40,7 @@ def package (project, logger):
 
     apply_on_files(source, copy_resource, globs, target, logger)
 
-def copy_resource (absolute_file_name, relative_file_name, target, logger):
+def copy_resource(absolute_file_name, relative_file_name, target, logger):
     logger.debug("Copying resource %s", relative_file_name)
 
     absolute_target_file_name = os.path.join(target, relative_file_name)

@@ -14,16 +14,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-class PythonbuilderException (Exception):
+class PythonbuilderException(Exception):
     def __init__(self, message, *arguments):
         self._message = message
         self._arguments = arguments
 
     @property
-    def message (self):
+    def message(self):
         return self._message % self._arguments
 
-    def __str__ (self):
+    def __str__(self):
         return self.message
 
 

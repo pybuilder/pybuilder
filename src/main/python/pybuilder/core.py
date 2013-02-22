@@ -35,7 +35,7 @@ DEPENDS_ATTRIBUTE = "_python_builder_depends"
 
 DESCRIPTION_ATTRIBUTE = "_python_builder_description"
 
-def init (*possible_callable, **additional_arguments):
+def init(*possible_callable, **additional_arguments):
     """
     Decorator for functions that wish to perform initialization steps.
     The decorated functions are called "initializers".
@@ -49,19 +49,19 @@ def init (*possible_callable, **additional_arguments):
     Examples:
 
     @init
-    def some_initializer (): pass
+    def some_initializer(): pass
 
     @init()
-    def some_initializer (): pass
+    def some_initializer(): pass
 
     @init(environments="spam")
-    def some_initializer (): pass
+    def some_initializer(): pass
 
     @init(environments=["spam", "eggs"])
-    def some_initializer (): pass
+    def some_initializer(): pass
     """
 
-    def do_decoration (callable):
+    def do_decoration(callable):
         setattr(callable, INITIALIZER_ATTRIBUTE, True)
 
         if "environments" in additional_arguments:
@@ -75,7 +75,7 @@ def init (*possible_callable, **additional_arguments):
     return do_decoration
 
 
-def task (callable_or_string):
+def task(callable_or_string):
     """
     Decorator for functions that should be used as tasks. Tasks are the main
     building blocks of projects.
@@ -83,7 +83,7 @@ def task (callable_or_string):
     a string argument, which overrides the default name.
     """
     if isinstance(callable_or_string, str):
-        def set_name_and_task_attribute (callable):
+        def set_name_and_task_attribute(callable):
             setattr(callable, TASK_ATTRIBUTE, True)
             setattr(callable, NAME_ATTRIBUTE, callable_or_string)
             return callable
@@ -92,24 +92,24 @@ def task (callable_or_string):
         setattr(callable_or_string, TASK_ATTRIBUTE, True)
         return callable_or_string
 
-class description (object):
-    def __init__ (self, description):
+class description(object):
+    def __init__(self, description):
         self._description = description
 
     def __call__(self, callable):
         setattr(callable, DESCRIPTION_ATTRIBUTE, self._description)
         return callable
 
-class depends (object):
-    def __init__ (self, *depends):
+class depends(object):
+    def __init__(self, *depends):
         self._depends = depends
 
     def __call__(self, callable):
         setattr(callable, DEPENDS_ATTRIBUTE, self._depends)
         return callable
 
-class BaseAction (object):
-    def __init__ (self, attribute, only_once, tasks):
+class BaseAction(object):
+    def __init__(self, attribute, only_once, tasks):
         self.tasks = tasks
         self.attribute = attribute
         self.only_once = only_once
@@ -122,51 +122,51 @@ class BaseAction (object):
 
         return callable
 
-class before (BaseAction):
-    def __init__ (self, tasks, only_once=False):
+class before(BaseAction):
+    def __init__(self, tasks, only_once=False):
         super(before, self).__init__(BEFORE_ATTRIBUTE, only_once, tasks)
 
-class after (BaseAction):
-    def __init__ (self, tasks, only_once=False):
+class after(BaseAction):
+    def __init__(self, tasks, only_once=False):
         super(after, self).__init__(AFTER_ATTRIBUTE, only_once, tasks)
 
-def use_plugin (name):
+def use_plugin(name):
     from pybuilder.reactor import Reactor
     reactor = Reactor.current_instance()
     if reactor is not None:
         reactor.require_plugin(name)
 
-class Author (object):
-    def __init__ (self, name, email=None, roles=[]):
+class Author(object):
+    def __init__(self, name, email=None, roles=[]):
         self.name = name
         self.email = email
         self.roles = roles
 
-class Dependency (object):
+class Dependency(object):
     """
     Defines a dependency to another module. Use the
         depends_on
     method from class Project to add a dependency to a project.
     """
-    def __init__ (self, name, version=None, url=None):
+    def __init__(self, name, version=None, url=None):
         self.name = name
         self.version = version
         self.url = url
 
-    def __eq__ (self, other):
+    def __eq__(self, other):
         return self.name == other.name and self.version == other.version and self.url == other.url
 
-    def __ne__ (self, other):
+    def __ne__(self, other):
         return not(self == other)
 
     def __hash__(self):
         return 13 * hash(self.name) + 17 * hash(self.version)
 
-    def __lt__ (self, other):
+    def __lt__(self, other):
         return self.name < other.name
 
 
-class Project (object):
+class Project(object):
     """
     Descriptor for a project to be built. A project has a number of attributes
     as well as some convenience methods to access these properties.
@@ -201,7 +201,7 @@ class Project (object):
     def __str__(self):
         return "[Project name=%s basedir=%s]" % (self.name, self.basedir)
 
-    def validate (self):
+    def validate(self):
         """
         Validates the project returning a list of validation error messages if the project is not valid.
         Returns an empty list if the project is valid.
@@ -210,7 +210,7 @@ class Project (object):
 
         return result
 
-    def validate_dependencies (self):
+    def validate_dependencies(self):
         result = []
 
         build_dependencies_found = {}
@@ -251,17 +251,17 @@ class Project (object):
     def build_dependencies(self):
         return list(sorted(self._build_dependencies))
 
-    def depends_on (self, name, version=None, url=None):
+    def depends_on(self, name, version=None, url=None):
         self._install_dependencies.add(Dependency(name, version, url))
 
-    def build_depends_on (self, name, version=None, url=None):
+    def build_depends_on(self, name, version=None, url=None):
         self._build_dependencies.add(Dependency(name, version, url))
 
     @property
-    def manifest_included_files (self):
+    def manifest_included_files(self):
         return self._manifest_included_files
 
-    def _manifest_include (self, glob_pattern):
+    def _manifest_include(self, glob_pattern):
         if not glob_pattern or glob_pattern.strip() == "":
             raise ValueError("Missing glob_pattern argument.")
 
@@ -330,53 +330,53 @@ class Project (object):
         elements += list(additional_path_elements)
         return os.path.join(*elements)
 
-    def get_property (self, key, default_value=None):
+    def get_property(self, key, default_value=None):
         return self.properties.get(key, default_value)
 
-    def get_mandatory_property (self, key):
+    def get_mandatory_property(self, key):
         if not self.has_property(key):
             raise MissingPropertyException(key)
         return self.get_property(key)
 
-    def has_property (self, key):
+    def has_property(self, key):
         return key in self.properties
 
-    def set_property (self, key, value):
+    def set_property(self, key, value):
         self.properties[key] = value
 
-    def set_property_if_unset (self, key, value):
+    def set_property_if_unset(self, key, value):
         if not self.has_property(key):
             self.set_property(key, value)
 
-class Logger (object):
+class Logger(object):
     DEBUG = 1
     INFO = 2
     WARN = 3
     ERROR = 4
 
-    def __init__ (self, threshold=INFO):
+    def __init__(self, threshold=INFO):
         self.threshold = threshold
 
-    def _do_log (self, level, message, *arguments):
+    def _do_log(self, level, message, *arguments):
         pass
 
-    def _format_message (self, message, *arguments):
+    def _format_message(self, message, *arguments):
         if arguments:
             return message % arguments
         return message
 
-    def log (self, level, message, *arguments):
+    def log(self, level, message, *arguments):
         if level >= self.threshold:
             self._do_log(level, message, *arguments)
 
-    def debug (self, message, *arguments):
+    def debug(self, message, *arguments):
         self.log(Logger.DEBUG, message, *arguments)
 
-    def info (self, message, *arguments):
+    def info(self, message, *arguments):
         self.log(Logger.INFO, message, *arguments)
 
-    def warn (self, message, *arguments):
+    def warn(self, message, *arguments):
         self.log(Logger.WARN, message, *arguments)
 
-    def error (self, message, *arguments):
+    def error(self, message, *arguments):
         self.log(Logger.ERROR, message, *arguments)

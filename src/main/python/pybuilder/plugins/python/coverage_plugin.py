@@ -66,7 +66,7 @@ def verify_coverage(project, logger, reactor):
         do_coverage(project, logger, reactor)
 
 
-def do_coverage (project, logger, reactor):
+def do_coverage(project, logger, reactor):
     import coverage
 
     start_coverage(coverage)

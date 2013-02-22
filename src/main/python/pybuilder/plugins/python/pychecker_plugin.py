@@ -31,12 +31,12 @@ use_plugin("python.core")
 use_plugin("analysis")
 
 @init
-def init_pychecker (project):
+def init_pychecker(project):
     project.set_property_if_unset("pychecker_break_build", True)
     project.set_property_if_unset("pychecker_break_build_threshold", 0)
 
 @after("prepare")
-def check_pychecker_available (logger):
+def check_pychecker_available(logger):
     logger.debug("Checking availability of pychecker")
     assert_can_execute(("pychecker", ), "pychecker", "plugin python.pychecker")
 
@@ -52,7 +52,7 @@ def build_command_line(project):
     return command_line
 
 @task("analyze")
-def execute_pychecker (project, logger):
+def execute_pychecker(project, logger):
     command_line = build_command_line(project)
     logger.info("Executing pychecker on project sources: %s" % (' '.join(command_line)))
 
@@ -75,8 +75,8 @@ def execute_pychecker (project, logger):
             raise BuildFailedException("Found warnings produced by pychecker")
 
 
-class PycheckerWarning (object):
-    def __init__ (self, message, line_number):
+class PycheckerWarning(object):
+    def __init__(self, message, line_number):
         self.message = message
         self.line_number = int(line_number)
 
@@ -84,15 +84,15 @@ class PycheckerWarning (object):
         return {"message": self.message, "line_number": self.line_number}
 
 
-class PycheckerModuleReport (object):
-    def __init__ (self, name):
+class PycheckerModuleReport(object):
+    def __init__(self, name):
         self.name = name
         self.warnings = []
 
-    def add_warning (self, warning):
+    def add_warning(self, warning):
         self.warnings.append(warning)
 
-    def to_json_dict (self):
+    def to_json_dict(self):
         return {
             "name": self.name,
             "warnings": list(map(lambda w: w.to_json_dict(), self.warnings))
@@ -100,10 +100,10 @@ class PycheckerModuleReport (object):
 
 
 class PycheckerReport(object):
-    def __init__ (self):
+    def __init__(self):
         self.module_reports = []
 
-    def get_module_report (self, module):
+    def get_module_report(self, module):
         for module_report in self.module_reports:
             if module_report.name == module:
                 return module_report
@@ -112,10 +112,10 @@ class PycheckerReport(object):
         self.add_module_report(module_report)
         return module_report
 
-    def add_module_report (self, module_report):
+    def add_module_report(self, module_report):
         self.module_reports.append(module_report)
 
-    def to_json_dict (self):
+    def to_json_dict(self):
         return {"modules": list(map(lambda m: m.to_json_dict(), self.module_reports))}
 
 
