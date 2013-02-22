@@ -40,8 +40,10 @@ def initialize_flake8_plugin(project):
         project.set_property("flake8_verbose_output", True)
     else:
         project.set_property("flake8_verbose_output", False)
+
     project.set_property("flake8_break_build", False)
     project.set_property("flake8_max_line_length", 120)
+    project.set_property("flake8_exclude_patterns", None)
 
 
 @after("prepare")
@@ -72,6 +74,10 @@ def analyze(project, logger):
 
     max_line_length = project.get_property("flake8_max_line_length")
     command_and_arguments.append("--max-line-length={0}".format(max_line_length))
+
+    exclude_patterns = project.get_property("flake8_exclude_patterns")
+    if exclude_patterns:
+        command_and_arguments.append("--exclude={0}".format(exclude_patterns))
 
     execution_result = execute_tool_on_source_files(project=project,
                                                     name="flake8",
