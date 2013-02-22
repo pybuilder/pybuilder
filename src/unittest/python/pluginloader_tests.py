@@ -62,6 +62,7 @@ class BuiltinPluginLoaderTest (unittest.TestCase):
             if old_module:
                 sys.modules["pybuilder.plugins.spam_plugin"] = old_module
 
+
 class DispatchingPluginLoaderTest (unittest.TestCase):
     def setUp (self):
         self.project = mock()

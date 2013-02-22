@@ -20,6 +20,7 @@ import sys
 from pybuilder.errors import BuildFailedException
 from pybuilder.core import init, use_plugin, task, description
 from pybuilder.utils import execute_command, render_report, Timer
+from pybuilder.terminal import write, write_line
 
 use_plugin("python.core")
 
@@ -121,7 +122,8 @@ def run_single_test(logger, project, reports_dir, test, ):
     test_time = Timer.start()
     command_and_arguments = (sys.executable, test)
     report_file_name = os.path.join(reports_dir, name)
-    return_code = execute_command(command_and_arguments, report_file_name, env)
+    error_file_name = report_file_name + ".err"
+    return_code = execute_command(command_and_arguments, report_file_name, env, error_file_name=error_file_name)
     test_time.stop()
     report_item = {
         "test": name,
@@ -132,5 +134,15 @@ def run_single_test(logger, project, reports_dir, test, ):
     if return_code != 0:
         logger.error("Integration test failed: %s", test)
         report_item["success"] = False
+
+        if project.verbose:
+            write_line("Report file {0}:".format(report_file_name))
+            for line in open(report_file_name):
+                write("   " + line)
+            write_line()
+
+            write_line("Error file {0}:".format(error_file_name))
+            for line in open(error_file_name):
+                write("   " + line)
 
     return report_item

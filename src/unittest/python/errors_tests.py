@@ -17,6 +17,7 @@ import unittest
 
 from pybuilder.errors import PythonbuilderException
 
+
 class PythonbuilderExceptionTest(unittest.TestCase):
     def test_should_format_exception_message_without_arguments(self):
         self.assertEquals("spam and eggs", str(PythonbuilderException("spam and eggs")))
