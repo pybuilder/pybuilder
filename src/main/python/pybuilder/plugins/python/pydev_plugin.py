@@ -78,7 +78,9 @@ def pydev_generate(project, logger):
     paths_string = ""
     for path in paths:
         if os.path.exists(path):
-            paths_string += _DOT_PYDEVPROJECT_PATH_LINE_TEMPLATE.substitute({"project_name": project.name, "path": path})
+            placeholders = {"project_name": project.name,
+                            "path": path}
+            paths_string += _DOT_PYDEVPROJECT_PATH_LINE_TEMPLATE.substitute(placeholders)
 
     values = {
         "project_name": project.name,

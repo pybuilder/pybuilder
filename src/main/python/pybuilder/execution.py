@@ -205,8 +205,8 @@ class ExecutionManager(object):
 
     def execute_action(self, action, arguments):
         if action.only_once and action in self._actions_executed:
-            self.logger.debug("Action %s has been executed before and is marked as only_once, so will not be executed again",
-                              action.name)
+            message = "Action %s has been executed before and is marked as only_once, so will not be executed again"
+            self.logger.debug(message, action.name)
             return False
 
         self.logger.debug("Executing action '%s' from '%s' before task", action.name, action.source)
@@ -252,7 +252,8 @@ class ExecutionManager(object):
 
         try:
             for dependency in self._task_dependencies[task.name]:
-                self.enqueue_task(execution_plan, dependency.name, circular_check=circular_check if circular_check else task)
+                self.enqueue_task(execution_plan, dependency.name,
+                                  circular_check=circular_check if circular_check else task)
         except CircularTaskDependencyException as e:
             if e.second:
                 raise

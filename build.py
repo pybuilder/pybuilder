@@ -73,13 +73,11 @@ def initialize(project):
 
     project.set_property("flake8_verbose_output", True)
     project.set_property("flake8_break_build", True)
-    project.set_property("flake8_ignore", "E501,W404,W801")
-
-    #   E302 expected 2 blank lines
     #   E501 line too long
-    #   W291 trailing whitespace
-    #   W404 'from pybuilder.core import *' used; unable to detect undefined names
+    #   required for W404 'from pybuilder.core import *' used; unable to detect undefined names
     #   W801 redefinition of unused 'StringIO'
+    project.set_property("flake8_ignore", "W404,W801")
+
 
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")

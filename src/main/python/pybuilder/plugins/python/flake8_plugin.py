@@ -41,6 +41,7 @@ def initialize_flake8_plugin(project):
     else:
         project.set_property("flake8_verbose_output", False)
     project.set_property("flake8_break_build", False)
+    project.set_property("flake8_max_line_length", 120)
 
 
 @after("prepare")
@@ -68,6 +69,9 @@ def analyze(project, logger):
     if property_flake8_ignore is not None:
         ignore_option = "--ignore={0}".format(property_flake8_ignore)
         command_and_arguments.append(ignore_option)
+
+    max_line_length = project.get_property("flake8_max_line_length")
+    command_and_arguments.append("--max-line-length={0}".format(max_line_length))
 
     execution_result = execute_tool_on_source_files(project=project,
                                                     name="flake8",

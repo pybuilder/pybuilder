@@ -174,7 +174,10 @@ class Reactor(object):
             elif hasattr(candidate, ACTION_ATTRIBUTE) and getattr(candidate, ACTION_ATTRIBUTE):
                 before = getattr(candidate, BEFORE_ATTRIBUTE) if hasattr(candidate, BEFORE_ATTRIBUTE) else None
                 after = getattr(candidate, AFTER_ATTRIBUTE) if hasattr(candidate, AFTER_ATTRIBUTE) else None
-                only_once = getattr(candidate, ONLY_ONCE_ATTRIBUTE) if hasattr(candidate, ONLY_ONCE_ATTRIBUTE) else False
+
+                only_once = False
+                if hasattr(candidate, ONLY_ONCE_ATTRIBUTE):
+                    only_once = getattr(candidate, ONLY_ONCE_ATTRIBUTE)
 
                 self.logger.debug("Found action %s", name)
                 self.execution_manager.register_action(Action(name, candidate, before, after, description, only_once))
@@ -213,13 +216,16 @@ class Reactor(object):
 
         if not os.path.exists(project_directory):
             raise PythonbuilderException("Project directory does not exist: %s", project_directory)
+
         if not os.path.isdir(project_directory):
             raise PythonbuilderException("Project directory is not a directory: %s", project_directory)
 
         project_descriptor_full_path = os.path.join(project_directory, project_descriptor)
 
         if not os.path.exists(project_descriptor_full_path):
-            raise PythonbuilderException("Project directory does not contain descriptor file: %s", project_descriptor_full_path)
+            raise PythonbuilderException("Project directory does not contain descriptor file: %s",
+                                         project_descriptor_full_path)
+
         if not os.path.isfile(project_descriptor_full_path):
             raise PythonbuilderException("Project descriptor is not a file: %s", project_descriptor_full_path)
 

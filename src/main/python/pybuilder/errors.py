@@ -41,7 +41,9 @@ class NoSuchTaskException(PythonbuilderException):
 class CircularTaskDependencyException(PythonbuilderException):
     def __init__(self, first, second=None):
         if second:
-            super(CircularTaskDependencyException, self).__init__("Circular task dependency detected between %s and %s", first, second)
+            super(CircularTaskDependencyException, self).__init__("Circular task dependency detected between %s and %s",
+                                                                  first,
+                                                                  second)
         self.first = first
         self.second = second
 
