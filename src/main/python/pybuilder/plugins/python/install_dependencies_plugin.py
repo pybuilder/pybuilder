@@ -22,7 +22,7 @@ from pybuilder.core import before, after, task, description, use_plugin, init
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import assert_can_execute, execute_command, mkdir
 from pybuilder.plugins.python.setuptools_plugin_helper import build_dependency_version_string
-
+from pybuilder.terminal import print_file_content
 use_plugin("core")
 
 
@@ -86,7 +86,13 @@ def install_dependency(logger, project, dependency):
     pip_command_line = "pip install {0}{1}".format(build_pip_install_options(project), as_pip_argument(dependency))
     exit_code = execute_command(pip_command_line, log_file, shell=True)
     if exit_code != 0:
-        raise BuildFailedException("Unable to install dependency '%s'. See %s for details.", dependency.name, log_file)
+        if project.verbose:
+            print_file_content(log_file)
+            raise BuildFailedException("Unable to install dependency '%s'.", dependency.name)
+        else:
+            raise BuildFailedException("Unable to install dependency '%s'. See %s for details.",
+                                       dependency.name,
+                                       log_file)
 
 
 def build_pip_install_options(project):

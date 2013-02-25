@@ -122,3 +122,10 @@ def write_error(text):
 def write_error_line(text=""):
     write_error(text)
     write_error("\n")
+
+
+def print_file_content(file_name, line_prefix="    "):
+    write_line("File {0}:".format(file_name))
+
+    for line in open(file_name):
+        write(line_prefix + line)

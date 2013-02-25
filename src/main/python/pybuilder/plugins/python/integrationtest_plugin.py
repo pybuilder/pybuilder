@@ -20,7 +20,7 @@ import sys
 from pybuilder.errors import BuildFailedException
 from pybuilder.core import init, use_plugin, task, description
 from pybuilder.utils import execute_command, render_report, Timer
-from pybuilder.terminal import write, write_line
+from pybuilder.terminal import write_line, print_file_content
 
 use_plugin("python.core")
 
@@ -136,13 +136,8 @@ def run_single_test(logger, project, reports_dir, test, ):
         report_item["success"] = False
 
         if project.verbose:
-            write_line("Report file {0}:".format(report_file_name))
-            for line in open(report_file_name):
-                write("   " + line)
+            print_file_content(report_file_name)
             write_line()
-
-            write_line("Error file {0}:".format(error_file_name))
-            for line in open(error_file_name):
-                write("   " + line)
+            print_file_content(error_file_name)
 
     return report_item

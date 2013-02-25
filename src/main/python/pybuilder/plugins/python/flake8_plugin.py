@@ -53,7 +53,7 @@ def assert_flake8_is_executable(logger):
     """
     logger.debug("Checking if flake8 is executable.")
 
-    assert_can_execute(command_and_arguments=["flake8"],
+    assert_can_execute(command_and_arguments=["flake8", "--version"],
                        prerequisite="flake8",
                        caller="plugin python.flake8")
 
