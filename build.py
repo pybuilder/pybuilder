@@ -73,7 +73,7 @@ def initialize(project):
 
     project.set_property("flake8_verbose_output", True)
     project.set_property("flake8_break_build", True)
-    project.set_property("flake8_ignore", "W404,W801")  # W801 = redefinition of unused 'StringIO'
+    project.set_property("flake8_ignore", "W403,W404,W801")  # W801 = redefinition of unused 'StringIO'
 
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
