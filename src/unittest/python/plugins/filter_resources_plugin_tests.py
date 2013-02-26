@@ -1,4 +1,4 @@
-#  This file is part of Python Builder
+#  This file is part of PyBuilder
 #
 #  Copyright 2011-2013 PyBuilder Team
 #
