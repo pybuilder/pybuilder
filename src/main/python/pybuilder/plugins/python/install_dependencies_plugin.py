@@ -1,6 +1,6 @@
 #  This file is part of PyBuilder
 #
-#  Copyright 2012 The PyBuilder Team
+#  Copyright 2012-2013 The PyBuilder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
