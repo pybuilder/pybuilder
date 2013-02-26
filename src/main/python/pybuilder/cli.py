@@ -26,7 +26,7 @@ from pybuilder.errors import PythonbuilderException
 from pybuilder.execution import ExecutionManager
 from pybuilder.reactor import Reactor
 from pybuilder.terminal import BOLD, BROWN, RED, GREEN, bold, styled_text, fg, italic, \
-    print_text, print_text_line, write_error, write_error_line, draw_line
+    print_text, print_text_line, write_error, print_error_line, draw_line
 from pybuilder.utils import format_timestamp
 
 PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
@@ -210,7 +210,7 @@ def main(*args):
     try:
         options, arguments = parse_options(args)
     except CommandLineUsageException as e:
-        write_error_line("Usage error: %s\n" % e)
+        print_error_line("Usage error: %s\n" % e)
         write_error(e.usage)
         return 1
 

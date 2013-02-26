@@ -119,7 +119,7 @@ def write_error(text):
     sys.stderr.write(text)
 
 
-def write_error_line(text=""):
+def print_error_line(text=""):
     write_error(text)
     write_error("\n")
 
