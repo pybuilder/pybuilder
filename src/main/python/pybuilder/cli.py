@@ -49,7 +49,9 @@ class StdOutLogger(Logger):
         return "[ERROR]"
 
     def _do_log(self, level, message, *arguments):
-        sys.stdout.write("%s %s\n" % (self._level_to_string(level), self._format_message(message, *arguments)))
+        formatted_message = self._format_message(message, *arguments)
+        log_level = self._level_to_string(level)
+        print_text_line("{0} {1}".format(log_level, formatted_message))
 
 
 class ColoredStdOutLogger(StdOutLogger):
