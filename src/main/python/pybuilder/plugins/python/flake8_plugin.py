@@ -36,11 +36,7 @@ use_plugin("python.core")
 def initialize_flake8_plugin(project):
     project.build_depends_on("flake8")
 
-    if project.verbose:
-        project.set_property("flake8_verbose_output", True)
-    else:
-        project.set_property("flake8_verbose_output", False)
-
+    project.set_property("flake8_verbose_output", project.get_property("verbose"))
     project.set_property("flake8_break_build", False)
     project.set_property("flake8_max_line_length", 120)
     project.set_property("flake8_exclude_patterns", None)

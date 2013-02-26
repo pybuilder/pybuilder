@@ -196,8 +196,7 @@ class Project(object):
         self.authors = []
         self.license = ""
         self.url = ""
-        self.verbose = False
-        self._properties = {}
+        self._properties = {"verbose": False}
         self._install_dependencies = set()
         self._build_dependencies = set()
         self._manifest_included_files = []

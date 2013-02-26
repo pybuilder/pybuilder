@@ -135,7 +135,7 @@ def run_single_test(logger, project, reports_dir, test, ):
         logger.error("Integration test failed: %s", test)
         report_item["success"] = False
 
-        if project.verbose:
+        if project.get_property("verbose"):
             print_file_content(report_file_name)
             print_text_line()
             print_file_content(error_file_name)

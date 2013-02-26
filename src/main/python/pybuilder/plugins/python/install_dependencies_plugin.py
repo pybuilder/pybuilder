@@ -86,7 +86,7 @@ def install_dependency(logger, project, dependency):
     pip_command_line = "pip install {0}{1}".format(build_pip_install_options(project), as_pip_argument(dependency))
     exit_code = execute_command(pip_command_line, log_file, shell=True)
     if exit_code != 0:
-        if project.verbose:
+        if project.get_property("verbose"):
             print_file_content(log_file)
             raise BuildFailedException("Unable to install dependency '%s'.", dependency.name)
         else:

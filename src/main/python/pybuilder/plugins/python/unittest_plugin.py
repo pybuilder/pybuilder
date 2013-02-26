@@ -89,7 +89,7 @@ def write_report(name, project, logger, result, console_out):
                                  "traceback": error[1]})
         logger.error("Test has error: %s", error[0].id())
 
-        if project.verbose:
+        if project.get_property("verbose"):
             print_text_line(error[1])
 
     for failure in result.failures:
@@ -97,7 +97,7 @@ def write_report(name, project, logger, result, console_out):
                                    "traceback": failure[1]})
         logger.error("Test failed: %s", failure[0].id())
 
-        if project.verbose:
+        if project.get_property("verbose"):
             print_text_line(failure[1])
 
     project.write_report("%s.json" % name, render_report(report))

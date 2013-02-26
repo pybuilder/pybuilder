@@ -252,9 +252,9 @@ def main(*args):
             reactor.prepare_build(property_overrides=options.property_overrides,
                                   project_directory=options.project_directory)
 
-            if options.verbose:
+            if options.verbose or options.debug:
                 logger.debug("Verbose output enabled.\n")
-                reactor.project.verbose = True
+                reactor.project.set_property("verbose", True)
 
             if options.list_tasks:
                 for task in sorted(reactor.get_tasks()):
@@ -264,7 +264,7 @@ def main(*args):
                     print_text_line()
             else:
                 summary = reactor.build(environments=options.environments, tasks=arguments)
-
+  
         except KeyboardInterrupt:
             raise PythonbuilderException("Build aborted")
 
