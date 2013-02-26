@@ -26,7 +26,7 @@ from pybuilder.errors import PythonbuilderException
 from pybuilder.execution import ExecutionManager
 from pybuilder.reactor import Reactor
 from pybuilder.terminal import BOLD, BROWN, RED, GREEN, bold, styled_text, fg, italic, \
-    write, write_line, write_error, write_error_line, draw_line
+    print_text, write_line, write_error, write_error_line, draw_line
 from pybuilder.utils import format_timestamp
 
 PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
@@ -183,7 +183,7 @@ def print_summary(successful, summary, start, end, options, failure_message):
         msg = "BUILD FAILED - %s\n" % failure_message
         if should_colorize(options):
             msg = styled_text(msg, BOLD, fg(RED))
-    write(msg)
+    print_text(msg)
     draw_line()
 
     if successful and summary:

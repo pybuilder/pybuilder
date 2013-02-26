@@ -102,17 +102,17 @@ def underline(text):
     return styled_text(text, UNDERLINE)
 
 
-def write(text):
+def print_text(text):
     sys.stdout.write(text)
 
 
 def write_line(text=""):
-    write(text)
-    write("\n")
+    print_text(text)
+    print_text("\n")
 
 
 def draw_line():
-    return write("-" * 60 + "\n")
+    return print_text("-" * 60 + "\n")
 
 
 def write_error(text):
@@ -128,4 +128,4 @@ def print_file_content(file_name, line_prefix="    "):
     write_line("File {0}:".format(file_name))
 
     for line in open(file_name):
-        write(line_prefix + line)
+        print_text(line_prefix + line)
