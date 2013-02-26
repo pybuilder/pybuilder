@@ -60,9 +60,11 @@ pybuilder provides a lot of plugins out ot the box that utilize tools and librar
 * **Pylint** - Executes [pylint](http://www.logilab.org/857/) on your sources.
 * **Pymetrics** - Calculates several metrics using [pymetrics](http://sourceforge.net/projects/pymetrics/)
 * **Unittest** - Executes [unittest](http://docs.python.org/library/unittest.html) test cases
+* **Integrationtest** - Executes python scripts as integrations tests
 
 In addition, a few common plugins are provided:
 
+* **install_dependencies** - Installs the projects build and runtime dependencies using `pip`
 * **copy_resources** - Copies files.
 * **filter_resources** - Filters files by replacing tokens with configuration values.
 * **source_distribution** - Bundles a source distribution for shipping.
