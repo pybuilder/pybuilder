@@ -35,12 +35,12 @@ use_plugin("python.pydev")
 
 
 summary = "An extensible, easy to use continuous build tool for Python"
-description = """python-builder is a continuous build tool for multiple languages.
+description = """PyBuilder is a continuous build tool for multiple languages.
 
-python-builder primarily targets Python projects but due to its extensible
+PyBuilder primarily targets Python projects but due to its extensible
 nature it can be used for other languages as well.
 
-python-builder features a powerful yet easy to use plugin mechanism which 
+PyBuilder features a powerful yet easy to use plugin mechanism which 
 allows programmers to extend the tool in an unlimited way.  
 """
 
