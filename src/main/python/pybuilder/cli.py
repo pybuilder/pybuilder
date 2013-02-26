@@ -26,7 +26,7 @@ from pybuilder.errors import PythonbuilderException
 from pybuilder.execution import ExecutionManager
 from pybuilder.reactor import Reactor
 from pybuilder.terminal import BOLD, BROWN, RED, GREEN, bold, styled_text, fg, italic, \
-    print_text, write_line, write_error, write_error_line, draw_line
+    print_text, print_text_line, write_error, write_error_line, draw_line
 from pybuilder.utils import format_timestamp
 
 PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
@@ -187,23 +187,23 @@ def print_summary(successful, summary, start, end, options, failure_message):
     draw_line()
 
     if successful and summary:
-        write_line("Build Summary")
-        write_line("%20s: %s" % ("Project", summary.project.name))
-        write_line("%20s: %s" % ("Version", summary.project.version))
-        write_line("%20s: %s" % ("Base directory", summary.project.basedir))
-        write_line("%20s: %s" % ("Environments", ", ".join(options.environments)))
+        print_text_line("Build Summary")
+        print_text_line("%20s: %s" % ("Project", summary.project.name))
+        print_text_line("%20s: %s" % ("Version", summary.project.version))
+        print_text_line("%20s: %s" % ("Base directory", summary.project.basedir))
+        print_text_line("%20s: %s" % ("Environments", ", ".join(options.environments)))
 
         task_summary = ""
         for task in summary.task_summaries:
             task_summary += " %s [%d ms]" % (task.task, task.execution_time)
 
-        write_line("%20s:%s" % ("Tasks", task_summary))
+        print_text_line("%20s:%s" % ("Tasks", task_summary))
 
     time_needed = end - start
     millis = ((time_needed.days * 24 * 60 * 60) + time_needed.seconds) * 1000 + time_needed.microseconds / 1000
 
-    write_line("Build finished at %s" % format_timestamp(end))
-    write_line("Build took %d seconds (%d ms)" % (time_needed.seconds, millis))
+    print_text_line("Build finished at %s" % format_timestamp(end))
+    print_text_line("Build took %d seconds (%d ms)" % (time_needed.seconds, millis))
 
 
 def main(*args):
@@ -223,13 +223,13 @@ def main(*args):
         reactor.prepare_build(property_overrides=options.property_overrides,
                               project_directory=options.project_directory)
 
-        write_line("Tasks found in %s building in %s:" % (reactor.project.name, reactor.project.basedir))
-        write_line()
+        print_text_line("Tasks found in %s building in %s:" % (reactor.project.name, reactor.project.basedir))
+        print_text_line()
         for task in sorted(reactor.get_tasks()):
-            write_line("%20s\t%s" % (task.name, " ".join(task.description) or "<no description available>"))
+            print_text_line("%20s\t%s" % (task.name, " ".join(task.description) or "<no description available>"))
             if task.dependencies:
-                write_line("\t\t\tdepends on tasks: %s" % " ".join(task.dependencies))
-            write_line()
+                print_text_line("\t\t\tdepends on tasks: %s" % " ".join(task.dependencies))
+            print_text_line()
         return 0
 
     banner = "PYBUILDER Version {0}".format(__version__)
@@ -237,8 +237,8 @@ def main(*args):
         banner = bold(banner)
 
     if not options.very_quiet:
-        write_line(banner)
-        write_line("Build started at %s" % format_timestamp(start))
+        print_text_line(banner)
+        print_text_line("Build started at %s" % format_timestamp(start))
         draw_line()
 
     successful = True
@@ -256,10 +256,10 @@ def main(*args):
 
             if options.list_tasks:
                 for task in sorted(reactor.get_tasks()):
-                    write_line("%20s\t%s" % (task.name, task.description or "<no description available>"))
+                    print_text_line("%20s\t%s" % (task.name, task.description or "<no description available>"))
                     if task.dependencies:
-                        write_line("\t\t\tdepends on tasks: %s" % " ".join(task.dependencies))
-                    write_line()
+                        print_text_line("\t\t\tdepends on tasks: %s" % " ".join(task.dependencies))
+                    print_text_line()
             else:
                 summary = reactor.build(environments=options.environments, tasks=arguments)
 

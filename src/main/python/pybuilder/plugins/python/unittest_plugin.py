@@ -25,7 +25,7 @@ import unittest
 from pybuilder.core import init, task, description, use_plugin
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import discover_modules, render_report
-from pybuilder.terminal import write_line
+from pybuilder.terminal import print_text_line
 use_plugin("python.core")
 
 
@@ -90,7 +90,7 @@ def write_report(name, project, logger, result, console_out):
         logger.error("Test has error: %s", error[0].id())
 
         if project.verbose:
-            write_line(error[1])
+            print_text_line(error[1])
 
     for failure in result.failures:
         report["failures"].append({"test": failure[0].id(),
@@ -98,6 +98,6 @@ def write_report(name, project, logger, result, console_out):
         logger.error("Test failed: %s", failure[0].id())
 
         if project.verbose:
-            write_line(failure[1])
+            print_text_line(failure[1])
 
     project.write_report("%s.json" % name, render_report(report))

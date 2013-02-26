@@ -106,7 +106,7 @@ def print_text(text):
     sys.stdout.write(text)
 
 
-def write_line(text=""):
+def print_text_line(text=""):
     print_text(text)
     print_text("\n")
 
@@ -125,7 +125,7 @@ def write_error_line(text=""):
 
 
 def print_file_content(file_name, line_prefix="    "):
-    write_line("File {0}:".format(file_name))
+    print_text_line("File {0}:".format(file_name))
 
     for line in open(file_name):
         print_text(line_prefix + line)
