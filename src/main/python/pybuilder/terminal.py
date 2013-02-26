@@ -115,13 +115,13 @@ def draw_line():
     return print_text("-" * 60 + "\n")
 
 
-def write_error(text):
+def print_error(text):
     sys.stderr.write(text)
 
 
 def print_error_line(text=""):
-    write_error(text)
-    write_error("\n")
+    print_error(text)
+    print_error("\n")
 
 
 def print_file_content(file_name, line_prefix="    "):
