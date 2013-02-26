@@ -13,6 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 import os
 import shutil
 import stat
@@ -28,6 +29,7 @@ from pybuilder.core import Logger
 from pybuilder.cli import StdOutLogger
 from pybuilder.execution import ExecutionManager
 from pybuilder.reactor import Reactor
+
 
 class IntegrationTestSupport(unittest.TestCase):
     def setUp(self):
@@ -104,11 +106,9 @@ class IntegrationTestSupport(unittest.TestCase):
                 expected_line = expected_content.readline()
                 expected_line_showing_escaped_new_line = expected_line.replace("\n", "\\n")
 
-                self.assertEquals(expected_line, actual_line,\
-                    'line %s is not as expected.\n   expected: "%s"\n    but got: "%s"' %
-                    (actual_line_number,\
-                     expected_line_showing_escaped_new_line,\
-                     actual_line_showing_escaped_new_line))
+                message = 'line {0} is not as expected.\n   expected: "{1}"\n    but got: "{2}"'.format(
+                    actual_line_number, expected_line_showing_escaped_new_line, actual_line_showing_escaped_new_line)
+                self.assertEquals(expected_line, actual_line, message)
 
         self.assertEqual(expected_lines, actual_line_number)
 

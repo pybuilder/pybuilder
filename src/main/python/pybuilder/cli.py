@@ -264,7 +264,7 @@ def main(*args):
                     print_text_line()
             else:
                 summary = reactor.build(environments=options.environments, tasks=arguments)
-  
+
         except KeyboardInterrupt:
             raise PythonbuilderException("Build aborted")
 

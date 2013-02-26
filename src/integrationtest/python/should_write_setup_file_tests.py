@@ -13,12 +13,14 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 import unittest
 
 from integrationtest_support import IntegrationTestSupport
 
+
 class Test (IntegrationTestSupport):
-    def test (self):
+    def test(self):
         self.write_build_file("""
 from pybuilder.core import use_plugin, init
 
