@@ -271,12 +271,8 @@ def main(*args):
         print_list_of_tasks(reactor)
         return 0
 
-    banner = "PYBUILDER Version {0}".format(__version__)
-    if should_colorize(options):
-        banner = bold(banner)
-
     if not options.very_quiet:
-        print_text_line(banner)
+        print_styled_text("PYBUILDER Version {0}".format(__version__), options, BOLD)
         print_text_line("Build started at %s" % format_timestamp(start))
         draw_line()
 
