@@ -189,17 +189,18 @@ def print_build_summary(options, summary):
     print_text_line("%20s:%s" % ("Tasks", task_summary))
 
 
+def print_styled_text(text, options, *style_attributes):
+    if should_colorize(options):
+        text = styled_text(text, *style_attributes)
+    print_text(text)
+
+
 def print_build_status(failure_message, options, successful):
     draw_line()
     if successful:
-        msg = "BUILD SUCCESSFUL\n"
-        if should_colorize(options):
-            msg = styled_text(msg, BOLD, fg(GREEN))
+        print_styled_text("BUILD SUCCESSFUL\n", options, BOLD, fg(GREEN))
     else:
-        msg = "BUILD FAILED - %s\n" % failure_message
-        if should_colorize(options):
-            msg = styled_text(msg, BOLD, fg(RED))
-    print_text(msg)
+        print_styled_text("BUILD FAILED - %s\n" % failure_message, options, BOLD, fg(RED))
     draw_line()
 
 
