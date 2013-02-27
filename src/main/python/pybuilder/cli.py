@@ -203,17 +203,20 @@ def print_build_status(failure_message, options, successful):
     draw_line()
 
 
+def print_elapsed_time_summary(start, end):
+    time_needed = end - start
+    millis = ((time_needed.days * 24 * 60 * 60) + time_needed.seconds) * 1000 + time_needed.microseconds / 1000
+    print_text_line("Build finished at %s" % format_timestamp(end))
+    print_text_line("Build took %d seconds (%d ms)" % (time_needed.seconds, millis))
+
+
 def print_summary(successful, summary, start, end, options, failure_message):
     print_build_status(failure_message, options, successful)
 
     if successful and summary:
         print_build_summary(options, summary)
 
-    time_needed = end - start
-    millis = ((time_needed.days * 24 * 60 * 60) + time_needed.seconds) * 1000 + time_needed.microseconds / 1000
-
-    print_text_line("Build finished at %s" % format_timestamp(end))
-    print_text_line("Build took %d seconds (%d ms)" % (time_needed.seconds, millis))
+    print_elapsed_time_summary(start, end)
 
 
 def length_of_longest_string(list_of_strings):
