@@ -200,7 +200,7 @@ def print_build_status(failure_message, options, successful):
     if successful:
         print_styled_text("BUILD SUCCESSFUL\n", options, BOLD, fg(GREEN))
     else:
-        print_styled_text("BUILD FAILED - %s\n" % failure_message, options, BOLD, fg(RED))
+        print_styled_text("BUILD FAILED - {0}\n".format(failure_message), options, BOLD, fg(RED))
     draw_line()
 
 
