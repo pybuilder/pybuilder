@@ -189,7 +189,7 @@ def print_build_summary(options, summary):
     print_text_line("%20s:%s" % ("Tasks", task_summary))
 
 
-def print_summary(successful, summary, start, end, options, failure_message):
+def print_build_status(failure_message, options, successful):
     draw_line()
     if successful:
         msg = "BUILD SUCCESSFUL\n"
@@ -201,6 +201,10 @@ def print_summary(successful, summary, start, end, options, failure_message):
             msg = styled_text(msg, BOLD, fg(RED))
     print_text(msg)
     draw_line()
+
+
+def print_summary(successful, summary, start, end, options, failure_message):
+    print_build_status(failure_message, options, successful)
 
     if successful and summary:
         print_build_summary(options, summary)
