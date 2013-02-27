@@ -195,12 +195,16 @@ def print_styled_text(text, options, *style_attributes):
     print_text(text)
 
 
+def print_styled_text_line(text, options, *style_attributes):
+    print_styled_text(text + "\n", options, *style_attributes)
+
+
 def print_build_status(failure_message, options, successful):
     draw_line()
     if successful:
-        print_styled_text("BUILD SUCCESSFUL\n", options, BOLD, fg(GREEN))
+        print_styled_text_line("BUILD SUCCESSFUL", options, BOLD, fg(GREEN))
     else:
-        print_styled_text("BUILD FAILED - {0}\n".format(failure_message), options, BOLD, fg(RED))
+        print_styled_text_line("BUILD FAILED - {0}".format(failure_message), options, BOLD, fg(RED))
     draw_line()
 
 
@@ -272,7 +276,7 @@ def main(*args):
         return 0
 
     if not options.very_quiet:
-        print_styled_text("PYBUILDER Version {0}".format(__version__), options, BOLD)
+        print_styled_text_line("PYBUILDER Version {0}".format(__version__), options, BOLD)
         print_text_line("Build started at %s" % format_timestamp(start))
         draw_line()
 
