@@ -175,6 +175,20 @@ def init_logger(options):
     return logger
 
 
+def print_build_summary(options, summary):
+    print_text_line("Build Summary")
+    print_text_line("%20s: %s" % ("Project", summary.project.name))
+    print_text_line("%20s: %s" % ("Version", summary.project.version))
+    print_text_line("%20s: %s" % ("Base directory", summary.project.basedir))
+    print_text_line("%20s: %s" % ("Environments", ", ".join(options.environments)))
+
+    task_summary = ""
+    for task in summary.task_summaries:
+        task_summary += " %s [%d ms]" % (task.task, task.execution_time)
+
+    print_text_line("%20s:%s" % ("Tasks", task_summary))
+
+
 def print_summary(successful, summary, start, end, options, failure_message):
     draw_line()
     if successful:
@@ -189,17 +203,7 @@ def print_summary(successful, summary, start, end, options, failure_message):
     draw_line()
 
     if successful and summary:
-        print_text_line("Build Summary")
-        print_text_line("%20s: %s" % ("Project", summary.project.name))
-        print_text_line("%20s: %s" % ("Version", summary.project.version))
-        print_text_line("%20s: %s" % ("Base directory", summary.project.basedir))
-        print_text_line("%20s: %s" % ("Environments", ", ".join(options.environments)))
-
-        task_summary = ""
-        for task in summary.task_summaries:
-            task_summary += " %s [%d ms]" % (task.task, task.execution_time)
-
-        print_text_line("%20s:%s" % ("Tasks", task_summary))
+        print_build_summary(options, summary)
 
     time_needed = end - start
     millis = ((time_needed.days * 24 * 60 * 60) + time_needed.seconds) * 1000 + time_needed.microseconds / 1000
