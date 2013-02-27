@@ -17,7 +17,7 @@
 import os
 import shutil
 
-from pybuilder.core import init, task, use_plugin
+from pybuilder.core import init, task, use_plugin, description
 
 use_plugin("core")
 
@@ -30,6 +30,7 @@ def init_source_distribution(project):
 
 
 @task
+@description("Builds a source distribution.")
 def build_source_distribution(project, logger):
     source_distribution_directory = project.expand_path("$dir_source_dist")
     logger.info("Building source distribution in {0}".format(source_distribution_directory))

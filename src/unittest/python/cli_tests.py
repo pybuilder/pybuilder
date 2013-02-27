@@ -15,7 +15,8 @@
 #  limitations under the License.
 import unittest
 
-from pybuilder.cli import parse_options, ColoredStdOutLogger, CommandLineUsageException, StdOutLogger
+from pybuilder.cli import parse_options, ColoredStdOutLogger, CommandLineUsageException, StdOutLogger, \
+    length_of_longest_string
 from pybuilder.core import Logger
 
 
@@ -134,3 +135,18 @@ class ParseOptionsTest (unittest.TestCase):
 
         self.assert_options(options, environments=[])
         self.assertEquals([], arguments)
+
+
+class LengthOfLongestStringTests(unittest.TestCase):
+
+    def test_should_return_zero_when_list_is_empty(self):
+        self.assertEqual(0, length_of_longest_string([]))
+
+    def test_should_return_one_when_list_contains_string_with_single_character(self):
+        self.assertEqual(1, length_of_longest_string(['a']))
+
+    def test_should_return_four_when_list_contains_egg_and_spam(self):
+        self.assertEqual(4, length_of_longest_string(['egg', 'spam']))
+        
+    def test_should_return_four_when_list_contains_foo_bar_egg_and_spam(self):
+        self.assertEqual(4, length_of_longest_string(['egg', 'spam', 'foo', 'bar']))

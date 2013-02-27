@@ -208,6 +208,37 @@ def print_summary(successful, summary, start, end, options, failure_message):
     print_text_line("Build took %d seconds (%d ms)" % (time_needed.seconds, millis))
 
 
+def length_of_longest_string(list_of_strings):
+    if len(list_of_strings) == 0:
+        return 0
+
+    result = 0
+    for string in list_of_strings:
+        length_of_string = len(string)
+        if length_of_string > result:
+            result = length_of_string
+
+    return result
+
+
+def print_list_of_tasks(reactor):
+    print_text_line('Tasks found for project "%s":' % reactor.project.name)
+
+    tasks = reactor.get_tasks()
+    column_length = length_of_longest_string(list(map(lambda task: task.name, tasks)))
+    column_length += 4
+
+    for task in sorted(tasks):
+        task_name = task.name.rjust(column_length)
+        task_description = " ".join(task.description) or "<no description available>"
+        print_text_line("{0} - {1}".format(task_name, task_description))
+
+        if task.dependencies:
+            whitespace = (column_length + 3) * " "
+            depends_on_message = "depends on tasks: %s" % " ".join(task.dependencies)
+            print_text_line(whitespace + depends_on_message)
+
+
 def main(*args):
     try:
         options, arguments = parse_options(args)
@@ -225,13 +256,7 @@ def main(*args):
         reactor.prepare_build(property_overrides=options.property_overrides,
                               project_directory=options.project_directory)
 
-        print_text_line("Tasks found in %s building in %s:" % (reactor.project.name, reactor.project.basedir))
-        print_text_line()
-        for task in sorted(reactor.get_tasks()):
-            print_text_line("%20s\t%s" % (task.name, " ".join(task.description) or "<no description available>"))
-            if task.dependencies:
-                print_text_line("\t\t\tdepends on tasks: %s" % " ".join(task.dependencies))
-            print_text_line()
+        print_list_of_tasks(reactor)
         return 0
 
     banner = "PYBUILDER Version {0}".format(__version__)
@@ -256,12 +281,6 @@ def main(*args):
                 logger.debug("Verbose output enabled.\n")
                 reactor.project.set_property("verbose", True)
 
-            if options.list_tasks:
-                for task in sorted(reactor.get_tasks()):
-                    print_text_line("%20s\t%s" % (task.name, task.description or "<no description available>"))
-                    if task.dependencies:
-                        print_text_line("\t\t\tdepends on tasks: %s" % " ".join(task.dependencies))
-                    print_text_line()
             else:
                 summary = reactor.build(environments=options.environments, tasks=arguments)
 
