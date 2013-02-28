@@ -8,12 +8,7 @@ Pybuilder is based on the concept of dependency based programming but also comes
 along with powerful plugin mechanism that allows the construction of build life
 cycles similar to those known from other famous (Java) build tools.
 
-Pybuilder is running on the following versions of Python:
-
-* 2.6
-* 2.7
-* 3.2
-* PyPy
+Pybuilder is running on the following versions of Python: 2.6, 2.7, 3.2, and PyPy.
 
 See the [Travis Build](http://travis-ci.org/#!/pybuilder/pybuilder) for version specific output.
 
@@ -49,22 +44,21 @@ See the [pybuilder homepage](http://pybuilder.github.com/) for more details.
 
 pybuilder provides a lot of plugins out ot the box that utilize tools and libraries commonly used in Python projects:
 
-* **Coverage** - Uses the standard [coverage](http://pypi.python.org/pypi/coverage/) module to calculate unit test line coverage.
-* **Setuptools** - Provides support to generate [setup.py](http://pypi.python.org/pypi/setuptools) files.
-* **Django** - Provides support for developing [Django](https://www.djangoproject.com/) applications.
-* **Flake8** - Provides support for [flake8](http://pypi.python.org/pypi/flake8/)
-* **Pep8** - Provides support for [pep8](http://pypi.python.org/pypi/pep8)
-* **Pip** - Provides support for installing dependencies using `pip`
-* **Pychecker** - Provides support for [pychecker](http://pychecker.sourceforge.net/)
-* **Pydev** - Generates project files to import projects into [Eclipse PyDev](http://pydev.org/)
-* **Pylint** - Executes [pylint](http://www.logilab.org/857/) on your sources.
-* **Pymetrics** - Calculates several metrics using [pymetrics](http://sourceforge.net/projects/pymetrics/)
-* **Unittest** - Executes [unittest](http://docs.python.org/library/unittest.html) test cases
-* **Integrationtest** - Executes python scripts as integrations tests
+* **python.coverage** - Uses the standard [coverage](http://pypi.python.org/pypi/coverage/) module to calculate unit test line coverage.
+* **python.distutils** - Provides support to generate [setup.py](http://pypi.python.org/pypi/setuptools) files.
+* **python.django** - Provides support for developing [Django](https://www.djangoproject.com/) applications.
+* **python.flake8** - Provides support for [flake8](http://pypi.python.org/pypi/flake8/)
+* **python.pep8** - Provides support for [pep8](http://pypi.python.org/pypi/pep8)
+* **python.install_dependencies** - Installs the projects build and runtime dependencies using `pip`
+* **python.pychecker** - Provides support for [pychecker](http://pychecker.sourceforge.net/)
+* **python.Pydev** - Generates project files to import projects into [Eclipse PyDev](http://pydev.org/)
+* **python.pylint** - Executes [pylint](http://www.logilab.org/857/) on your sources.
+* **python.pymetrics** - Calculates several metrics using [pymetrics](http://sourceforge.net/projects/pymetrics/)
+* **python.unittest** - Executes [unittest](http://docs.python.org/library/unittest.html) test cases
+* **python.integrationtest** - Executes python scripts as integrations tests
 
 In addition, a few common plugins are provided:
 
-* **install_dependencies** - Installs the projects build and runtime dependencies using `pip`
 * **copy_resources** - Copies files.
 * **filter_resources** - Filters files by replacing tokens with configuration values.
 * **source_distribution** - Bundles a source distribution for shipping.
