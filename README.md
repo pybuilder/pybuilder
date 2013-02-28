@@ -44,7 +44,7 @@ See the [pybuilder homepage](http://pybuilder.github.com/) for more details.
 
 pybuilder provides a lot of plugins out ot the box that utilize tools and libraries commonly used in Python projects:
 
-* **python.coverage** - Uses the standard [coverage](http://pypi.python.org/pypi/coverage/) module to calculate unit test line coverage.
+* [python.coverage](http://pybuilder.github.com/documentation/plugins.html#measuring_unittest_coverage) - Uses the standard [coverage](http://pypi.python.org/pypi/coverage/) module to calculate unit test line coverage.
 * **python.distutils** - Provides support to generate [setup.py](http://pypi.python.org/pypi/setuptools) files.
 * **python.django** - Provides support for developing [Django](https://www.djangoproject.com/) applications.
 * **python.flake8** - Provides support for [flake8](http://pypi.python.org/pypi/flake8/)
