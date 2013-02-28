@@ -45,7 +45,7 @@ See the [pybuilder homepage](http://pybuilder.github.com/) for more details.
 pybuilder provides a lot of plugins out ot the box that utilize tools and libraries commonly used in Python projects:
 
 * [python.coverage](http://pybuilder.github.com/documentation/plugins.html#measuring_unittest_coverage) - Uses the standard [coverage](http://pypi.python.org/pypi/coverage/) module to calculate unit test line coverage.
-* **python.distutils** - Provides support to generate [setup.py](http://pypi.python.org/pypi/setuptools) files.
+* [python.distutils](http://pybuilder.github.com/documentation/plugins.html#building_a_python_egg) - Provides support to generate [setup.py](http://pypi.python.org/pypi/setuptools) files.
 * **python.django** - Provides support for developing [Django](https://www.djangoproject.com/) applications.
 * **python.flake8** - Provides support for [flake8](http://pypi.python.org/pypi/flake8/)
 * **python.pep8** - Provides support for [pep8](http://pypi.python.org/pypi/pep8)
@@ -54,8 +54,8 @@ pybuilder provides a lot of plugins out ot the box that utilize tools and librar
 * **python.Pydev** - Generates project files to import projects into [Eclipse PyDev](http://pydev.org/)
 * **python.pylint** - Executes [pylint](http://www.logilab.org/857/) on your sources.
 * **python.pymetrics** - Calculates several metrics using [pymetrics](http://sourceforge.net/projects/pymetrics/)
-* **python.unittest** - Executes [unittest](http://docs.python.org/library/unittest.html) test cases
-* **python.integrationtest** - Executes python scripts as integrations tests
+* [python.unittest](http://pybuilder.github.com/documentation/plugins.html#running_python_unittests) - Executes [unittest](http://docs.python.org/library/unittest.html) test cases
+* [python.integrationtest](http://pybuilder.github.com/documentation/plugins.html#running_python_integration_tests) - Executes python scripts as integrations tests
 
 In addition, a few common plugins are provided:
 
