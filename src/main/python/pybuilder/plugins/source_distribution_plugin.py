@@ -30,7 +30,7 @@ def init_source_distribution(project):
 
 
 @task
-@description("Builds a source distribution.")
+@description("Bundles a source distribution for shipping.")
 def build_source_distribution(project, logger):
     source_distribution_directory = project.expand_path("$dir_source_dist")
     logger.info("Building source distribution in {0}".format(source_distribution_directory))
