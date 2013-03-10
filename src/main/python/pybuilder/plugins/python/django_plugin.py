@@ -44,4 +44,4 @@ def django_run_server(project, logger):
     else:
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", settings_module_name)
         from django.core.management import execute_from_command_line
-        execute_from_command_line(["runserver"])
+        execute_from_command_line(["", "runserver"])
