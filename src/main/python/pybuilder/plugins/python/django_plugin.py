@@ -17,8 +17,6 @@
 import os
 import sys
 
-from django import VERSION as DJANGO_VERSION
-
 from pybuilder.core import use_plugin, task
 from pybuilder.errors import PythonbuilderException
 
@@ -38,6 +36,7 @@ def django_run_server(project, logger):
     except ImportError as e:
         raise PythonbuilderException("Error when importing settings module: " + str(e))
 
+    from django import VERSION as DJANGO_VERSION
     if DJANGO_VERSION < (1, 4, 0):
         from django.core.management import execute_manager
         execute_manager(sys.modules[settings_module_name], ["", "runserver"])
