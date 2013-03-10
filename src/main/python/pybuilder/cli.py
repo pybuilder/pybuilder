@@ -293,8 +293,7 @@ def main(*args):
                 logger.debug("Verbose output enabled.\n")
                 reactor.project.set_property("verbose", True)
 
-            else:
-                summary = reactor.build(environments=options.environments, tasks=arguments)
+            summary = reactor.build(environments=options.environments, tasks=arguments)
 
         except KeyboardInterrupt:
             raise PythonbuilderException("Build aborted")
