@@ -28,7 +28,7 @@ use the recommended directory layout, all you have to do is create a file
 build.py with the following content:
 
 ```python
-from pythonbuilder.core import use_plugin
+from pybuilder.core import use_plugin
 
 use_plugin("python.core")
 use_plugin("python.unittest")
