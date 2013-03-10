@@ -14,9 +14,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import os
 import sys
 
-from django.core.management import execute_manager
+from django import VERSION as DJANGO_VERSION
 
 from pybuilder.core import use_plugin, task
 from pybuilder.errors import PythonbuilderException
@@ -26,15 +27,21 @@ use_plugin("python.core")
 
 @task
 def django_run_server(project, logger):
-    django_module = project.get_mandatory_property("django_module")
+    django_module_name = project.get_mandatory_property("django_module")
 
-    logger.info("Running Django development server for %s", django_module)
+    logger.info("Running Django development server for %s", django_module_name)
 
-    module = "{0}.settings".format(django_module)
+    settings_module_name = "{0}.settings".format(django_module_name)
     sys.path.append(project.expand_path("$dir_source_main_python"))
     try:
-        __import__(module)
+        __import__(settings_module_name)
     except ImportError as e:
-        raise PythonbuilderException("Missing settings module: " + str(e))
+        raise PythonbuilderException("Error when importing settings module: " + str(e))
 
-    execute_manager(sys.modules[module], ["", "runserver"])
+    if DJANGO_VERSION < (1, 4, 0):
+        from django.core.management import execute_manager
+        execute_manager(sys.modules[settings_module_name], ["", "runserver"])
+    else:
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", settings_module_name)
+        from django.core.management import execute_from_command_line
+        execute_from_command_line(["runserver"])
