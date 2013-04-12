@@ -37,7 +37,7 @@ def initialized_install_dependencies_plugin(project):
 
 @after("prepare")
 def check_pip_available(logger):
-    logger.debug("Chechking if pip is available")
+    logger.debug("Checking if pip is available")
     assert_can_execute("pip", "pip", "plugin python.install_dependencies")
 
 
