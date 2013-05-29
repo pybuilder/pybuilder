@@ -37,10 +37,10 @@ def any_method_name (): pass
 
         tasks = reactor.get_tasks()
 
-        self.assertEquals(3, len(tasks))
-        self.assertEquals("my_task", tasks[0].name)
-        self.assertEquals("a_task_with_overridden_name", tasks[1].name)
-        self.assertEquals("another_task", tasks[2].name)
+        self.assertEqual(3, len(tasks))
+        self.assertEqual("my_task", tasks[0].name)
+        self.assertEqual("a_task_with_overridden_name", tasks[1].name)
+        self.assertEqual("another_task", tasks[2].name)
 
 if __name__ == "__main__":
     unittest.main()
