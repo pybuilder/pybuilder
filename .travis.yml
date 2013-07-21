@@ -9,6 +9,6 @@ before_script:
   - sudo apt-get install pymetrics pychecker pylint pep8
   - pip install ordereddict coveralls
   - ./bootstrap install_dependencies
-script: ./bootstrap -v && coverage run --source=src/main/python/pybuilder ./bootstrap run_unit_tests"
+script: "./bootstrap -v && coverage run --source=src/main/python/pybuilder ./bootstrap run_unit_tests"
 after_success:
   - coveralls --verbose
