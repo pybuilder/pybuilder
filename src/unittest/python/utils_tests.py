@@ -22,7 +22,10 @@ import time
 import unittest
 import shutil
 
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 from mockito import when, verify, unstub
 
 from pybuilder.utils import format_timestamp, as_list, timedelta_in_millis, discover_modules, render_report, Timer, GlobExpression, apply_on_files, mkdir
