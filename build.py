@@ -40,8 +40,8 @@ description = """PyBuilder is a continuous build tool for multiple languages.
 PyBuilder primarily targets Python projects but due to its extensible
 nature it can be used for other languages as well.
 
-PyBuilder features a powerful yet easy to use plugin mechanism which 
-allows programmers to extend the tool in an unlimited way.  
+PyBuilder features a powerful yet easy to use plugin mechanism which
+allows programmers to extend the tool in an unlimited way.
 """
 
 authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
@@ -82,11 +82,18 @@ def initialize(project):
 
     project.get_property("distutils_commands").append("bdist_egg")
     project.set_property("distutils_classifiers", [
+          'Programming Language :: Python',
+          'Programming Language :: Python :: Implementation :: CPython',
+          'Programming Language :: Python :: Implementation :: PyPy',
+          'Programming Language :: Python :: 2.6',
+          'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 3',
+          'Programming Language :: Python :: 3.2',
+          'Programming Language :: Python :: 3.3',
           'Development Status :: 3 - Alpha',
           'Environment :: Console',
           'Intended Audience :: Developers',
           'License :: OSI Approved :: Apache Software License',
-          'Programming Language :: Python',
           'Topic :: Software Development :: Build Tools',
           'Topic :: Software Development :: Quality Assurance',
           'Topic :: Software Development :: Testing'])
