@@ -25,6 +25,7 @@ DEFAULT_PYLINT_OPTIONS = ["--max-line-length=100", "--no-docstring-rgx=.*"]
 
 @init
 def init_pylint(project):
+    project.build_depends_on("pylint")
     project.set_property_if_unset("pylint_options", DEFAULT_PYLINT_OPTIONS)
 
 
