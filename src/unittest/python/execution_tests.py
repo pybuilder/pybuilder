@@ -98,6 +98,16 @@ class ActionTest(unittest.TestCase):
 
 
 class TaskTest(unittest.TestCase):
+
+    def test_should_sort_tasks_by_name(self):
+        task_a = Task("a_name", lambda: None, "dependency", "description")
+        task_b = Task("b_name", lambda: None, "dependency", "description")
+
+        task_list = [task_b, task_a]
+
+        self.assertEquals(["a_name", "b_name"], [task.name for task in sorted(task_list)])
+
+
     def test_should_initialize_fields(self):
         def callable(): pass
 

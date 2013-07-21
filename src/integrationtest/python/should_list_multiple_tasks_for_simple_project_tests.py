@@ -25,22 +25,21 @@ class Test (IntegrationTestSupport):
 from pybuilder.core import task
 
 @task
-def my_task (): pass
-
-@task
 def another_task (): pass
 
 @task("a_task_with_overridden_name")
 def any_method_name (): pass
+
+@task
+def my_task (): pass
         """)
         reactor = self.prepare_reactor()
 
         tasks = reactor.get_tasks()
-
         self.assertEqual(3, len(tasks))
-        self.assertEqual("my_task", tasks[0].name)
+        self.assertEqual("another_task", tasks[0].name)
         self.assertEqual("a_task_with_overridden_name", tasks[1].name)
-        self.assertEqual("another_task", tasks[2].name)
+        self.assertEqual("my_task", tasks[2].name)
 
 if __name__ == "__main__":
     unittest.main()

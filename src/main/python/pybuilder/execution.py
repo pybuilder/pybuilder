@@ -18,6 +18,8 @@ import inspect
 import re
 import types
 
+from collections import OrderedDict
+
 from pybuilder.errors import (CircularTaskDependencyException,
                               InternalException,
                               InvalidNameException,
@@ -86,6 +88,19 @@ class Task(object):
         self.dependencies = as_task_name_list(dependencies)
         self.description = [description]
 
+    def __eq__(self, other):
+        if isinstance(other, Task):
+            return self.name == other.name
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __lt__(self, other):
+        if isinstance(other, Task):
+            return self.name < other.name
+        return self.name < other
+
     def extend(self, task):
         self.executables += task.executables
         self.dependencies += task.dependencies
@@ -126,7 +141,7 @@ class ExecutionManager(object):
     def __init__(self, logger):
         self.logger = logger
 
-        self._tasks = {}
+        self._tasks = OrderedDict()
         self._task_dependencies = {}
 
         self._actions = {}

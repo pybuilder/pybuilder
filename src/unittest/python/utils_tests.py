@@ -22,6 +22,7 @@ import time
 import unittest
 import shutil
 
+from collections import OrderedDict
 from mockito import when, verify, unstub
 
 from pybuilder.utils import format_timestamp, as_list, timedelta_in_millis, discover_modules, render_report, Timer, GlobExpression, apply_on_files, mkdir
@@ -49,13 +50,8 @@ class RenderReportTest(unittest.TestCase):
             "spam": "spam",
             "eggs": ["egg", "another_egg"]
         }
-        expected = """{
-  "eggs": [
-    "egg", 
-    "another_egg"
-  ], 
-  "spam": "spam"
-}"""
+        report = OrderedDict(sorted(report.items(), key=lambda t: t[0]))
+        expected = '{\n  "eggs": [\n    "egg", \n    "another_egg"\n  ], \n  "spam": "spam"\n}'
         actual = render_report(report)
         self.assertEquals(expected, actual)
 

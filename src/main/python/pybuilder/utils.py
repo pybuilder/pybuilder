@@ -25,7 +25,7 @@ from pybuilder.errors import MissingPrerequisiteException, PythonbuilderExceptio
 
 
 def render_report(report_dict):
-    return json.dumps(report_dict, indent=2)
+    return json.dumps(report_dict, indent=2, sort_keys=False)
 
 
 def format_timestamp(timestamp):
