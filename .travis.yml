@@ -6,6 +6,7 @@ python:
   - "pypy"
 before_script:
   - sudo apt-get install pymetrics pychecker pylint pep8
+  - pip install ordereddict
   - ./bootstrap install_dependencies
 script: ./bootstrap -v
 

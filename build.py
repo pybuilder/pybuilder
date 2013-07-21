@@ -58,6 +58,7 @@ def initialize(project):
     project.build_depends_on("mockito")
     project.build_depends_on("pymetrics")
     project.build_depends_on("pyassert")
+    project.build_depends_on("ordereddict")
 
     # Need to define that manually, because the pyfix plugin is not used directly.
     project.build_depends_on("pyfix")
