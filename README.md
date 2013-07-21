@@ -1,4 +1,4 @@
-Pybuilder [![Build Status](https://secure.travis-ci.org/pybuilder/pybuilder.png?branch=master)](http://travis-ci.org/pybuilder/pybuilder)
+Pybuilder [![Build Status](https://secure.travis-ci.org/pybuilder/pybuilder.png?branch=master)](http://travis-ci.org/pybuilder/pybuilder) [![PyPi version](https://pypip.in/v/pybuilder/badge.png)](https://crate.io/packages/pybuilder/) [![PyPi downloads](https://pypip.in/d/pybuilder/badge.png)](https://crate.io/packages/pybuilder/)
 =========
 
 Pybuilder is a software build tool written in 100% pure Python and mainly 
