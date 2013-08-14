@@ -22,10 +22,12 @@ import time
 import unittest
 import shutil
 
+from json import loads
 from mockito import when, verify, unstub
 
 from pybuilder.utils import format_timestamp, as_list, timedelta_in_millis, discover_modules, render_report, Timer, GlobExpression, apply_on_files, mkdir
 from pybuilder.errors import PythonbuilderException
+
 
 class TimerTest(unittest.TestCase):
     def test_ensure_that_start_starts_timer(self):
@@ -43,16 +45,22 @@ class TimerTest(unittest.TestCase):
         timer.stop()
         self.assertTrue(timer.get_millis() > 0)
 
+
 class RenderReportTest(unittest.TestCase):
     def test_should_render_report(self):
         report = {
-            "spam": "spam",
-            "eggs": ["egg", "another_egg"]
+            "eggs": ["foo", "bar"],
+            "spam": "baz"
         }
-        report = dict(sorted(report.items(), key=lambda t: t[0]))
-        expected = '{\n  "eggs": [\n    "egg", \n    "another_egg"\n  ], \n  "spam": "spam"\n}'
-        actual = render_report(report)
-        self.assertEquals(expected, actual)
+
+        actual_report_as_json_string = render_report(report)
+
+        actual_report = loads(actual_report_as_json_string)
+        actual_keys = sorted(actual_report.keys())
+
+        self.assertEquals(actual_keys, ['eggs', 'spam'])
+        self.assertEquals(actual_report['eggs'], ["foo", "bar"])
+        self.assertEquals(actual_report['spam'], "baz")
 
 class FormatTimestampTest(unittest.TestCase):
 
