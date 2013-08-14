@@ -62,6 +62,7 @@ class RenderReportTest(unittest.TestCase):
         self.assertEquals(actual_report['eggs'], ["foo", "bar"])
         self.assertEquals(actual_report['spam'], "baz")
 
+
 class FormatTimestampTest(unittest.TestCase):
 
     def assert_matches(self, regex, actual, message=None):
@@ -74,6 +75,7 @@ class FormatTimestampTest(unittest.TestCase):
     def test_should_format_timestamp(self):
         self.assert_matches(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$",
                             format_timestamp(datetime.datetime.now()))
+
 
 class AsListTest(unittest.TestCase):
     def test_should_return_empty_list_when_no_argument_is_given(self):
@@ -112,6 +114,7 @@ class AsListTest(unittest.TestCase):
         def foo(): pass
         self.assertEquals([foo], as_list(foo))
 
+
 class TimedeltaInMillisTest(unittest.TestCase):
     def assertMillis(self, expected_millis, **timedelta_constructor_args):
         self.assertEquals(expected_millis, timedelta_in_millis(datetime.timedelta(**timedelta_constructor_args)))
@@ -133,6 +136,7 @@ class TimedeltaInMillisTest(unittest.TestCase):
 
     def test_should_return_number_of_millis_for_timedelta_with_days(self):
         self.assertMillis(5 * 24 * 60 * 60 * 1000, days=5)
+
 
 class DiscoverModulesTest(unittest.TestCase):
 
@@ -157,6 +161,7 @@ class DiscoverModulesTest(unittest.TestCase):
 
         verify(os).walk("spam")
 
+
 class GlobExpressionTest(unittest.TestCase):
     def test_static_expression_should_match_exact_file_name(self):
         self.assertTrue(GlobExpression("spam.eggs").matches("spam.eggs"))
@@ -179,6 +184,7 @@ class GlobExpressionTest(unittest.TestCase):
     def test_dynamic_directory_expression_should_match_file_in_directory(self):
         self.assertTrue(GlobExpression("**/spam.egg").matches("foo/spam.egg"))
         self.assertTrue(GlobExpression("**/spam.egg").matches("bar/spam.egg"))
+
 
 class ApplyOnFilesTest(unittest.TestCase):
     def setUp(self):
