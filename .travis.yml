@@ -1,14 +1,21 @@
 language: python
+
 python:
   - "2.6"
   - "2.7"
   - "3.2"
   - "3.3"
   - "pypy"
+
 before_script:
   - sudo apt-get install pymetrics pychecker pylint pep8
   - pip install coveralls
-  - ./bootstrap install_dependencies
-script: export PYTHONPATH=src/main/python/; ./bootstrap -v && coverage run --source=src/main/python src/main/scripts/pyb run_unit_tests
+  - ./bootstrap install_dependencies -v
+
+script:
+  - export PYTHONPATH=src/main/python/
+  - ./bootstrap -v 
+  - coverage run --source=src/main/python src/main/scripts/pyb run_unit_tests -v
+
 after_success:
   - coveralls --verbose
