@@ -18,11 +18,6 @@ import inspect
 import re
 import types
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
-
 from pybuilder.errors import (CircularTaskDependencyException,
                               InternalException,
                               InvalidNameException,
@@ -144,7 +139,7 @@ class ExecutionManager(object):
     def __init__(self, logger):
         self.logger = logger
 
-        self._tasks = OrderedDict()
+        self._tasks = {}
         self._task_dependencies = {}
 
         self._actions = {}

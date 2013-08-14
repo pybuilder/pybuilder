@@ -35,11 +35,10 @@ def my_task (): pass
         """)
         reactor = self.prepare_reactor()
 
-        tasks = reactor.get_tasks()
-        self.assertEqual(3, len(tasks))
-        self.assertEqual("another_task", tasks[0].name)
-        self.assertEqual("a_task_with_overridden_name", tasks[1].name)
-        self.assertEqual("my_task", tasks[2].name)
+        actual_tasks = reactor.get_tasks()
+        actual_task_names = [task.name for task in actual_tasks]
+
+        self.assertEqual(["a_task_with_overridden_name", "another_task", "my_task"], sorted(actual_task_names))
 
 if __name__ == "__main__":
     unittest.main()

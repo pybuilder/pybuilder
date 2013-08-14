@@ -7,7 +7,7 @@ python:
   - "pypy"
 before_script:
   - sudo apt-get install pymetrics pychecker pylint pep8
-  - pip install ordereddict coveralls
+  - pip install coveralls
   - ./bootstrap install_dependencies
 script: export PYTHONPATH=src/main/python/; ./bootstrap -v && coverage run --source=src/main/python src/main/scripts/pyb run_unit_tests
 after_success:
