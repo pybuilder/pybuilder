@@ -64,7 +64,7 @@ def generate_manpages(project, logger):
     logger.info('Generating manpages')
     try:
         os.makedirs(project.get_property('dir_manpages'))
-    except OSError, e:
+    except OSError as e:
         if e.errno != errno.EEXIST:
             raise
     ronn_report_file = project.expand_path("$dir_reports/{0}".format('generate_manpage'))
