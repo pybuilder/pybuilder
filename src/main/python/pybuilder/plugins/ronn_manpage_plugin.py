@@ -47,10 +47,10 @@ def assert_gzip_is_executable(logger):
     """
         Asserts that the gzip program is executable.
     """
-    logger.debug("Checking if ronn is executable.")
+    logger.debug("Checking if gzip is executable.")
 
     assert_can_execute(command_and_arguments=["gzip", "--version"],
-                       prerequisite="ronn",
+                       prerequisite="gzip",
                        caller="plugin ronn_manpage_plugin")
 
 

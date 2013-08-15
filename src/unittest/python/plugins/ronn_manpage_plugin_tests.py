@@ -21,7 +21,7 @@ from pybuilder.plugins.ronn_manpage_plugin import build_generate_manpages_comman
 
 class RonnManpagePluginTests(unittest.TestCase):
 
-    def test_should_generate_manpage_from_one_file(self):
+    def test_should_generate_command_abiding_to_configuration(self):
         project = Project('egg')
         project.set_property("dir_manpages", "docs/man")
         project.set_property("manpage_source", "README.md")
