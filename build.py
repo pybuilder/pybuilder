@@ -49,9 +49,10 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            Author("Udo Juettner", "udo.juettner@gmail.com")]
 url = "http://pybuilder.github.com"
 license = "Apache License"
-version = "0.9.8"
+version = "0.9.9"
 
 default_task = ["analyze", "publish"]
+
 
 @init
 def initialize(project):
@@ -59,21 +60,25 @@ def initialize(project):
     project.build_depends_on("pymetrics")
     project.build_depends_on("pyassert")
 
-    # Need to define that manually, because the pyfix plugin is not used directly.
+    # Need to define that manually, because the pyfix plugin is not used
+    # directly.
     project.build_depends_on("pyfix")
 
     project.set_property("coverage_break_build", False)
     project.get_property("coverage_exceptions").append("pybuilder.cli")
-    project.get_property("coverage_exceptions").append("pybuilder.plugins.core_plugin")
+    project.get_property("coverage_exceptions").append(
+        "pybuilder.plugins.core_plugin")
 
     project.set_property("copy_resources_target", "$dir_dist")
     project.get_property("copy_resources_glob").append("LICENSE")
 
-    project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
+    project.get_property("filter_resources_glob").append(
+        "**/pybuilder/__init__.py")
 
     project.set_property("flake8_verbose_output", True)
     project.set_property("flake8_break_build", True)
-    project.set_property("flake8_ignore", "F403,W404,W801")  # W801 = redefinition of unused 'StringIO'
+    project.set_property("flake8_ignore", "F403,W404,W801")
+                         # W801 = redefinition of unused 'StringIO'
 
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
@@ -81,18 +86,18 @@ def initialize(project):
 
     project.get_property("distutils_commands").append("bdist_egg")
     project.set_property("distutils_classifiers", [
-          'Programming Language :: Python',
-          'Programming Language :: Python :: Implementation :: CPython',
-          'Programming Language :: Python :: Implementation :: PyPy',
-          'Programming Language :: Python :: 2.6',
-          'Programming Language :: Python :: 2.7',
-          'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.2',
-          'Programming Language :: Python :: 3.3',
-          'Development Status :: 3 - Alpha',
-          'Environment :: Console',
-          'Intended Audience :: Developers',
-          'License :: OSI Approved :: Apache Software License',
-          'Topic :: Software Development :: Build Tools',
-          'Topic :: Software Development :: Quality Assurance',
-          'Topic :: Software Development :: Testing'])
+                         'Programming Language :: Python',
+                         'Programming Language :: Python :: Implementation :: CPython',
+                         'Programming Language :: Python :: Implementation :: PyPy',
+                         'Programming Language :: Python :: 2.6',
+                         'Programming Language :: Python :: 2.7',
+                         'Programming Language :: Python :: 3',
+                         'Programming Language :: Python :: 3.2',
+                         'Programming Language :: Python :: 3.3',
+                         'Development Status :: 3 - Alpha',
+                         'Environment :: Console',
+                         'Intended Audience :: Developers',
+                         'License :: OSI Approved :: Apache Software License',
+                         'Topic :: Software Development :: Build Tools',
+                         'Topic :: Software Development :: Quality Assurance',
+                         'Topic :: Software Development :: Testing'])
