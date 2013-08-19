@@ -17,7 +17,7 @@
 import os
 import errno
 
-from pybuilder.core import init, task, use_plugin, description, after, before
+from pybuilder.core import init, task, use_plugin, description, depends, after
 from pybuilder.utils import assert_can_execute, execute_command
 
 use_plugin("core")
@@ -55,7 +55,7 @@ def assert_gzip_is_executable(logger):
 
 
 @task
-@before(("package", "publish"))
+@depends("prepare")
 @description("Generates manpages using ronn.")
 def generate_manpages(project, logger):
     """
