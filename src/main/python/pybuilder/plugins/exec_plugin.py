@@ -18,10 +18,6 @@ from pybuilder.core import task, use_plugin
 from pybuilder.errors import BuildFailedException
 
 import subprocess
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 use_plugin("core")
 
@@ -52,16 +48,8 @@ def publish(project, logger):
 
 
 def _write_command_report(project, stdout, stderr, command_line, phase, process_return_code):
-        report = StringIO()
-        report.write('Running {0} in phase {1}\n'.format(command_line, phase))
-        report.write('STDOUT:\n')
-        report.write(stdout + "\n")
-        report.write('STDERR:\n')
-        report.write(stderr + '\n')
-        report.write('{0} exited with code {1}'.format(
-            command_line, process_return_code))
-        project.write_report('exec_%s' % phase, report.getvalue())
-        report.close()
+        project.write_report('exec_%s' % phase, stdout)
+        project.write_report('exec_%s.err' % phase, stderr)
 
 
 def _log_quoted_output(logger, output_type, output, phase):
