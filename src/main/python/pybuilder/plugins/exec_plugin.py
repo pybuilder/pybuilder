@@ -1,0 +1,105 @@
+#   This file is part of PyBuilder
+#
+#   Copyright 2011-2013 PyBuilder Team
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+from pybuilder.core import task, use_plugin
+from pybuilder.errors import BuildFailedException
+
+import subprocess
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
+use_plugin("core")
+
+
+@task
+def run_unit_tests(project, logger):
+    run_command('run_unit_tests', project, logger)
+
+
+@task
+def run_integration_tests(project, logger):
+    run_command('run_integration_tests', project, logger)
+
+
+@task
+def analyze(project, logger):
+    run_command('analyze', project, logger)
+
+
+@task
+def package(project, logger):
+    run_command('package', project, logger)
+
+
+@task
+def publish(project, logger):
+    run_command('publish', project, logger)
+
+
+def _write_command_report(project, stdout, stderr, command_line, phase, process_return_code):
+        report = StringIO()
+        report.write('Running {0} in phase {1}\n'.format(command_line, phase))
+        report.write('STDOUT:\n')
+        report.write(stdout + "\n")
+        report.write('STDERR:\n')
+        report.write(stderr + '\n')
+        report.write('{0} exited with code {1}'.format(
+            command_line, process_return_code))
+        project.write_report('exec_%s' % phase, report.getvalue())
+        report.close()
+
+
+def _log_quoted_output(logger, output_type, output, phase):
+    separator = '-' * 5
+    logger.info('{0} verbatim {1} output of {2} {0}'.format(separator, output_type, phase))
+    for line in output.split('\n'):
+        logger.info(line)
+    logger.info('{0} end of verbatim {1} output {0}'.format(separator, output_type))
+
+
+def run_command(phase, project, logger):
+    command_line = project.get_property('%s_command' % phase)
+    if not command_line:
+        return
+
+    process_handle = subprocess.Popen(
+        command_line,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=True)
+    (stdout, stderr) = process_handle.communicate()
+    process_return_code = process_handle.returncode
+
+    _write_command_report(project,
+                          stdout,
+                          stderr,
+                          command_line,
+                          phase,
+                          process_return_code)
+
+    if project.get_property('%s_propagate_stdout' % phase) and stdout:
+        _log_quoted_output(logger, '', stdout, phase)
+
+    if project.get_property('%s_propagate_stderr' % phase) and stderr:
+        _log_quoted_output(logger, 'error', stderr, phase)
+
+    if process_return_code != 0:
+        raise BuildFailedException(
+            'exec plugin command {0} for {1} exited with nonzero code {2}'.format(command_line,
+                                                                                  phase,
+                                                                                  process_return_code))
