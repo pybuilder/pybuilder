@@ -30,6 +30,7 @@ from pybuilder.errors import PythonbuilderException
 
 
 class TimerTest(unittest.TestCase):
+
     def test_ensure_that_start_starts_timer(self):
         timer = Timer.start()
         self.assertTrue(timer.start_time > 0)
@@ -47,6 +48,7 @@ class TimerTest(unittest.TestCase):
 
 
 class RenderReportTest(unittest.TestCase):
+
     def test_should_render_report(self):
         report = {
             "eggs": ["foo", "bar"],
@@ -68,7 +70,7 @@ class FormatTimestampTest(unittest.TestCase):
     def assert_matches(self, regex, actual, message=None):
         if not re.match(regex, actual):
             if not message:
-                message = "'%s' does not match '%s'" %(actual, regex)
+                message = "'%s' does not match '%s'" % (actual, regex)
 
             self.fail(message)
 
@@ -78,6 +80,7 @@ class FormatTimestampTest(unittest.TestCase):
 
 
 class AsListTest(unittest.TestCase):
+
     def test_should_return_empty_list_when_no_argument_is_given(self):
         self.assertEquals([], as_list())
 
@@ -94,30 +97,38 @@ class AsListTest(unittest.TestCase):
         self.assertEquals(["spam", "eggs"], as_list(["spam", "eggs"]))
 
     def test_should_unwrap_multiple_lists(self):
-        self.assertEquals(["spam", "eggs", "foo", "bar"], as_list(["spam", "eggs"], ["foo", "bar"]))
+        self.assertEquals(
+            ["spam", "eggs", "foo", "bar"], as_list(["spam", "eggs"], ["foo", "bar"]))
 
     def test_should_unwrap_single_tuple(self):
         self.assertEquals(["spam", "eggs"], as_list(("spam", "eggs")))
 
     def test_should_unwrap_multiple_tuples(self):
-        self.assertEquals(["spam", "eggs", "foo", "bar"], as_list(("spam", "eggs"),("foo", "bar")))
+        self.assertEquals(
+            ["spam", "eggs", "foo", "bar"], as_list(("spam", "eggs"), ("foo", "bar")))
 
     def test_should_unwrap_mixed_tuples_and_lists_and_strings(self):
-        self.assertEquals(["spam", "eggs", "foo", "bar", "foobar"], as_list(("spam", "eggs"), ["foo", "bar"], "foobar"))
+        self.assertEquals(["spam", "eggs", "foo", "bar", "foobar"],
+                          as_list(("spam", "eggs"), ["foo", "bar"], "foobar"))
 
     def test_should_unwrap_mixed_tuples_and_lists_and_strings_and_ignore_none_values(self):
-        self.assertEquals(["spam", "eggs", "foo", "bar", "foobar"], as_list(None,("spam", "eggs"),
-                                                                            None, ["foo", "bar"],
-                                                                            None, "foobar", None))
+        self.assertEquals(
+            ["spam", "eggs", "foo", "bar", "foobar"], as_list(None, ("spam", "eggs"),
+                                                              None, [
+                                                              "foo", "bar"],
+                                                              None, "foobar", None))
 
     def test_should_return_list_of_function(self):
-        def foo(): pass
+        def foo():
+            pass
         self.assertEquals([foo], as_list(foo))
 
 
 class TimedeltaInMillisTest(unittest.TestCase):
+
     def assertMillis(self, expected_millis, **timedelta_constructor_args):
-        self.assertEquals(expected_millis, timedelta_in_millis(datetime.timedelta(**timedelta_constructor_args)))
+        self.assertEquals(expected_millis, timedelta_in_millis(
+            datetime.timedelta(**timedelta_constructor_args)))
 
     def test_should_return_number_of_millis_for_timedelta_with_microseconds_less_than_one_thousand(self):
         self.assertMillis(0, microseconds=500)
@@ -163,6 +174,7 @@ class DiscoverModulesTest(unittest.TestCase):
 
 
 class GlobExpressionTest(unittest.TestCase):
+
     def test_static_expression_should_match_exact_file_name(self):
         self.assertTrue(GlobExpression("spam.eggs").matches("spam.eggs"))
 
@@ -187,8 +199,10 @@ class GlobExpressionTest(unittest.TestCase):
 
 
 class ApplyOnFilesTest(unittest.TestCase):
+
     def setUp(self):
         self.old_os_path_join = os.path.join
+
         def join(*elements):
             return "/".join(elements)
         os.path.join = join
@@ -242,6 +256,7 @@ class ApplyOnFilesTest(unittest.TestCase):
 
 
 class MkdirTest(unittest.TestCase):
+
     def setUp(self):
         unittest.TestCase.setUp(self)
         self.basedir = tempfile.mkdtemp(self.__class__.__name__)

@@ -22,12 +22,14 @@ from mockito.matchers import Matcher
 from test_utils import mock
 
 from pybuilder.core import TASK_ATTRIBUTE, ACTION_ATTRIBUTE, BEFORE_ATTRIBUTE, AFTER_ATTRIBUTE, INITIALIZER_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, Project, NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE
-from pybuilder.errors import MissingPluginException, PythonbuilderException, BuildFailedException, ProjectValidationFailedException
+from pybuilder.errors import MissingPluginException, PythonbuilderException, ProjectValidationFailedException
 from pybuilder.reactor import Reactor
 from pybuilder.execution import Task, Action, Initializer, ExecutionManager
 from pybuilder.pluginloader import PluginLoader
 
+
 class TaskNameMatcher (Matcher):
+
     def __init__(self, task_name):
         self.task_name = task_name
 
@@ -36,32 +38,38 @@ class TaskNameMatcher (Matcher):
             return False
         return arg.name == self.task_name
 
-    def repr (self):
+    def repr(self):
         return "Task with name %s" % self.task_name
 
+
 class ReactorTest (unittest.TestCase):
-    def setUp (self):
+
+    def setUp(self):
         self.plugin_loader_mock = mock(PluginLoader)
         self.logger = mock()
         self.execution_manager = mock(ExecutionManager)
-        self.reactor = Reactor(self.logger, self.execution_manager, self.plugin_loader_mock)
+        self.reactor = Reactor(
+            self.logger, self.execution_manager, self.plugin_loader_mock)
 
-    def tearDown (self):
+    def tearDown(self):
         unstub()
 
-    def test_should_return_tasks_from_execution_manager_when_calling_get_tasks (self):
+    def test_should_return_tasks_from_execution_manager_when_calling_get_tasks(self):
         self.execution_manager.tasks = ["spam"]
         self.assertEquals(["spam"], self.reactor.get_tasks())
 
-    def test_should_raise_exception_when_importing_plugin_and_plugin_not_found (self):
-        when(self.plugin_loader_mock).load_plugin(any(), "not_found").thenRaise(MissingPluginException("not_found"))
+    def test_should_raise_exception_when_importing_plugin_and_plugin_not_found(self):
+        when(self.plugin_loader_mock).load_plugin(
+            any(), "not_found").thenRaise(MissingPluginException("not_found"))
 
-        self.assertRaises(MissingPluginException, self.reactor.import_plugin, "not_found")
+        self.assertRaises(
+            MissingPluginException, self.reactor.import_plugin, "not_found")
 
         verify(self.plugin_loader_mock).load_plugin(any(), "not_found")
 
-    def test_should_collect_single_task (self):
-        def task (): pass
+    def test_should_collect_single_task(self):
+        def task():
+            pass
         setattr(task, TASK_ATTRIBUTE, True)
 
         module = mock()
@@ -71,8 +79,9 @@ class ReactorTest (unittest.TestCase):
 
         verify(self.execution_manager).register_task(TaskNameMatcher("task"))
 
-    def test_should_collect_single_task_with_overridden_name (self):
-        def task (): pass
+    def test_should_collect_single_task_with_overridden_name(self):
+        def task():
+            pass
         setattr(task, TASK_ATTRIBUTE, True)
         setattr(task, NAME_ATTRIBUTE, "overridden_name")
 
@@ -81,13 +90,16 @@ class ReactorTest (unittest.TestCase):
 
         self.reactor.collect_tasks_and_actions_and_initializers(module)
 
-        verify(self.execution_manager).register_task(TaskNameMatcher("overridden_name"))
+        verify(self.execution_manager).register_task(
+            TaskNameMatcher("overridden_name"))
 
-    def test_should_collect_multiple_tasks (self):
-        def task (): pass
+    def test_should_collect_multiple_tasks(self):
+        def task():
+            pass
         setattr(task, TASK_ATTRIBUTE, True)
 
-        def task2 (): pass
+        def task2():
+            pass
         setattr(task2, TASK_ATTRIBUTE, True)
 
         module = mock()
@@ -98,8 +110,9 @@ class ReactorTest (unittest.TestCase):
 
         verify(self.execution_manager, times(2)).register_task(any(Task))
 
-    def test_should_collect_single_before_action (self):
-        def action (): pass
+    def test_should_collect_single_before_action(self):
+        def action():
+            pass
         setattr(action, ACTION_ATTRIBUTE, True)
         setattr(action, BEFORE_ATTRIBUTE, "spam")
 
@@ -110,8 +123,9 @@ class ReactorTest (unittest.TestCase):
 
         verify(self.execution_manager).register_action(any(Action))
 
-    def test_should_collect_single_after_action (self):
-        def action (): pass
+    def test_should_collect_single_after_action(self):
+        def action():
+            pass
         setattr(action, ACTION_ATTRIBUTE, True)
         setattr(action, AFTER_ATTRIBUTE, "spam")
 
@@ -122,8 +136,9 @@ class ReactorTest (unittest.TestCase):
 
         verify(self.execution_manager).register_action(any(Action))
 
-    def test_should_collect_single_after_action_with_only_once_flag (self):
-        def action (): pass
+    def test_should_collect_single_after_action_with_only_once_flag(self):
+        def action():
+            pass
         setattr(action, ACTION_ATTRIBUTE, True)
         setattr(action, AFTER_ATTRIBUTE, "spam")
         setattr(action, ONLY_ONCE_ATTRIBUTE, True)
@@ -131,7 +146,7 @@ class ReactorTest (unittest.TestCase):
         module = mock()
         module.task = action
 
-        def register_action (action):
+        def register_action(action):
             if not action.only_once:
                 raise AssertionError("Action is not marked as only_once")
 
@@ -139,8 +154,9 @@ class ReactorTest (unittest.TestCase):
 
         self.reactor.collect_tasks_and_actions_and_initializers(module)
 
-    def test_should_collect_single_initializer (self):
-        def init (): pass
+    def test_should_collect_single_initializer(self):
+        def init():
+            pass
         setattr(init, INITIALIZER_ATTRIBUTE, True)
 
         module = mock()
@@ -150,8 +166,9 @@ class ReactorTest (unittest.TestCase):
 
         verify(self.execution_manager).register_initializer(any(Initializer))
 
-    def test_should_collect_single_initializer_with_environments (self):
-        def init (): pass
+    def test_should_collect_single_initializer_with_environments(self):
+        def init():
+            pass
         setattr(init, INITIALIZER_ATTRIBUTE, True)
         setattr(init, ENVIRONMENTS_ATTRIBUTE, ["any_environment"])
 
@@ -159,44 +176,49 @@ class ReactorTest (unittest.TestCase):
         module.task = init
 
         class ExecutionManagerMock (object):
-            def register_initializer (self, initializer):
+
+            def register_initializer(self, initializer):
                 self.initializer = initializer
 
         execution_manager_mock = ExecutionManagerMock()
-        self.reactor.execution_manager =  execution_manager_mock
+        self.reactor.execution_manager = execution_manager_mock
 
         self.reactor.collect_tasks_and_actions_and_initializers(module)
 
-        self.assertEquals(execution_manager_mock.initializer.environments, ["any_environment"])
+        self.assertEquals(
+            execution_manager_mock.initializer.environments, ["any_environment"])
 
-    def test_should_raise_exception_when_verifying_project_directory_and_directory_does_not_exist (self):
+    def test_should_raise_exception_when_verifying_project_directory_and_directory_does_not_exist(self):
         when(os.path).abspath("spam").thenReturn("spam")
         when(os.path).exists("spam").thenReturn(False)
 
-        self.assertRaises(PythonbuilderException, self.reactor.verify_project_directory, "spam", "eggs")
+        self.assertRaises(
+            PythonbuilderException, self.reactor.verify_project_directory, "spam", "eggs")
 
         verify(os.path).abspath("spam")
         verify(os.path).exists("spam")
 
-    def test_should_raise_exception_when_verifying_project_directory_and_directory_is_not_a_directory (self):
+    def test_should_raise_exception_when_verifying_project_directory_and_directory_is_not_a_directory(self):
         when(os.path).abspath("spam").thenReturn("spam")
         when(os.path).exists("spam").thenReturn(True)
         when(os.path).isdir("spam").thenReturn(False)
 
-        self.assertRaises(PythonbuilderException, self.reactor.verify_project_directory, "spam", "eggs")
+        self.assertRaises(
+            PythonbuilderException, self.reactor.verify_project_directory, "spam", "eggs")
 
         verify(os.path).abspath("spam")
         verify(os.path).exists("spam")
         verify(os.path).isdir("spam")
 
-    def test_should_raise_exception_when_verifying_project_directory_and_build_descriptor_does_not_exist (self):
+    def test_should_raise_exception_when_verifying_project_directory_and_build_descriptor_does_not_exist(self):
         when(os.path).abspath("spam").thenReturn("spam")
         when(os.path).exists("spam").thenReturn(True)
         when(os.path).isdir("spam").thenReturn(True)
         when(os.path).join("spam", "eggs").thenReturn("spam/eggs")
         when(os.path).exists("spam/eggs").thenReturn(False)
 
-        self.assertRaises(PythonbuilderException, self.reactor.verify_project_directory, "spam", "eggs")
+        self.assertRaises(
+            PythonbuilderException, self.reactor.verify_project_directory, "spam", "eggs")
 
         verify(os.path).abspath("spam")
         verify(os.path).exists("spam")
@@ -204,7 +226,7 @@ class ReactorTest (unittest.TestCase):
         verify(os.path).join("spam", "eggs")
         verify(os.path).exists("spam/eggs")
 
-    def test_should_raise_exception_when_verifying_project_directory_and_build_descriptor_is_not_a_file (self):
+    def test_should_raise_exception_when_verifying_project_directory_and_build_descriptor_is_not_a_file(self):
         when(os.path).abspath("spam").thenReturn("spam")
         when(os.path).exists("spam").thenReturn(True)
         when(os.path).isdir("spam").thenReturn(True)
@@ -212,7 +234,8 @@ class ReactorTest (unittest.TestCase):
         when(os.path).exists("spam/eggs").thenReturn(True)
         when(os.path).isfile("spam/eggs").thenReturn(False)
 
-        self.assertRaises(PythonbuilderException, self.reactor.verify_project_directory, "spam", "eggs")
+        self.assertRaises(
+            PythonbuilderException, self.reactor.verify_project_directory, "spam", "eggs")
 
         verify(os.path).abspath("spam")
         verify(os.path).exists("spam")
@@ -221,7 +244,7 @@ class ReactorTest (unittest.TestCase):
         verify(os.path).exists("spam/eggs")
         verify(os.path).isfile("spam/eggs")
 
-    def test_should_return_directory_and_full_path_of_descriptor_when_verifying_project_directory (self):
+    def test_should_return_directory_and_full_path_of_descriptor_when_verifying_project_directory(self):
         when(os.path).abspath("spam").thenReturn("/spam")
         when(os.path).exists("/spam").thenReturn(True)
         when(os.path).isdir("/spam").thenReturn(True)
@@ -229,7 +252,8 @@ class ReactorTest (unittest.TestCase):
         when(os.path).exists("/spam/eggs").thenReturn(True)
         when(os.path).isfile("/spam/eggs").thenReturn(True)
 
-        self.assertEquals(("/spam", "/spam/eggs"), self.reactor.verify_project_directory("spam", "eggs"))
+        self.assertEquals(
+            ("/spam", "/spam/eggs"), self.reactor.verify_project_directory("spam", "eggs"))
 
         verify(os.path).abspath("spam")
         verify(os.path).exists("/spam")
@@ -238,14 +262,15 @@ class ReactorTest (unittest.TestCase):
         verify(os.path).exists("/spam/eggs")
         verify(os.path).isfile("/spam/eggs")
 
-    def test_should_raise_exception_when_loading_project_module_and_import_raises_exception (self):
+    def test_should_raise_exception_when_loading_project_module_and_import_raises_exception(self):
         when(imp).load_source("build", "spam").thenRaise(ImportError("spam"))
 
-        self.assertRaises(PythonbuilderException, self.reactor.load_project_module, "spam")
+        self.assertRaises(
+            PythonbuilderException, self.reactor.load_project_module, "spam")
 
         verify(imp).load_source("build", "spam")
 
-    def test_should_return_module_when_loading_project_module_and_import_raises_exception (self):
+    def test_should_return_module_when_loading_project_module_and_import_raises_exception(self):
         module = mock()
         when(imp).load_source("build", "spam").thenReturn(module)
 
@@ -253,7 +278,7 @@ class ReactorTest (unittest.TestCase):
 
         verify(imp).load_source("build", "spam")
 
-    def test_ensure_project_attributes_are_set_when_instantiating_project (self):
+    def test_ensure_project_attributes_are_set_when_instantiating_project(self):
         module = mock(version="version",
                       default_task="default_task",
                       summary="summary",
@@ -277,7 +302,7 @@ class ReactorTest (unittest.TestCase):
         self.assertEquals("license", self.reactor.project.license)
         self.assertEquals("url", self.reactor.project.url)
 
-    def test_ensure_project_name_is_set_from_attribute_when_instantiating_project (self):
+    def test_ensure_project_name_is_set_from_attribute_when_instantiating_project(self):
         module = mock(name="name")
 
         self.reactor.project = mock()
@@ -286,9 +311,10 @@ class ReactorTest (unittest.TestCase):
 
         self.assertEquals("name", self.reactor.project.name)
 
-    def test_should_import_plugin_only_once (self):
+    def test_should_import_plugin_only_once(self):
         plugin_module = mock()
-        when(self.plugin_loader_mock).load_plugin(any(), "spam").thenReturn(plugin_module)
+        when(self.plugin_loader_mock).load_plugin(
+            any(), "spam").thenReturn(plugin_module)
 
         self.reactor.require_plugin("spam")
         self.reactor.require_plugin("spam")
@@ -297,7 +323,7 @@ class ReactorTest (unittest.TestCase):
 
         verify(self.plugin_loader_mock).load_plugin(any(), "spam")
 
-    def test_ensure_project_properties_are_logged_when_calling_log_project_properties (self):
+    def test_ensure_project_properties_are_logged_when_calling_log_project_properties(self):
         project = Project("spam")
         project.set_property("spam", "spam")
         project.set_property("eggs", "eggs")
@@ -305,11 +331,14 @@ class ReactorTest (unittest.TestCase):
         self.reactor.project = project
         self.reactor.log_project_properties()
 
-        verify(self.logger).debug("Project properties: %s", contains("basedir : spam"))
-        verify(self.logger).debug("Project properties: %s", contains("eggs : eggs"))
-        verify(self.logger).debug("Project properties: %s", contains("spam : spam"))
+        verify(self.logger).debug(
+            "Project properties: %s", contains("basedir : spam"))
+        verify(self.logger).debug(
+            "Project properties: %s", contains("eggs : eggs"))
+        verify(self.logger).debug(
+            "Project properties: %s", contains("spam : spam"))
 
-    def test_should_raise_exception_when_project_is_not_valid (self):
+    def test_should_raise_exception_when_project_is_not_valid(self):
         self.reactor.project = mock(properties={})
         when(self.reactor.project).validate().thenReturn(["spam"])
 

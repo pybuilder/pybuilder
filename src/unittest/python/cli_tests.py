@@ -21,6 +21,7 @@ from pybuilder.core import Logger
 
 
 class StdOutLoggerTest (unittest.TestCase):
+
     def setUp(self):
         self.stdOutLogger = StdOutLogger(Logger)
 
@@ -42,6 +43,7 @@ class StdOutLoggerTest (unittest.TestCase):
 
 
 class ColoredStdOutLoggerTest (unittest.TestCase):
+
     def setUp(self):
         self.coloredStdOutLogger = ColoredStdOutLogger(Logger)
 
@@ -63,6 +65,7 @@ class ColoredStdOutLoggerTest (unittest.TestCase):
 
 
 class ParseOptionsTest (unittest.TestCase):
+
     def assert_options(self, options, **overrides):
         self.assertEquals(options.project_directory,
                           overrides.get("project_directory", "."))
@@ -77,60 +80,61 @@ class ParseOptionsTest (unittest.TestCase):
         self.assertEquals(options.property_overrides,
                           overrides.get("property_overrides", {}))
 
-    def test_should_parse_empty_arguments (self):
+    def test_should_parse_empty_arguments(self):
         options, arguments = parse_options([])
 
         self.assert_options(options)
         self.assertEquals([], arguments)
 
-    def test_should_parse_task_list_without_options (self):
+    def test_should_parse_task_list_without_options(self):
         options, arguments = parse_options(["clean", "spam"])
 
         self.assert_options(options)
         self.assertEquals(["clean", "spam"], arguments)
 
-    def test_should_parse_empty_arguments_with_option (self):
+    def test_should_parse_empty_arguments_with_option(self):
         options, arguments = parse_options(["-X"])
 
         self.assert_options(options, debug=True)
         self.assertEquals([], arguments)
 
-    def test_should_parse_arguments_and_option (self):
+    def test_should_parse_arguments_and_option(self):
         options, arguments = parse_options(["-X", "-D", "spam", "eggs"])
 
         self.assert_options(options, debug=True, project_directory="spam")
         self.assertEquals(["eggs"], arguments)
 
-    def test_should_set_property (self):
+    def test_should_set_property(self):
         options, arguments = parse_options(["-P", "spam=eggs"])
 
         self.assert_options(options, property_overrides={"spam": "eggs"})
         self.assertEquals([], arguments)
 
-    def test_should_set_multiple_properties (self):
+    def test_should_set_multiple_properties(self):
         options, arguments = parse_options(["-P", "spam=eggs",
                                             "-P", "foo=bar"])
 
         self.assert_options(options, property_overrides={"spam": "eggs",
-                                                         "foo":"bar"})
+                                                         "foo": "bar"})
         self.assertEquals([], arguments)
 
-    def test_should_abort_execution_when_property_definition_has_syntax_error (self):
-        self.assertRaises(CommandLineUsageException, parse_options, ["-P", "spam"])
+    def test_should_abort_execution_when_property_definition_has_syntax_error(self):
+        self.assertRaises(
+            CommandLineUsageException, parse_options, ["-P", "spam"])
 
-    def test_should_parse_single_environment (self):
+    def test_should_parse_single_environment(self):
         options, arguments = parse_options(["-E", "spam"])
 
         self.assert_options(options, environments=["spam"])
         self.assertEquals([], arguments)
 
-    def test_should_parse_multiple_environments (self):
+    def test_should_parse_multiple_environments(self):
         options, arguments = parse_options(["-E", "spam", "-E", "eggs"])
 
         self.assert_options(options, environments=["spam", "eggs"])
         self.assertEquals([], arguments)
 
-    def test_should_parse_empty_environments (self):
+    def test_should_parse_empty_environments(self):
         options, arguments = parse_options([])
 
         self.assert_options(options, environments=[])
@@ -147,6 +151,7 @@ class LengthOfLongestStringTests(unittest.TestCase):
 
     def test_should_return_four_when_list_contains_egg_and_spam(self):
         self.assertEqual(4, length_of_longest_string(['egg', 'spam']))
-        
+
     def test_should_return_four_when_list_contains_foo_bar_egg_and_spam(self):
-        self.assertEqual(4, length_of_longest_string(['egg', 'spam', 'foo', 'bar']))
+        self.assertEqual(
+            4, length_of_longest_string(['egg', 'spam', 'foo', 'bar']))

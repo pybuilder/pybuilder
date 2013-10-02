@@ -22,15 +22,17 @@ from test_utils import mock
 from pybuilder.core import Project
 from pybuilder.plugins.filter_resources_plugin import ProjectDictWrapper
 
+
 class ProjectDictWrapperTest (unittest.TestCase):
-    def test_should_return_project_property_when_property_is_defined (self):
+
+    def test_should_return_project_property_when_property_is_defined(self):
         project_mock = mock(Project, name="my name")
 
         self.assertEquals("my name", ProjectDictWrapper(project_mock)["name"])
 
         verify(project_mock, never).get_property("name", "name")
 
-    def test_should_delegate_to_project_get_property_when_attribute_is_not_defined (self):
+    def test_should_delegate_to_project_get_property_when_attribute_is_not_defined(self):
         project_mock = Project(".")
         when(project_mock).get_property("spam", "spam").thenReturn("eggs")
 

@@ -15,7 +15,8 @@
 #  limitations under the License.
 import mockito
 
-def mock (mocked_obj=None, **keywordArguments):
+
+def mock(mocked_obj=None, **keywordArguments):
     result = mockito.mock(mocked_obj)
     for key in keywordArguments:
         setattr(result, key, keywordArguments[key])
