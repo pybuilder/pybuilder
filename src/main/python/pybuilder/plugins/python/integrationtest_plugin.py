@@ -57,7 +57,7 @@ def run_integration_tests_sequentially(project, logger):
 
     total_time = Timer.start()
 
-    for test in discover_pybuilder_integration_tests(project):
+    for test in discover_integration_tests_for_project(project):
         report_item = run_single_test(logger, project, reports_dir, test)
         report_items.append(report_item)
 
@@ -82,7 +82,7 @@ def run_integration_tests_in_parallel(project, logger):
             cpu_count))
 
     total_time = Timer.start()
-    for test in discover_pybuilder_integration_tests(project):
+    for test in discover_integration_tests_for_project(project):
         tests.put(test)
 
     def pick_and_run_tests_then_report(tests, reports, reports_dir, logger, project):
@@ -126,7 +126,7 @@ def discover_integration_tests(source_path, suffix=".py"):
     return result
 
 
-def discover_pybuilder_integration_tests(project):
+def discover_integration_tests_for_project(project):
     integrationtest_source_dir = project.expand_path(
         "$dir_source_integrationtest_python")
     integrationtest_suffix = project.expand("$integrationtest_file_suffix")
