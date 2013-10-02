@@ -85,7 +85,8 @@ def run_integration_tests_in_parallel(project, logger):
     tests = multiprocessing.Queue()
     reports = multiprocessing.Queue()
     reports_dir = prepare_reports_directory(project)
-    worker_pool_size = project.get_property('integrationtest_workers', None) or multiprocessing.cpu_count() * 4
+    cpu_scaling_factor = project.get_property('integrationtest_cpu_scaling_factor', 4)
+    worker_pool_size = multiprocessing.cpu_count() * cpu_scaling_factor
 
     tests_failed = 0
     tests_executed = 0
