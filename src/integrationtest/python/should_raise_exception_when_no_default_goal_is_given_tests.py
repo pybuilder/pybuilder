@@ -22,6 +22,7 @@ from pybuilder.errors import PythonbuilderException
 
 
 class Test (IntegrationTestSupport):
+
     def test(self):
         self.write_build_file("""
 from pybuilder.core import task

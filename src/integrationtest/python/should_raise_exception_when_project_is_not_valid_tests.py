@@ -22,6 +22,7 @@ from pybuilder.errors import ProjectValidationFailedException
 
 
 class Test (IntegrationTestSupport):
+
     def test(self):
         self.write_build_file("""
 from pybuilder.core import init
@@ -33,7 +34,8 @@ def init (project):
         """)
         reactor = self.prepare_reactor()
 
-        self.assertRaises(ProjectValidationFailedException, reactor.build, ["clean"])
+        self.assertRaises(
+            ProjectValidationFailedException, reactor.build, ["clean"])
 
 if __name__ == "__main__":
     unittest.main()

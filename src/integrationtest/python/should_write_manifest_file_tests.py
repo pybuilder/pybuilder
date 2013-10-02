@@ -18,7 +18,9 @@ import unittest
 
 from integrationtest_support import IntegrationTestSupport
 
+
 class Test (IntegrationTestSupport):
+
     def test(self):
         self.write_build_file("""
 from pybuilder.core import use_plugin, init
@@ -43,11 +45,16 @@ def init (project):
         reactor = self.prepare_reactor()
         reactor.build()
 
-        self.assert_directory_exists("target/dist/integration-test-1.0-SNAPSHOT")
-        self.assert_directory_exists("target/dist/integration-test-1.0-SNAPSHOT/spam")
-        self.assert_file_empty("target/dist/integration-test-1.0-SNAPSHOT/spam/eggs")
-        self.assert_file_empty("target/dist/integration-test-1.0-SNAPSHOT/more_spam")
-        self.assert_file_empty("target/dist/integration-test-1.0-SNAPSHOT/more_eggs")
+        self.assert_directory_exists(
+            "target/dist/integration-test-1.0-SNAPSHOT")
+        self.assert_directory_exists(
+            "target/dist/integration-test-1.0-SNAPSHOT/spam")
+        self.assert_file_empty(
+            "target/dist/integration-test-1.0-SNAPSHOT/spam/eggs")
+        self.assert_file_empty(
+            "target/dist/integration-test-1.0-SNAPSHOT/more_spam")
+        self.assert_file_empty(
+            "target/dist/integration-test-1.0-SNAPSHOT/more_eggs")
 
         manifest_in = "target/dist/integration-test-1.0-SNAPSHOT/MANIFEST.in"
 

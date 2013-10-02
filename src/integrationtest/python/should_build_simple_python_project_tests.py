@@ -20,7 +20,8 @@ from integrationtest_support import IntegrationTestSupport
 
 
 class Test (IntegrationTestSupport):
-    def test (self):
+
+    def test(self):
         self.write_build_file("""
 from pybuilder.core import use_plugin
 
@@ -39,9 +40,12 @@ def spam ():
         reactor = self.prepare_reactor()
         reactor.build()
 
-        self.assert_directory_exists("target/dist/integration-test-1.0-SNAPSHOT")
-        self.assert_directory_exists("target/dist/integration-test-1.0-SNAPSHOT/spam")
-        self.assert_file_empty("target/dist/integration-test-1.0-SNAPSHOT/spam/__init__.py")
+        self.assert_directory_exists(
+            "target/dist/integration-test-1.0-SNAPSHOT")
+        self.assert_directory_exists(
+            "target/dist/integration-test-1.0-SNAPSHOT/spam")
+        self.assert_file_empty(
+            "target/dist/integration-test-1.0-SNAPSHOT/spam/__init__.py")
         self.assert_file_content("target/dist/integration-test-1.0-SNAPSHOT/spam/eggs.py", """
 def spam ():
     pass
