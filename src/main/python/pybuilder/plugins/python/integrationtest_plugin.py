@@ -37,10 +37,12 @@ def init_test_source_directory(project):
 @task
 @description("Runs integration tests based on Python's unittest module")
 def run_integration_tests(project, logger):
-    if not project.get_property('integrationtest_parallel'):
-        reports, total_time = run_integration_tests_sequentially(project, logger)
+    if not project.get_property("integrationtest_parallel"):
+        reports, total_time = run_integration_tests_sequentially(
+            project, logger)
     else:
-        reports, total_time = run_integration_tests_in_parallel(project, logger)
+        reports, total_time = run_integration_tests_in_parallel(
+            project, logger)
 
     reports_processor = ReportsProcessor(project, logger)
     reports_processor.process_reports(reports, total_time)
@@ -48,15 +50,14 @@ def run_integration_tests(project, logger):
 
 
 def run_integration_tests_sequentially(project, logger):
+    logger.debug("Running integration tests sequentially")
     reports_dir = prepare_reports_directory(project)
 
     report_items = []
 
     total_time = Timer.start()
 
-    for test in discover_integration_tests(project.expand_path("$dir_source_integrationtest_python"),
-                                           project.expand("$integrationtest_file_suffix")):
-
+    for test in discover_pybuilder_integration_tests(project):
         report_item = run_single_test(logger, project, reports_dir, test)
         report_items.append(report_item)
 
@@ -70,13 +71,18 @@ def run_integration_tests_in_parallel(project, logger):
     tests = multiprocessing.Queue()
     reports = multiprocessing.Queue()
     reports_dir = prepare_reports_directory(project)
-    cpu_scaling_factor = project.get_property('integrationtest_cpu_scaling_factor', 4)
-    worker_pool_size = multiprocessing.cpu_count() * cpu_scaling_factor
+    cpu_scaling_factor = project.get_property(
+        'integrationtest_cpu_scaling_factor', 4)
+    cpu_count = multiprocessing.cpu_count()
+    worker_pool_size = cpu_count * cpu_scaling_factor
+
+    logger.debug(
+        "Running integration tests in parallel with {0} processes ({1} cpus found)".format(
+            worker_pool_size,
+            cpu_count))
 
     total_time = Timer.start()
-
-    for test in discover_integration_tests(project.expand_path("$dir_source_integrationtest_python"),
-                                           project.expand("$integrationtest_file_suffix")):
+    for test in discover_pybuilder_integration_tests(project):
         tests.put(test)
 
     def pick_and_run_tests_then_report(tests, reports, reports_dir, logger, project):
@@ -118,6 +124,13 @@ def discover_integration_tests(source_path, suffix=".py"):
             if file_name.endswith(suffix):
                 result.append(os.path.join(root, file_name))
     return result
+
+
+def discover_pybuilder_integration_tests(project):
+    integrationtest_source_dir = project.expand_path(
+        "$dir_source_integrationtest_python")
+    integrationtest_suffix = project.expand("$integrationtest_file_suffix")
+    return discover_integration_tests(integrationtest_source_dir, integrationtest_suffix)
 
 
 def add_additional_environment_keys(env, project):
