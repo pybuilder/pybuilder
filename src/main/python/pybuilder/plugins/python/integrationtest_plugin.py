@@ -27,7 +27,8 @@ use_plugin("python.core")
 
 @init
 def init_test_source_directory(project):
-    project.set_property_if_unset("dir_source_integrationtest_python", "src/integrationtest/python")
+    project.set_property_if_unset(
+        "dir_source_integrationtest_python", "src/integrationtest/python")
     project.set_property_if_unset("integrationtest_file_suffix", "_tests.py")
     project.set_property_if_unset("integrationtest_additional_environment", {})
     project.set_property_if_unset("integrationtest_inherit_environment", False)
@@ -36,6 +37,13 @@ def init_test_source_directory(project):
 @task
 @description("Runs integration tests based on Python's unittest module")
 def run_integration_tests(project, logger):
+    if not project.get_property('integrationtest_parallel'):
+        return run_integration_tests_sequentially(project, logger)
+
+    return run_integration_tests_in_parallel(project, logger)
+
+
+def run_integration_tests_sequentially(project, logger):
     reports_dir = prepare_reports_directory(project)
 
     test_failed = 0
@@ -72,6 +80,73 @@ def run_integration_tests(project, logger):
         raise BuildFailedException("Integration test(s) failed.")
 
 
+def run_integration_tests_in_parallel(project, logger):
+    import multiprocessing
+    tests = multiprocessing.Queue()
+    reports = multiprocessing.Queue()
+    reports_dir = prepare_reports_directory(project)
+    worker_pool_size = project.get_property('integrationtest_workers', None) or multiprocessing.cpu_count() * 4
+
+    tests_failed = 0
+    tests_executed = 0
+
+    total_time = Timer.start()
+
+    for test in discover_integration_tests(project.expand_path("$dir_source_integrationtest_python"),
+                                           project.expand("$integrationtest_file_suffix")):
+        tests.put(test)
+
+    def pick_and_run_tests_then_report(tests, reports, reports_dir, logger, project):
+        while True:
+            try:
+                test = tests.get_nowait()
+                report_item = run_single_test(
+                    logger, project, reports_dir, test)
+                reports.put(report_item)
+            except:
+                break
+
+    pool = []
+    for i in range(worker_pool_size):
+        p = multiprocessing.Process(
+            target=pick_and_run_tests_then_report, args=(tests, reports, reports_dir, logger, project))
+        pool.append(p)
+        p.start()
+
+    for worker in pool:
+        worker.join()
+
+    total_time.stop()
+
+    tests_failed = 0
+    tests_executed = 0
+
+    iterable_reports = []
+    while True:
+        try:
+            iterable_reports.append(reports.get_nowait())
+        except:
+            break
+
+    for report in iterable_reports:
+        if not report['success']:
+            tests_failed += 1
+        tests_executed += 1
+
+    test_report = {
+        "time": total_time.get_millis(),
+        "success": tests_failed == 0,
+        "num_of_tests": tests_executed,
+        "tests_failed": tests_failed,
+        "tests": iterable_reports
+    }
+
+    project.write_report("integrationtest.json", render_report(test_report))
+    logger.info("Executed %d integration tests.", tests_executed)
+    if tests_failed:
+        raise BuildFailedException("Integration test(s) failed.")
+
+
 def discover_integration_tests(source_path, suffix=".py"):
     result = []
     for root, _, files in os.walk(source_path):
@@ -82,7 +157,8 @@ def discover_integration_tests(source_path, suffix=".py"):
 
 
 def add_additional_environment_keys(env, project):
-    additional_environment = project.get_property("integrationtest_additional_environment", {})
+    additional_environment = project.get_property(
+        "integrationtest_additional_environment", {})
     # TODO: assert that additional env is a map
     for key in additional_environment:
         env[key] = additional_environment[key]
@@ -123,7 +199,8 @@ def run_single_test(logger, project, reports_dir, test, ):
     command_and_arguments = (sys.executable, test)
     report_file_name = os.path.join(reports_dir, name)
     error_file_name = report_file_name + ".err"
-    return_code = execute_command(command_and_arguments, report_file_name, env, error_file_name=error_file_name)
+    return_code = execute_command(
+        command_and_arguments, report_file_name, env, error_file_name=error_file_name)
     test_time.stop()
     report_item = {
         "test": name,
