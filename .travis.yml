@@ -8,13 +8,14 @@ python:
   - "pypy"
 
 before_script:
+  - sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm
   - sudo apt-get install pymetrics pychecker pylint pep8
   - pip install coveralls
   - ./bootstrap install_dependencies -v
 
 script:
   - export PYTHONPATH=src/main/python/
-  - ./bootstrap -v 
+  - ./bootstrap -v
   - coverage run --source=src/main/python src/main/scripts/pyb run_unit_tests -v
 
 after_success:
