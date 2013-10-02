@@ -17,10 +17,10 @@
 import os
 import sys
 
-from pybuilder.errors import BuildFailedException
 from pybuilder.core import init, use_plugin, task, description
-from pybuilder.utils import execute_command, render_report, Timer
+from pybuilder.utils import execute_command, Timer
 from pybuilder.terminal import print_text_line, print_file_content
+from pybuilder.plugins.python.test_plugin_helper import ReportsProcessor
 
 use_plugin("python.core")
 
@@ -38,16 +38,18 @@ def init_test_source_directory(project):
 @description("Runs integration tests based on Python's unittest module")
 def run_integration_tests(project, logger):
     if not project.get_property('integrationtest_parallel'):
-        return run_integration_tests_sequentially(project, logger)
+        reports, total_time = run_integration_tests_sequentially(project, logger)
+    else:
+        reports, total_time = run_integration_tests_in_parallel(project, logger)
 
-    return run_integration_tests_in_parallel(project, logger)
+    reports_processor = ReportsProcessor(project, logger)
+    reports_processor.process_reports(reports, total_time)
+    reports_processor.write_report_and_ensure_all_tests_passed()
 
 
 def run_integration_tests_sequentially(project, logger):
     reports_dir = prepare_reports_directory(project)
 
-    test_failed = 0
-    tests_executed = 0
     report_items = []
 
     total_time = Timer.start()
@@ -58,26 +60,9 @@ def run_integration_tests_sequentially(project, logger):
         report_item = run_single_test(logger, project, reports_dir, test)
         report_items.append(report_item)
 
-        if not report_item["success"]:
-            test_failed += 1
-
-        tests_executed += 1
-
     total_time.stop()
 
-    test_report = {
-        "time": total_time.get_millis(),
-        "success": test_failed == 0,
-        "num_of_tests": tests_executed,
-        "tests_failed": test_failed,
-        "tests": report_items
-    }
-
-    project.write_report("integrationtest.json", render_report(test_report))
-
-    logger.info("Executed %d integration tests.", tests_executed)
-    if test_failed:
-        raise BuildFailedException("Integration test(s) failed.")
+    return (report_items, total_time)
 
 
 def run_integration_tests_in_parallel(project, logger):
@@ -87,9 +72,6 @@ def run_integration_tests_in_parallel(project, logger):
     reports_dir = prepare_reports_directory(project)
     cpu_scaling_factor = project.get_property('integrationtest_cpu_scaling_factor', 4)
     worker_pool_size = multiprocessing.cpu_count() * cpu_scaling_factor
-
-    tests_failed = 0
-    tests_executed = 0
 
     total_time = Timer.start()
 
@@ -119,9 +101,6 @@ def run_integration_tests_in_parallel(project, logger):
 
     total_time.stop()
 
-    tests_failed = 0
-    tests_executed = 0
-
     iterable_reports = []
     while True:
         try:
@@ -129,23 +108,7 @@ def run_integration_tests_in_parallel(project, logger):
         except:
             break
 
-    for report in iterable_reports:
-        if not report['success']:
-            tests_failed += 1
-        tests_executed += 1
-
-    test_report = {
-        "time": total_time.get_millis(),
-        "success": tests_failed == 0,
-        "num_of_tests": tests_executed,
-        "tests_failed": tests_failed,
-        "tests": iterable_reports
-    }
-
-    project.write_report("integrationtest.json", render_report(test_report))
-    logger.info("Executed %d integration tests.", tests_executed)
-    if tests_failed:
-        raise BuildFailedException("Integration test(s) failed.")
+    return (iterable_reports, total_time)
 
 
 def discover_integration_tests(source_path, suffix=".py"):
