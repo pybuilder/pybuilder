@@ -39,6 +39,18 @@ class BuiltinPluginLoader(PluginLoader):
             raise MissingPluginException(name, import_error)
 
 
+class ThirdPartyPluginLoader(PluginLoader):
+    def load_plugin(self, project, name):
+        self.logger.debug("Trying to load third party plugin '%s'", name)
+        thirdparty_plugin = "%s" % name
+        try:
+            __import__(thirdparty_plugin)
+            self.logger.debug("Found third party plugin '%s'", thirdparty_plugin)
+            return sys.modules[thirdparty_plugin]
+        except ImportError as import_error:
+            raise MissingPluginException(name, import_error)
+
+
 class DispatchingPluginLoader(PluginLoader):
     def __init__(self, logger, *loader):
         super(DispatchingPluginLoader, self).__init__(logger)

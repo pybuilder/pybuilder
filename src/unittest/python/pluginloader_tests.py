@@ -28,7 +28,44 @@ from mockito import when, verify, unstub, never
 from test_utils import mock
 
 from pybuilder.errors import MissingPluginException
-from pybuilder.pluginloader import BuiltinPluginLoader, DispatchingPluginLoader
+from pybuilder.pluginloader import BuiltinPluginLoader, DispatchingPluginLoader, ThirdPartyPluginLoader
+
+
+class ThirdPartyPluginLoaderTest (unittest.TestCase):
+
+    def setUp(self):
+        super(ThirdPartyPluginLoaderTest, self).setUp()
+        self.project = mock()
+        self.loader = ThirdPartyPluginLoader(mock())
+
+    def tearDown(self):
+        super(ThirdPartyPluginLoaderTest, self).tearDown()
+        unstub()
+
+    def test_should_raise_exception_when_requiring_plugin_and_plugin_is_not_found(self):
+        when(builtin_module).__import__(
+            "spam").thenRaise(ImportError())
+
+        self.assertRaises(
+            MissingPluginException, self.loader.load_plugin, self.project, "spam")
+
+        verify(builtin_module).__import__("spam")
+
+    def test_should_import_plugin_when_requiring_plugin_and_plugin_is_found_as_third_party(self):
+        old_module = sys.modules.get("spam")
+        try:
+            plugin_module = mock()
+            sys.modules["spam"] = plugin_module
+            when(builtin_module).__import__(
+                "spam").thenReturn(plugin_module)
+
+            self.loader.load_plugin(self.project, "spam")
+
+            verify(builtin_module).__import__("spam")
+        finally:
+            del sys.modules["spam"]
+            if old_module:
+                sys.modules["spam"] = old_module
 
 
 class BuiltinPluginLoaderTest (unittest.TestCase):
