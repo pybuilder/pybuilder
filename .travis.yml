@@ -14,8 +14,7 @@ before_script:
   - ./bootstrap install_dependencies -v
 
 script:
-  - export PYTHONPATH=src/main/python/
-  - ./bootstrap -v
+  - find . -name "*.pyc" -delete; ./bootstrap -v
   - coverage run --source=src/main/python src/main/scripts/pyb run_unit_tests -v
 
 after_success:
