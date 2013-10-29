@@ -21,7 +21,9 @@ from pybuilder.core import (
     TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE, DESCRIPTION_ATTRIBUTE, AFTER_ATTRIBUTE, BEFORE_ATTRIBUTE,
     INITIALIZER_ATTRIBUTE, ACTION_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, Project, NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE)
 from pybuilder.errors import PythonbuilderException, ProjectValidationFailedException
-from pybuilder.pluginloader import BuiltinPluginLoader, DispatchingPluginLoader, ThirdPartyPluginLoader
+from pybuilder.pluginloader import BuiltinPluginLoader
+from pybuilder.pluginloader import DispatchingPluginLoader
+from pybuilder.pluginloader import ThirdPartyPluginLoader
 from pybuilder.utils import as_list
 from pybuilder.execution import Action, Initializer, Task
 
