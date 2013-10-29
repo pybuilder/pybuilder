@@ -15,7 +15,7 @@ before_script:
 
 script:
   - find . -name "*.pyc" -delete; ./bootstrap -v
-  - coverage run --source=src/main/python src/main/scripts/pyb run_unit_tests -v
+  - PYTHONPATH=src/main/python coverage run --source=src/main/python src/main/scripts/pyb run_unit_tests -v
 
 after_success:
   - coveralls --verbose
