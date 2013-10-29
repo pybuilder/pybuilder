@@ -108,7 +108,7 @@ def execute_command(command_and_arguments, outfile_name, env=None, cwd=None, err
 
 
 def assert_can_execute(command_and_arguments, prerequisite, caller):
-    _, outfile = tempfile.mkstemp()
+    fd, outfile = tempfile.mkstemp()
     f = open(outfile, "w")
     try:
         process = subprocess.Popen(command_and_arguments, stdout=f, stderr=f, shell=False)
@@ -117,6 +117,7 @@ def assert_can_execute(command_and_arguments, prerequisite, caller):
         raise MissingPrerequisiteException(prerequisite, caller)
     finally:
         f.close()
+        os.close(fd)
         os.unlink(outfile)
 
 
