@@ -25,20 +25,33 @@ from pybuilder.core import Logger
 from pybuilder.errors import PythonbuilderException
 from pybuilder.execution import ExecutionManager
 from pybuilder.reactor import Reactor
-from pybuilder.terminal import BOLD, BROWN, RED, GREEN, bold, styled_text, fg, italic, \
-    print_text, print_text_line, print_error, print_error_line, draw_line
+from pybuilder.terminal import (BOLD,
+                                BROWN,
+                                RED,
+                                GREEN,
+                                bold,
+                                styled_text,
+                                fg,
+                                italic,
+                                print_text,
+                                print_text_line,
+                                print_error,
+                                print_error_line,
+                                draw_line)
 from pybuilder.utils import format_timestamp
 
 PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
 
 
 class CommandLineUsageException(PythonbuilderException):
+
     def __init__(self, usage, message):
         super(CommandLineUsageException, self).__init__(message)
         self.usage = usage
 
 
 class StdOutLogger(Logger):
+
     def _level_to_string(self, level):
         if Logger.DEBUG == level:
             return "[DEBUG]"
@@ -55,6 +68,7 @@ class StdOutLogger(Logger):
 
 
 class ColoredStdOutLogger(StdOutLogger):
+
     def _level_to_string(self, level):
         if Logger.DEBUG == level:
             return italic("[DEBUG]")
@@ -70,7 +84,8 @@ def parse_options(args):
                                    version="%prog " + __version__)
 
     def error(msg):
-        raise CommandLineUsageException(parser.get_usage() + parser.format_option_help(), msg)
+        raise CommandLineUsageException(
+            parser.get_usage() + parser.format_option_help(), msg)
 
     parser.error = error
 
@@ -86,7 +101,8 @@ def parse_options(args):
                       default=False,
                       help="Enable verbose output")
 
-    project_group = optparse.OptionGroup(parser, "Project Options", "Customizes the project to build.")
+    project_group = optparse.OptionGroup(
+        parser, "Project Options", "Customizes the project to build.")
 
     project_group.add_option("-D", "--project-directory",
                              dest="project_directory",
@@ -108,7 +124,8 @@ def parse_options(args):
 
     parser.add_option_group(project_group)
 
-    output_group = optparse.OptionGroup(parser, "Output Options", "Modifies the messages printed during a build.")
+    output_group = optparse.OptionGroup(
+        parser, "Output Options", "Modifies the messages printed during a build.")
 
     output_group.add_option("-X", "--debug",
                             action="store_true",
@@ -180,7 +197,8 @@ def print_build_summary(options, summary):
     print_text_line("%20s: %s" % ("Project", summary.project.name))
     print_text_line("%20s: %s" % ("Version", summary.project.version))
     print_text_line("%20s: %s" % ("Base directory", summary.project.basedir))
-    print_text_line("%20s: %s" % ("Environments", ", ".join(options.environments)))
+    print_text_line("%20s: %s" %
+                    ("Environments", ", ".join(options.environments)))
 
     task_summary = ""
     for task in summary.task_summaries:
@@ -204,15 +222,18 @@ def print_build_status(failure_message, options, successful):
     if successful:
         print_styled_text_line("BUILD SUCCESSFUL", options, BOLD, fg(GREEN))
     else:
-        print_styled_text_line("BUILD FAILED - {0}".format(failure_message), options, BOLD, fg(RED))
+        print_styled_text_line(
+            "BUILD FAILED - {0}".format(failure_message), options, BOLD, fg(RED))
     draw_line()
 
 
 def print_elapsed_time_summary(start, end):
     time_needed = end - start
-    millis = ((time_needed.days * 24 * 60 * 60) + time_needed.seconds) * 1000 + time_needed.microseconds / 1000
+    millis = ((time_needed.days * 24 * 60 * 60) + time_needed.seconds) * \
+        1000 + time_needed.microseconds / 1000
     print_text_line("Build finished at %s" % format_timestamp(end))
-    print_text_line("Build took %d seconds (%d ms)" % (time_needed.seconds, millis))
+    print_text_line("Build took %d seconds (%d ms)" %
+                    (time_needed.seconds, millis))
 
 
 def print_summary(successful, summary, start, end, options, failure_message):
@@ -241,17 +262,20 @@ def print_list_of_tasks(reactor):
     print_text_line('Tasks found for project "%s":' % reactor.project.name)
 
     tasks = reactor.get_tasks()
-    column_length = length_of_longest_string(list(map(lambda task: task.name, tasks)))
+    column_length = length_of_longest_string(
+        list(map(lambda task: task.name, tasks)))
     column_length += 4
 
     for task in sorted(tasks):
         task_name = task.name.rjust(column_length)
-        task_description = " ".join(task.description) or "<no description available>"
+        task_description = " ".join(
+            task.description) or "<no description available>"
         print_text_line("{0} - {1}".format(task_name, task_description))
 
         if task.dependencies:
             whitespace = (column_length + 3) * " "
-            depends_on_message = "depends on tasks: %s" % " ".join(task.dependencies)
+            depends_on_message = "depends on tasks: %s" % " ".join(
+                task.dependencies)
             print_text_line(whitespace + depends_on_message)
 
 
@@ -276,7 +300,8 @@ def main(*args):
         return 0
 
     if not options.very_quiet:
-        print_styled_text_line("PYBUILDER Version {0}".format(__version__), options, BOLD)
+        print_styled_text_line(
+            "PYBUILDER Version {0}".format(__version__), options, BOLD)
         print_text_line("Build started at %s" % format_timestamp(start))
         draw_line()
 
@@ -286,14 +311,16 @@ def main(*args):
 
     try:
         try:
-            reactor.prepare_build(property_overrides=options.property_overrides,
-                                  project_directory=options.project_directory)
+            reactor.prepare_build(
+                property_overrides=options.property_overrides,
+                project_directory=options.project_directory)
 
             if options.verbose or options.debug:
                 logger.debug("Verbose output enabled.\n")
                 reactor.project.set_property("verbose", True)
 
-            summary = reactor.build(environments=options.environments, tasks=arguments)
+            summary = reactor.build(
+                environments=options.environments, tasks=arguments)
 
         except KeyboardInterrupt:
             raise PythonbuilderException("Build aborted")
@@ -307,7 +334,8 @@ def main(*args):
     finally:
         end = datetime.datetime.now()
         if not options.very_quiet:
-            print_summary(successful, summary, start, end, options, failure_message)
+            print_summary(
+                successful, summary, start, end, options, failure_message)
 
         if not successful:
             return 1
