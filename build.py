@@ -28,8 +28,6 @@ use_plugin("python.coverage")
 use_plugin("python.unittest")
 use_plugin("python.integrationtest")
 use_plugin("python.flake8")
-use_plugin("python.pylint")
-use_plugin("python.pymetrics")
 
 use_plugin("python.pydev")
 
@@ -57,7 +55,6 @@ default_task = ["analyze", "publish"]
 @init
 def initialize(project):
     project.build_depends_on("mockito")
-    project.build_depends_on("pymetrics")
     project.build_depends_on("pyassert")
 
     # Need to define that manually, because the pyfix plugin is not used
