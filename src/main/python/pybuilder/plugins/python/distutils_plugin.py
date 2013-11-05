@@ -67,7 +67,8 @@ def default(value, default=""):
 
 @init
 def initialize_distutils_plugin(project):
-    project.set_property_if_unset("distutils_commands", ["sdist", "bdist_dumb"])
+    project.set_property_if_unset(
+        "distutils_commands", ["sdist", "bdist_dumb"])
     project.set_property_if_unset("distutils_classifiers", [
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python"
@@ -118,13 +119,16 @@ def write_manifest_file(project, logger):
         logger.debug("No data to write into MANIFEST.in")
         return
 
-    logger.debug("Files included in MANIFEST.in: %s" % project.manifest_included_files)
+    logger.debug("Files included in MANIFEST.in: %s" %
+                 project.manifest_included_files)
 
     manifest_filename = project.expand_path("$dir_dist/MANIFEST.in")
     logger.info("Writing MANIFEST.in as %s", manifest_filename)
 
     with open(manifest_filename, "w") as manifest_file:
         manifest_file.write(render_manifest_file(project))
+
+    os.chmod(manifest_filename, 0o664)
 
 
 def render_manifest_file(project):
@@ -144,7 +148,8 @@ def build_binary_distribution(project, logger):
 
     setup_script = project.expand_path("$dir_dist/setup.py")
 
-    logger.info("Building binary distribution in %s", project.expand_path("$dir_dist"))
+    logger.info("Building binary distribution in %s",
+                project.expand_path("$dir_dist"))
 
     commands = as_list(project.get_property("distutils_commands"))
 
@@ -158,11 +163,13 @@ def build_binary_distribution(project, logger):
                                        shell=False)
             return_code = process.wait()
             if return_code != 0:
-                raise BuildFailedException("Error while executing setup command %s", command)
+                raise BuildFailedException(
+                    "Error while executing setup command %s", command)
 
 
 def build_install_dependencies_string(project):
-    dependencies = [dependency for dependency in project.dependencies if not dependency.url]
+    dependencies = [
+        dependency for dependency in project.dependencies if not dependency.url]
     if not dependencies:
         return ""
 
@@ -176,7 +183,8 @@ def build_install_dependencies_string(project):
 
 
 def build_dependency_links_string(project):
-    dependency_links = [dependency for dependency in project.dependencies if dependency.url]
+    dependency_links = [
+        dependency for dependency in project.dependencies if dependency.url]
     if not dependency_links:
         return ""
 
