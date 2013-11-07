@@ -23,7 +23,7 @@
 
 __author__ = 'Michael Gruber'
 
-from pybuilder.core import after, task, init, use_plugin
+from pybuilder.core import after, task, init, use_plugin, depends
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import assert_can_execute, read_file
 from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
@@ -55,6 +55,7 @@ def assert_flake8_is_executable(logger):
 
 
 @task
+@depends("prepare")
 def analyze(project, logger):
     """
         Applies the flake8 script to the sources of the given project.
