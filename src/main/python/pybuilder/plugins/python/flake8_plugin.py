@@ -36,10 +36,12 @@ use_plugin("python.core")
 def initialize_flake8_plugin(project):
     project.build_depends_on("flake8")
 
-    project.set_property("flake8_verbose_output", project.get_property("verbose"))
+    project.set_property(
+        "flake8_verbose_output", project.get_property("verbose"))
     project.set_property("flake8_break_build", False)
     project.set_property("flake8_max_line_length", 120)
     project.set_property("flake8_exclude_patterns", None)
+    project.set_property("flake8_include_test_sources", False)
 
 
 @after("prepare")
@@ -70,16 +72,20 @@ def analyze(project, logger):
         command_and_arguments.append(ignore_option)
 
     max_line_length = project.get_property("flake8_max_line_length")
-    command_and_arguments.append("--max-line-length={0}".format(max_line_length))
+    command_and_arguments.append(
+        "--max-line-length={0}".format(max_line_length))
 
     exclude_patterns = project.get_property("flake8_exclude_patterns")
     if exclude_patterns:
         command_and_arguments.append("--exclude={0}".format(exclude_patterns))
 
+    include_test_sources = project.get_property("flake8_include_test_sources")
+
     execution_result = execute_tool_on_source_files(project=project,
                                                     name="flake8",
                                                     command_and_arguments=command_and_arguments,
-                                                    logger=logger)
+                                                    logger=logger,
+                                                    include_test_sources=include_test_sources)
 
     report_file = execution_result[1]
     report_lines = read_file(report_file)
@@ -87,6 +93,7 @@ def analyze(project, logger):
 
     if count_of_warnings > 0:
         if project.get_property("flake8_break_build"):
-            raise BuildFailedException("flake8 found {0} warning(s)".format(count_of_warnings))
+            raise BuildFailedException(
+                "flake8 found {0} warning(s)".format(count_of_warnings))
         else:
             logger.warn("flake8 found %d warning(s).", count_of_warnings)

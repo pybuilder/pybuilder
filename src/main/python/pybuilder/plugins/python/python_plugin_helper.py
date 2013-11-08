@@ -19,9 +19,21 @@ import os
 from pybuilder.utils import discover_modules, discover_files, execute_command, as_list, read_file
 
 
-def execute_tool_on_source_files(project, name, command_and_arguments, logger=None):
+def execute_tool_on_source_files(project, name, command_and_arguments, logger=None, include_test_sources=False):
+    def discover_python_files(directory):
+        return discover_files(directory, ".py")
+
     source_dir = project.expand_path("$dir_source_main_python")
-    files = discover_files(source_dir, ".py")
+
+    if include_test_sources:
+        import itertools
+        files = itertools.chain(
+            discover_python_files(source_dir),
+            discover_python_files(project.expand_path("$dir_source_unittest_python")),
+            discover_python_files(project.expand_path("$dir_source_integrationtest_python")))
+    else:
+        files = discover_python_files(source_dir)
+
     command = as_list(command_and_arguments) + [f for f in files]
 
     report_file = project.expand_path("$dir_reports/{0}".format(name))
