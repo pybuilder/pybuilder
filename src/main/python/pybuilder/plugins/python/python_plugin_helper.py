@@ -26,11 +26,14 @@ def execute_tool_on_source_files(project, name, command_and_arguments, logger=No
     source_dir = project.expand_path("$dir_source_main_python")
 
     if include_test_sources:
+        unittest_dir = project.expand_path("$dir_source_unittest_python")
+        integrationtest_dir = project.expand_path("$dir_source_integrationtest_python")
+
         import itertools
         files = itertools.chain(
             discover_python_files(source_dir),
-            discover_python_files(project.expand_path("$dir_source_unittest_python")),
-            discover_python_files(project.expand_path("$dir_source_integrationtest_python")))
+            discover_python_files(unittest_dir),
+            discover_python_files(integrationtest_dir))
     else:
         files = discover_python_files(source_dir)
 
