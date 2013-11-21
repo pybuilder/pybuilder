@@ -26,11 +26,14 @@ def log_report(logger, name, report_lines):
             logger.warn(name + ': ' + report_line[:-1])
 
 
+def discover_python_files(directory):
+    return discover_files(directory, ".py")
+
+
 def discover_affected_files(include_test_sources, project):
-    def discover_python_files(directory):
-        return discover_files(directory, ".py")
 
     source_dir = project.expand_path("$dir_source_main_python")
+
     if include_test_sources:
         unittest_dir = project.expand_path("$dir_source_unittest_python")
         integrationtest_dir = project.expand_path("$dir_source_integrationtest_python")
