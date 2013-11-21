@@ -57,6 +57,7 @@ default_task = ["analyze", "publish"]
 def initialize(project):
     project.build_depends_on("mockito")
     project.build_depends_on("pyassert")
+    project.build_depends_on("wheel")
 
     # Need to define that manually, because the pyfix plugin is not used
     # directly.
@@ -80,7 +81,7 @@ def initialize(project):
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
     project.get_property("source_dist_ignore_patterns").append(".settings")
 
-    project.get_property("distutils_commands").append("bdist_egg")
+    project.get_property("distutils_commands").append("bdist_wheel")
     project.set_property("distutils_classifiers", [
                          'Programming Language :: Python',
                          'Programming Language :: Python :: Implementation :: CPython',
