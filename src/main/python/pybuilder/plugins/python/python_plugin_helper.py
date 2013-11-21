@@ -19,23 +19,35 @@ import os
 from pybuilder.utils import discover_modules, discover_files, execute_command, as_list, read_file
 
 
-def execute_tool_on_source_files(project, name, command_and_arguments, logger=None, include_test_sources=False):
+def log_report(logger, name, report_lines):
+    count_of_warnings = len(report_lines)
+    if count_of_warnings > 0:
+        for report_line in report_lines:
+            logger.warn(name + ': ' + report_line[:-1])
+
+
+def discover_affected_files(include_test_sources, project):
     def discover_python_files(directory):
         return discover_files(directory, ".py")
 
     source_dir = project.expand_path("$dir_source_main_python")
-
     if include_test_sources:
         unittest_dir = project.expand_path("$dir_source_unittest_python")
         integrationtest_dir = project.expand_path("$dir_source_integrationtest_python")
 
         import itertools
+
         files = itertools.chain(
             discover_python_files(source_dir),
             discover_python_files(unittest_dir),
             discover_python_files(integrationtest_dir))
     else:
         files = discover_python_files(source_dir)
+    return files
+
+
+def execute_tool_on_source_files(project, name, command_and_arguments, logger=None, include_test_sources=False):
+    files = discover_affected_files(include_test_sources, project)
 
     command = as_list(command_and_arguments) + [f for f in files]
 
@@ -45,12 +57,9 @@ def execute_tool_on_source_files(project, name, command_and_arguments, logger=No
 
     report_file = execution_result[1]
     report_lines = read_file(report_file)
-    count_of_warnings = len(report_lines)
 
-    if count_of_warnings > 0:
-        if project.get_property(name + "_verbose_output") and logger:
-            for report_line in report_lines:
-                logger.warn(name + ': ' + report_line[:-1])
+    if project.get_property(name + "_verbose_output") and logger:
+        log_report(logger, name, report_lines)
 
     return execution_result
 
