@@ -84,9 +84,9 @@ class DependencyLinksTest(unittest.TestCase):
                                 url="https://github.com/downloads/halimath/pyassert/pyassert1-0.2.2.tar.gz")
         self.project.depends_on("pyassert2",
                                 url="https://github.com/downloads/halimath/pyassert/pyassert2-0.2.2.tar.gz")
-        self.assertEqual(
-            'dependency_links = [ "https://github.com/downloads/halimath/pyassert/pyassert1-0.2.2.tar.gz", "https://github.com/downloads/halimath/pyassert/pyassert2-0.2.2.tar.gz" ],',
-            build_dependency_links_string(self.project))
+        self.assertEqual('dependency_links = [ "https://github.com/downloads/halimath/pyassert/pyassert1-0.2.2.tar.gz",'
+                         ' "https://github.com/downloads/halimath/pyassert/pyassert2-0.2.2.tar.gz" ],',
+                         build_dependency_links_string(self.project))
 
 
 class DefaultTest(unittest.TestCase):

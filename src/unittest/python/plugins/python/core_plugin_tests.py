@@ -16,7 +16,10 @@
 import unittest
 
 from pybuilder.plugins.python.core_plugin import init_python_directories
-from pybuilder.plugins.python.core_plugin import DISTRIBUTION_PROPERTY, PYTHON_SOURCES_PROPERTY, SCRIPTS_SOURCES_PROPERTY, SCRIPTS_TARGET_PROPERTY
+from pybuilder.plugins.python.core_plugin import (DISTRIBUTION_PROPERTY,
+                                                  PYTHON_SOURCES_PROPERTY,
+                                                  SCRIPTS_SOURCES_PROPERTY,
+                                                  SCRIPTS_TARGET_PROPERTY)
 
 from pybuilder.core import Project
 

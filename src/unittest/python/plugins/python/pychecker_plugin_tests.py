@@ -17,7 +17,10 @@ import unittest
 
 from mockito import mock, when
 
-from pybuilder.plugins.python.pychecker_plugin import parse_pychecker_output, PycheckerWarning, PycheckerModuleReport, PycheckerReport
+from pybuilder.plugins.python.pychecker_plugin import (PycheckerModuleReport,
+                                                       PycheckerWarning,
+                                                       PycheckerReport,
+                                                       parse_pychecker_output)
 
 
 class PycheckerWarningTest (unittest.TestCase):

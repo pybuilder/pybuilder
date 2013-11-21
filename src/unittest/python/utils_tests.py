@@ -25,7 +25,15 @@ import shutil
 from json import loads
 from mockito import when, verify, unstub
 
-from pybuilder.utils import format_timestamp, as_list, timedelta_in_millis, discover_modules, render_report, Timer, GlobExpression, apply_on_files, mkdir
+from pybuilder.utils import (GlobExpression,
+                             Timer,
+                             apply_on_files,
+                             as_list,
+                             discover_modules,
+                             format_timestamp,
+                             mkdir,
+                             render_report,
+                             timedelta_in_millis)
 from pybuilder.errors import PythonbuilderException
 
 

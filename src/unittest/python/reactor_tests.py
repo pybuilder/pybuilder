@@ -21,7 +21,15 @@ from mockito import when, verify, unstub, any, times, contains
 from mockito.matchers import Matcher
 from test_utils import mock
 
-from pybuilder.core import TASK_ATTRIBUTE, ACTION_ATTRIBUTE, BEFORE_ATTRIBUTE, AFTER_ATTRIBUTE, INITIALIZER_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, Project, NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE
+from pybuilder.core import (ACTION_ATTRIBUTE,
+                            AFTER_ATTRIBUTE,
+                            BEFORE_ATTRIBUTE,
+                            ENVIRONMENTS_ATTRIBUTE,
+                            INITIALIZER_ATTRIBUTE,
+                            NAME_ATTRIBUTE,
+                            ONLY_ONCE_ATTRIBUTE,
+                            TASK_ATTRIBUTE,
+                            Project)
 from pybuilder.errors import MissingPluginException, PythonbuilderException, ProjectValidationFailedException
 from pybuilder.reactor import Reactor
 from pybuilder.execution import Task, Action, Initializer, ExecutionManager
