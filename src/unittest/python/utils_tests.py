@@ -114,8 +114,7 @@ class AsListTest(unittest.TestCase):
     def test_should_unwrap_mixed_tuples_and_lists_and_strings_and_ignore_none_values(self):
         self.assertEquals(
             ["spam", "eggs", "foo", "bar", "foobar"], as_list(None, ("spam", "eggs"),
-                                                              None, [
-                                                              "foo", "bar"],
+                                                              None, ["foo", "bar"],
                                                               None, "foobar", None))
 
     def test_should_return_list_of_function(self):

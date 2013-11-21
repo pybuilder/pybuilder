@@ -76,7 +76,7 @@ def initialize(project):
 
     project.set_property("flake8_verbose_output", True)
     project.set_property("flake8_break_build", True)
-    project.set_property("flake8_ignore", "E122,E241,E501,W291,W293")
+    project.set_property("flake8_ignore", "E241,E501,W291,W293")
     project.set_property('flake8_include_test_sources', True)
 
     project.get_property("source_dist_ignore_patterns").append(".project")
