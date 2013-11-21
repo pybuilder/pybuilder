@@ -24,7 +24,7 @@ class PycheckerWarningTest (unittest.TestCase):
 
     def test_to_json_dict(self):
         expected = {
-            "message":  "any message",
+            "message": "any message",
             "line_number": 17
         }
         self.assertEquals(
@@ -39,7 +39,7 @@ class PycheckerModuleReportTest (unittest.TestCase):
         report.add_warning(PycheckerWarning("warning 2", 2))
 
         expected = {
-            "name":  "any.module",
+            "name": "any.module",
             "warnings": [{"message": "warning 1", "line_number": 1},
                          {"message": "warning 2", "line_number": 2}]
         }
@@ -65,12 +65,12 @@ class PycheckerReportTest (unittest.TestCase):
         expected = {
             "modules": [
                 {
-                    "name":  "any.module",
+                    "name": "any.module",
                     "warnings": [{"message": "warning 1", "line_number": 1},
                                  {"message": "warning 2", "line_number": 2}]
                 },
                 {
-                    "name":  "any.other.module",
+                    "name": "any.other.module",
                     "warnings": [{"message": "warning 1", "line_number": 3},
                                  {"message": "warning 2", "line_number": 4}]
                 }

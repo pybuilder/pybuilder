@@ -67,8 +67,7 @@ def default(value, default=""):
 
 @init
 def initialize_distutils_plugin(project):
-    project.set_property_if_unset(
-        "distutils_commands", ["sdist", "bdist_dumb"])
+    project.set_property_if_unset("distutils_commands", ["sdist", "bdist_dumb"])
     project.set_property_if_unset("distutils_classifiers", [
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python"
