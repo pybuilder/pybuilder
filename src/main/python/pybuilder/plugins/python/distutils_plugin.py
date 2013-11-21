@@ -50,8 +50,8 @@ if __name__ == '__main__':
           scripts = $scripts,
           packages = $packages,
           classifiers = $classifiers,
-          $data_files
-          $package_data
+          $data_files   #  data files
+          $package_data   # package data
           $dependencies
           $dependency_links
           zip_safe=True

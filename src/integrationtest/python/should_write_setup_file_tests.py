@@ -37,7 +37,6 @@ def init (project):
     project.depends_on("pyassert", url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz")
     project.depends_on("eggs", "==0.2.3")
     project.build_depends_on("eggy")
-
 """)
         self.create_directory("src/main/python/spam")
         self.write_file("src/main/python/spam/__init__.py", "")
@@ -45,10 +44,10 @@ def init (project):
 def spam ():
     pass
 """)
-        
+
         reactor = self.prepare_reactor()
         reactor.build()
-        
+
         self.assert_directory_exists("target/dist/integration-test-1.0-SNAPSHOT")
         self.assert_directory_exists("target/dist/integration-test-1.0-SNAPSHOT/spam")
         self.assert_file_empty("target/dist/integration-test-1.0-SNAPSHOT/spam/__init__.py")
@@ -58,7 +57,7 @@ def spam ():
 """)
 
         setup_py = "target/dist/integration-test-1.0-SNAPSHOT/setup.py"
-        
+
         self.assert_file_exists(setup_py)
         self.assert_file_permissions(0o755, setup_py)
         self.assert_file_content(setup_py, """#!/usr/bin/env python
@@ -78,14 +77,14 @@ if __name__ == '__main__':
           scripts = [],
           packages = ['spam'],
           classifiers = ['Development Status :: 3 - Alpha', 'Programming Language :: Python'],
-          
-          
+             #  data files
+             # package data
           install_requires = [ "eggs==0.2.3", "spam" ],
           dependency_links = [ "https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz" ],
           zip_safe=True
     )
 """)
-        
-        
+
+
 if __name__ == "__main__":
     unittest.main()

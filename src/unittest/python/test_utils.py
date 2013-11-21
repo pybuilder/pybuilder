@@ -13,6 +13,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
+from unittest import TestCase
 import mockito
 
 
@@ -21,3 +23,19 @@ def mock(mocked_obj=None, **keywordArguments):
     for key in keywordArguments:
         setattr(result, key, keywordArguments[key])
     return result
+
+
+class PyBuilderTestCase(TestCase):
+
+    def assert_line_by_line_equal(self, expected_multi_line_string, actual_multi_line_string):
+        expected_lines = expected_multi_line_string.split("\n")
+        actual_lines = actual_multi_line_string.split("\n")
+        for i in range(len(expected_lines)):
+            expected_line = expected_lines[i]
+            actual_line = actual_lines[i]
+            message = """Multi line strings are not equal in line ${line_number}
+  expected: "{expected_line}"
+   but got: "{actual_line}"
+""".format(line_number=i, expected_line=expected_line, actual_line=actual_line)
+
+            self.assertEqual(expected_line, actual_line, message)

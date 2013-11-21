@@ -15,6 +15,7 @@
 #  limitations under the License.
 import unittest
 
+from test_utils import PyBuilderTestCase
 from pybuilder.core import Project, Author
 from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        build_dependency_links_string,
@@ -175,14 +176,14 @@ class BuildPackageDataStringTest(unittest.TestCase):
                          "'z': ['Zeta']},", build_package_data_string(self.project))
 
 
-class RenderSetupScriptTest(unittest.TestCase):
+class RenderSetupScriptTest(PyBuilderTestCase):
 
     def test_should_render_setup_file(self):
         project = create_project()
 
         actual_setup_script = render_setup_script(project)
 
-        self.assertEqual("""#!/usr/bin/env python
+        self.assert_line_by_line_equal("""#!/usr/bin/env python
 
 from distutils.core import setup
 
@@ -199,8 +200,8 @@ if __name__ == '__main__':
           scripts = ['spam', 'eggs'],
           packages = ['spam', 'eggs'],
           classifiers = ['Development Status :: 5 - Beta', 'Environment :: Console'],
-          data_files = [('dir', ['file1', 'file2'])],
-          package_data = {'spam': ['eggs']},
+          data_files = [('dir', ['file1', 'file2'])],   #  data files
+          package_data = {'spam': ['eggs']},   # package data
           install_requires = [ "sometool" ],
           dependency_links = [ "https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz" ],
           zip_safe=True
