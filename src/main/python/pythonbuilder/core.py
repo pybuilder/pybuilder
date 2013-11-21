@@ -1,1 +1,1 @@
-from pybuilder.core import *
+from pybuilder.core import *  # nopep8
