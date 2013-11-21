@@ -1,20 +1,20 @@
-Pybuilder [![Build Status](https://secure.travis-ci.org/pybuilder/pybuilder.png?branch=master)](http://travis-ci.org/pybuilder/pybuilder) [![PyPi version](https://pypip.in/v/pybuilder/badge.png)](https://crate.io/packages/pybuilder/) [![PyPi downloads](https://pypip.in/d/pybuilder/badge.png)](https://crate.io/packages/pybuilder/) [![Coverage Status](https://coveralls.io/repos/pybuilder/pybuilder/badge.png?branch=master)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
+PyBuilder [![Build Status](https://secure.travis-ci.org/pybuilder/pybuilder.png?branch=master)](http://travis-ci.org/pybuilder/pybuilder) [![PyPi version](https://pypip.in/v/pybuilder/badge.png)](https://crate.io/packages/pybuilder/) [![PyPi downloads](https://pypip.in/d/pybuilder/badge.png)](https://crate.io/packages/pybuilder/) [![Coverage Status](https://coveralls.io/repos/pybuilder/pybuilder/badge.png?branch=master)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
 =========
 
-Pybuilder is a software build tool written in 100% pure Python and mainly
+PyBuilder is a software build tool written in 100% pure Python and mainly
 targets Python applications.
 
-Pybuilder is based on the concept of dependency based programming but also comes
+PyBuilder is based on the concept of dependency based programming but also comes
 along with powerful plugin mechanism that allows the construction of build life
 cycles similar to those known from other famous (Java) build tools.
 
-Pybuilder is running on the following versions of Python: 2.6, 2.7, 3.2, 3.3 and PyPy.
+PyBuilder is running on the following versions of Python: 2.6, 2.7, 3.2, 3.3 and PyPy.
 
 See the [Travis Build](http://travis-ci.org/#!/pybuilder/pybuilder) for version specific output.
 
 ## Installing
 
-Pybuilder is available using pip:
+PyBuilder is available using pip:
 
     $ pip install pybuilder
 
@@ -23,7 +23,7 @@ information.
 
 ## Getting started
 
-Pybuilder emphasizes simplicity. If you want to build a pure Python project and
+PyBuilder emphasizes simplicity. If you want to build a pure Python project and
 use the recommended directory layout, all you have to do is create a file
 build.py with the following content:
 
@@ -38,11 +38,11 @@ use_plugin("python.distutils")
 default_task = "publish"
 ```
 
-See the [pybuilder homepage](http://pybuilder.github.com/) for more details.
+See the [PyBuilder homepage](http://pybuilder.github.com/) for more details.
 
 ## Plugins
 
-pybuilder provides a lot of plugins out ot the box that utilize tools and libraries commonly used in Python projects:
+PyBuilder provides a lot of plugins out ot the box that utilize tools and libraries commonly used in Python projects:
 
 * [python.coverage](http://pybuilder.github.com/documentation/plugins.html#measuring_unittest_coverage) - Uses the standard [coverage](http://pypi.python.org/pypi/coverage/) module to calculate unit test line coverage.
 * [python.distutils](http://pybuilder.github.com/documentation/plugins.html#building_a_python_egg) - Provides support to generate [setup.py](http://pypi.python.org/pypi/setuptools) files.
