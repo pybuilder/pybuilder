@@ -1,5 +1,5 @@
 #  This file is part of PyBuilder
-#   
+#
 #  Copyright 2011 The PyBuilder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
