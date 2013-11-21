@@ -1,0 +1,6 @@
+# committer configuration file
+# see https://github.com/aelgru/committer
+
+[COMMIT]
+# This command will be executed before perfoming a commit
+execute_before = ./bootstrap
