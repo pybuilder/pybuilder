@@ -55,7 +55,7 @@ default_task = ["analyze", "publish"]
 
 @init
 def initialize(project):
-    project.build_depends_on("mockito")
+    project.build_depends_on("mockito", version="0.5.1")
     project.build_depends_on("pyassert")
     project.build_depends_on("wheel")
 
