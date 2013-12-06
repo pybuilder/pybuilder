@@ -31,21 +31,17 @@ def discover_python_files(directory):
 
 
 def discover_affected_files(include_test_sources, project):
-
-    source_dir = project.expand_path("$dir_source_main_python")
+    source_dir = project.get_property("dir_source_main_python")
+    files = discover_python_files(source_dir)
 
     if include_test_sources:
-        unittest_dir = project.expand_path("$dir_source_unittest_python")
-        integrationtest_dir = project.expand_path("$dir_source_integrationtest_python")
-
         import itertools
-
-        files = itertools.chain(
-            discover_python_files(source_dir),
-            discover_python_files(unittest_dir),
-            discover_python_files(integrationtest_dir))
-    else:
-        files = discover_python_files(source_dir)
+        if project.get_property("dir_source_unittest_python"):
+            unittest_dir = project.get_property("dir_source_unittest_python")
+            files = itertools.chain(files, discover_python_files(unittest_dir))
+        if project.get_property("dir_source_integrationtest_python"):
+            integrationtest_dir = project.get_property("dir_source_integrationtest_python")
+            files = itertools.chain(files, discover_python_files(integrationtest_dir))
     return files
 
 
