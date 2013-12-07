@@ -48,7 +48,7 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            Author("Udo Juettner", "udo.juettner@gmail.com")]
 url = "http://pybuilder.github.com"
 license = "Apache License"
-version = "0.9.16"
+version = "0.9.17"
 
 default_task = ["analyze", "publish"]
 
@@ -56,11 +56,11 @@ default_task = ["analyze", "publish"]
 @init
 def initialize(project):
     project.build_depends_on("mockito")
+    project.build_depends_on("mock")
     project.build_depends_on("pyassert")
     project.build_depends_on("wheel")
 
-    # Need to define that manually, because the pyfix plugin is not used
-    # directly.
+    # Need to define that manually, because the pyfix plugin is not used directly.
     project.build_depends_on("pyfix")
 
     project.set_property("integrationtest_parallel", True)

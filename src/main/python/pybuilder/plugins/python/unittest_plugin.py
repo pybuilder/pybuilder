@@ -33,6 +33,7 @@ use_plugin("python.core")
 def init_test_source_directory(project):
     project.set_property_if_unset("dir_source_unittest_python", "src/unittest/python")
     project.set_property_if_unset("unittest_file_suffix", "_tests.py")
+    project.set_property_if_unset("unittest_test_method_prefix", None)
 
 
 @task
@@ -48,7 +49,8 @@ def run_unit_tests(project, logger):
     logger.debug("Including files ending with '%s'", suffix)
 
     try:
-        result, console_out = execute_tests(test_dir, suffix)
+        test_method_prefix = project.get_property("unittest_test_method_prefix")
+        result, console_out = execute_tests(test_dir, suffix, test_method_prefix)
 
         if result.testsRun == 0:
             logger.warn("No unittests executed.")
@@ -65,12 +67,15 @@ def run_unit_tests(project, logger):
         raise BuildFailedException("Unable to execute unit tests.")
 
 
-def execute_tests(test_source, suffix):
+def execute_tests(test_source, suffix, test_method_prefix=None):
     output_log_file = StringIO()
 
     try:
         test_modules = discover_modules(test_source, suffix)
-        tests = unittest.defaultTestLoader.loadTestsFromNames(test_modules)
+        loader = unittest.defaultTestLoader
+        if test_method_prefix:
+            loader.testMethodPrefix = test_method_prefix
+        tests = loader.loadTestsFromNames(test_modules)
         result = unittest.TextTestRunner(stream=output_log_file).run(tests)
         return result, output_log_file.getvalue()
     finally:
