@@ -191,7 +191,7 @@ if __name__ == '__main__':
     setup(
           name = 'Spam and Eggs',
           version = '1.2.3',
-          description = 'This is a simple integration-test for distutils plugin.',
+          description = '''This is a simple integration-test for distutils plugin.''',
           long_description = '''As you might have guessed we have nothing to say here.''',
           author = "Udo Juettner, Michael Gruber",
           author_email = "udo.juettner@gmail.com, aelgru@gmail.com",

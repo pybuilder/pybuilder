@@ -41,7 +41,7 @@ if __name__ == '__main__':
     setup(
           name = '$name',
           version = '$version',
-          description = '$summary',
+          description = '''$summary''',
           long_description = '''$description''',
           author = "$author",
           author_email = "$author_email",

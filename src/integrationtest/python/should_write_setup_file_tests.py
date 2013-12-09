@@ -68,7 +68,7 @@ if __name__ == '__main__':
     setup(
           name = 'integration-test',
           version = '1.0-SNAPSHOT',
-          description = '',
+          description = '''''',
           long_description = '''''',
           author = "",
           author_email = "",
