@@ -291,7 +291,7 @@ def main(*args):
 
     if not options.very_quiet:
         print_styled_text_line(
-            "PYBUILDER Version {0}".format(__version__), options, BOLD)
+            "PyBuilder version {0}".format(__version__), options, BOLD)
         print_text_line("Build started at %s" % format_timestamp(start))
         draw_line()
 
