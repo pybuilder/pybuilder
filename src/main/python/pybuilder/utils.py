@@ -85,14 +85,14 @@ def remove_python_source_suffix(file_name):
 
 def discover_modules(source_path, suffix=".py"):
     result = []
-    for module in discover_files(source_path, suffix):
-        module = module.replace(source_path, "")
-        module = module.replace(os.sep, ".")
-        module = remove_leading_slash_or_dot_from_path(module)
-        module = remove_python_source_suffix(module)
-        if module.endswith(".__init__"):
-            module = module.replace(".__init__", "")
-        result.append(module)
+    for module_file_path in discover_files(source_path, suffix):
+        relative_module_file_path = module_file_path.replace(source_path, "")
+        relative_module_file_path = relative_module_file_path.replace(os.sep, ".")
+        module_file = remove_leading_slash_or_dot_from_path(relative_module_file_path)
+        module_name = remove_python_source_suffix(module_file)
+        if module_name.endswith(".__init__"):
+            module_name = module_name.replace(".__init__", "")
+        result.append(module_name)
     return result
 
 
