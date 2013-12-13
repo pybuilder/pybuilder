@@ -79,13 +79,17 @@ def remove_leading_slash_or_dot_from_path(path):
     return path
 
 
+def remove_python_source_suffix(file_name):
+    return file_name[0:-len(".py")]
+
+
 def discover_modules(source_path, suffix=".py"):
     result = []
     for module in discover_files(source_path, suffix):
         module = module.replace(source_path, "")
         module = module.replace(os.sep, ".")
         module = remove_leading_slash_or_dot_from_path(module)
-        module = module[0:-3]
+        module = remove_python_source_suffix(module)
         if module.endswith(".__init__"):
             module = module.replace(".__init__", "")
         result.append(module)

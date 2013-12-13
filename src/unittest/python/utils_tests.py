@@ -185,6 +185,11 @@ class DiscoverModulesTest(unittest.TestCase):
 
         self.assertEquals(["reactor_tests"], discover_modules("/path/to/tests/", ".py"))
 
+    def test_should_honor_suffix_without_stripping_it_from_module_names(self):
+        when(pybuilder.utils).discover_files(any(), any()).thenReturn(['/path/to/tests/reactor_tests.py'])
+
+        self.assertEquals(["reactor_tests"], discover_modules("/path/to/tests/", "_tests.py"))
+
 
 class GlobExpressionTest(unittest.TestCase):
 
