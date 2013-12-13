@@ -23,8 +23,9 @@ import unittest
 import shutil
 
 from json import loads
-from mockito import when, verify, unstub
+from mockito import when, verify, unstub, any
 
+import pybuilder.utils
 from pybuilder.utils import (GlobExpression,
                              Timer,
                              apply_on_files,
@@ -178,6 +179,11 @@ class DiscoverModulesTest(unittest.TestCase):
         self.assertEquals(["eggs"], discover_modules("spam", ".py"))
 
         verify(os).walk("spam")
+
+    def test_should_not_eat_first_character_of_modules_when_source_path_ends_with_slash(self):
+        when(pybuilder.utils).discover_files(any(), any()).thenReturn(['/path/to/tests/reactor_tests.py'])
+
+        self.assertEquals(["reactor_tests"], discover_modules("/path/to/tests/", ".py"))
 
 
 class GlobExpressionTest(unittest.TestCase):
