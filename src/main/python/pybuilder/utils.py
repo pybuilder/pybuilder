@@ -73,13 +73,18 @@ def as_list(*whatever):
     return result
 
 
+def remove_leading_slash_or_dot_from_path(path):
+    if path.startswith('/') or path.startswith('.'):
+            return path[1:]
+    return path
+
+
 def discover_modules(source_path, suffix=".py"):
     result = []
     for module in discover_files(source_path, suffix):
         module = module.replace(source_path, "")
         module = module.replace(os.sep, ".")
-        if module.startswith('/') or module.startswith('.'):
-            module = module[1:]
+        module = remove_leading_slash_or_dot_from_path(module)
         module = module[0:-3]
         if module.endswith(".__init__"):
             module = module.replace(".__init__", "")
