@@ -18,7 +18,8 @@ import unittest
 from mock import Mock, call, patch
 
 from pybuilder.plugins.python.python_plugin_helper import (log_report,
-                                                           discover_affected_files)
+                                                           discover_affected_files,
+                                                           execute_tool_on_source_files)
 
 
 class LogReportsTest(unittest.TestCase):
@@ -108,3 +109,35 @@ class DiscoverAffectedFilesTest(unittest.TestCase):
 
         self.assertEqual(discover_python_files.call_args_list,
                          [call('dir_source_main_python')])
+
+
+class ExecuteToolOnSourceFilesTest(unittest.TestCase):
+
+    @patch('pybuilder.plugins.python.python_plugin_helper.log_report')
+    @patch('pybuilder.plugins.python.python_plugin_helper.read_file')
+    @patch('pybuilder.plugins.python.python_plugin_helper.execute_command')
+    @patch('pybuilder.plugins.python.python_plugin_helper.discover_affected_files')
+    def test_should_execute_tool_on_source_files(self, affected,
+                                                 execute, read, log):
+        project = Mock()
+        project.expand_path.return_value = '/path/to/report'
+        affected.return_value = ['file1', 'file2']
+
+        execute_tool_on_source_files(project, 'name', 'foo --bar')
+
+        execute.assert_called_with(['foo --bar', 'file1', 'file2'], '/path/to/report')
+
+    @patch('pybuilder.plugins.python.python_plugin_helper.log_report')
+    @patch('pybuilder.plugins.python.python_plugin_helper.read_file')
+    @patch('pybuilder.plugins.python.python_plugin_helper.execute_command')
+    @patch('pybuilder.plugins.python.python_plugin_helper.discover_affected_files')
+    def test_should_give_verbose_output(self, affected,
+                                        execute, read, log):
+        project = Mock()
+        project.get_property.return_value = True  # flake8_verbose_output == True
+        logger = Mock()
+        read.return_value = ['error', 'warning']
+
+        execute_tool_on_source_files(project, 'flake8', 'foo --bar', logger)
+
+        log.assert_called_with(logger, 'flake8', ['error', 'warning'])
