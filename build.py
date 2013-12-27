@@ -60,11 +60,6 @@ def initialize(project):
     project.build_depends_on("pyassert")
     project.build_depends_on("wheel")
 
-    # Need to define that manually, because the pyfix plugin is not used directly.
-    project.build_depends_on("pyfix")
-
-    project.set_property("integrationtest_parallel", True)
-
     project.set_property("coverage_break_build", False)
     project.get_property("coverage_exceptions").append("pybuilder.cli")
     project.get_property("coverage_exceptions").append("pybuilder.plugins.core_plugin")
