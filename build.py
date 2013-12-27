@@ -57,6 +57,7 @@ default_task = ["analyze", "publish"]
 def initialize(project):
     project.build_depends_on("mockito-without-hardcoded-distribute-version")
     project.build_depends_on("mock")
+    project.build_depends_on("pyfix")  # required test framework
     project.build_depends_on("pyassert")
     project.build_depends_on("wheel")
 
