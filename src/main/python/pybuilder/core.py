@@ -17,6 +17,8 @@
 import os
 import string
 
+from os.path import sep as PATH_SEPARATOR
+
 from pybuilder.errors import MissingPropertyException
 from .utils import as_list
 
@@ -331,7 +333,7 @@ class Project(object):
 
     def expand_path(self, format_string, *additional_path_elements):
         elements = [self.basedir]
-        elements += self.expand(format_string).split("/")
+        elements += self.expand(format_string).split(PATH_SEPARATOR)
         elements += list(additional_path_elements)
         return os.path.join(*elements)
 
