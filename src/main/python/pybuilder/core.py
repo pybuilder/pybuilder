@@ -319,15 +319,15 @@ class Project(object):
         self._manifest_include(filename)
 
     def expand(self, format_string):
+        previous = None
         result = format_string
-        while True:
+        while previous != result:
             try:
                 previous = result
                 result = string.Template(result).substitute(self.properties)
-                if previous == result:
-                    return result
             except KeyError as e:
                 raise MissingPropertyException(e)
+        return result
 
     def expand_path(self, format_string, *additional_path_elements):
         elements = [self.basedir]
