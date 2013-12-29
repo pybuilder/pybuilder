@@ -1,5 +1,9 @@
-[PyBuilder](http://pybuilder.github.io) [![Build Status](https://secure.travis-ci.org/pybuilder/pybuilder.png?branch=master)](http://travis-ci.org/pybuilder/pybuilder) [![PyPi version](https://pypip.in/v/pybuilder/badge.png)](https://crate.io/packages/pybuilder/) [![PyPi downloads](https://pypip.in/d/pybuilder/badge.png)](https://crate.io/packages/pybuilder/) [![Coverage Status](https://coveralls.io/repos/pybuilder/pybuilder/badge.png?branch=master)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
+[PyBuilder](http://pybuilder.github.io) 
 =========
+
+[![Build Status](https://secure.travis-ci.org/pybuilder/pybuilder.png?branch=master)](http://travis-ci.org/pybuilder/pybuilder)
+[![PyPI version](https://badge.fury.io/py/pybuilder.png)](http://badge.fury.io/py/pybuilder)
+[![Coverage Status](https://coveralls.io/repos/pybuilder/pybuilder/badge.png?branch=master)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
 
 PyBuilder is a software build tool written in 100% pure Python and mainly
 targets Python applications.
@@ -66,3 +70,7 @@ In addition, a few common plugins are provided:
 ## Release Notes
 
 The release notes can be found [here](http://pybuilder.github.com/releasenotes/)
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/pybuilder/pybuilder/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+

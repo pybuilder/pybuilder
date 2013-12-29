@@ -55,15 +55,11 @@ default_task = ["analyze", "publish"]
 
 @init
 def initialize(project):
-    project.build_depends_on("mockito")
+    project.build_depends_on("mockito-without-hardcoded-distribute-version")
     project.build_depends_on("mock")
+    project.build_depends_on("pyfix")  # required test framework
     project.build_depends_on("pyassert")
     project.build_depends_on("wheel")
-
-    # Need to define that manually, because the pyfix plugin is not used directly.
-    project.build_depends_on("pyfix")
-
-    project.set_property("integrationtest_parallel", True)
 
     project.set_property("coverage_break_build", False)
     project.get_property("coverage_exceptions").append("pybuilder.cli")
