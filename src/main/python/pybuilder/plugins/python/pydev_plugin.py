@@ -61,7 +61,7 @@ $paths
 @init
 def init_pydev_plugin(project):
     project.set_property_if_unset("pydev_interpreter_name", "Default")
-    project.set_property_if_unset("pydev_version", "python 2.6")
+    project.set_property_if_unset("pydev_version", "python 2.7")
 
 
 @task
