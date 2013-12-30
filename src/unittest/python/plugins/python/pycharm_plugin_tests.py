@@ -14,6 +14,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+try:
+    TYPE_FILE = file
+except NameError:
+    from io import FileIO as TYPE_FILE
+
+
 import unittest
 from mock import patch, Mock, MagicMock
 
@@ -47,7 +53,7 @@ class PycharmPluginTests(unittest.TestCase):
     def test_should_write_pycharm_file(self, os, mock_open):
         project = Project('basedir', name='pybuilder')
         project.set_property('dir_source_main_python', 'src/main/python')
-        mock_open.return_value = MagicMock(spec=file)
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
         os.path.join.side_effect = lambda first, second: first + '/' + second
 
         pycharm_generate(project, Mock())
