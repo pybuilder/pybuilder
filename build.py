@@ -17,6 +17,7 @@
 from pybuilder.core import init, use_plugin, Author
 
 use_plugin("python.core")
+use_plugin("python.pytddmon")
 use_plugin("python.distutils")
 use_plugin("python.install_dependencies")
 
