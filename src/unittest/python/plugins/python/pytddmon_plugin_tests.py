@@ -28,8 +28,10 @@ class PytddmonPluginTests(unittest.TestCase):
         subprocess.check_output.side_effect = lambda *args, **kwargs: ' '.join(a for a in args)
         project = Project('/path/to/project', name='pybuilder')
         project.set_property('dir_source_main_python', 'path/to/source')
-        project.set_property('dir_source_unittest_python', 'src/unittest/python')
+        project.set_property(
+            'dir_source_unittest_python', 'src/unittest/python')
 
         pytddmon_plugin.pytddmon(project, Mock())
 
-        subprocess.Popen.assert_called_with(['which python', 'which pytddmon.py'], shell=False, cwd='src/unittest/python', env=ANY)
+        subprocess.Popen.assert_called_with(
+            ['which python', 'which pytddmon.py'], shell=False, cwd='src/unittest/python', env=ANY)
