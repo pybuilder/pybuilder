@@ -30,6 +30,7 @@ use_plugin("python.integrationtest")
 use_plugin("python.flake8")
 
 use_plugin("python.pydev")
+use_plugin("python.pycharm")
 
 
 summary = "An extensible, easy to use continuous build tool for Python"
