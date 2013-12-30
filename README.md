@@ -56,11 +56,12 @@ PyBuilder provides a lot of plugins out ot the box that utilize tools and librar
 * [python.install_dependencies](http://pybuilder.github.io/documentation/plugins.html#installing_build_and_runtime_dependencies) - Installs the projects build and runtime dependencies using `pip`
 * [python.pychecker](http://pybuilder.github.io/documentation/plugins.html#pychecker_plugin) - Provides support for [pychecker](http://pychecker.sourceforge.net/)
 * [python.Pydev](http://pybuilder.github.io/documentation/plugins.html#generating_project_files_for_eclipse_pydev) - Generates project files to import projects into [Eclipse PyDev](http://pydev.org/)
-* [python.PyCharm](/documentation/plugins.html#ProjectfilesforJetbrainsPyCharm) - Generates project files to import projects into [Jetbrains PyCharm](http://www.jetbrains.com/pycharm/)
+* [python.PyCharm](http://pybuilder.github.io/documentation/plugins.html#ProjectfilesforJetbrainsPyCharm) - Generates project files to import projects into [Jetbrains PyCharm](http://www.jetbrains.com/pycharm/)
 * [python.pylint](http://pybuilder.github.io/documentation/plugins.html#pylint_plugin) - Executes [pylint](https://bitbucket.org/logilab/pylint/) on your sources.
 * [python.pymetrics](http://pybuilder.github.io/documentation/plugins.html#pymetrics_plugin) - Calculates several metrics using [pymetrics](http://sourceforge.net/projects/pymetrics/)
 * [python.unittest](http://pybuilder.github.com/documentation/plugins.html#running_python_unittests) - Executes [unittest](http://docs.python.org/library/unittest.html) test cases
 * [python.integrationtest](http://pybuilder.github.com/documentation/plugins.html#running_python_integration_tests) - Executes python scripts as integrations tests
+* [python.pytddmon](http://pybuilder.github.io/documentation/plugins.html#Visualfeedbackfortests) - Provides visual feedback about unit tests through [pytddmon](http://pytddmon.org/)
 
 In addition, a few common plugins are provided:
 
