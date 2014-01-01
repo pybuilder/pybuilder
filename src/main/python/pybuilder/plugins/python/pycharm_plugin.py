@@ -49,7 +49,7 @@ def _ensure_directory_present(directory):
 
 
 @task
-@description("Generates eclipse-pydev development files")
+@description("Generates PyCharm development files")
 def pycharm_generate(project, logger):
     logger.info("Generating PyCharm project files.")
 
