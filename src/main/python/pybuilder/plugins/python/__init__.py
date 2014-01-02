@@ -13,3 +13,9 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
+"""
+    The PyBuilder python plugins package.
+    This package contains all builtin PyBuilder plugins that are used in
+    python projects.
+"""
