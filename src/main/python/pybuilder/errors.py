@@ -14,8 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """
-The PyBuilder error module.
-Defines all possible errors that can arise during the execution of PyBuilder.
+    The PyBuilder error module.
+    Defines all possible errors that can arise during the execution of PyBuilder.
 """
 
 

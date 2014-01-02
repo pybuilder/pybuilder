@@ -14,10 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """
-The PyBuilder execution module.
-Deals with the execution of a PyBuilder process by
-running tasks, actions and initializers in the correct
-order regarding dependencies.
+    The PyBuilder execution module.
+    Deals with the execution of a PyBuilder process by
+    running tasks, actions and initializers in the correct
+    order regarding dependencies.
 """
 
 import inspect
