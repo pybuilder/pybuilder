@@ -195,7 +195,7 @@ class GlobExpression(object):
 def mkdir(directory):
     """
     Tries to create the directory denoted by the given name. If it exists and is a directory, nothing will be created
-    and no error is raised. If it exists as a file a PybuilderException is raised. Otherwise the directory incl.
+    and no error is raised. If it exists as a file a PyBuilderException is raised. Otherwise the directory incl.
     all parents is created.
     """
 
