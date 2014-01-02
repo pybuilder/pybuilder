@@ -13,6 +13,11 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""
+The PyBuilder core module.
+Contains the most import classes and syntax used in a
+build.py project descriptor.
+"""
 
 import os
 import string

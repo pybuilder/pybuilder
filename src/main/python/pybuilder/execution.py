@@ -13,8 +13,14 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import inspect
+"""
+The PyBuilder execution module.
+Deals with the execution of a PyBuilder process by
+running tasks, actions and initializers in the correct
+order regarding dependencies.
+"""
 
+import inspect
 import re
 import types
 
