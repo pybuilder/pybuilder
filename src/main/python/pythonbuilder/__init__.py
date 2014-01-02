@@ -16,4 +16,16 @@
 
 import sys
 
-sys.stderr.write("WARNING: the module pythonbuilder is deprecated, please use the module pybuilder.\n")
+sys.stderr.write("[WARNING]\n")
+sys.stderr.write("[WARNING] module pythonbuilder is deprecated, use module pybuilder.\n")
+sys.stderr.write("[WARNING]\n")
+sys.stderr.write("[WARNING] ****************************************************\n")
+sys.stderr.write("[WARNING] *                                                  *\n")
+sys.stderr.write("[WARNING] * Please make sure you are not referencing module  *\n")
+sys.stderr.write("[WARNING] * pythonbuilder anymore. It will be removed with   *\n")
+sys.stderr.write("[WARNING] * release 0.10.0                                   *\n")
+sys.stderr.write("[WARNING] *                                                  *\n")
+sys.stderr.write("[WARNING] ****************************************************\n")
+sys.stderr.write("[WARNING]\n")
+sys.stderr.write("[WARNING] module pythonbuilder is deprecated, use module pybuilder.\n")
+sys.stderr.write("[WARNING]\n")
