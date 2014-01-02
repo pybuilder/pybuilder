@@ -19,7 +19,7 @@
 """
 
 
-class PybuilderException(Exception):
+class PyBuilderException(Exception):
 
     def __init__(self, message, *arguments):
         self._message = message
@@ -33,19 +33,19 @@ class PybuilderException(Exception):
         return self.message
 
 
-class InvalidNameException(PybuilderException):
+class InvalidNameException(PyBuilderException):
 
     def __init__(self, name):
         super(InvalidNameException, self).__init__("Invalid name: %s", name)
 
 
-class NoSuchTaskException(PybuilderException):
+class NoSuchTaskException(PyBuilderException):
 
     def __init__(self, name):
         super(NoSuchTaskException, self).__init__("No such task %s", name)
 
 
-class CircularTaskDependencyException(PybuilderException):
+class CircularTaskDependencyException(PyBuilderException):
 
     def __init__(self, first, second=None):
         if second:
@@ -57,7 +57,7 @@ class CircularTaskDependencyException(PybuilderException):
         self.second = second
 
 
-class MissingPrerequisiteException(PybuilderException):
+class MissingPrerequisiteException(PyBuilderException):
 
     def __init__(self, prerequisite, caller="n/a"):
         super(
@@ -65,7 +65,7 @@ class MissingPrerequisiteException(PybuilderException):
                                                          prerequisite, caller)
 
 
-class MissingTaskDependencyException(PybuilderException):
+class MissingTaskDependencyException(PyBuilderException):
 
     def __init__(self, source, dependency):
         super(
@@ -73,7 +73,7 @@ class MissingTaskDependencyException(PybuilderException):
                                                            dependency, source)
 
 
-class MissingActionDependencyException(PybuilderException):
+class MissingActionDependencyException(PyBuilderException):
 
     def __init__(self, source, dependency):
         super(
@@ -81,18 +81,18 @@ class MissingActionDependencyException(PybuilderException):
                                                              dependency, source)
 
 
-class MissingPluginException(PybuilderException):
+class MissingPluginException(PyBuilderException):
 
     def __init__(self, plugin, message=""):
         super(MissingPluginException, self).__init__(
             "Missing plugin '%s': %s", plugin, message)
 
 
-class BuildFailedException(PybuilderException):
+class BuildFailedException(PyBuilderException):
     pass
 
 
-class MissingPropertyException(PybuilderException):
+class MissingPropertyException(PyBuilderException):
 
     def __init__(self, property):
         super(MissingPropertyException, self).__init__(
@@ -107,7 +107,7 @@ class ProjectValidationFailedException(BuildFailedException):
         self.validation_messages = validation_messages
 
 
-class InternalException(PybuilderException):
+class InternalException(PyBuilderException):
     pass
 
 

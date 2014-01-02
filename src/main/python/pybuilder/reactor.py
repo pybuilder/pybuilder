@@ -27,7 +27,7 @@ from pybuilder.core import (TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE,
                             BEFORE_ATTRIBUTE, INITIALIZER_ATTRIBUTE,
                             ACTION_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE,
                             Project, NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE)
-from pybuilder.errors import PybuilderException, ProjectValidationFailedException
+from pybuilder.errors import PyBuilderException, ProjectValidationFailedException
 from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
                                     ThirdPartyPluginLoader)
@@ -126,7 +126,7 @@ class Reactor(object):
             if self.project.default_task:
                 tasks += as_list(self.project.default_task)
             else:
-                raise PybuilderException("No default task given.")
+                raise PyBuilderException("No default task given.")
 
         execution_plan = self.execution_manager.build_execution_plan(tasks)
         self.logger.debug("Execution plan is %s", ", ".join(
@@ -235,30 +235,30 @@ class Reactor(object):
         try:
             return imp.load_source("build", project_descriptor)
         except ImportError as e:
-            raise PybuilderException(
+            raise PyBuilderException(
                 "Error importing project descriptor %s: %s" % (project_descriptor, e))
 
     def verify_project_directory(self, project_directory, project_descriptor):
         project_directory = os.path.abspath(project_directory)
 
         if not os.path.exists(project_directory):
-            raise PybuilderException(
+            raise PyBuilderException(
                 "Project directory does not exist: %s", project_directory)
 
         if not os.path.isdir(project_directory):
-            raise PybuilderException(
+            raise PyBuilderException(
                 "Project directory is not a directory: %s", project_directory)
 
         project_descriptor_full_path = os.path.join(
             project_directory, project_descriptor)
 
         if not os.path.exists(project_descriptor_full_path):
-            raise PybuilderException(
+            raise PyBuilderException(
                 "Project directory does not contain descriptor file: %s",
                 project_descriptor_full_path)
 
         if not os.path.isfile(project_descriptor_full_path):
-            raise PybuilderException(
+            raise PyBuilderException(
                 "Project descriptor is not a file: %s", project_descriptor_full_path)
 
         return project_directory, project_descriptor_full_path

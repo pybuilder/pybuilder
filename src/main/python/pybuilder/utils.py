@@ -25,7 +25,7 @@ import subprocess
 import tempfile
 import time
 
-from pybuilder.errors import MissingPrerequisiteException, PybuilderException
+from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
 
 
 def render_report(report_dict):
@@ -160,7 +160,7 @@ class Timer(object):
 
     def get_millis(self):
         if self.end_time is None:
-            raise PybuilderException("Timer is running.")
+            raise PyBuilderException("Timer is running.")
         return int((self.end_time - self.start_time) * 1000)
 
 
@@ -202,6 +202,6 @@ def mkdir(directory):
     if os.path.exists(directory):
         if os.path.isfile(directory):
             message = "Unable to created directory '%s': A file with that name already exists"
-            raise PybuilderException(message, directory)
+            raise PyBuilderException(message, directory)
         return
     os.makedirs(directory)
