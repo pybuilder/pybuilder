@@ -1,6 +1,6 @@
-#   Flake8 Plugin for Python-Builder
+#   Flake8 Plugin for PyBuilder
 #
-#   Copyright 2012 The PyBuilder Team
+#   Copyright 2011-2014 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
