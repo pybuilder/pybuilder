@@ -15,7 +15,7 @@
 #  limitations under the License.
 """
     The PyBuilder core module.
-    Contains the most import classes and syntax used in a
+    Contains the most important classes and syntax used in a
     build.py project descriptor.
 """
 
