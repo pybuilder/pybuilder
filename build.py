@@ -112,7 +112,7 @@ def pdoc_generate(project, logger):
         import pdoc
         logger.debug("pdoc is installed in version %s" % pdoc.__version__)
     except ImportError:
-        raise MissingPrerequisiteException("pdoc", caller="pdoc generator task")
+        raise MissingPrerequisiteException("pdoc", caller=pdoc_generate.__name__)
     logger.info("Generating pdoc documentation")
     source_directory = project.get_property("dir_source_main_python")
     subprocess.check_call(
