@@ -111,17 +111,15 @@ def pdoc_generate(project, logger):
     try:
         import pdoc
         logger.debug("pdoc is installed in version %s" % pdoc.__version__)
+
     except ImportError:
         raise MissingPrerequisiteException("pdoc", caller=pdoc_generate.__name__)
+
     logger.info("Generating pdoc documentation")
+
+    command_and_arguments = ["pdoc", "--html", "pybuilder", "--all-submodules", "--overwrite", "--html-dir", "api-doc"]
     source_directory = project.get_property("dir_source_main_python")
-    subprocess.check_call(
-        [
-            "pdoc", "--html", "pybuilder", "--all-submodules", "--overwrite",
-            "--html-dir", "api-doc"
-        ],
-        shell=False,
-        env={
-            "PYTHONPATH": source_directory,
-            "PATH": os.environ["PATH"]
-        })
+    environment = {"PYTHONPATH": source_directory,
+                   "PATH": os.environ["PATH"]}
+
+    subprocess.check_call(command_and_arguments, shell=False, env=environment)
