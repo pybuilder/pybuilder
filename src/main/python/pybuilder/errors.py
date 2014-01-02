@@ -109,3 +109,8 @@ class ProjectValidationFailedException(BuildFailedException):
 
 class InternalException(PythonbuilderException):
     pass
+
+
+class DependenciesNotResolvedException(InternalException):
+    def __init__(self):
+        super(DependenciesNotResolvedException, self).__init__("Dependencies have not been resolved.")

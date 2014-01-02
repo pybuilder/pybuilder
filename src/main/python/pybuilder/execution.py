@@ -25,7 +25,7 @@ import re
 import types
 
 from pybuilder.errors import (CircularTaskDependencyException,
-                              InternalException,
+                              DependenciesNotResolvedException,
                               InvalidNameException,
                               MissingTaskDependencyException,
                               MissingActionDependencyException,
@@ -127,11 +127,6 @@ class Initializer(Executable):
         for environment in as_list(environments):
             if environment in self.environments:
                 return True
-
-
-class DependenciesNotResolvedException(InternalException):
-    def __init__(self):
-        super(DependenciesNotResolvedException, self).__init__("Dependencies have not been resolved.")
 
 
 class TaskExecutionSummary(object):
