@@ -15,12 +15,12 @@
 #  limitations under the License.
 import unittest
 
-from pybuilder.errors import PythonbuilderException
+from pybuilder.errors import PybuilderException
 
 
-class PythonbuilderExceptionTest(unittest.TestCase):
+class PybuilderExceptionTest(unittest.TestCase):
     def test_should_format_exception_message_without_arguments(self):
-        self.assertEquals("spam and eggs", str(PythonbuilderException("spam and eggs")))
+        self.assertEquals("spam and eggs", str(PybuilderException("spam and eggs")))
 
     def test_should_format_exception_message_with_arguments(self):
-        self.assertEquals("spam and eggs", str(PythonbuilderException("%s and %s", "spam", "eggs")))
+        self.assertEquals("spam and eggs", str(PybuilderException("%s and %s", "spam", "eggs")))

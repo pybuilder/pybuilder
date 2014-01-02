@@ -26,7 +26,7 @@ import traceback
 
 from pybuilder import __version__
 from pybuilder.core import Logger
-from pybuilder.errors import PythonbuilderException
+from pybuilder.errors import PybuilderException
 from pybuilder.execution import ExecutionManager
 from pybuilder.reactor import Reactor
 from pybuilder.terminal import (BOLD, BROWN, RED, GREEN, bold, styled_text,
@@ -37,7 +37,7 @@ from pybuilder.utils import format_timestamp
 PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
 
 
-class CommandLineUsageException(PythonbuilderException):
+class CommandLineUsageException(PybuilderException):
 
     def __init__(self, usage, message):
         super(CommandLineUsageException, self).__init__(message)
@@ -317,7 +317,7 @@ def main(*args):
                 environments=options.environments, tasks=arguments)
 
         except KeyboardInterrupt:
-            raise PythonbuilderException("Build aborted")
+            raise PybuilderException("Build aborted")
 
     except Exception as e:
         failure_message = str(e)
