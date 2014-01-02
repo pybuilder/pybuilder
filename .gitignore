@@ -11,3 +11,5 @@ ve*
 .idea
 out
 
+# generated pdoc documentation
+api-doc

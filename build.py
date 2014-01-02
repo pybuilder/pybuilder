@@ -14,7 +14,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pybuilder.core import init, use_plugin, Author
+import os
+import subprocess
+
+from pybuilder.core import init, use_plugin, Author, task
+from pybuilder.errors import MissingPrerequisiteException
 
 use_plugin("python.core")
 use_plugin("python.pytddmon")
@@ -65,12 +69,14 @@ def initialize(project):
 
     project.set_property("coverage_break_build", False)
     project.get_property("coverage_exceptions").append("pybuilder.cli")
-    project.get_property("coverage_exceptions").append("pybuilder.plugins.core_plugin")
+    project.get_property("coverage_exceptions").append(
+        "pybuilder.plugins.core_plugin")
 
     project.set_property("copy_resources_target", "$dir_dist")
     project.get_property("copy_resources_glob").append("LICENSE")
 
-    project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
+    project.get_property("filter_resources_glob").append(
+        "**/pybuilder/__init__.py")
 
     project.set_property("flake8_verbose_output", True)
     project.set_property("flake8_break_build", True)
@@ -98,3 +104,25 @@ def initialize(project):
                          'Topic :: Software Development :: Build Tools',
                          'Topic :: Software Development :: Quality Assurance',
                          'Topic :: Software Development :: Testing'])
+
+
+@task
+def pdoc_generate(project, logger):
+    try:
+        import pdoc
+        logger.debug("pdoc is installed in version %s" % pdoc.__version__)
+    except ImportError:
+        raise MissingPrerequisiteException(
+            "Missing the pdoc module, please install it with pip", caller="pdoc generator task")
+    logger.info("Generating pdoc documentation")
+    source_directory = project.get_property("dir_source_main_python")
+    subprocess.check_call(
+        [
+            "pdoc", "--html", "pybuilder", "--all-submodules", "--overwrite",
+            "--html-dir", "api-doc"
+        ],
+        shell=False,
+        env={
+            "PYTHONPATH": source_directory,
+            "PATH": os.environ["PATH"]
+        })
