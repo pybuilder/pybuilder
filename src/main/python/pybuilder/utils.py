@@ -13,6 +13,10 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""
+    The PyBuilder utils module.
+    Provides generic utilities that can be used by plugins.
+"""
 
 import json
 import os
