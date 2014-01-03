@@ -152,10 +152,10 @@ def use_plugin(name):
 
 
 class Author(object):
-    def __init__(self, name, email=None, roles=[]):
+    def __init__(self, name, email=None, roles=None):
         self.name = name
         self.email = email
-        self.roles = roles
+        self.roles = roles or []
 
 
 class Dependency(object):

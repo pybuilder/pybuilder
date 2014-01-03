@@ -18,7 +18,7 @@ import unittest
 
 from integrationtest_support import IntegrationTestSupport
 
-from pybuilder.errors import PybuilderException
+from pybuilder.errors import PyBuilderException
 
 
 class Test (IntegrationTestSupport):
@@ -32,7 +32,7 @@ def spam (): pass
         """)
         reactor = self.prepare_reactor()
 
-        self.assertRaises(PybuilderException, reactor.build)
+        self.assertRaises(PyBuilderException, reactor.build)
 
 if __name__ == "__main__":
     unittest.main()

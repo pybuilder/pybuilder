@@ -30,7 +30,7 @@ from pybuilder.core import (ACTION_ATTRIBUTE,
                             ONLY_ONCE_ATTRIBUTE,
                             TASK_ATTRIBUTE,
                             Project)
-from pybuilder.errors import MissingPluginException, PybuilderException, ProjectValidationFailedException
+from pybuilder.errors import MissingPluginException, PyBuilderException, ProjectValidationFailedException
 from pybuilder.reactor import Reactor
 from pybuilder.execution import Task, Action, Initializer, ExecutionManager
 from pybuilder.pluginloader import PluginLoader
@@ -201,7 +201,7 @@ class ReactorTest (unittest.TestCase):
         when(os.path).exists("spam").thenReturn(False)
 
         self.assertRaises(
-            PybuilderException, self.reactor.verify_project_directory, "spam", "eggs")
+            PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs")
 
         verify(os.path).abspath("spam")
         verify(os.path).exists("spam")
@@ -212,7 +212,7 @@ class ReactorTest (unittest.TestCase):
         when(os.path).isdir("spam").thenReturn(False)
 
         self.assertRaises(
-            PybuilderException, self.reactor.verify_project_directory, "spam", "eggs")
+            PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs")
 
         verify(os.path).abspath("spam")
         verify(os.path).exists("spam")
@@ -226,7 +226,7 @@ class ReactorTest (unittest.TestCase):
         when(os.path).exists("spam/eggs").thenReturn(False)
 
         self.assertRaises(
-            PybuilderException, self.reactor.verify_project_directory, "spam", "eggs")
+            PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs")
 
         verify(os.path).abspath("spam")
         verify(os.path).exists("spam")
@@ -243,7 +243,7 @@ class ReactorTest (unittest.TestCase):
         when(os.path).isfile("spam/eggs").thenReturn(False)
 
         self.assertRaises(
-            PybuilderException, self.reactor.verify_project_directory, "spam", "eggs")
+            PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs")
 
         verify(os.path).abspath("spam")
         verify(os.path).exists("spam")
@@ -274,7 +274,7 @@ class ReactorTest (unittest.TestCase):
         when(imp).load_source("build", "spam").thenRaise(ImportError("spam"))
 
         self.assertRaises(
-            PybuilderException, self.reactor.load_project_module, "spam")
+            PyBuilderException, self.reactor.load_project_module, "spam")
 
         verify(imp).load_source("build", "spam")
 

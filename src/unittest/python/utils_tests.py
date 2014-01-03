@@ -35,7 +35,7 @@ from pybuilder.utils import (GlobExpression,
                              mkdir,
                              render_report,
                              timedelta_in_millis)
-from pybuilder.errors import PybuilderException
+from pybuilder.errors import PyBuilderException
 
 
 class TimerTest(unittest.TestCase):
@@ -47,7 +47,7 @@ class TimerTest(unittest.TestCase):
 
     def test_should_raise_exception_when_fetching_millis_of_running_timer(self):
         timer = Timer.start()
-        self.assertRaises(PybuilderException, timer.get_millis)
+        self.assertRaises(PyBuilderException, timer.get_millis)
 
     def test_should_return_number_of_millis(self):
         timer = Timer.start()
@@ -310,7 +310,7 @@ class MkdirTest(unittest.TestCase):
         with open(self.any_directory, "w") as existing_file:
             existing_file.write("caboom")
 
-        self.assertRaises(PybuilderException, mkdir, self.any_directory)
+        self.assertRaises(PyBuilderException, mkdir, self.any_directory)
 
         self.assertTrue(os.path.exists(self.any_directory))
         self.assertFalse(os.path.isdir(self.any_directory))

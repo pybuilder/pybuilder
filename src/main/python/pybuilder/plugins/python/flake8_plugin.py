@@ -36,8 +36,8 @@ use_plugin("python.core")
 def initialize_flake8_plugin(project):
     project.build_depends_on("flake8")
 
-    project.set_property(
-        "flake8_verbose_output", project.get_property("verbose"))
+    verbose = project.get_property("verbose")
+    project.set_property("flake8_verbose_output", verbose)
     project.set_property("flake8_break_build", False)
     project.set_property("flake8_max_line_length", 120)
     project.set_property("flake8_exclude_patterns", None)
@@ -46,9 +46,7 @@ def initialize_flake8_plugin(project):
 
 @after("prepare")
 def assert_flake8_is_executable(logger):
-    """
-        Asserts that the flake8 script is executable.
-    """
+    """ Asserts that the flake8 script is executable. """
     logger.debug("Checking if flake8 is executable.")
 
     assert_can_execute(command_and_arguments=["flake8", "--version"],
@@ -59,21 +57,18 @@ def assert_flake8_is_executable(logger):
 @task
 @depends("prepare")
 def analyze(project, logger):
-    """
-        Applies the flake8 script to the sources of the given project.
-    """
+    """ Applies the flake8 script to the sources of the given project. """
     logger.info("Executing flake8 on project sources.")
 
     command_and_arguments = ["flake8"]
 
-    property_flake8_ignore = project.get_property("flake8_ignore")
-    if property_flake8_ignore is not None:
-        ignore_option = "--ignore={0}".format(property_flake8_ignore)
+    flake8_ignore = project.get_property("flake8_ignore")
+    if flake8_ignore is not None:
+        ignore_option = "--ignore={0}".format(flake8_ignore)
         command_and_arguments.append(ignore_option)
 
     max_line_length = project.get_property("flake8_max_line_length")
-    command_and_arguments.append(
-        "--max-line-length={0}".format(max_line_length))
+    command_and_arguments.append("--max-line-length={0}".format(max_line_length))
 
     exclude_patterns = project.get_property("flake8_exclude_patterns")
     if exclude_patterns:
@@ -93,7 +88,7 @@ def analyze(project, logger):
 
     if count_of_warnings > 0:
         if project.get_property("flake8_break_build"):
-            raise BuildFailedException(
-                "flake8 found {0} warning(s)".format(count_of_warnings))
+            error_message = "flake8 found {0} warning(s)".format(count_of_warnings)
+            raise BuildFailedException(error_message)
         else:
             logger.warn("flake8 found %d warning(s).", count_of_warnings)

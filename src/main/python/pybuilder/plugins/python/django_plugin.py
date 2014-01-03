@@ -18,7 +18,7 @@ import os
 import sys
 
 from pybuilder.core import use_plugin, task
-from pybuilder.errors import PybuilderException
+from pybuilder.errors import PyBuilderException
 
 use_plugin("python.core")
 
@@ -34,7 +34,7 @@ def django_run_server(project, logger):
     try:
         __import__(settings_module_name)
     except ImportError as e:
-        raise PybuilderException("Error when importing settings module: " + str(e))
+        raise PyBuilderException("Error when importing settings module: " + str(e))
 
     from django import VERSION as DJANGO_VERSION
     if DJANGO_VERSION < (1, 4, 0):
