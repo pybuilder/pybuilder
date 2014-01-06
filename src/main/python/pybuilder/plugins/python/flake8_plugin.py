@@ -35,9 +35,6 @@ use_plugin("python.core")
 @init
 def initialize_flake8_plugin(project):
     project.build_depends_on("flake8")
-
-    verbose = project.get_property("verbose")
-    project.set_property("flake8_verbose_output", verbose)
     project.set_property("flake8_break_build", False)
     project.set_property("flake8_max_line_length", 120)
     project.set_property("flake8_exclude_patterns", None)
@@ -59,6 +56,9 @@ def assert_flake8_is_executable(logger):
 def analyze(project, logger):
     """ Applies the flake8 script to the sources of the given project. """
     logger.info("Executing flake8 on project sources.")
+
+    verbose = project.get_property("verbose")
+    project.set_property_if_unset("flake8_verbose_output", verbose)
 
     command_and_arguments = ["flake8"]
 
