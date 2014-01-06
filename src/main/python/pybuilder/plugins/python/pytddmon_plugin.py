@@ -16,7 +16,7 @@
 
 import subprocess
 
-from pybuilder.core import use_plugin, task, init
+from pybuilder.core import use_plugin, task, init, description
 
 use_plugin('python.core')
 
@@ -27,6 +27,7 @@ def init_pytddmon_plugin(project):
 
 
 @task
+@description('Start monitoring tests.')
 def pytddmon(project, logger):
     import os
     unittest_directory = project.get_property('dir_source_unittest_python')
