@@ -36,6 +36,7 @@ use_plugin("python.flake8")
 
 use_plugin("python.pydev")
 use_plugin("python.pycharm")
+use_plugin("python.pytddmon")
 
 
 summary = "An extensible, easy to use continuous build tool for Python"
