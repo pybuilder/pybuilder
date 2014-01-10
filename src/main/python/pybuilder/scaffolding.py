@@ -32,7 +32,7 @@ def prompt_user(description, default):
 
 def collect_project_information():
     default_project_name = os.path.basename(os.getcwd())
-    project_name = prompt_user('Project name', default_project_name)
+    project_name = prompt_user('Project name', default_project_name) or default_project_name
     scaffolding = PythonProjectScaffolding(project_name)
 
     dir_source_main_python = prompt_user('Source directory', 'src/main/python')
@@ -70,6 +70,7 @@ from pybuilder.core import $core_imports
 use_plugin("python.core")
 use_plugin("python.unittest")
 
+name = "${project_name}"
 default_task = "publish"
 
 $initializer

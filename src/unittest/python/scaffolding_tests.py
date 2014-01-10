@@ -75,6 +75,7 @@ from pybuilder.core import use_plugin, init
 use_plugin("python.core")
 use_plugin("python.unittest")
 
+name = "some-project"
 default_task = "publish"
 
 @init
@@ -93,6 +94,7 @@ from pybuilder.core import use_plugin
 use_plugin("python.core")
 use_plugin("python.unittest")
 
+name = "some-project"
 default_task = "publish"
 
 
