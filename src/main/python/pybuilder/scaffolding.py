@@ -24,6 +24,9 @@ try:
 except NameError:
     _input = raw_input
 
+DEFAULT_SOURCE_DIRECTORY = 'src/main/python'
+DEFAULT_UNITTEST_DIRECTORY = 'src/unittest/python'
+
 
 def prompt_user(description, default):
     message = "{0} (default: '{1}') : ".format(description, default)
@@ -35,9 +38,9 @@ def collect_project_information():
     project_name = prompt_user('Project name', default_project_name) or default_project_name
     scaffolding = PythonProjectScaffolding(project_name)
 
-    dir_source_main_python = prompt_user('Source directory', 'src/main/python')
+    dir_source_main_python = prompt_user('Source directory', DEFAULT_SOURCE_DIRECTORY)
     dir_source_unittest_python = prompt_user(
-        'Unittest directory', 'src/unittest/python')
+        'Unittest directory', DEFAULT_UNITTEST_DIRECTORY)
 
     if dir_source_main_python:
         scaffolding.dir_source_main_python = dir_source_main_python
@@ -79,8 +82,8 @@ $initializer
 
     def __init__(self, project_name):
         self.project_name = project_name
-        self.dir_source_main_python = 'src/main/python'
-        self.dir_source_unittest_python = 'src/unittest/python'
+        self.dir_source_main_python = DEFAULT_SOURCE_DIRECTORY
+        self.dir_source_unittest_python = DEFAULT_UNITTEST_DIRECTORY
         self.core_imports = ['use_plugin']
         self.initializer = ''
 
@@ -109,11 +112,11 @@ def set_properties(project):
 
     @property
     def is_default_source_main_python(self):
-        return self.dir_source_main_python == 'src/main/python'
+        return self.dir_source_main_python == DEFAULT_SOURCE_DIRECTORY
 
     @property
     def is_default_source_unittest_python(self):
-        return self.dir_source_unittest_python == 'src/unittest/python'
+        return self.dir_source_unittest_python == DEFAULT_UNITTEST_DIRECTORY
 
     def set_up_project(self):
         for needed_directory in (self.dir_source_main_python,
