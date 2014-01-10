@@ -29,6 +29,7 @@ from pybuilder.core import Logger
 from pybuilder.errors import PyBuilderException
 from pybuilder.execution import ExecutionManager
 from pybuilder.reactor import Reactor
+from pybuilder.scaffolding import start_project
 from pybuilder.terminal import (BOLD, BROWN, RED, GREEN, bold, styled_text,
                                 fg, italic, print_text, print_text_line,
                                 print_error, print_error_line, draw_line)
@@ -88,6 +89,12 @@ def parse_options(args):
                       dest="list_tasks",
                       default=False,
                       help="List tasks")
+
+    parser.add_option("--startproject",
+                      action="store_true",
+                      dest="start_project",
+                      default=False,
+                      help="Initialize a build descriptor and python project structure.")
 
     parser.add_option("-v", "--verbose",
                       action="store_true",
@@ -285,6 +292,9 @@ def main(*args):
 
     logger = init_logger(options)
     reactor = init_reactor(logger)
+
+    if options.start_project:
+        return start_project()
 
     if options.list_tasks:
         reactor.prepare_build(property_overrides=options.property_overrides,

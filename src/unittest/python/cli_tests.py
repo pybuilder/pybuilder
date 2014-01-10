@@ -79,6 +79,8 @@ class ParseOptionsTest (unittest.TestCase):
                           overrides.get("no_color", False))
         self.assertEquals(options.property_overrides,
                           overrides.get("property_overrides", {}))
+        self.assertEquals(options.start_project,
+                          overrides.get("start_project", False))
 
     def test_should_parse_empty_arguments(self):
         options, arguments = parse_options([])
@@ -87,6 +89,12 @@ class ParseOptionsTest (unittest.TestCase):
         self.assertEquals([], arguments)
 
     def test_should_parse_task_list_without_options(self):
+        options, arguments = parse_options(["clean", "spam"])
+
+        self.assert_options(options)
+        self.assertEquals(["clean", "spam"], arguments)
+
+    def test_should_parse_create_without_options(self):
         options, arguments = parse_options(["clean", "spam"])
 
         self.assert_options(options)
