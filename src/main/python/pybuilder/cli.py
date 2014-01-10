@@ -90,7 +90,7 @@ def parse_options(args):
                       default=False,
                       help="List tasks")
 
-    parser.add_option("--startproject",
+    parser.add_option("--start-project",
                       action="store_true",
                       dest="start_project",
                       default=False,
