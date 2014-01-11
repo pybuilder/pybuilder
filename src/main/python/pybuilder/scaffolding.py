@@ -21,7 +21,9 @@ from pybuilder.terminal import print_text_line
 try:
     input
 except NameError:
-    input = raw_input
+    input = raw_input  # NOQA
+                       # flake8 sees this as an error on python 3, but there is
+                       # no NameError due to `input` on py3...
 
 DEFAULT_SOURCE_DIRECTORY = 'src/main/python'
 DEFAULT_UNITTEST_DIRECTORY = 'src/unittest/python'
