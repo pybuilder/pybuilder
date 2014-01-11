@@ -64,6 +64,7 @@ def start_project():
         build_descriptor_file.write(descriptor)
 
     scaffolding.set_up_project()
+    return 0
 
 
 class PythonProjectScaffolding(object):
