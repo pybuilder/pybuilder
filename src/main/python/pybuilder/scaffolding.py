@@ -20,9 +20,8 @@ from pybuilder.terminal import print_text_line
 
 try:
     input
-    _input = input
 except NameError:
-    _input = raw_input
+    input = raw_input
 
 DEFAULT_SOURCE_DIRECTORY = 'src/main/python'
 DEFAULT_UNITTEST_DIRECTORY = 'src/unittest/python'
@@ -30,7 +29,7 @@ DEFAULT_UNITTEST_DIRECTORY = 'src/unittest/python'
 
 def prompt_user(description, default):
     message = "{0} (default: '{1}') : ".format(description, default)
-    return raw_input(message)
+    return input(message)
 
 
 def collect_project_information():
