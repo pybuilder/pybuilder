@@ -94,7 +94,7 @@ class ParseOptionsTest (unittest.TestCase):
         self.assert_options(options)
         self.assertEquals(["clean", "spam"], arguments)
 
-    def test_should_parse_create_without_options(self):
+    def test_should_parse_start_project_without_options(self):
         options, arguments = parse_options(["clean", "spam"])
 
         self.assert_options(options)
