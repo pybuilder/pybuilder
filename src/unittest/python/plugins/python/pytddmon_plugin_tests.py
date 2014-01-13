@@ -34,4 +34,4 @@ class PytddmonPluginTests(unittest.TestCase):
         pytddmon_plugin.pytddmon(project, Mock())
 
         subprocess.Popen.assert_called_with(
-            ['which python', 'which pytddmon.py'], shell=False, cwd='src/unittest/python', env=ANY)
+            ['which python', 'which pytddmon.py', '--no-pulse'], shell=False, cwd='src/unittest/python', env=ANY)

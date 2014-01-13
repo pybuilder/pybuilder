@@ -40,4 +40,4 @@ def pytddmon(project, logger):
     python_interpreter = subprocess.check_output('which python', shell=True).rstrip('\n')
     pytddmon_script = subprocess.check_output('which pytddmon.py', shell=True).rstrip('\n')
 
-    subprocess.Popen([python_interpreter, pytddmon_script], shell=False, cwd=unittest_directory, env=environment)
+    subprocess.Popen([python_interpreter, pytddmon_script, '--no-pulse'], shell=False, cwd=unittest_directory, env=environment)
