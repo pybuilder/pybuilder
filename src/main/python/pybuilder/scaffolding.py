@@ -19,11 +19,10 @@ import string
 from pybuilder.terminal import print_text_line
 
 try:
-    input
+    _input = raw_input
 except NameError:
-    input = raw_input  # NOQA
-                       # flake8 sees this as an error on python 3, but there is
-                       # no NameError due to `input` on py3...
+    _input = input
+
 
 DEFAULT_SOURCE_DIRECTORY = 'src/main/python'
 DEFAULT_UNITTEST_DIRECTORY = 'src/unittest/python'
@@ -31,7 +30,7 @@ DEFAULT_UNITTEST_DIRECTORY = 'src/unittest/python'
 
 def prompt_user(description, default):
     message = "{0} (default: '{1}') : ".format(description, default)
-    return input(message)
+    return _input(message)
 
 
 def collect_project_information():
