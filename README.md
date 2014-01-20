@@ -72,7 +72,3 @@ In addition, a few common plugins are provided:
 ## Release Notes
 
 The release notes can be found [here](http://pybuilder.github.com/releasenotes/)
-
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/pybuilder/pybuilder/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
