@@ -63,6 +63,9 @@ def run_unit_tests(project, logger):
             raise BuildFailedException("There were test errors.")
         logger.info("All unittests passed.")
     except ImportError as e:
+        if project.get_property("verbose"):
+            import traceback
+            traceback.print_exc()
         logger.error("Error importing unittests: %s", e)
         raise BuildFailedException("Unable to execute unit tests.")
 
