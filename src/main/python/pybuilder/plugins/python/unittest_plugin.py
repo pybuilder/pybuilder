@@ -65,9 +65,9 @@ def run_unit_tests(project, logger):
     except ImportError as e:
         import traceback
         _, _, import_error_traceback = sys.exc_info()
-        errored_file, error_line, _, errored_statement = traceback.extract_tb(import_error_traceback)[-1]
+        file_with_error, error_line, _, statement_causing_error = traceback.extract_tb(import_error_traceback)[-1]
         logger.error("Import error in unittest file {0}, due to statement '{1}' on line {2}".format(
-            errored_file, errored_statement, error_line))
+            file_with_error, statement_causing_error, error_line))
         logger.error("Error importing unittests: %s", e)
         raise BuildFailedException("Unable to execute unit tests.")
 
