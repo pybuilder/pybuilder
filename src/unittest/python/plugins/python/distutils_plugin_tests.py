@@ -107,7 +107,6 @@ class DefaultTest(unittest.TestCase):
 class BuildDataFilesStringTest(unittest.TestCase):
 
     def setUp(self):
-        unittest.TestCase.setUp(self)
         self.project = Project(".")
 
     def test_should_return_empty_data_files_string(self):
@@ -136,7 +135,6 @@ class BuildDataFilesStringTest(unittest.TestCase):
 class BuildPackageDataStringTest(unittest.TestCase):
 
     def setUp(self):
-        unittest.TestCase.setUp(self)
         self.project = Project('.')
 
     def test_should_return_empty_package_data_string_when_no_files_to_include_given(self):

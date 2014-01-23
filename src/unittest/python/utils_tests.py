@@ -276,13 +276,11 @@ class ApplyOnFilesTest(unittest.TestCase):
 class MkdirTest(unittest.TestCase):
 
     def setUp(self):
-        unittest.TestCase.setUp(self)
         self.basedir = tempfile.mkdtemp(self.__class__.__name__)
         self.any_directory = os.path.join(self.basedir, "any_dir")
 
     def tearDown(self):
         shutil.rmtree(self.basedir)
-        unittest.TestCase.tearDown(self)
 
     def test_should_make_directory_if_it_does_not_exist(self):
         mkdir(self.any_directory)

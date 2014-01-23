@@ -34,12 +34,10 @@ from pybuilder.pluginloader import BuiltinPluginLoader, DispatchingPluginLoader,
 class ThirdPartyPluginLoaderTest (unittest.TestCase):
 
     def setUp(self):
-        super(ThirdPartyPluginLoaderTest, self).setUp()
         self.project = mock()
         self.loader = ThirdPartyPluginLoader(mock())
 
     def tearDown(self):
-        super(ThirdPartyPluginLoaderTest, self).tearDown()
         unstub()
 
     def test_should_raise_exception_when_requiring_plugin_and_plugin_is_not_found(self):
@@ -71,12 +69,10 @@ class ThirdPartyPluginLoaderTest (unittest.TestCase):
 class BuiltinPluginLoaderTest (unittest.TestCase):
 
     def setUp(self):
-        super(BuiltinPluginLoaderTest, self).setUp()
         self.project = mock()
         self.loader = BuiltinPluginLoader(mock())
 
     def tearDown(self):
-        super(BuiltinPluginLoaderTest, self).tearDown()
         unstub()
 
     def test_should_raise_exception_when_requiring_plugin_and_plugin_is_not_found(self):
