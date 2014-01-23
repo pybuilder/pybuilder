@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #  This file is part of PyBuilder
 #
 #  Copyright 2011-2014 PyBuilder Team
@@ -254,7 +255,7 @@ class TaskPoolProgress(object):
         waiting_tests_count = self.waiting_tests_count
         waiting_tests_progress = styled_text(self.WAITING_SYMBOL * waiting_tests_count, fg(GREY))
 
-        return "\r[%s%s%s]" % (finished_tests_progress, running_tests_progress, waiting_tests_progress)
+        return "\r[%sᗧ%s%s]" % (finished_tests_progress, running_tests_progress, waiting_tests_progress)
 
     def render_to_terminal(self):
         if self.can_be_displayed:

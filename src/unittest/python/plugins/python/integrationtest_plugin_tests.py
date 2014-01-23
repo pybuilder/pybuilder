@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #  This file is part of PyBuilder
 #
 #  Copyright 2011-2014 PyBuilder Team
@@ -86,7 +88,7 @@ class TaskPoolProgressTests(unittest.TestCase):
         progress.update(3)
 
         self.assertEqual(progress.render(),
-                         '\r[---//|||]')
+                         '\r[---ᗧ//|||]')
 
 
 class IntegrationTestConfigurationTests(unittest.TestCase):
