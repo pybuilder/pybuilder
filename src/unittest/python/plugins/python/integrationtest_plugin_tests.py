@@ -65,15 +65,15 @@ class TaskPoolProgressTests(unittest.TestCase):
 
         self.assertTrue(progress.is_finished)
 
-    @patch('pybuilder.plugins.python.integrationtest_plugin.sys.stderr')
-    def test_should_be_displayed_when_tty_given(self, stderr):
-        stderr.isatty.return_value = True
+    @patch('pybuilder.plugins.python.integrationtest_plugin.sys.stdout')
+    def test_should_be_displayed_when_tty_given(self, stdout):
+        stdout.isatty.return_value = True
 
         self.assertTrue(self.progress.can_be_displayed)
 
-    @patch('pybuilder.plugins.python.integrationtest_plugin.sys.stderr')
-    def test_should_not_be_displayed_when_no_tty_given(self, stderr):
-        stderr.isatty.return_value = False
+    @patch('pybuilder.plugins.python.integrationtest_plugin.sys.stdout')
+    def test_should_not_be_displayed_when_no_tty_given(self, stdout):
+        stdout.isatty.return_value = False
 
         self.assertFalse(self.progress.can_be_displayed)
 

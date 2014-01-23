@@ -19,7 +19,7 @@ import sys
 
 from pybuilder.core import init, use_plugin, task, description
 from pybuilder.utils import execute_command, Timer
-from pybuilder.terminal import print_text_line, print_file_content
+from pybuilder.terminal import print_text_line, print_file_content, print_text
 from pybuilder.plugins.python.test_plugin_helper import ReportsProcessor
 
 from pybuilder.terminal import styled_text, fg, GREEN, MAGENTA, GREY
@@ -116,7 +116,7 @@ def run_integration_tests_in_parallel(project, logger):
         progress.update(finished_tests_count)
         if progress.can_be_displayed:
             bar = progress.render()
-            sys.stderr.write(bar)
+            print_text(bar, flush=True)
         time.sleep(.5)
 
     progress.mark_as_finished()
@@ -254,6 +254,6 @@ class TaskPoolProgress(object):
 
     @property
     def can_be_displayed(self):
-        if sys.stderr.isatty():
+        if sys.stdout.isatty():
             return True
         return False

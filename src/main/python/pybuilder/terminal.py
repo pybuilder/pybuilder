@@ -102,8 +102,10 @@ def underline(text):
     return styled_text(text, UNDERLINE)
 
 
-def print_text(text):
+def print_text(text, flush=False):
     sys.stdout.write(text)
+    if flush:
+        sys.stdout.flush()
 
 
 def print_text_line(text=""):
