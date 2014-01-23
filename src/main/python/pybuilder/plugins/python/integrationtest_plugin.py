@@ -15,6 +15,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import multiprocessing
 import os
 import sys
 
@@ -23,11 +24,11 @@ try:
 except ImportError:
     from Queue import Empty
 
+
 from pybuilder.core import init, use_plugin, task, description
 from pybuilder.utils import execute_command, Timer
 from pybuilder.terminal import print_text_line, print_file_content, print_text
 from pybuilder.plugins.python.test_plugin_helper import ReportsProcessor
-
 from pybuilder.terminal import styled_text, fg, GREEN, MAGENTA, GREY
 
 use_plugin("python.core")
@@ -76,9 +77,8 @@ def run_integration_tests_sequentially(project, logger):
 
 def run_integration_tests_in_parallel(project, logger):
     logger.info("Running integration tests in parallel")
-    import multiprocessing
     tests = multiprocessing.Queue()
-    reports = multiprocessing.Queue()
+    reports = ConsumingQueue()
     reports_dir = prepare_reports_directory(project)
     cpu_scaling_factor = project.get_property(
         'integrationtest_cpu_scaling_factor', 4)
@@ -123,16 +123,10 @@ def run_integration_tests_in_parallel(project, logger):
         pool.append(p)
         p.start()
 
-    test_reports = []
     import time
     while not progress.is_finished:
-        try:  # fail OSX has no sem_getvalue() implementation so no queue size
-            while True:
-                report = reports.get_nowait()
-                test_reports.append(report)
-        except Empty:
-            pass
-        finished_tests_count = len(test_reports)
+        reports.consume_available_items()
+        finished_tests_count = reports.size
         progress.update(finished_tests_count)
         progress.render_to_terminal()
         time.sleep(.5)
@@ -141,7 +135,7 @@ def run_integration_tests_in_parallel(project, logger):
 
     total_time.stop()
 
-    return (test_reports, total_time)
+    return (reports.items, total_time)
 
 
 def discover_integration_tests(source_path, suffix=".py"):
@@ -224,6 +218,35 @@ def run_single_test(logger, project, reports_dir, test, output_test_names=True):
             print_file_content(error_file_name)
 
     return report_item
+
+
+class ConsumingQueue(object):
+
+    def __init__(self):
+        self._items = []
+        self._queue = multiprocessing.Queue()
+
+    def consume_available_items(self):
+        try:
+            while True:
+                item = self.get_nowait()
+                self._items.append(item)
+        except Empty:
+            pass
+
+    def put(self, *args, **kwargs):
+        return self._queue.put(*args, **kwargs)
+
+    def get_nowait(self, *args, **kwargs):
+        return self._queue.get_nowait(*args, **kwargs)
+
+    @property
+    def items(self):
+        return self._items
+
+    @property
+    def size(self):
+        return len(self.items)
 
 
 class TaskPoolProgress(object):

@@ -17,11 +17,17 @@
 #  limitations under the License.
 
 import unittest
+try:
+    from queue import Empty
+except ImportError:
+    from Queue import Empty
+
 from mock import patch
 
 from pybuilder.core import Project
 from pybuilder.plugins.python.integrationtest_plugin import (TaskPoolProgress,
-                                                             add_additional_environment_keys)
+                                                             add_additional_environment_keys,
+                                                             ConsumingQueue)
 
 
 class TaskPoolProgressTests(unittest.TestCase):
@@ -124,4 +130,53 @@ class IntegrationTestConfigurationTests(unittest.TestCase):
         project = Project('any-directory')
         project.set_property(
             'integrationtest_additional_environment', 'meow')
-        self.assertRaises(ValueError, add_additional_environment_keys, {}, project)
+        self.assertRaises(
+            ValueError, add_additional_environment_keys, {}, project)
+
+
+class ConsumingQueueTests(unittest.TestCase):
+
+    @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
+    def test_should_consume_no_items_when_underlying_queue_empty(self, underlying_nowait_get):
+        queue = ConsumingQueue()
+
+        def empty_queue_get_nowait():
+            raise Empty()
+
+        underlying_nowait_get.side_effect = empty_queue_get_nowait
+
+        queue.consume_available_items()
+
+        self.assertEqual(queue.items, [])
+
+    @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
+    def test_should_consume_one_item_when_underlying_queue_has_one(self, underlying_nowait_get):
+        queue = ConsumingQueue()
+
+        def empty_queue_get_nowait():
+            yield "any-item"
+            raise Empty()
+
+        underlying_nowait_get.side_effect = empty_queue_get_nowait()
+
+        queue.consume_available_items()
+
+        self.assertEqual(queue.items, ['any-item'])
+
+    @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
+    def test_should_consume_many_items_when_underlying_queue_has_them(self, underlying_nowait_get):
+        queue = ConsumingQueue()
+
+        def empty_queue_get_nowait():
+            yield "any-item"
+            yield "any-other-item"
+            yield "some stuff"
+            raise Empty()
+
+        underlying_nowait_get.side_effect = empty_queue_get_nowait()
+
+        queue.consume_available_items()
+
+        self.assertEqual(queue.items, ['any-item',
+                                       'any-other-item',
+                                       'some stuff'])
