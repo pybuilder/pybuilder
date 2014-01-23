@@ -74,9 +74,6 @@ def initialize(project):
     project.get_property("coverage_exceptions").append("pybuilder.cli")
     project.get_property("coverage_exceptions").append("pybuilder.plugins.core_plugin")
 
-    project.set_property("integrationtest_parallel", True)
-    project.set_property("integrationtest_cpu_scaling_factor", 1)
-
     project.set_property("copy_resources_target", "$dir_dist")
     project.get_property("copy_resources_glob").append("LICENSE")
     project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
