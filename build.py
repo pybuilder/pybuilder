@@ -68,6 +68,8 @@ def initialize(project):
     project.build_depends_on("pyassert")
     project.build_depends_on("wheel")
 
+    project.set_property("verbose", True)
+
     project.set_property("coverage_break_build", False)
     project.get_property("coverage_exceptions").append("pybuilder.cli")
     project.get_property("coverage_exceptions").append("pybuilder.plugins.core_plugin")
@@ -78,7 +80,6 @@ def initialize(project):
     project.set_property("copy_resources_target", "$dir_dist")
     project.get_property("copy_resources_glob").append("LICENSE")
     project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
-
 
     project.set_property("flake8_verbose_output", True)
     project.set_property("flake8_break_build", True)
