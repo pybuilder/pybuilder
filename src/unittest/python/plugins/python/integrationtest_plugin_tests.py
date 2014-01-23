@@ -35,25 +35,25 @@ class TaskPoolProgressTests(unittest.TestCase):
         self.assertEqual(self.progress.total_tasks_count, 42)
 
     def test_should_have_max_amount_of_tasks_running_when_limited_by_workers(self):
-        self.assertEqual(self.progress.running_tests_count, 8)
+        self.assertEqual(self.progress.running_tasks_count, 8)
 
     def test_should_have_max_amount_of_tasks_running_when_limited_by_tasks(self):
         progress = TaskPoolProgress(2, 4)
 
-        self.assertEqual(progress.running_tests_count, 2)
+        self.assertEqual(progress.running_tasks_count, 2)
 
     def test_should_have_max_amount_of_tasks_running_when_limited_by_tasks_after_updating(self):
         self.progress.update(40)
 
-        self.assertEqual(self.progress.running_tests_count, 2)
+        self.assertEqual(self.progress.running_tasks_count, 2)
 
     def test_should_have_tasks_that_are_neither_running_nor_finished_as_waiting(self):
-        self.assertEqual(self.progress.waiting_tests_count, 42 - 8)
+        self.assertEqual(self.progress.waiting_tasks_count, 42 - 8)
 
     def test_should_have_tasks_that_are_neither_running_nor_finished_as_waiting_after_updating(self):
         self.progress.update(2)
 
-        self.assertEqual(self.progress.waiting_tests_count, 40 - 8)
+        self.assertEqual(self.progress.waiting_tasks_count, 40 - 8)
 
     def test_should_not_be_finished_when_tasks_are_still_todo(self):
         self.assertFalse(self.progress.is_finished)

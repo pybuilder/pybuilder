@@ -250,12 +250,12 @@ class TaskPoolProgress(object):
 
     def render(self):
         finished_tests_progress = styled_text(self.FINISHED_SYMBOL * self.finished_tasks_count, fg(GREEN))
-        running_tests_count = self.running_tests_count
-        running_tests_progress = styled_text(self.PENDING_SYMBOL * running_tests_count, fg(MAGENTA))
-        waiting_tests_count = self.waiting_tests_count
-        waiting_tests_progress = styled_text(self.WAITING_SYMBOL * waiting_tests_count, fg(GREY))
+        running_tasks_count = self.running_tasks_count
+        running_tests_progress = styled_text(self.PENDING_SYMBOL * running_tasks_count, fg(MAGENTA))
+        waiting_tasks_count = self.waiting_tasks_count
+        waiting_tasks_progress = styled_text(self.WAITING_SYMBOL * waiting_tasks_count, fg(GREY))
 
-        return "\r[%sᗧ%s%s]" % (finished_tests_progress, running_tests_progress, waiting_tests_progress)
+        return "\r[%sᗧ%s%s]" % (finished_tests_progress, running_tests_progress, waiting_tasks_progress)
 
     def render_to_terminal(self):
         if self.can_be_displayed:
@@ -266,15 +266,15 @@ class TaskPoolProgress(object):
             print_text_line()
 
     @property
-    def running_tests_count(self):
+    def running_tasks_count(self):
         pending_tasks = (self.total_tasks_count - self.finished_tasks_count)
         if pending_tasks > self.workers_count:
             return self.workers_count
         return pending_tasks
 
     @property
-    def waiting_tests_count(self):
-        return (self.total_tasks_count - self.finished_tasks_count - self.running_tests_count)
+    def waiting_tasks_count(self):
+        return (self.total_tasks_count - self.finished_tasks_count - self.running_tasks_count)
 
     @property
     def is_finished(self):
