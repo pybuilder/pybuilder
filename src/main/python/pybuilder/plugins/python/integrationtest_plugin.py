@@ -17,6 +17,11 @@
 import os
 import sys
 
+try:
+    from queue import Empty
+except ImportError:
+    from Queue import Empty
+
 from pybuilder.core import init, use_plugin, task, description
 from pybuilder.utils import execute_command, Timer
 from pybuilder.terminal import print_text_line, print_file_content, print_text
@@ -96,8 +101,18 @@ def run_integration_tests_in_parallel(project, logger):
                 report_item = run_single_test(
                     logger, project, reports_dir, test, not progress.can_be_displayed)
                 reports.put(report_item)
-            except:
+            except Empty:
                 break
+            except Exception as e:
+                logger.error("Failed to run test %r : %s" % (test, str(e)))
+                failed_report = {
+                    "test": test,
+                    "test_file": test,
+                    "time": 0,
+                    "success": False
+                }
+                reports.put(failed_report)
+                continue
 
     pool = []
     for i in range(worker_pool_size):
@@ -110,9 +125,7 @@ def run_integration_tests_in_parallel(project, logger):
     while not progress.is_finished:
         finished_tests_count = reports.qsize()
         progress.update(finished_tests_count)
-        if progress.can_be_displayed:
-            bar = progress.render()
-            print_text(bar, flush=True)
+        progress.render_to_terminal()
         time.sleep(.5)
 
     progress.mark_as_finished()
@@ -148,7 +161,8 @@ def discover_integration_tests_for_project(project):
 def add_additional_environment_keys(env, project):
     additional_environment = project.get_property(
         "integrationtest_additional_environment", {})
-    # TODO: assert that additional env is a map
+    if not isinstance(additional_environment, dict):
+        raise ValueError("Additional environment %r is not a map." % additional_environment)
     for key in additional_environment:
         env[key] = additional_environment[key]
 
@@ -240,6 +254,10 @@ class TaskPoolProgress(object):
         waiting_tests_progress = styled_text(self.WAITING_SYMBOL * waiting_tests_count, fg(GREY))
 
         return "\r[%s%s%s]" % (finished_tests_progress, running_tests_progress, waiting_tests_progress)
+
+    def render_to_terminal(self):
+        if self.can_be_displayed:
+            print_text(self.render(), flush=True)
 
     def mark_as_finished(self):
         if self.can_be_displayed:

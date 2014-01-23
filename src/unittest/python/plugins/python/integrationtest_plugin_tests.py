@@ -17,7 +17,9 @@
 import unittest
 from mock import patch
 
-from pybuilder.plugins.python.integrationtest_plugin import TaskPoolProgress
+from pybuilder.core import Project
+from pybuilder.plugins.python.integrationtest_plugin import (TaskPoolProgress,
+                                                             add_additional_environment_keys)
 
 
 class TaskPoolProgressTests(unittest.TestCase):
@@ -85,3 +87,39 @@ class TaskPoolProgressTests(unittest.TestCase):
 
         self.assertEqual(progress.render(),
                          '\r[---//|||]')
+
+
+class IntegrationTestConfigurationTests(unittest.TestCase):
+
+    def test_should_merge_additional_environment_into_current_one(self):
+        project = Project('any-directory')
+        project.set_property(
+            'integrationtest_additional_environment', {'foo': 'bar'})
+        environment = {'bar': 'baz'}
+
+        add_additional_environment_keys(environment, project)
+
+        self.assertEqual(environment,
+                         {
+                             'foo': 'bar',
+                             'bar': 'baz'
+                         })
+
+    def test_should_override_current_environment_keys_with_additional_environment(self):
+        project = Project('any-directory')
+        project.set_property(
+            'integrationtest_additional_environment', {'foo': 'mooh'})
+        environment = {'foo': 'bar'}
+
+        add_additional_environment_keys(environment, project)
+
+        self.assertEqual(environment,
+                         {
+                             'foo': 'mooh'
+                         })
+
+    def test_should_fail_when_additional_environment_is_not_a_map(self):
+        project = Project('any-directory')
+        project.set_property(
+            'integrationtest_additional_environment', 'meow')
+        self.assertRaises(ValueError, add_additional_environment_keys, {}, project)
