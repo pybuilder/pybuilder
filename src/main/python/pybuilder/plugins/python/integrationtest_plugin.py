@@ -26,10 +26,6 @@ from pybuilder.terminal import styled_text, fg, GREEN, MAGENTA, GREY
 
 use_plugin("python.core")
 
-FINISHED_SYMBOL = "-"
-PENDING_SYMBOL = "/"
-WAITING_SYMBOL = "|"
-
 
 @init
 def init_test_source_directory(project):
@@ -215,6 +211,9 @@ def run_single_test(logger, project, reports_dir, test, output_test_names=True):
 
 
 class TaskPoolProgress(object):
+    FINISHED_SYMBOL = "-"
+    PENDING_SYMBOL = "/"
+    WAITING_SYMBOL = "|"
 
     def __init__(self, total_tasks_count, workers_count):
         self.total_tasks_count = total_tasks_count
@@ -225,11 +224,11 @@ class TaskPoolProgress(object):
         self.finished_tasks_count = finished_tasks_count
 
     def render(self):
-        finished_tests_progress = styled_text(FINISHED_SYMBOL * self.finished_tasks_count, fg(GREEN))
+        finished_tests_progress = styled_text(self.FINISHED_SYMBOL * self.finished_tasks_count, fg(GREEN))
         running_tests_count = self.running_tests_count
-        running_tests_progress = styled_text(PENDING_SYMBOL * running_tests_count, fg(MAGENTA))
+        running_tests_progress = styled_text(self.PENDING_SYMBOL * running_tests_count, fg(MAGENTA))
         waiting_tests_count = self.waiting_tests_count
-        waiting_tests_progress = styled_text(WAITING_SYMBOL * waiting_tests_count, fg(GREY))
+        waiting_tests_progress = styled_text(self.WAITING_SYMBOL * waiting_tests_count, fg(GREY))
 
         return "\r[%s%s%s]" % (finished_tests_progress, running_tests_progress, waiting_tests_progress)
 
