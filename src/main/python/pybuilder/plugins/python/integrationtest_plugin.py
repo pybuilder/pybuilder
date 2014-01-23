@@ -22,7 +22,13 @@ from pybuilder.utils import execute_command, Timer
 from pybuilder.terminal import print_text_line, print_file_content
 from pybuilder.plugins.python.test_plugin_helper import ReportsProcessor
 
+from pybuilder.terminal import styled_text, fg, GREEN, MAGENTA, GREY
+
 use_plugin("python.core")
+
+FINISHED_SYMBOL = "-"
+PENDING_SYMBOL = "/"
+WAITING_SYMBOL = "|"
 
 
 @init
@@ -67,6 +73,7 @@ def run_integration_tests_sequentially(project, logger):
 
 
 def run_integration_tests_in_parallel(project, logger):
+    logger.info("Running integration tests in parallel")
     import multiprocessing
     tests = multiprocessing.Queue()
     reports = multiprocessing.Queue()
@@ -75,7 +82,6 @@ def run_integration_tests_in_parallel(project, logger):
         'integrationtest_cpu_scaling_factor', 4)
     cpu_count = multiprocessing.cpu_count()
     worker_pool_size = cpu_count * cpu_scaling_factor
-
     logger.debug(
         "Running integration tests in parallel with {0} processes ({1} cpus found)".format(
             worker_pool_size,
@@ -84,13 +90,15 @@ def run_integration_tests_in_parallel(project, logger):
     total_time = Timer.start()
     for test in discover_integration_tests_for_project(project):
         tests.put(test)
+    total_tests_count = tests.qsize()
+    progress = TaskPoolProgress(total_tests_count, worker_pool_size)
 
     def pick_and_run_tests_then_report(tests, reports, reports_dir, logger, project):
         while True:
             try:
                 test = tests.get_nowait()
                 report_item = run_single_test(
-                    logger, project, reports_dir, test)
+                    logger, project, reports_dir, test, not progress.can_be_displayed)
                 reports.put(report_item)
             except:
                 break
@@ -102,8 +110,16 @@ def run_integration_tests_in_parallel(project, logger):
         pool.append(p)
         p.start()
 
-    for worker in pool:
-        worker.join()
+    import time
+    while not progress.is_finished:
+        finished_tests_count = reports.qsize()
+        progress.update(finished_tests_count)
+        if progress.can_be_displayed:
+            bar = progress.render()
+            sys.stderr.write(bar)
+        time.sleep(.5)
+
+    progress.mark_as_finished()
 
     total_time.stop()
 
@@ -168,9 +184,10 @@ def prepare_reports_directory(project):
     return reports_dir
 
 
-def run_single_test(logger, project, reports_dir, test, ):
+def run_single_test(logger, project, reports_dir, test, output_test_names=True):
     name, _ = os.path.splitext(os.path.basename(test))
-    logger.info("Running integration test %s", name)
+    if output_test_names:
+        logger.info("Running integration test %s", name)
     env = prepare_environment(project)
     test_time = Timer.start()
     command_and_arguments = (sys.executable, test)
@@ -195,3 +212,48 @@ def run_single_test(logger, project, reports_dir, test, ):
             print_file_content(error_file_name)
 
     return report_item
+
+
+class TaskPoolProgress(object):
+
+    def __init__(self, total_tasks_count, workers_count):
+        self.total_tasks_count = total_tasks_count
+        self.finished_tasks_count = 0
+        self.workers_count = workers_count
+
+    def update(self, finished_tasks_count):
+        self.finished_tasks_count = finished_tasks_count
+
+    def render(self):
+        finished_tests_progress = styled_text(FINISHED_SYMBOL * self.finished_tasks_count, fg(GREEN))
+        running_tests_count = self.running_tests_count
+        running_tests_progress = styled_text(PENDING_SYMBOL * running_tests_count, fg(MAGENTA))
+        waiting_tests_count = self.waiting_tests_count
+        waiting_tests_progress = styled_text(WAITING_SYMBOL * waiting_tests_count, fg(GREY))
+
+        return "\r[%s%s%s]" % (finished_tests_progress, running_tests_progress, waiting_tests_progress)
+
+    def mark_as_finished(self):
+        if self.can_be_displayed:
+            print_text_line()
+
+    @property
+    def running_tests_count(self):
+        pending_tasks = (self.total_tasks_count - self.finished_tasks_count)
+        if pending_tasks > self.workers_count:
+            return self.workers_count
+        return pending_tasks
+
+    @property
+    def waiting_tests_count(self):
+        return (self.total_tasks_count - self.finished_tasks_count - self.running_tests_count)
+
+    @property
+    def is_finished(self):
+        return (self.finished_tasks_count == self.total_tasks_count)
+
+    @property
+    def can_be_displayed(self):
+        if sys.stderr.isatty():
+            return True
+        return False
