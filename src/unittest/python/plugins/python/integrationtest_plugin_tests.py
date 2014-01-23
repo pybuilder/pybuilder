@@ -157,7 +157,7 @@ class ConsumingQueueTests(unittest.TestCase):
             yield "any-item"
             raise Empty()
 
-        underlying_nowait_get.side_effect = empty_queue_get_nowait()
+        underlying_nowait_get.side_effect = empty_queue_get_nowait()  # generator, needs initialization!
 
         queue.consume_available_items()
 
@@ -173,10 +173,39 @@ class ConsumingQueueTests(unittest.TestCase):
             yield "some stuff"
             raise Empty()
 
-        underlying_nowait_get.side_effect = empty_queue_get_nowait()
+        underlying_nowait_get.side_effect = empty_queue_get_nowait()  # generator, needs initialization!
 
         queue.consume_available_items()
 
         self.assertEqual(queue.items, ['any-item',
                                        'any-other-item',
                                        'some stuff'])
+
+    @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
+    def test_should_give_item_size_of_zero_when_underlying_queue_is_empty(self, underlying_nowait_get):
+        queue = ConsumingQueue()
+
+        def empty_queue_get_nowait():
+            raise Empty()
+
+        underlying_nowait_get.side_effect = empty_queue_get_nowait  # not a generator, beware!!!!
+
+        queue.consume_available_items()
+
+        self.assertEqual(queue.size, 0)
+
+    @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
+    def test_should_give_item_size_of_n_when_underlying_queue_has_n_elements(self, underlying_nowait_get):
+        queue = ConsumingQueue()
+
+        def empty_queue_get_nowait():
+            yield 'first'
+            yield 'second'
+            yield 'third'
+            raise Empty()
+
+        underlying_nowait_get.side_effect = empty_queue_get_nowait()  # generator, needs initialization!
+
+        queue.consume_available_items()
+
+        self.assertEqual(queue.size, 3)
