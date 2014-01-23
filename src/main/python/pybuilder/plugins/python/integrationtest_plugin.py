@@ -89,9 +89,10 @@ def run_integration_tests_in_parallel(project, logger):
             cpu_count))
 
     total_time = Timer.start()
+    total_tests_count = 0  # fail OSX has no sem_getvalue() implementation so no queue size
     for test in discover_integration_tests_for_project(project):
         tests.put(test)
-    total_tests_count = tests.qsize()
+        total_tests_count += 1
     progress = TaskPoolProgress(total_tests_count, worker_pool_size)
 
     def pick_and_run_tests_then_report(tests, reports, reports_dir, logger, project):
@@ -121,9 +122,16 @@ def run_integration_tests_in_parallel(project, logger):
         pool.append(p)
         p.start()
 
+    test_reports = []
     import time
     while not progress.is_finished:
-        finished_tests_count = reports.qsize()
+        try:  # fail OSX has no sem_getvalue() implementation so no queue size
+            while True:
+                report = reports.get_nowait()
+                test_reports.append(report)
+        except Empty:
+            pass
+        finished_tests_count = len(test_reports)
         progress.update(finished_tests_count)
         progress.render_to_terminal()
         time.sleep(.5)
@@ -132,14 +140,7 @@ def run_integration_tests_in_parallel(project, logger):
 
     total_time.stop()
 
-    iterable_reports = []
-    while True:
-        try:
-            iterable_reports.append(reports.get_nowait())
-        except:
-            break
-
-    return (iterable_reports, total_time)
+    return (test_reports, total_time)
 
 
 def discover_integration_tests(source_path, suffix=".py"):
