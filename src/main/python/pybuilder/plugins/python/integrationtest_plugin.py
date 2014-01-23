@@ -211,6 +211,15 @@ def run_single_test(logger, project, reports_dir, test, output_test_names=True):
 
 
 class TaskPoolProgress(object):
+    """
+    Class that renders progress for a set of tasks run in parallel.
+    The progress is based on
+    * the amount of total tasks, which must be static
+    * the amount of workers running in parallel.
+    The bar can be updated with the amount of tasks that have been successfully
+    executed and render its progress.
+    """
+
     FINISHED_SYMBOL = "-"
     PENDING_SYMBOL = "/"
     WAITING_SYMBOL = "|"
