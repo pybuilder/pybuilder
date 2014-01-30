@@ -129,7 +129,7 @@ def run_integration_tests_in_parallel(project, logger):
         finished_tests_count = reports.size
         progress.update(finished_tests_count)
         progress.render_to_terminal()
-        time.sleep(.5)
+        time.sleep(1)
 
     progress.mark_as_finished()
 
@@ -263,9 +263,8 @@ class TaskPoolProgress(object):
     PENDING_SYMBOL = "/"
     WAITING_SYMBOL = "|"
     PACMAN_FORWARD = "ᗧ"
-    PACMAN_DOWN = "ᗣ"
     PACMAN_BACKWARD = "ᗤ"
-    PACMAN_CYCLE = [PACMAN_BACKWARD, PACMAN_DOWN, PACMAN_FORWARD]
+    PACMAN_CYCLE = [PACMAN_BACKWARD, PACMAN_FORWARD]
 
     def __init__(self, total_tasks_count, workers_count):
         self.total_tasks_count = total_tasks_count
