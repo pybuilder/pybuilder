@@ -48,4 +48,4 @@ class ReportsProcessor(object):
         self.project.write_report("integrationtest.json", render_report(self.test_report))
         self.logger.info("Executed %d integration tests.", self.tests_executed)
         if self.tests_failed:
-            raise BuildFailedException("Integration test(s) failed.")
+            raise BuildFailedException("%d of %d integration tests failed." % (self.tests_failed, self.tests_executed))
