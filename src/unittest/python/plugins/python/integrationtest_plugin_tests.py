@@ -94,7 +94,14 @@ class TaskPoolProgressTests(unittest.TestCase):
         progress.update(3)
 
         self.assertEqual(progress.render(),
-                         '\r[---ᗧ//|||]')
+                         '\r[---ᗤ//|||]')
+
+
+    def test_should_alternate_pacman_symbol(self):
+        self.assertEqual(self.progress.pacman_symbol, "ᗤ")
+        self.assertEqual(self.progress.pacman_symbol, "ᗣ")
+        self.assertEqual(self.progress.pacman_symbol, "ᗧ")
+        self.assertEqual(self.progress.pacman_symbol, "ᗤ")
 
 
 class IntegrationTestConfigurationTests(unittest.TestCase):

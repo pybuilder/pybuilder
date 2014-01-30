@@ -262,23 +262,29 @@ class TaskPoolProgress(object):
     FINISHED_SYMBOL = "-"
     PENDING_SYMBOL = "/"
     WAITING_SYMBOL = "|"
+    PACMAN_FORWARD = "ᗧ"
+    PACMAN_DOWN = "ᗣ"
+    PACMAN_BACKWARD = "ᗤ"
+    PACMAN_CYCLE = [PACMAN_BACKWARD, PACMAN_DOWN, PACMAN_FORWARD]
 
     def __init__(self, total_tasks_count, workers_count):
         self.total_tasks_count = total_tasks_count
         self.finished_tasks_count = 0
         self.workers_count = workers_count
+        self.pacman_index = 0
 
     def update(self, finished_tasks_count):
         self.finished_tasks_count = finished_tasks_count
 
     def render(self):
+        pacman = self.pacman_symbol
         finished_tests_progress = styled_text(self.FINISHED_SYMBOL * self.finished_tasks_count, fg(GREEN))
         running_tasks_count = self.running_tasks_count
         running_tests_progress = styled_text(self.PENDING_SYMBOL * running_tasks_count, fg(MAGENTA))
         waiting_tasks_count = self.waiting_tasks_count
         waiting_tasks_progress = styled_text(self.WAITING_SYMBOL * waiting_tasks_count, fg(GREY))
 
-        return "\r[%sᗧ%s%s]" % (finished_tests_progress, running_tests_progress, waiting_tasks_progress)
+        return "\r[%s%s%s%s]" % (finished_tests_progress, pacman, running_tests_progress, waiting_tasks_progress)
 
     def render_to_terminal(self):
         if self.can_be_displayed:
@@ -287,6 +293,13 @@ class TaskPoolProgress(object):
     def mark_as_finished(self):
         if self.can_be_displayed:
             print_text_line()
+
+    @property
+    def pacman_symbol(self):
+        pacman_symbol = self.PACMAN_CYCLE[self.pacman_index]
+        self.pacman_index += 1
+        self.pacman_index = self.pacman_index % len(self.PACMAN_CYCLE)
+        return pacman_symbol
 
     @property
     def running_tasks_count(self):
