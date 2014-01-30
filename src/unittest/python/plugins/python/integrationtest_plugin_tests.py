@@ -96,7 +96,6 @@ class TaskPoolProgressTests(unittest.TestCase):
         self.assertEqual(progress.render(),
                          '\r[---ᗤ//|||]')
 
-
     def test_should_alternate_pacman_symbol(self):
         self.assertEqual(self.progress.pacman_symbol, "ᗤ")
         self.assertEqual(self.progress.pacman_symbol, "ᗧ")
