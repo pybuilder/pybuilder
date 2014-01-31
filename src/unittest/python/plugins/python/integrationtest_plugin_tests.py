@@ -94,12 +94,26 @@ class TaskPoolProgressTests(unittest.TestCase):
         progress.update(3)
 
         self.assertEqual(progress.render(),
-                         '\r[---ᗤ//|||]')
+                         '[---ᗤ//|||]')
 
     def test_should_alternate_pacman_symbol(self):
         self.assertEqual(self.progress.pacman_symbol, "ᗤ")
         self.assertEqual(self.progress.pacman_symbol, "ᗧ")
         self.assertEqual(self.progress.pacman_symbol, "ᗤ")
+
+    @patch('pybuilder.plugins.python.integrationtest_plugin.styled_text')
+    @patch('pybuilder.plugins.python.integrationtest_plugin.print_text')
+    @patch('pybuilder.plugins.python.integrationtest_plugin.TaskPoolProgress.can_be_displayed')
+    def test_should_erase_previous_progress_on_subsequent_renders(self, _, print_text, styled):
+        styled.side_effect = lambda text, *styles: text
+        progress = TaskPoolProgress(8, 2)
+        progress.update(2)
+
+        progress.render_to_terminal()
+        print_text.assert_called_with('[--ᗤ//||||]', flush=True)
+        progress.render_to_terminal()
+        # ᗤ is 3 characters, sums up to 13
+        print_text.assert_called_with('\b' * 13 + '[--ᗧ//||||]', flush=True)
 
 
 class IntegrationTestConfigurationTests(unittest.TestCase):
@@ -162,7 +176,8 @@ class ConsumingQueueTests(unittest.TestCase):
             yield "any-item"
             raise Empty()
 
-        underlying_nowait_get.side_effect = empty_queue_get_nowait()  # generator, needs initialization!
+        # generator, needs initialization!
+        underlying_nowait_get.side_effect = empty_queue_get_nowait()
 
         queue.consume_available_items()
 
@@ -178,7 +193,8 @@ class ConsumingQueueTests(unittest.TestCase):
             yield "some stuff"
             raise Empty()
 
-        underlying_nowait_get.side_effect = empty_queue_get_nowait()  # generator, needs initialization!
+        # generator, needs initialization!
+        underlying_nowait_get.side_effect = empty_queue_get_nowait()
 
         queue.consume_available_items()
 
@@ -193,7 +209,8 @@ class ConsumingQueueTests(unittest.TestCase):
         def empty_queue_get_nowait():
             raise Empty()
 
-        underlying_nowait_get.side_effect = empty_queue_get_nowait  # not a generator, beware!!!!
+        # not a generator, beware!!!!
+        underlying_nowait_get.side_effect = empty_queue_get_nowait
 
         queue.consume_available_items()
 
@@ -209,7 +226,8 @@ class ConsumingQueueTests(unittest.TestCase):
             yield 'third'
             raise Empty()
 
-        underlying_nowait_get.side_effect = empty_queue_get_nowait()  # generator, needs initialization!
+        # generator, needs initialization!
+        underlying_nowait_get.side_effect = empty_queue_get_nowait()
 
         queue.consume_available_items()
 

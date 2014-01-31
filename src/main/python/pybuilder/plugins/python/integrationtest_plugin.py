@@ -90,7 +90,8 @@ def run_integration_tests_in_parallel(project, logger):
             cpu_count))
 
     total_time = Timer.start()
-    total_tests_count = 0  # fail OSX has no sem_getvalue() implementation so no queue size
+    # fail OSX has no sem_getvalue() implementation so no queue size
+    total_tests_count = 0
     for test in discover_integration_tests_for_project(project):
         tests.put(test)
         total_tests_count += 1
@@ -158,7 +159,8 @@ def add_additional_environment_keys(env, project):
     additional_environment = project.get_property(
         "integrationtest_additional_environment", {})
     if not isinstance(additional_environment, dict):
-        raise ValueError("Additional environment %r is not a map." % additional_environment)
+        raise ValueError("Additional environment %r is not a map." %
+                         additional_environment)
     for key in additional_environment:
         env[key] = additional_environment[key]
 
@@ -250,6 +252,7 @@ class ConsumingQueue(object):
 
 
 class TaskPoolProgress(object):
+
     """
     Class that renders progress for a set of tasks run in parallel.
     The progress is based on
@@ -259,6 +262,7 @@ class TaskPoolProgress(object):
     executed and render its progress.
     """
 
+    BACKSPACE = "\b"
     FINISHED_SYMBOL = "-"
     PENDING_SYMBOL = "/"
     WAITING_SYMBOL = "|"
@@ -271,23 +275,31 @@ class TaskPoolProgress(object):
         self.finished_tasks_count = 0
         self.workers_count = workers_count
         self.pacman_index = 0
+        self.last_render_length = 0
 
     def update(self, finished_tasks_count):
         self.finished_tasks_count = finished_tasks_count
 
     def render(self):
         pacman = self.pacman_symbol
-        finished_tests_progress = styled_text(self.FINISHED_SYMBOL * self.finished_tasks_count, fg(GREEN))
+        finished_tests_progress = styled_text(
+            self.FINISHED_SYMBOL * self.finished_tasks_count, fg(GREEN))
         running_tasks_count = self.running_tasks_count
-        running_tests_progress = styled_text(self.PENDING_SYMBOL * running_tasks_count, fg(MAGENTA))
+        running_tests_progress = styled_text(
+            self.PENDING_SYMBOL * running_tasks_count, fg(MAGENTA))
         waiting_tasks_count = self.waiting_tasks_count
-        waiting_tasks_progress = styled_text(self.WAITING_SYMBOL * waiting_tasks_count, fg(GREY))
+        waiting_tasks_progress = styled_text(
+            self.WAITING_SYMBOL * waiting_tasks_count, fg(GREY))
 
-        return "\r[%s%s%s%s]" % (finished_tests_progress, pacman, running_tests_progress, waiting_tasks_progress)
+        return "[%s%s%s%s]" % (finished_tests_progress, pacman, running_tests_progress, waiting_tasks_progress)
 
     def render_to_terminal(self):
         if self.can_be_displayed:
-            print_text(self.render(), flush=True)
+            text_to_render = self.render()
+            characters_to_be_erased = self.last_render_length
+            self.last_render_length = len(text_to_render)
+            text_to_render = "%s%s" % (characters_to_be_erased * self.BACKSPACE, text_to_render)
+            print_text(text_to_render, flush=True)
 
     def mark_as_finished(self):
         if self.can_be_displayed:
