@@ -112,8 +112,8 @@ class TaskPoolProgressTests(unittest.TestCase):
         progress.render_to_terminal()
         print_text.assert_called_with('[--ᗤ//||||]', flush=True)
         progress.render_to_terminal()
-        # ᗤ is 3 characters, sums up to 13
-        print_text.assert_called_with('\b' * 13 + '[--ᗧ//||||]', flush=True)
+        print_text.assert_called_with(
+            '\b' * (10 + len('ᗤ')) + '[--ᗧ//||||]', flush=True)
 
 
 class IntegrationTestConfigurationTests(unittest.TestCase):
