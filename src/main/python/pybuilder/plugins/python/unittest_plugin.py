@@ -60,7 +60,8 @@ def run_unit_tests(project, logger):
         write_report("unittest", project, logger, result, console_out)
 
         if not result.wasSuccessful():
-            raise BuildFailedException("There were test errors.")
+            raise BuildFailedException("There were %d test error(s) and %d failure(s)"
+                                       % (len(result.errors), len(result.failures)))
         logger.info("All unittests passed.")
     except ImportError as e:
         import traceback
