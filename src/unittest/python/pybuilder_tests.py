@@ -18,6 +18,7 @@ import unittest
 
 from pybuilder.testutils import assert_is_not_locally_installed
 
+
 class PyBuilderTests(unittest.TestCase):
 
     def test_pybuilder_is_not_installed_locally(self):

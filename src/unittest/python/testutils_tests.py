@@ -18,6 +18,7 @@ import unittest
 from pybuilder.testutils import assert_is_not_locally_installed
 from mock import patch, Mock
 
+
 class PipPackagesTests(unittest.TestCase):
 
     @patch('pybuilder.testutils.pip.get_installed_distributions')
