@@ -39,9 +39,7 @@ def init_test_source_directory(project):
 @task
 @description("Runs unit tests based on Python's unittest module")
 def run_unit_tests(project, logger):
-    sys.path.append(project.expand_path("$dir_source_main_python"))
-    test_dir = project.expand_path("$dir_source_unittest_python")
-    sys.path.append(test_dir)
+    test_dir = _register_test_and_source_path_and_return_test_dir(project, sys.path)
 
     suffix = project.expand("$unittest_file_suffix")
 
@@ -86,6 +84,14 @@ def execute_tests(test_source, suffix, test_method_prefix=None):
         return result, output_log_file.getvalue()
     finally:
         output_log_file.close()
+
+
+def _register_test_and_source_path_and_return_test_dir(project, system_path):
+    test_dir = project.expand_path("$dir_source_unittest_python")
+    system_path.insert(0, test_dir)
+    system_path.insert(0, project.expand_path("$dir_source_main_python"))
+
+    return test_dir
 
 
 def write_report(name, project, logger, result, console_out):
