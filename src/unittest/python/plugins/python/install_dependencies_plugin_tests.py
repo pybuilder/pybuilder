@@ -84,15 +84,6 @@ class InstallDependencyTest(unittest.TestCase):
             "pip install --index-url some_index_url --extra-index-url some_extra_index_url spam", any_value(
             ), shell=True)
 
-    def test_should_use_mirrors_to_install_dependency(self):
-        self.project.set_property("install_dependencies_use_mirrors", True)
-        dependency = Dependency("spam")
-
-        install_dependency(self.logger, self.project, dependency)
-
-        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            "pip install --use-mirrors spam", any_value(), shell=True)
-
     def test_should_upgrade_dependencies(self):
         self.project.set_property("install_dependencies_upgrade", True)
         dependency = Dependency("spam")

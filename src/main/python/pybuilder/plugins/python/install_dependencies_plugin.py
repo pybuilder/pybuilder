@@ -31,7 +31,6 @@ def initialized_install_dependencies_plugin(project):
     project.set_property_if_unset("dir_install_logs", "$dir_logs/install_dependencies")
     project.set_property_if_unset("install_dependencies_index_url", None)
     project.set_property_if_unset("install_dependencies_extra_index_url", None)
-    project.set_property_if_unset("install_dependencies_use_mirrors", True)
     project.set_property_if_unset("install_dependencies_upgrade", False)
 
 
@@ -101,8 +100,6 @@ def build_pip_install_options(project):
         options.append("--index-url " + project.get_property("install_dependencies_index_url"))
         if project.get_property("install_dependencies_extra_index_url"):
             options.append("--extra-index-url " + project.get_property("install_dependencies_extra_index_url"))
-    if project.get_property("install_dependencies_use_mirrors"):
-        options.append("--use-mirrors")
 
     if project.get_property("install_dependencies_upgrade"):
         options.append("--upgrade")
