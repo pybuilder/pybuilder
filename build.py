@@ -97,7 +97,7 @@ def initialize(project):
                          'Programming Language :: Python :: 3',
                          'Programming Language :: Python :: 3.2',
                          'Programming Language :: Python :: 3.3',
-                         'Development Status :: 3 - Alpha',
+                         'Development Status :: 4 - Beta',
                          'Environment :: Console',
                          'Intended Audience :: Developers',
                          'License :: OSI Approved :: Apache Software License',
