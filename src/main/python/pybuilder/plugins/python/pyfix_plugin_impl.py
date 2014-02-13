@@ -7,7 +7,7 @@ from pyfix.testcollector import TestCollector
 from pyfix.testrunner import TestRunner, TestRunListener
 
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import discover_modules, render_report
+from pybuilder.utils import discover_modules_matching, render_report
 
 
 def run_unit_tests(project, logger):
@@ -15,15 +15,20 @@ def run_unit_tests(project, logger):
     test_dir = project.expand_path("$dir_source_unittest_python")
     sys.path.append(test_dir)
 
-    suffix = project.expand("$pyfix_unittest_file_suffix")
+    pyfix_unittest_file_suffix = project.get_property("pyfix_unittest_file_suffix")
+    if pyfix_unittest_file_suffix is not None:
+        logger.warn("pyfix_unittest_file_suffix is deprecated, please use pyfix_unittest_file_glob")
+        project.set_property("pyfix_unittest_file_glob", "*{0}".format(pyfix_unittest_file_suffix))
+
+    file_glob = project.expand("$pyfix_unittest_file_glob")
 
     logger.info("Executing pyfix unittests in %s", test_dir)
-    logger.debug("Including files ending with '%s'", suffix)
+    logger.debug("Including files matching '%s'", file_glob)
 
     try:
-        result = execute_tests(logger, test_dir, suffix)
+        result = execute_tests_matching(logger, test_dir, file_glob)
         if result.number_of_tests_executed == 0:
-            logger.warn("No unittests executed")
+            logger.warn("No pyfix executed")
         else:
             logger.info("Executed %d pyfix unittests", result.number_of_tests_executed)
 
@@ -59,7 +64,11 @@ def import_modules(test_modules):
 
 
 def execute_tests(logger, test_source, suffix):
-    test_module_names = discover_modules(test_source, suffix)
+    return execute_tests_matching(logger, test_source, "*{0}".format(suffix))
+
+
+def execute_tests_matching(logger, test_source, file_glob):
+    test_module_names = discover_modules_matching(test_source, file_glob)
     test_modules = import_modules(test_module_names)
 
     test_collector = TestCollector()

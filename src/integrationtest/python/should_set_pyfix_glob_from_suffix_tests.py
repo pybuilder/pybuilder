@@ -23,31 +23,37 @@ class Test (IntegrationTestSupport):
 
     def test(self):
         self.write_build_file("""
+from pybuilder.core import init
+from pybuilder.core import task
 from pybuilder.core import use_plugin
 
 use_plugin("python.pyfix_unittest")
 
 name = "integration-test"
 default_task = "run_unit_tests"
+
+@task
+def run_unit_tests(project):
+    file_suffix = project.get_property("pyfix_unittest_file_suffix")
+    file_glob = project.get_property("pyfix_unittest_file_glob")
+    if file_glob != "*{0}".format(file_suffix):
+        raise Exception("pyfix_unittest_file_suffix failed to override pyfix_unittest_file_glob")
+
+@init
+def init_should_set_pyfix_glob_from_suffix(project):
+    project.set_property("pyfix_unittest_file_glob", "suffix will overwrite")
+    project.set_property("pyfix_unittest_file_suffix", "_pyfix_tests.py")
 """)
         self.create_directory("src/unittest/python")
         self.write_file("src/unittest/python/spam_pyfix_tests.py", """
-import time
-
 from pyfix import test
 
 @test
 def should_run_pyfix_test ():
-    time.sleep(.1)
+    return
 """)
         self.write_file("src/unittest/python/cheese_tests.py", """
-import time
-
-from pyfix import test
-
-@test
-def should_skip_test_sans_pyfix_test ():
-    raise Exception("This test should not have run!")
+raise Exception("This test should not have run!")
 """)
 
         reactor = self.prepare_reactor()

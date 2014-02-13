@@ -26,7 +26,7 @@ except ImportError:
 
 
 from pybuilder.core import init, use_plugin, task, description
-from pybuilder.utils import execute_command, Timer
+from pybuilder.utils import discover_files_matching, execute_command, Timer
 from pybuilder.terminal import print_text_line, print_file_content, print_text
 from pybuilder.plugins.python.test_plugin_helper import ReportsProcessor
 from pybuilder.terminal import styled_text, fg, GREEN, MAGENTA, GREY
@@ -38,7 +38,8 @@ use_plugin("python.core")
 def init_test_source_directory(project):
     project.set_property_if_unset(
         "dir_source_integrationtest_python", "src/integrationtest/python")
-    project.set_property_if_unset("integrationtest_file_suffix", "_tests.py")
+    project.set_property_if_unset("integrationtest_file_glob", "*_tests.py")
+    project.set_property_if_unset("integrationtest_file_suffix", None)  # deprecated, use unittest_file_glob.
     project.set_property_if_unset("integrationtest_additional_environment", {})
     project.set_property_if_unset("integrationtest_inherit_environment", False)
 
@@ -66,7 +67,7 @@ def run_integration_tests_sequentially(project, logger):
 
     total_time = Timer.start()
 
-    for test in discover_integration_tests_for_project(project):
+    for test in discover_integration_tests_for_project(project, logger):
         report_item = run_single_test(logger, project, reports_dir, test)
         report_items.append(report_item)
 
@@ -92,7 +93,7 @@ def run_integration_tests_in_parallel(project, logger):
     total_time = Timer.start()
     # fail OSX has no sem_getvalue() implementation so no queue size
     total_tests_count = 0
-    for test in discover_integration_tests_for_project(project):
+    for test in discover_integration_tests_for_project(project, logger):
         tests.put(test)
         total_tests_count += 1
     progress = TaskPoolProgress(total_tests_count, worker_pool_size)
@@ -140,19 +141,25 @@ def run_integration_tests_in_parallel(project, logger):
 
 
 def discover_integration_tests(source_path, suffix=".py"):
-    result = []
-    for root, _, files in os.walk(source_path):
-        for file_name in files:
-            if file_name.endswith(suffix):
-                result.append(os.path.join(root, file_name))
-    return result
+    return discover_files_matching(source_path, "*{0}".format(suffix))
 
 
-def discover_integration_tests_for_project(project):
+def discover_integration_tests_matching(source_path, file_glob):
+    return discover_files_matching(source_path, file_glob)
+
+
+def discover_integration_tests_for_project(project, logger=None):
     integrationtest_source_dir = project.expand_path(
         "$dir_source_integrationtest_python")
-    integrationtest_suffix = project.expand("$integrationtest_file_suffix")
-    return discover_integration_tests(integrationtest_source_dir, integrationtest_suffix)
+    integrationtest_suffix = project.get_property("integrationtest_file_suffix")
+    if integrationtest_suffix is not None:
+        if logger is not None:
+            logger.warn(
+                "integrationtest_file_suffix is deprecated, please use integrationtest_file_glob"
+            )
+        project.set_property("integrationtest_file_glob", "*{0}".format(integrationtest_suffix))
+    integrationtest_glob = project.expand("$integrationtest_file_glob")
+    return discover_files_matching(integrationtest_source_dir, integrationtest_glob)
 
 
 def add_additional_environment_keys(env, project):

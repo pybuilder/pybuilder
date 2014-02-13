@@ -24,7 +24,7 @@ import unittest
 
 from pybuilder.core import init, task, description, use_plugin
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import discover_modules, render_report
+from pybuilder.utils import discover_modules_matching, render_report
 from pybuilder.terminal import print_text_line
 use_plugin("python.core")
 
@@ -32,7 +32,8 @@ use_plugin("python.core")
 @init
 def init_test_source_directory(project):
     project.set_property_if_unset("dir_source_unittest_python", "src/unittest/python")
-    project.set_property_if_unset("unittest_file_suffix", "_tests.py")
+    project.set_property_if_unset("unittest_file_glob", "*_tests.py")
+    project.set_property_if_unset("unittest_file_suffix", None)  # deprecated, use unittest_file_glob.
     project.set_property_if_unset("unittest_test_method_prefix", None)
 
 
@@ -41,14 +42,19 @@ def init_test_source_directory(project):
 def run_unit_tests(project, logger):
     test_dir = _register_test_and_source_path_and_return_test_dir(project, sys.path)
 
-    suffix = project.expand("$unittest_file_suffix")
+    unittest_file_suffix = project.get_property("unittest_file_suffix")
+    if unittest_file_suffix is not None:
+        logger.warn("unittest_file_suffix is deprecated, please use unittest_file_glob")
+        project.set_property("unittest_file_glob", "*{0}".format(unittest_file_suffix))
+
+    file_glob = project.expand("$unittest_file_glob")
 
     logger.info("Executing unittests in %s", test_dir)
-    logger.debug("Including files ending with '%s'", suffix)
+    logger.debug("Including files matching '%s'", file_glob)
 
     try:
         test_method_prefix = project.get_property("unittest_test_method_prefix")
-        result, console_out = execute_tests(test_dir, suffix, test_method_prefix)
+        result, console_out = execute_tests_matching(test_dir, file_glob, test_method_prefix)
 
         if result.testsRun == 0:
             logger.warn("No unittests executed.")
@@ -72,10 +78,14 @@ def run_unit_tests(project, logger):
 
 
 def execute_tests(test_source, suffix, test_method_prefix=None):
+    return execute_tests_matching(test_source, "*{0}".format(suffix), test_method_prefix)
+
+
+def execute_tests_matching(test_source, file_glob, test_method_prefix=None):
     output_log_file = StringIO()
 
     try:
-        test_modules = discover_modules(test_source, suffix)
+        test_modules = discover_modules_matching(test_source, file_glob)
         loader = unittest.defaultTestLoader
         if test_method_prefix:
             loader.testMethodPrefix = test_method_prefix

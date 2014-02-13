@@ -16,7 +16,11 @@
 
 import os
 
-from pybuilder.utils import discover_modules, discover_files, execute_command, as_list, read_file
+from pybuilder.utils import (discover_modules,
+                             discover_files_matching,
+                             execute_command,
+                             as_list,
+                             read_file)
 
 
 def log_report(logger, name, report_lines):
@@ -27,7 +31,7 @@ def log_report(logger, name, report_lines):
 
 
 def discover_python_files(directory):
-    return discover_files(directory, ".py")
+    return discover_files_matching(directory, "*.py")
 
 
 def discover_affected_files(include_test_sources, project):
