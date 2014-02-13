@@ -81,7 +81,7 @@ class ExecuteTestsTests(TestCase):
         mock_unittest.defaultTestLoader.loadTestsFromNames.assert_called_with(mock_modules)
 
     @patch('pybuilder.plugins.python.unittest_plugin.unittest')
-    @patch('pybuilder.plugins.python.unittest_plugin.discover_modules')
+    @patch('pybuilder.utils.discover_modules')
     def test_should_run_discovered_and_loaded_tests(self, mock_discover_modules, mock_unittest):
 
         mock_tests = Mock()
@@ -94,7 +94,7 @@ class ExecuteTestsTests(TestCase):
         mock_test_runner.run.assert_called_with(mock_tests)
 
     @patch('pybuilder.plugins.python.unittest_plugin.unittest')
-    @patch('pybuilder.plugins.python.unittest_plugin.discover_modules')
+    @patch('pybuilder.utils.discover_modules')
     def test_should_return_actual_test_results(self, mock_discover_modules, mock_unittest):
 
         mock_tests = Mock()
@@ -109,7 +109,7 @@ class ExecuteTestsTests(TestCase):
         self.assertEqual(mock_result, actual)
 
     @patch('pybuilder.plugins.python.unittest_plugin.unittest')
-    @patch('pybuilder.plugins.python.unittest_plugin.discover_modules')
+    @patch('pybuilder.utils.discover_modules')
     def test_should_set_test_method_prefix_when_given(self, mock_discover_modules, mock_unittest):
 
         mock_tests = Mock()

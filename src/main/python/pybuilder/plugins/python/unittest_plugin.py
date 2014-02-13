@@ -24,6 +24,7 @@ import unittest
 
 from pybuilder.core import init, task, description, use_plugin
 from pybuilder.errors import BuildFailedException
+from pybuilder.utils import discover_modules  # noqa To ensure 0.10.2 compatibility.
 from pybuilder.utils import discover_modules_matching, render_report
 from pybuilder.terminal import print_text_line
 use_plugin("python.core")
