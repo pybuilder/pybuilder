@@ -196,6 +196,14 @@ class DiscoverModulesTest(unittest.TestCase):
         self.assertEquals([], discover_modules_matching("spam", "*.py"))
         verify(os).walk("spam")
 
+    def test_should_only_match_py_files_regardless_of_glob(self):
+        when(os).walk("pet_shop").thenReturn([("pet_shop", [],
+                                               ["parrot.txt", "parrot.py", "parrot.pyc", "parrot.py~"])])
+        expected_result = ["parrot"]
+        actual_result = discover_modules_matching("pet_shop", "*parrot*")
+        self.assertEquals(set(expected_result), set(actual_result))
+        verify(os).walk("pet_shop")
+
     def test_should_return_list_with_single_module_when_directory_contains_single_file(self):
         when(os).walk("spam").thenReturn([("spam", [], ["eggs.py"])])
         self.assertEquals(["eggs"], discover_modules("spam", ".py"))

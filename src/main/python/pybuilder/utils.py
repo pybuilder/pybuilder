@@ -85,8 +85,9 @@ def remove_leading_slash_or_dot_from_path(path):
 
 
 def remove_python_source_suffix(file_name):
-    return file_name[0:-len(".py")]
-
+    if file_name.endswith(".py"):
+        return file_name[0:-len(".py")]
+    return file_name
 
 def discover_modules(source_path, suffix=".py"):
     return discover_modules_matching(source_path, "*{0}".format(suffix))
@@ -95,6 +96,8 @@ def discover_modules(source_path, suffix=".py"):
 def discover_modules_matching(source_path, file_glob):
     result = []
     for module_file_path in discover_files_matching(source_path, file_glob):
+        if not module_file_path.endswith(".py"):
+            continue
         relative_module_file_path = module_file_path.replace(source_path, "")
         relative_module_file_path = relative_module_file_path.replace(os.sep, ".")
         module_file = remove_leading_slash_or_dot_from_path(relative_module_file_path)
