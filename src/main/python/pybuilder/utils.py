@@ -89,6 +89,7 @@ def remove_python_source_suffix(file_name):
         return file_name[0:-len(".py")]
     return file_name
 
+
 def discover_modules(source_path, suffix=".py"):
     return discover_modules_matching(source_path, "*{0}".format(suffix))
 
