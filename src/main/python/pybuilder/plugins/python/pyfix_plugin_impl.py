@@ -17,16 +17,19 @@ def run_unit_tests(project, logger):
 
     pyfix_unittest_file_suffix = project.get_property("pyfix_unittest_file_suffix")
     if pyfix_unittest_file_suffix is not None:
-        logger.warn("pyfix_unittest_file_suffix is deprecated, please use pyfix_unittest_file_glob")
-        project.set_property("pyfix_unittest_file_glob", "*{0}".format(pyfix_unittest_file_suffix))
+        logger.warn("pyfix_unittest_file_suffix is deprecated, please use pyfix_unittest_module_glob")
+        module_glob = "*{0}".format(pyfix_unittest_file_suffix)
+        if module_glob.endswith(".py"):
+            module_glob = module_glob[:-3]
+        project.set_property("pyfix_unittest_module_glob", module_glob)
+    else:
+        module_glob = project.get_property("pyfix_unittest_module_glob")
 
-    file_glob = project.expand("$pyfix_unittest_file_glob")
-
-    logger.info("Executing pyfix unittests in %s", test_dir)
-    logger.debug("Including files matching '%s'", file_glob)
+    logger.info("Executing pyfix unittest Python modules in %s", test_dir)
+    logger.debug("Including files matching '%s.py'", module_glob)
 
     try:
-        result = execute_tests_matching(logger, test_dir, file_glob)
+        result = execute_tests_matching(logger, test_dir, module_glob)
         if result.number_of_tests_executed == 0:
             logger.warn("No pyfix executed")
         else:
@@ -67,8 +70,8 @@ def execute_tests(logger, test_source, suffix):
     return execute_tests_matching(logger, test_source, "*{0}".format(suffix))
 
 
-def execute_tests_matching(logger, test_source, file_glob):
-    test_module_names = discover_modules_matching(test_source, file_glob)
+def execute_tests_matching(logger, test_source, module_glob):
+    test_module_names = discover_modules_matching(test_source, module_glob)
     test_modules = import_modules(test_module_names)
 
     test_collector = TestCollector()

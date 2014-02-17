@@ -26,8 +26,8 @@ def init_test_source_directory(project):
     project.build_depends_on("pyfix")
 
     project.set_property_if_unset("dir_source_unittest_python", "src/unittest/python")
-    project.set_property_if_unset("pyfix_unittest_file_glob", "*_pyfix_tests.py")
-    project.set_property_if_unset("pyfix_unittest_file_suffix", None)  # deprecated, use unittest_file_glob.
+    project.set_property_if_unset("pyfix_unittest_module_glob", "*_pyfix_tests")
+    project.set_property_if_unset("pyfix_unittest_file_suffix", None)  # deprecated, use pyfix_unittest_module_glob.
 
 
 @task

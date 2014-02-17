@@ -39,7 +39,7 @@ def init_test_source_directory(project):
     project.set_property_if_unset(
         "dir_source_integrationtest_python", "src/integrationtest/python")
     project.set_property_if_unset("integrationtest_file_glob", "*_tests.py")
-    project.set_property_if_unset("integrationtest_file_suffix", None)  # deprecated, use unittest_file_glob.
+    project.set_property_if_unset("integrationtest_file_suffix", None)  # deprecated, use integrationtest_file_glob.
     project.set_property_if_unset("integrationtest_additional_environment", {})
     project.set_property_if_unset("integrationtest_inherit_environment", False)
 

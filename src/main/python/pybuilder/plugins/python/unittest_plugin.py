@@ -33,8 +33,8 @@ use_plugin("python.core")
 @init
 def init_test_source_directory(project):
     project.set_property_if_unset("dir_source_unittest_python", "src/unittest/python")
-    project.set_property_if_unset("unittest_file_glob", "*_tests.py")
-    project.set_property_if_unset("unittest_file_suffix", None)  # deprecated, use unittest_file_glob.
+    project.set_property_if_unset("unittest_module_glob", "*_tests")
+    project.set_property_if_unset("unittest_file_suffix", None)  # deprecated, use unittest_module_glob.
     project.set_property_if_unset("unittest_test_method_prefix", None)
 
 
@@ -45,17 +45,20 @@ def run_unit_tests(project, logger):
 
     unittest_file_suffix = project.get_property("unittest_file_suffix")
     if unittest_file_suffix is not None:
-        logger.warn("unittest_file_suffix is deprecated, please use unittest_file_glob")
-        project.set_property("unittest_file_glob", "*{0}".format(unittest_file_suffix))
+        logger.warn("unittest_file_suffix is deprecated, please use unittest_module_glob")
+        module_glob = "*{0}".format(unittest_file_suffix)
+        if module_glob.endswith(".py"):
+            module_glob = module_glob[:-3]
+        project.set_property("unittest_module_glob", module_glob)
+    else:
+        module_glob = project.get_property("unittest_module_glob")
 
-    file_glob = project.expand("$unittest_file_glob")
-
-    logger.info("Executing unittests in %s", test_dir)
-    logger.debug("Including files matching '%s'", file_glob)
+    logger.info("Executing unittest Python modules in %s", test_dir)
+    logger.debug("Including files matching '%s'", module_glob)
 
     try:
         test_method_prefix = project.get_property("unittest_test_method_prefix")
-        result, console_out = execute_tests_matching(test_dir, file_glob, test_method_prefix)
+        result, console_out = execute_tests_matching(test_dir, module_glob, test_method_prefix)
 
         if result.testsRun == 0:
             logger.warn("No unittests executed.")

@@ -191,52 +191,41 @@ class DiscoverModulesTest(unittest.TestCase):
         self.assertEquals([], discover_modules("spam", ".py"))
         verify(os).walk("spam")
 
-    def test_should_return_empty_list_when_directory_contains_single_file_not_matching_glob(self):
-        when(os).walk("spam").thenReturn([("spam", [], ["eggs.pi"])])
-        self.assertEquals([], discover_modules_matching("spam", "*.py"))
-        verify(os).walk("spam")
-
-    def test_should_only_match_py_files_regardless_of_glob(self):
-        when(os).walk("pet_shop").thenReturn([("pet_shop", [],
-                                               ["parrot.txt", "parrot.py", "parrot.pyc", "parrot.py~"])])
-        expected_result = ["parrot"]
-        actual_result = discover_modules_matching("pet_shop", "*parrot*")
-        self.assertEquals(set(expected_result), set(actual_result))
-        verify(os).walk("pet_shop")
-
     def test_should_return_list_with_single_module_when_directory_contains_single_file(self):
         when(os).walk("spam").thenReturn([("spam", [], ["eggs.py"])])
         self.assertEquals(["eggs"], discover_modules("spam", ".py"))
         verify(os).walk("spam")
 
+    def test_should_only_match_py_files_regardless_of_glob(self):
+        when(os).walk("pet_shop").thenReturn([("pet_shop", [],
+                                               ["parrot.txt", "parrot.py", "parrot.pyc", "parrot.py~", "slug.py"])])
+        expected_result = ["parrot"]
+        actual_result = discover_modules_matching("pet_shop", "*parrot*")
+        self.assertEquals(set(expected_result), set(actual_result))
+        verify(os).walk("pet_shop")
+
     def test_glob_should_return_list_with_single_module_when_directory_contains_single_file(self):
         when(os).walk("spam").thenReturn([("spam", [], ["eggs.py"])])
-        self.assertEquals(["eggs"], discover_modules_matching("spam", "*.py"))
+        self.assertEquals(["eggs"], discover_modules_matching("spam", "*"))
         verify(os).walk("spam")
-
-    def test_should_return_list_with_single_module_when_directory_contains_package(self):
-        when(os).walk("spam").thenReturn([("spam", ["eggs"], []),
-                                         ("spam/eggs", [], ["__init__.py"])])
-
-        self.assertEquals(["eggs"], discover_modules("spam", ".py"))
 
     def test_glob_should_return_list_with_single_module_when_directory_contains_package(self):
         when(os).walk("spam").thenReturn([("spam", ["eggs"], []),
                                          ("spam/eggs", [], ["__init__.py"])])
 
-        self.assertEquals(["eggs"], discover_modules_matching("spam", "*.py"))
+        self.assertEquals(["eggs"], discover_modules_matching("spam", "*"))
 
         verify(os).walk("spam")
 
     def test_should_not_eat_first_character_of_modules_when_source_path_ends_with_slash(self):
         when(pybuilder.utils).discover_files_matching(any(), any()).thenReturn(['/path/to/tests/reactor_tests.py'])
 
-        self.assertEquals(["reactor_tests"], discover_modules("/path/to/tests/", ".py"))
+        self.assertEquals(["reactor_tests"], discover_modules_matching("/path/to/tests/", "*"))
 
     def test_should_honor_suffix_without_stripping_it_from_module_names(self):
         when(pybuilder.utils).discover_files_matching(any(), any()).thenReturn(['/path/to/tests/reactor_tests.py'])
 
-        self.assertEquals(["reactor_tests"], discover_modules("/path/to/tests/", "_tests.py"))
+        self.assertEquals(["reactor_tests"], discover_modules_matching("/path/to/tests/", "*_tests"))
 
 
 class GlobExpressionTest(unittest.TestCase):

@@ -30,18 +30,18 @@ from pybuilder.core import use_plugin
 use_plugin("python.pyfix_unittest")
 
 name = "integration-test"
-default_task = "run_unit_tests"
+default_task = ["run_unit_tests", "test_override"]
 
 @task
-def run_unit_tests(project):
+def test_override(project):
     file_suffix = project.get_property("pyfix_unittest_file_suffix")
-    file_glob = project.get_property("pyfix_unittest_file_glob")
-    if file_glob != "*{0}".format(file_suffix):
-        raise Exception("pyfix_unittest_file_suffix failed to override pyfix_unittest_file_glob")
+    module_glob = project.get_property("pyfix_unittest_module_glob")
+    if module_glob != "*{0}".format(file_suffix)[:-3]:
+        raise Exception("pyfix_unittest_file_suffix failed to override pyfix_unittest_module_glob")
 
 @init
 def init_should_set_pyfix_glob_from_suffix(project):
-    project.set_property("pyfix_unittest_file_glob", "suffix will overwrite")
+    project.set_property("pyfix_unittest_module_glob", "suffix will overwrite")
     project.set_property("pyfix_unittest_file_suffix", "_pyfix_tests.py")
 """)
         self.create_directory("src/unittest/python")
