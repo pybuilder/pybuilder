@@ -94,11 +94,11 @@ def discover_modules(source_path, suffix=".py"):
     return discover_modules_matching(source_path, "*{0}".format(suffix))
 
 
-def discover_modules_matching(source_path, file_glob):
+def discover_modules_matching(source_path, module_glob):
     result = []
-    for module_file_path in discover_files_matching(source_path, file_glob):
-        if not module_file_path.endswith(".py"):
-            continue
+    if not module_glob.endswith(".py"):
+        module_glob += ".py"
+    for module_file_path in discover_files_matching(source_path, module_glob):
         relative_module_file_path = module_file_path.replace(source_path, "")
         relative_module_file_path = relative_module_file_path.replace(os.sep, ".")
         module_file = remove_leading_slash_or_dot_from_path(relative_module_file_path)
