@@ -18,7 +18,7 @@ import os
 import subprocess
 
 from pybuilder.core import init, use_plugin, Author, task
-from pybuilder.errors import MissingPrerequisiteException
+from pybuilder.utils import assert_can_execute
 
 use_plugin("python.core")
 use_plugin("python.pytddmon")
@@ -67,6 +67,8 @@ def initialize(project):
     project.build_depends_on("pyfix")  # required test framework
     project.build_depends_on("pyassert")
     project.build_depends_on("wheel")
+    project.build_depends_on("pdoc")
+    project.build_depends_on("pygments")
 
     project.set_property("verbose", True)
 
@@ -108,12 +110,9 @@ def initialize(project):
 
 @task
 def pdoc_generate(project, logger):
-    try:
-        import pdoc
-        logger.debug("pdoc is installed in version %s" % pdoc.__version__)
-
-    except ImportError:
-        raise MissingPrerequisiteException("pdoc", caller=pdoc_generate.__name__)
+    assert_can_execute(command_and_arguments=["pdoc", "--version"],
+                       prerequisite="pdoc",
+                       caller=pdoc_generate.__name__)
 
     logger.info("Generating pdoc documentation")
 
