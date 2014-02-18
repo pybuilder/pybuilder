@@ -29,11 +29,13 @@ class PythonProjectScaffoldingTests(TestCase):
         self.assertEqual(
             scaffolding.dir_source_unittest_python, 'src/unittest/python')
 
-    def test_should_not_build_initializer_when_defaults_are_used(self):
+    def test_should_build_empty_initializer_when_defaults_are_used(self):
         scaffolding = PythonProjectScaffolding('some-project')
         scaffolding.build_initializer()
 
-        self.assertEqual(scaffolding.initializer, '')
+        self.assertEqual(scaffolding.initializer, '''@init
+def set_properties(project):
+    pass''')
 
     def test_should_build_initializer_for_custom_source_dir(self):
         scaffolding = PythonProjectScaffolding('some-project')
@@ -89,7 +91,7 @@ def set_properties(project):
         scaffolding = PythonProjectScaffolding('some-project')
 
         self.assertEqual(scaffolding.render_build_descriptor(), '''
-from pybuilder.core import use_plugin
+from pybuilder.core import use_plugin, init
 
 use_plugin("python.core")
 use_plugin("python.unittest")
@@ -97,7 +99,9 @@ use_plugin("python.unittest")
 name = "some-project"
 default_task = "publish"
 
-
+@init
+def set_properties(project):
+    pass
 
 ''')
 

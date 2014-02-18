@@ -94,10 +94,13 @@ $initializer
         return self.descriptor_template.substitute(self.__dict__)
 
     def build_initializer(self):
-        if self.is_default_source_main_python and self.is_default_source_unittest_python:
-            return
-
         self.core_imports.append('init')
+        self.initializer = '''@init
+def set_properties(project):
+'''
+        if self.is_default_source_main_python and self.is_default_source_unittest_python:
+            self.initializer += '    pass'
+            return
 
         properties_to_set = []
         if not self.is_default_source_main_python:
@@ -105,9 +108,6 @@ $initializer
         if not self.is_default_source_unittest_python:
             properties_to_set.append(('dir_source_unittest_python', self.dir_source_unittest_python))
 
-        self.initializer = '''@init
-def set_properties(project):
-'''
         self.initializer += '\n'.join(
             ['    project.set_property("{0}", "{1}")'.format(k, v) for k, v in properties_to_set])
 
