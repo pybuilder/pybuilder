@@ -68,7 +68,7 @@ def start_project():
 
 class PythonProjectScaffolding(object):
 
-    descriptor_template = string.Template("""
+    descriptor_template = string.Template("""\
 from pybuilder.core import $core_imports
 
 use_plugin("python.core")
