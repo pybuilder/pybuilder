@@ -95,12 +95,10 @@ $initializer
 
     def build_initializer(self):
         self.core_imports.append('init')
-        self.initializer = '''@init
+        initializer_head = '''@init
 def set_properties(project):
 '''
-        if self.is_default_source_main_python and self.is_default_source_unittest_python:
-            self.initializer += '    pass'
-            return
+        initializer_body = ''
 
         properties_to_set = []
         if not self.is_default_source_main_python:
@@ -108,8 +106,13 @@ def set_properties(project):
         if not self.is_default_source_unittest_python:
             properties_to_set.append(('dir_source_unittest_python', self.dir_source_unittest_python))
 
-        self.initializer += '\n'.join(
+        initializer_body += '\n'.join(
             ['    project.set_property("{0}", "{1}")'.format(k, v) for k, v in properties_to_set])
+
+        if not initializer_body:
+            initializer_body += '    pass'
+
+        self.initializer = initializer_head + initializer_body
 
     @property
     def is_default_source_main_python(self):
