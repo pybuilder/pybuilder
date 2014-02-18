@@ -30,7 +30,10 @@ from pybuilder.utils import (GlobExpression,
                              Timer,
                              apply_on_files,
                              as_list,
+                             discover_files,
+                             discover_files_matching,
                              discover_modules,
+                             discover_modules_matching,
                              format_timestamp,
                              mkdir,
                              render_report,
@@ -157,6 +160,27 @@ class TimedeltaInMillisTest(unittest.TestCase):
         self.assertMillis(5 * 24 * 60 * 60 * 1000, days=5)
 
 
+class DiscoverFilesTest(unittest.TestCase):
+    fake_dir_contents = ["README.md", ".gitignore", "spam.py", "eggs.py", "eggs.py~"]
+
+    def tearDown(self):
+        unstub()
+
+    def test_should_only_return_py_suffix(self):
+        when(os).walk("spam").thenReturn([("spam", [], self.fake_dir_contents)])
+        expected_result = ["spam/spam.py", "spam/eggs.py"]
+        actual_result = set(discover_files("spam", ".py"))
+        self.assertEquals(set(expected_result), actual_result)
+        verify(os).walk("spam")
+
+    def test_should_only_return_py_glob(self):
+        when(os).walk("spam").thenReturn([("spam", [], self.fake_dir_contents)])
+        expected_result = ["spam/README.md"]
+        actual_result = set(discover_files_matching("spam", "README.?d"))
+        self.assertEquals(set(expected_result), actual_result)
+        verify(os).walk("spam")
+
+
 class DiscoverModulesTest(unittest.TestCase):
 
     def tearDown(self):
@@ -172,23 +196,36 @@ class DiscoverModulesTest(unittest.TestCase):
         self.assertEquals(["eggs"], discover_modules("spam", ".py"))
         verify(os).walk("spam")
 
-    def test_should_return_list_with_single_module_when_directory_contains_package(self):
+    def test_should_only_match_py_files_regardless_of_glob(self):
+        when(os).walk("pet_shop").thenReturn([("pet_shop", [],
+                                               ["parrot.txt", "parrot.py", "parrot.pyc", "parrot.py~", "slug.py"])])
+        expected_result = ["parrot"]
+        actual_result = discover_modules_matching("pet_shop", "*parrot*")
+        self.assertEquals(set(expected_result), set(actual_result))
+        verify(os).walk("pet_shop")
+
+    def test_glob_should_return_list_with_single_module_when_directory_contains_single_file(self):
+        when(os).walk("spam").thenReturn([("spam", [], ["eggs.py"])])
+        self.assertEquals(["eggs"], discover_modules_matching("spam", "*"))
+        verify(os).walk("spam")
+
+    def test_glob_should_return_list_with_single_module_when_directory_contains_package(self):
         when(os).walk("spam").thenReturn([("spam", ["eggs"], []),
                                          ("spam/eggs", [], ["__init__.py"])])
 
-        self.assertEquals(["eggs"], discover_modules("spam", ".py"))
+        self.assertEquals(["eggs"], discover_modules_matching("spam", "*"))
 
         verify(os).walk("spam")
 
     def test_should_not_eat_first_character_of_modules_when_source_path_ends_with_slash(self):
-        when(pybuilder.utils).discover_files(any(), any()).thenReturn(['/path/to/tests/reactor_tests.py'])
+        when(pybuilder.utils).discover_files_matching(any(), any()).thenReturn(['/path/to/tests/reactor_tests.py'])
 
-        self.assertEquals(["reactor_tests"], discover_modules("/path/to/tests/", ".py"))
+        self.assertEquals(["reactor_tests"], discover_modules_matching("/path/to/tests/", "*"))
 
     def test_should_honor_suffix_without_stripping_it_from_module_names(self):
-        when(pybuilder.utils).discover_files(any(), any()).thenReturn(['/path/to/tests/reactor_tests.py'])
+        when(pybuilder.utils).discover_files_matching(any(), any()).thenReturn(['/path/to/tests/reactor_tests.py'])
 
-        self.assertEquals(["reactor_tests"], discover_modules("/path/to/tests/", "_tests.py"))
+        self.assertEquals(["reactor_tests"], discover_modules_matching("/path/to/tests/", "*_tests"))
 
 
 class GlobExpressionTest(unittest.TestCase):

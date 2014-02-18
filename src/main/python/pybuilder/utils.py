@@ -18,6 +18,7 @@
     Provides generic utilities that can be used by plugins.
 """
 
+import fnmatch
 import json
 import os
 import re
@@ -84,12 +85,20 @@ def remove_leading_slash_or_dot_from_path(path):
 
 
 def remove_python_source_suffix(file_name):
-    return file_name[0:-len(".py")]
+    if file_name.endswith(".py"):
+        return file_name[0:-len(".py")]
+    return file_name
 
 
 def discover_modules(source_path, suffix=".py"):
+    return discover_modules_matching(source_path, "*{0}".format(suffix))
+
+
+def discover_modules_matching(source_path, module_glob):
     result = []
-    for module_file_path in discover_files(source_path, suffix):
+    if not module_glob.endswith(".py"):
+        module_glob += ".py"
+    for module_file_path in discover_files_matching(source_path, module_glob):
         relative_module_file_path = module_file_path.replace(source_path, "")
         relative_module_file_path = relative_module_file_path.replace(os.sep, ".")
         module_file = remove_leading_slash_or_dot_from_path(relative_module_file_path)
@@ -101,9 +110,13 @@ def discover_modules(source_path, suffix=".py"):
 
 
 def discover_files(start_dir, suffix):
+    return discover_files_matching(start_dir, "*{0}".format(suffix))
+
+
+def discover_files_matching(start_dir, file_glob):
     for root, _, files in os.walk(start_dir):
         for file_name in files:
-            if file_name.endswith(suffix):
+            if fnmatch.fnmatch(file_name, file_glob):
                 yield os.path.join(root, file_name)
 
 

@@ -20,7 +20,7 @@ from unittest import TestCase
 
 from mock import Mock, patch
 from pybuilder.core import Project
-from pybuilder.plugins.python.unittest_plugin import (execute_tests,
+from pybuilder.plugins.python.unittest_plugin import (execute_tests, execute_tests_matching,
                                                       _register_test_and_source_path_and_return_test_dir)
 
 
@@ -54,26 +54,34 @@ class PythonPathTests(TestCase):
 class ExecuteTestsTests(TestCase):
 
     @patch('pybuilder.plugins.python.unittest_plugin.unittest')
-    @patch('pybuilder.plugins.python.unittest_plugin.discover_modules')
-    def test_should_discover_modules_in_given_path(self, mock_discover_modules, mock_unittest):
+    @patch('pybuilder.plugins.python.unittest_plugin.discover_modules_matching')
+    def test_should_discover_modules_by_suffix(self, mock_discover_modules_matching, mock_unittest):
 
         execute_tests('/path/to/test/sources', '_tests.py')
 
-        mock_discover_modules.assert_called_with('/path/to/test/sources', '_tests.py')
+        mock_discover_modules_matching.assert_called_with('/path/to/test/sources', '*_tests.py')
 
     @patch('pybuilder.plugins.python.unittest_plugin.unittest')
-    @patch('pybuilder.plugins.python.unittest_plugin.discover_modules')
-    def test_should_load_tests_from_discovered_modules(self, mock_discover_modules, mock_unittest):
+    @patch('pybuilder.plugins.python.unittest_plugin.discover_modules_matching')
+    def test_should_discover_modules_by_glob(self, mock_discover_modules_matching, mock_unittest):
+
+        execute_tests_matching('/path/to/test/sources', '*_tests.py')
+
+        mock_discover_modules_matching.assert_called_with('/path/to/test/sources', '*_tests.py')
+
+    @patch('pybuilder.plugins.python.unittest_plugin.unittest')
+    @patch('pybuilder.plugins.python.unittest_plugin.discover_modules_matching')
+    def test_should_load_tests_from_discovered_modules(self, mock_discover_modules_matching, mock_unittest):
 
         mock_modules = Mock()
-        mock_discover_modules.return_value = mock_modules
+        mock_discover_modules_matching.return_value = mock_modules
 
-        execute_tests('/path/to/test/sources', '_tests.py')
+        execute_tests_matching('/path/to/test/sources', '*_tests.py')
 
         mock_unittest.defaultTestLoader.loadTestsFromNames.assert_called_with(mock_modules)
 
     @patch('pybuilder.plugins.python.unittest_plugin.unittest')
-    @patch('pybuilder.plugins.python.unittest_plugin.discover_modules')
+    @patch('pybuilder.utils.discover_modules')
     def test_should_run_discovered_and_loaded_tests(self, mock_discover_modules, mock_unittest):
 
         mock_tests = Mock()
@@ -86,7 +94,7 @@ class ExecuteTestsTests(TestCase):
         mock_test_runner.run.assert_called_with(mock_tests)
 
     @patch('pybuilder.plugins.python.unittest_plugin.unittest')
-    @patch('pybuilder.plugins.python.unittest_plugin.discover_modules')
+    @patch('pybuilder.utils.discover_modules')
     def test_should_return_actual_test_results(self, mock_discover_modules, mock_unittest):
 
         mock_tests = Mock()
@@ -101,7 +109,7 @@ class ExecuteTestsTests(TestCase):
         self.assertEqual(mock_result, actual)
 
     @patch('pybuilder.plugins.python.unittest_plugin.unittest')
-    @patch('pybuilder.plugins.python.unittest_plugin.discover_modules')
+    @patch('pybuilder.utils.discover_modules')
     def test_should_set_test_method_prefix_when_given(self, mock_discover_modules, mock_unittest):
 
         mock_tests = Mock()
