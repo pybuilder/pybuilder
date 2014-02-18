@@ -80,11 +80,11 @@ use_plugin("python.unittest")
 name = "some-project"
 default_task = "publish"
 
+
 @init
 def set_properties(project):
     project.set_property("dir_source_main_python", "src")
     project.set_property("dir_source_unittest_python", "test")
-
 ''')
 
     def test_should_render_build_descriptor_without_custom_dirs(self):
@@ -99,10 +99,10 @@ use_plugin("python.unittest")
 name = "some-project"
 default_task = "publish"
 
+
 @init
 def set_properties(project):
     pass
-
 ''')
 
     @patch('pybuilder.scaffolding.os')

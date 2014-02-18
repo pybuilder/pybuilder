@@ -77,8 +77,8 @@ use_plugin("python.unittest")
 name = "${project_name}"
 default_task = "publish"
 
-$initializer
 
+$initializer
 """)
 
     def __init__(self, project_name):
