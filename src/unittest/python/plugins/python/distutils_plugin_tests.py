@@ -179,7 +179,7 @@ class RenderSetupScriptTest(PyBuilderTestCase):
     def setUp(self):
         self.project = create_project()
 
-    def test_should_remove_hardlink_capabilities_for_shared_filesystems_when_workaround_is_enabled(self):
+    def test_should_remove_hardlink_capabilities_when_workaround_is_enabled(self):
         self.project.set_property("distutils_issue8876_workaround_enabled", True)
 
         actual_setup_script = render_setup_script(self.project)
