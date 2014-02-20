@@ -68,7 +68,7 @@ def start_project():
 
 class PythonProjectScaffolding(object):
 
-    descriptor_template = string.Template("""\
+    DESCRIPTOR_TEMPLATE = string.Template("""\
 from pybuilder.core import $core_imports
 
 use_plugin("python.core")
@@ -81,6 +81,10 @@ default_task = "publish"
 $initializer
 """)
 
+    INITIALIZER_HEAD = '''@init
+def set_properties(project):
+'''
+
     def __init__(self, project_name):
         self.project_name = project_name
         self.dir_source_main_python = DEFAULT_SOURCE_DIRECTORY
@@ -91,14 +95,10 @@ $initializer
     def render_build_descriptor(self):
         self.build_initializer()
         self.core_imports = ', '.join(self.core_imports)
-        return self.descriptor_template.substitute(self.__dict__)
+        return self.DESCRIPTOR_TEMPLATE.substitute(self.__dict__)
 
     def build_initializer(self):
         self.core_imports.append('init')
-        initializer_head = '''@init
-def set_properties(project):
-'''
-        initializer_body = ''
 
         properties_to_set = []
         if not self.is_default_source_main_python:
@@ -106,13 +106,19 @@ def set_properties(project):
         if not self.is_default_source_unittest_python:
             properties_to_set.append(('dir_source_unittest_python', self.dir_source_unittest_python))
 
+        initializer_body = self.build_initializer_body(properties_to_set)
+
+        self.initializer = self.INITIALIZER_HEAD + initializer_body
+
+    def build_initializer_body(self, properties_to_set):
+        initializer_body = ''
         initializer_body += '\n'.join(
             ['    project.set_property("{0}", "{1}")'.format(k, v) for k, v in properties_to_set])
 
         if not initializer_body:
             initializer_body += '    pass'
 
-        self.initializer = initializer_head + initializer_body
+        return initializer_body
 
     @property
     def is_default_source_main_python(self):
