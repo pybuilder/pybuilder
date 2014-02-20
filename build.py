@@ -55,7 +55,7 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            Author("Udo Juettner", "udo.juettner@gmail.com")]
 url = "http://pybuilder.github.io"
 license = "Apache License"
-version = "0.10.3"
+version = "0.10.4"
 
 default_task = ["analyze", "publish"]
 
@@ -89,6 +89,8 @@ def initialize(project):
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
     project.get_property("source_dist_ignore_patterns").append(".settings")
 
+    # enable this to build a bdist on vagrant
+    # project.set_property("distutils_issue8876_workaround_enabled", True)
     project.get_property("distutils_commands").append("bdist_wheel")
     project.set_property("distutils_classifiers", [
                          'Programming Language :: Python',
