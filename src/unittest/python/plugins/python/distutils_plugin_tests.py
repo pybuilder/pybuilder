@@ -176,10 +176,25 @@ class BuildPackageDataStringTest(unittest.TestCase):
 
 class RenderSetupScriptTest(PyBuilderTestCase):
 
-    def test_should_render_setup_file(self):
-        project = create_project()
+    def setUp(self):
+        self.project = create_project()
 
-        actual_setup_script = render_setup_script(project)
+    def test_should_remove_hardlink_capabilities_when_workaround_is_enabled(self):
+        self.project.set_property("distutils_issue8876_workaround_enabled", True)
+
+        actual_setup_script = render_setup_script(self.project)
+
+        self.assertTrue("import os\ndel os.link\n" in actual_setup_script)
+
+    def test_should_not_remove_hardlink_capabilities_when_workaround_is_disabled(self):
+        self.project.set_property("distutils_issue8876_workaround_enabled", False)
+
+        actual_setup_script = render_setup_script(self.project)
+
+        self.assertFalse("import os\ndel os.link\n" in actual_setup_script)
+
+    def test_should_render_setup_file(self):
+        actual_setup_script = render_setup_script(self.project)
 
         self.assert_line_by_line_equal("""#!/usr/bin/env python
 
