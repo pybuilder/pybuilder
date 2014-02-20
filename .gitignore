@@ -13,3 +13,8 @@ out
 
 # generated pdoc documentation
 api-doc
+
+# Virtualization artifacts
+Vagrantfile
+.vagrant
+**/*.swp
