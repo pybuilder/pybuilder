@@ -34,7 +34,7 @@ use_plugin("python.core")
 
 DATA_FILES_PROPERTY = "distutils_data_files"
 SETUP_TEMPLATE = string.Template("""#!/usr/bin/env python
-
+$remove_hardlink_capabilities_for_shared_filesystems
 from $module import setup
 
 if __name__ == '__main__':
@@ -68,6 +68,9 @@ def default(value, default=""):
 @init
 def initialize_distutils_plugin(project):
     project.set_property_if_unset("distutils_commands", ["sdist", "bdist_dumb"])
+    # Workaround for http://bugs.python.org/issue8876 , unable to build a bdist
+    # on a filesystem that does not support hardlinks
+    project.set_property_if_unset("distutils_issue8876_workaround_enabled", False)
     project.set_property_if_unset("distutils_classifiers", [
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python"
@@ -107,6 +110,10 @@ def render_setup_script(project):
         "package_data": build_package_data_string(project),
         "dependencies": build_install_dependencies_string(project),
         "dependency_links": build_dependency_links_string(project),
+        "remove_hardlink_capabilities_for_shared_filesystems": (
+            "import os\ndel os.link"
+            if project.get_property("distutils_issue8876_workaround_enabled")
+            else "")
     }
 
     return SETUP_TEMPLATE.substitute(template_values)
