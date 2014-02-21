@@ -105,7 +105,7 @@ def set_properties(project):
         self.dir_source_main_python = DEFAULT_SOURCE_DIRECTORY
         self.dir_source_unittest_python = DEFAULT_UNITTEST_DIRECTORY
         self.core_imports = ['use_plugin']
-        self.plugins = ['python.core', 'python.unittest']
+        self.plugins = ['python.core', 'python.unittest', 'python.install_dependencies']
         self.initializer = ''
 
     def add_plugins(self, plugins):
