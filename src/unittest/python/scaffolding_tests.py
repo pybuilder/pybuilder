@@ -17,7 +17,9 @@ from mock import patch, call
 from unittest import TestCase
 
 from pybuilder.scaffolding import (PythonProjectScaffolding,
-                                   collect_project_information)
+                                   collect_project_information,
+                                   suggest,
+                                   suggest_plugins)
 
 
 class PythonProjectScaffoldingTests(TestCase):
@@ -107,6 +109,12 @@ def set_properties(project):
     pass
 ''')
 
+    def test_should_render_build_descriptor_with_additional_imports(self):
+        scaffolding = PythonProjectScaffolding('some-project')
+        scaffolding.add_plugins(['foo', 'bar'])
+
+        self.assertTrue('\nuse_plugin("foo")\nuse_plugin("bar")\n' in scaffolding.render_build_descriptor())
+
     @patch('pybuilder.scaffolding.os')
     def test_should_set_up_project_when_directories_missing(self, mock_os):
         scaffolding = PythonProjectScaffolding('some-project')
@@ -142,7 +150,10 @@ class CollectProjectInformationTests(TestCase):
                          [
                              call('Project name', 'project'),
                              call('Source directory', 'src/main/python'),
-                             call('Unittest directory', 'src/unittest/python')
+                             call('Unittest directory', 'src/unittest/python'),
+                             call('Use plugin python.flake8 (Y/n)?', 'y'),
+                             call('Use plugin python.coverage (Y/n)?', 'y'),
+                             call('Use plugin python.distutils (Y/n)?', 'y')
                          ])
 
     @patch('pybuilder.scaffolding.os')
@@ -168,3 +179,43 @@ class CollectProjectInformationTests(TestCase):
         scaffolding = collect_project_information()
 
         self.assertEqual(scaffolding.dir_source_unittest_python, 'test')
+
+
+class PluginSuggestionTests(TestCase):
+
+    @patch('pybuilder.scaffolding.prompt_user')
+    def test_should_filter_out_plugins_that_were_not_chosen(self, prompt):
+        prompt.side_effect = ['', 'n', 'y', 'N', 'Y']
+        chosen_plugins = suggest_plugins(['plugin-1', 'plugin-2', 'plugin-3', 'plugin-4', 'plugin-5'])
+
+        self.assertEqual(chosen_plugins, ['plugin-1', 'plugin-3', 'plugin-5'])
+
+    @patch('pybuilder.scaffolding.prompt_user')
+    def test_should_return_plugin_when_choice_is_skipped(self, prompt):
+        prompt.return_value = ''
+
+        self.assertEqual(suggest('plugin'), 'plugin')
+
+    @patch('pybuilder.scaffolding.prompt_user')
+    def test_should_return_plugin_when_plugin_is_chosen_lowercase(self, prompt):
+        prompt.return_value = 'y'
+
+        self.assertEqual(suggest('plugin'), 'plugin')
+
+    @patch('pybuilder.scaffolding.prompt_user')
+    def test_should_return_plugin_when_plugin_is_chosen_uppercase(self, prompt):
+        prompt.return_value = 'Y'
+
+        self.assertEqual(suggest('plugin'), 'plugin')
+
+    @patch('pybuilder.scaffolding.prompt_user')
+    def test_should_return_non_when_plugin_is_refused_lowercase(self, prompt):
+        prompt.return_value = 'n'
+
+        self.assertEqual(suggest('plugin'), None)
+
+    @patch('pybuilder.scaffolding.prompt_user')
+    def test_should_return_non_when_plugin_is_refused_uppercase(self, prompt):
+        prompt.return_value = 'N'
+
+        self.assertEqual(suggest('plugin'), None)
