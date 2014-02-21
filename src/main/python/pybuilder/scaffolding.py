@@ -71,8 +71,8 @@ class PythonProjectScaffolding(object):
     DESCRIPTOR_TEMPLATE = string.Template("""\
 from pybuilder.core import $core_imports
 
-use_plugin("python.core")
-use_plugin("python.unittest")
+$activated_plugins
+
 
 name = "${project_name}"
 default_task = "publish"
@@ -90,12 +90,17 @@ def set_properties(project):
         self.dir_source_main_python = DEFAULT_SOURCE_DIRECTORY
         self.dir_source_unittest_python = DEFAULT_UNITTEST_DIRECTORY
         self.core_imports = ['use_plugin']
+        self.plugins = ['python.core', 'python.unittest']
         self.initializer = ''
 
     def render_build_descriptor(self):
         self.build_initializer()
+        self.build_imports()
         self.core_imports = ', '.join(self.core_imports)
         return self.DESCRIPTOR_TEMPLATE.substitute(self.__dict__)
+
+    def build_imports(self):
+        self.activated_plugins = '\n'.join(['use_plugin("%s")' % plugin for plugin in self.plugins])
 
     def build_initializer(self):
         self.core_imports.append('init')
