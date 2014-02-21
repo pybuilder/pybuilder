@@ -111,19 +111,9 @@ def set_properties(project):
         if not self.is_default_source_unittest_python:
             properties_to_set.append(('dir_source_unittest_python', self.dir_source_unittest_python))
 
-        initializer_body = self._build_initializer_body(properties_to_set)
+        initializer_body = self._build_initializer_body_with_properties(properties_to_set)
 
         self.initializer = self.INITIALIZER_HEAD + initializer_body
-
-    def _build_initializer_body(self, properties_to_set):
-        initializer_body = ''
-        initializer_body += '\n'.join(
-            ['    project.set_property("{0}", "{1}")'.format(k, v) for k, v in properties_to_set])
-
-        if not initializer_body:
-            initializer_body += '    pass'
-
-        return initializer_body
 
     @property
     def is_default_source_main_python(self):
@@ -138,3 +128,13 @@ def set_properties(project):
                                  self.dir_source_unittest_python):
             if not os.path.exists(needed_directory):
                 os.makedirs(needed_directory)
+
+    def _build_initializer_body_with_properties(self, properties_to_set):
+        initializer_body = ''
+        initializer_body += '\n'.join(
+            ['    project.set_property("{0}", "{1}")'.format(k, v) for k, v in properties_to_set])
+
+        if not initializer_body:
+            initializer_body += '    pass'
+
+        return initializer_body
