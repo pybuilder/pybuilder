@@ -26,6 +26,7 @@ except NameError:
 
 DEFAULT_SOURCE_DIRECTORY = 'src/main/python'
 DEFAULT_UNITTEST_DIRECTORY = 'src/unittest/python'
+PLUGINS_TO_SUGGEST = ['python.flake8', 'python.coverage', 'python.distutils']
 
 
 def prompt_user(description, default):
@@ -42,12 +43,26 @@ def collect_project_information():
     dir_source_unittest_python = prompt_user(
         'Unittest directory', DEFAULT_UNITTEST_DIRECTORY)
 
+    plugins = suggest_plugins(PLUGINS_TO_SUGGEST)
+    scaffolding.add_plugins(plugins)
+
     if dir_source_main_python:
         scaffolding.dir_source_main_python = dir_source_main_python
     if dir_source_unittest_python:
         scaffolding.dir_source_unittest_python = dir_source_unittest_python
 
     return scaffolding
+
+
+def suggest_plugins(plugins):
+    chosen_plugins = [plugin for plugin in [suggest(plugin) for plugin in plugins] if plugin]
+    return chosen_plugins
+
+
+def suggest(plugin):
+    choice = prompt_user('Use plugin %s (Y/n)?' % plugin, 'y')
+    plugin_enabled = not choice or choice.lower() == 'y'
+    return plugin if plugin_enabled else None
 
 
 def start_project():
@@ -71,8 +86,8 @@ class PythonProjectScaffolding(object):
     DESCRIPTOR_TEMPLATE = string.Template("""\
 from pybuilder.core import $core_imports
 
-use_plugin("python.core")
-use_plugin("python.unittest")
+$activated_plugins
+
 
 name = "${project_name}"
 default_task = "publish"
@@ -90,12 +105,20 @@ def set_properties(project):
         self.dir_source_main_python = DEFAULT_SOURCE_DIRECTORY
         self.dir_source_unittest_python = DEFAULT_UNITTEST_DIRECTORY
         self.core_imports = ['use_plugin']
+        self.plugins = ['python.core', 'python.unittest']
         self.initializer = ''
+
+    def add_plugins(self, plugins):
+        self.plugins.extend(plugins)
 
     def render_build_descriptor(self):
         self.build_initializer()
+        self.build_imports()
         self.core_imports = ', '.join(self.core_imports)
         return self.DESCRIPTOR_TEMPLATE.substitute(self.__dict__)
+
+    def build_imports(self):
+        self.activated_plugins = '\n'.join(['use_plugin("%s")' % plugin for plugin in self.plugins])
 
     def build_initializer(self):
         self.core_imports.append('init')
@@ -106,19 +129,9 @@ def set_properties(project):
         if not self.is_default_source_unittest_python:
             properties_to_set.append(('dir_source_unittest_python', self.dir_source_unittest_python))
 
-        initializer_body = self.build_initializer_body(properties_to_set)
+        initializer_body = self._build_initializer_body_with_properties(properties_to_set)
 
         self.initializer = self.INITIALIZER_HEAD + initializer_body
-
-    def build_initializer_body(self, properties_to_set):
-        initializer_body = ''
-        initializer_body += '\n'.join(
-            ['    project.set_property("{0}", "{1}")'.format(k, v) for k, v in properties_to_set])
-
-        if not initializer_body:
-            initializer_body += '    pass'
-
-        return initializer_body
 
     @property
     def is_default_source_main_python(self):
@@ -133,3 +146,13 @@ def set_properties(project):
                                  self.dir_source_unittest_python):
             if not os.path.exists(needed_directory):
                 os.makedirs(needed_directory)
+
+    def _build_initializer_body_with_properties(self, properties_to_set):
+        initializer_body = ''
+        initializer_body += '\n'.join(
+            ['    project.set_property("{0}", "{1}")'.format(k, v) for k, v in properties_to_set])
+
+        if not initializer_body:
+            initializer_body += '    pass'
+
+        return initializer_body
