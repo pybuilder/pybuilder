@@ -111,11 +111,11 @@ def set_properties(project):
         if not self.is_default_source_unittest_python:
             properties_to_set.append(('dir_source_unittest_python', self.dir_source_unittest_python))
 
-        initializer_body = self.build_initializer_body(properties_to_set)
+        initializer_body = self._build_initializer_body(properties_to_set)
 
         self.initializer = self.INITIALIZER_HEAD + initializer_body
 
-    def build_initializer_body(self, properties_to_set):
+    def _build_initializer_body(self, properties_to_set):
         initializer_body = ''
         initializer_body += '\n'.join(
             ['    project.set_property("{0}", "{1}")'.format(k, v) for k, v in properties_to_set])
