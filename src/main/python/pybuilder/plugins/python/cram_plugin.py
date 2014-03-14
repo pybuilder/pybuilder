@@ -23,6 +23,8 @@
 
 __author__ = 'Valentin Haenel'
 
+import os
+
 from pybuilder.core import after, task, init, use_plugin, depends
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import assert_can_execute, discover_files_matching, read_file
@@ -77,7 +79,15 @@ def cram(project, logger):
     command_and_arguments.extend(_find_files(project))
     report_file = _report_file(project)
 
-    execution_result = execute_command(command_and_arguments, report_file), report_file
+    env = os.environ.copy()
+    source_dir = project.expand_path("$dir_source_main_python")
+    env["PYTHONPATH"] = source_dir + ":" + \
+        (env["PYTHONPATH"] if "PYTHONPATH" in env else '')
+    script_path = project.expand_path('$dir_source_main_scripts')
+    env["PATH"] = script_path + ":" + env["PATH"]
+
+    execution_result = execute_command(command_and_arguments, report_file,
+                                       env=env), report_file
 
     report = read_file(report_file)
     result = report[-1][2:].strip()
