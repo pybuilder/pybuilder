@@ -78,9 +78,9 @@ def _modify_path(env, variable, value):
 
 @task("publish")
 @depends("prepare")
-@description("Run cram command line tests")
+@description("Run Cram command line tests")
 def cram(project, logger):
-    logger.info("Running Cram tests")
+    logger.info("Running Cram command line tests")
 
     command_and_arguments = _command(project)
     command_and_arguments.extend(_find_files(project))

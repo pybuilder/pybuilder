@@ -94,7 +94,7 @@ class CramPluginTests(unittest.TestCase):
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
             env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
         )
-        expected_info_calls = [call('Running Cram tests'),
+        expected_info_calls = [call('Running Cram command line tests'),
                                call('Cram tests were fine'),
                                call('results'),
                                ]
@@ -132,7 +132,7 @@ class CramPluginTests(unittest.TestCase):
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
             env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
         )
-        expected_info_calls = [call('Running Cram tests'),
+        expected_info_calls = [call('Running Cram command line tests'),
                                ]
         expected_error_calls = [call('Cram tests failed!'),
                                 call('results'),
@@ -173,7 +173,7 @@ class CramPluginTests(unittest.TestCase):
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
             env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
         )
-        expected_info_calls = [call('Running Cram tests'),
+        expected_info_calls = [call('Running Cram command line tests'),
                                ]
         expected_error_calls = [call('Cram tests failed!'),
                                 call('test failes for file'),
