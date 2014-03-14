@@ -30,6 +30,7 @@ use_plugin("python.unittest")
 use_plugin("python.integrationtest")
 use_plugin("python.flake8")
 use_plugin("python.frosted")
+use_plugin("python.cram")
 
 use_plugin("python.pydev")
 use_plugin("python.pycharm")
