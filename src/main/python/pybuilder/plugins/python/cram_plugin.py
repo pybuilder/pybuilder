@@ -76,7 +76,7 @@ def _modify_path(env, variable, value):
         (env[variable] if variable in env else '')
 
 
-@task
+@task("publish")
 @depends("prepare")
 @description("Run cram command line tests")
 def cram(project, logger):
