@@ -65,28 +65,35 @@ class CramPluginTests(unittest.TestCase):
     @patch('pybuilder.plugins.python.cram_plugin._command')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
     @patch('pybuilder.plugins.python.cram_plugin._report_file')
+    @patch('os.environ')
     @patch('pybuilder.plugins.python.cram_plugin.read_file')
     @patch('pybuilder.plugins.python.cram_plugin.execute_command')
     def test_running_plugin(self,
                             execute_mock,
                             read_file_mock,
+                            os_mock,
                             report_mock,
                             find_files_mock,
                             command_mock
                             ):
         project = Project('.')
         project.set_property('verbose', False)
+        project.set_property('dir_source_main_python', 'python')
+        project.set_property('dir_source_main_scripts', 'scripts')
         logger = Mock()
 
         command_mock.return_value = ['cram']
         find_files_mock.return_value = ['test1.cram', 'test2.cram']
         report_mock.return_value = 'report_file'
+        os_mock.copy.return_value = {}
         read_file_mock.return_value = ['test failes for file', '# results']
         execute_mock.return_value = 0
 
         cram(project, logger)
         execute_mock.assert_called_once_with(
-            ['cram', 'test1.cram', 'test2.cram'], 'report_file')
+            ['cram', 'test1.cram', 'test2.cram'], 'report_file',
+            env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
+        )
         expected_info_calls = [call('Running Cram tests'),
                                call('Cram tests were fine'),
                                call('results'),
@@ -96,28 +103,35 @@ class CramPluginTests(unittest.TestCase):
     @patch('pybuilder.plugins.python.cram_plugin._command')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
     @patch('pybuilder.plugins.python.cram_plugin._report_file')
+    @patch('os.environ')
     @patch('pybuilder.plugins.python.cram_plugin.read_file')
     @patch('pybuilder.plugins.python.cram_plugin.execute_command')
     def test_running_plugin_fails(self,
                                   execute_mock,
                                   read_file_mock,
+                                  os_mock,
                                   report_mock,
                                   find_files_mock,
                                   command_mock
                                   ):
         project = Project('.')
         project.set_property('verbose', False)
+        project.set_property('dir_source_main_python', 'python')
+        project.set_property('dir_source_main_scripts', 'scripts')
         logger = Mock()
 
         command_mock.return_value = ['cram']
         find_files_mock.return_value = ['test1.cram', 'test2.cram']
         report_mock.return_value = 'report_file'
+        os_mock.copy.return_value = {}
         read_file_mock.return_value = ['test failes for file', '# results']
         execute_mock.return_value = 1
 
         self.assertRaises(BuildFailedException, cram, project, logger)
         execute_mock.assert_called_once_with(
-            ['cram', 'test1.cram', 'test2.cram'], 'report_file')
+            ['cram', 'test1.cram', 'test2.cram'], 'report_file',
+            env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
+        )
         expected_info_calls = [call('Running Cram tests'),
                                ]
         expected_error_calls = [call('Cram tests failed!'),
@@ -130,28 +144,35 @@ class CramPluginTests(unittest.TestCase):
     @patch('pybuilder.plugins.python.cram_plugin._command')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
     @patch('pybuilder.plugins.python.cram_plugin._report_file')
+    @patch('os.environ')
     @patch('pybuilder.plugins.python.cram_plugin.read_file')
     @patch('pybuilder.plugins.python.cram_plugin.execute_command')
     def test_running_plugin_fails_with_verbose(self,
                                                execute_mock,
                                                read_file_mock,
+                                               os_mock,
                                                report_mock,
                                                find_files_mock,
                                                command_mock
                                                ):
         project = Project('.')
         project.set_property('verbose', True)
+        project.set_property('dir_source_main_python', 'python')
+        project.set_property('dir_source_main_scripts', 'scripts')
         logger = Mock()
 
         command_mock.return_value = ['cram']
         find_files_mock.return_value = ['test1.cram', 'test2.cram']
         report_mock.return_value = 'report_file'
+        os_mock.copy.return_value = {}
         read_file_mock.return_value = ['test failes for file', '# results']
         execute_mock.return_value = 1
 
         self.assertRaises(BuildFailedException, cram, project, logger)
         execute_mock.assert_called_once_with(
-            ['cram', 'test1.cram', 'test2.cram'], 'report_file')
+            ['cram', 'test1.cram', 'test2.cram'], 'report_file',
+            env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
+        )
         expected_info_calls = [call('Running Cram tests'),
                                ]
         expected_error_calls = [call('Cram tests failed!'),
