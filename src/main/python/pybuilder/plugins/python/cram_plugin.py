@@ -87,8 +87,8 @@ def cram(project, logger):
     env = os.environ.copy()
     source_dir = project.expand_path("$dir_source_main_python")
     _modify_path(env, "PYTHONPATH", source_dir)
-    script_path = project.expand_path('$dir_source_main_scripts')
-    _modify_path(env, "PATH", script_path)
+    script_dir = project.expand_path('$dir_source_main_scripts')
+    _modify_path(env, "PATH", script_dir)
 
     execution_result = execute_command(command_and_arguments, report_file,
                                        env=env), report_file
