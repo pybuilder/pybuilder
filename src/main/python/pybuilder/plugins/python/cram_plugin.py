@@ -15,7 +15,10 @@
 # limitations under the License.
 
 """
-Cram plugin.
+    Plugin for Cram, a functional testing framework for command line
+    applications.
+
+    https://pypi.python.org/pypi/cram
 """
 
 __author__ = 'Valentin Haenel'
