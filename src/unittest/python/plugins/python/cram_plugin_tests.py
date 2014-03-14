@@ -48,11 +48,12 @@ class CramPluginTests(unittest.TestCase):
     def test_find_files(self, discover_mock):
         project = Project('.')
         project.set_property('dir_source_cmdlinetest', '/any/dir')
+        project.set_property('cram_glob', '*.t')
         expected = ['/any/dir/test.cram']
         discover_mock.return_value = expected
         received = _find_files(project)
         self.assertEquals(expected, received)
-        discover_mock.assert_called_once_with('/any/dir', '*.cram')
+        discover_mock.assert_called_once_with('/any/dir', '*.t')
 
     def test_report(self):
         project = Project('.')

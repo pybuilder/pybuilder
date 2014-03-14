@@ -39,8 +39,8 @@ DIR_SOURCE_CMDLINETEST = 'dir_source_cmdlinetest'
 @init
 def initialize_cram_plugin(project):
     project.build_depends_on("cram")
-    project.set_property_if_unset(
-        DIR_SOURCE_CMDLINETEST, "src/cmdlinetest")
+    project.set_property_if_unset(DIR_SOURCE_CMDLINETEST, "src/cmdlinetest")
+    project.set_property("cram_glob", '*.t')
 
 
 @after("prepare")
@@ -62,7 +62,8 @@ def _command(project):
 
 def _find_files(project):
     cram_dir = project.get_property(DIR_SOURCE_CMDLINETEST)
-    cram_files = discover_files_matching(cram_dir, '*.cram')
+    cram_glob = project.get_property("cram_glob")
+    cram_files = discover_files_matching(cram_dir, cram_glob)
     return cram_files
 
 
