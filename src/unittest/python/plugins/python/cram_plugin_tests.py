@@ -24,7 +24,7 @@ from pybuilder.plugins.python.cram_plugin import (
     _command,
     _find_files,
     _report_file,
-    cram,
+    run_cram_tests,
 )
 
 
@@ -89,7 +89,7 @@ class CramPluginTests(unittest.TestCase):
         read_file_mock.return_value = ['test failes for file', '# results']
         execute_mock.return_value = 0
 
-        cram(project, logger)
+        run_cram_tests(project, logger)
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
             env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
@@ -127,7 +127,7 @@ class CramPluginTests(unittest.TestCase):
         read_file_mock.return_value = ['test failes for file', '# results']
         execute_mock.return_value = 1
 
-        self.assertRaises(BuildFailedException, cram, project, logger)
+        self.assertRaises(BuildFailedException, run_cram_tests, project, logger)
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
             env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
@@ -168,7 +168,7 @@ class CramPluginTests(unittest.TestCase):
         read_file_mock.return_value = ['test failes for file', '# results']
         execute_mock.return_value = 1
 
-        self.assertRaises(BuildFailedException, cram, project, logger)
+        self.assertRaises(BuildFailedException, run_cram_tests, project, logger)
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
             env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
