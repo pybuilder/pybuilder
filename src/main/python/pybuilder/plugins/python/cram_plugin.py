@@ -51,24 +51,31 @@ def assert_cram_is_executable(logger):
                        caller="plugin python.cram")
 
 
+def _command(project):
+    command_and_arguments = ["cram"]
+    if project.get_property("verbose"):
+        command_and_arguments.append('--verbose')
+    return command_and_arguments
+
+
+def _find_files(project):
+    cram_dir = project.get_property(DIR_SOURCE_CMDLINETEST)
+    cram_files = discover_files_matching(cram_dir, '*.cram')
+    return cram_files
+
+
+def _report_file(project):
+    return project.expand_path("$dir_reports/{0}".format('cram.err'))
+
+
 @task
 @depends("prepare")
 def cram(project, logger):
     logger.info("Running Cram tests")
 
-    verbose_flag = project.get_property("verbose")
-
-    command_and_arguments = ["cram"]
-
-    if verbose_flag:
-        command_and_arguments.append('--verbose')
-
-    cram_dir = project.get_property(DIR_SOURCE_CMDLINETEST)
-    cram_files = discover_files_matching(cram_dir, '*.cram')
-
-    command_and_arguments.extend(cram_files)
-
-    report_file = project.expand_path("$dir_reports/{0}".format('cram.err'))
+    command_and_arguments = _command(project)
+    command_and_arguments.extend(_find_files(project))
+    report_file = _report_file(project)
 
     execution_result = execute_command(command_and_arguments, report_file), report_file
 
@@ -77,7 +84,7 @@ def cram(project, logger):
 
     if execution_result[0] != 0:
         logger.error("Cram tests failed!")
-        if verbose_flag:
+        if project.get_property("verbose"):
             for line in report:
                 logger.error(line.rstrip())
         else:
