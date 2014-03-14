@@ -86,11 +86,11 @@ class CramPluginTests(unittest.TestCase):
         cram(project, logger)
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file')
-        expected = [call('Running Cram tests'),
-                    call('Cram tests were fine'),
-                    call('results'),
-                    ]
-        self.assertEquals(expected, logger.info.call_args_list)
+        expected_info_calls = [call('Running Cram tests'),
+                               call('Cram tests were fine'),
+                               call('results'),
+                               ]
+        self.assertEquals(expected_info_calls, logger.info.call_args_list)
 
     @patch('pybuilder.plugins.python.cram_plugin._command')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
