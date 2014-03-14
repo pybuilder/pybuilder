@@ -37,9 +37,6 @@ def initialize_cram_plugin(project):
     #project.set_property("cram_measure_coverage", False)
     project.set_property_if_unset(
         DIR_SOURCE_CMDLINETEST, "src/cmdlinetest")
-    #project.set_property("flake8_max_line_length", 120)
-    #project.set_property("flake8_exclude_patterns", None)
-    #project.set_property("flake8_include_test_sources", False)
 
 
 @after("prepare")
