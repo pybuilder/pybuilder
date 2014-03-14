@@ -54,7 +54,12 @@ def assert_cram_is_executable(logger):
 def cram(project, logger):
     logger.info("Running Cram tests")
 
+    verbose_flag = project.get_property("verbose")
+
     command_and_arguments = ["cram"]
+
+    if verbose_flag:
+        command_and_arguments.append('--verbose')
 
     cram_dir = project.get_property(DIR_SOURCE_CMDLINETEST)
     cram_files = discover_files_matching(cram_dir, '*.cram')
@@ -70,7 +75,11 @@ def cram(project, logger):
 
     if execution_result[0] != 0:
         logger.error("Cram tests failed!")
-        logger.error(result)
+        if verbose_flag:
+            for line in report:
+                logger.error(line.rstrip())
+        else:
+            logger.error(result)
         logger.error("See: '{0}' for details".format(report_file))
         raise BuildFailedException("Cram tests failed!")
     else:
