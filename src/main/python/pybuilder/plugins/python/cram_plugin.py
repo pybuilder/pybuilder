@@ -37,7 +37,6 @@ DIR_SOURCE_CMDLINETEST = 'dir_source_cmdlinetest'
 @init
 def initialize_cram_plugin(project):
     project.build_depends_on("cram")
-    #project.set_property("cram_measure_coverage", False)
     project.set_property_if_unset(
         DIR_SOURCE_CMDLINETEST, "src/cmdlinetest")
 
