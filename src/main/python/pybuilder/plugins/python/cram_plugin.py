@@ -51,7 +51,7 @@ def assert_cram_is_executable(logger):
                        caller="plugin python.cram")
 
 
-def _command(project):
+def _cram_command_for(project):
     command_and_arguments = ["cram"]
     if project.get_property("verbose"):
         command_and_arguments.append('--verbose')
@@ -79,7 +79,7 @@ def _prepend_path(env, variable, value):
 def run_cram_tests(project, logger):
     logger.info("Running Cram command line tests")
 
-    command_and_arguments = _command(project)
+    command_and_arguments = _cram_command_for(project)
     command_and_arguments.extend(_find_files(project))
     report_file = _report_file(project)
 

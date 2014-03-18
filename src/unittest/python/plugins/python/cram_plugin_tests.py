@@ -21,7 +21,7 @@ from mock import patch, Mock, call
 from pybuilder.core import Project
 from pybuilder.errors import BuildFailedException
 from pybuilder.plugins.python.cram_plugin import (
-    _command,
+    _cram_command_for,
     _find_files,
     _report_file,
     run_cram_tests,
@@ -34,14 +34,14 @@ class CramPluginTests(unittest.TestCase):
         project = Project('.')
         project.set_property('verbose', False)
         expected = ['cram']
-        received = _command(project)
+        received = _cram_command_for(project)
         self.assertEquals(expected, received)
 
     def test_command_respects_verbose(self):
         project = Project('.')
         project.set_property('verbose', True)
         expected = ['cram', '--verbose']
-        received = _command(project)
+        received = _cram_command_for(project)
         self.assertEquals(expected, received)
 
     @patch('pybuilder.plugins.python.cram_plugin.discover_files_matching')
@@ -62,7 +62,7 @@ class CramPluginTests(unittest.TestCase):
         received = _report_file(project)
         self.assertEquals(expected, received)
 
-    @patch('pybuilder.plugins.python.cram_plugin._command')
+    @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
     @patch('pybuilder.plugins.python.cram_plugin._report_file')
     @patch('os.environ')
@@ -100,7 +100,7 @@ class CramPluginTests(unittest.TestCase):
                                ]
         self.assertEquals(expected_info_calls, logger.info.call_args_list)
 
-    @patch('pybuilder.plugins.python.cram_plugin._command')
+    @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
     @patch('pybuilder.plugins.python.cram_plugin._report_file')
     @patch('os.environ')
@@ -141,7 +141,7 @@ class CramPluginTests(unittest.TestCase):
         self.assertEquals(expected_info_calls, logger.info.call_args_list)
         self.assertEquals(expected_error_calls, logger.error.call_args_list)
 
-    @patch('pybuilder.plugins.python.cram_plugin._command')
+    @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
     @patch('pybuilder.plugins.python.cram_plugin._report_file')
     @patch('os.environ')
