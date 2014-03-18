@@ -69,9 +69,8 @@ def _report_file(project):
     return project.expand_path("$dir_reports/{0}".format('cram.err'))
 
 
-def _modify_path(env, variable, value):
-    env[variable] = value + ":" + \
-        (env[variable] if variable in env else '')
+def _prepend_path(env, variable, value):
+    env[variable] = value + ":" + env.get(variable, '')
 
 
 @task
@@ -86,9 +85,9 @@ def run_cram_tests(project, logger):
 
     env = os.environ.copy()
     source_dir = project.expand_path("$dir_source_main_python")
-    _modify_path(env, "PYTHONPATH", source_dir)
+    _prepend_path(env, "PYTHONPATH", source_dir)
     script_dir = project.expand_path('$dir_source_main_scripts')
-    _modify_path(env, "PATH", script_dir)
+    _prepend_path(env, "PATH", script_dir)
 
     execution_result = execute_command(command_and_arguments, report_file,
                                        env=env), report_file
