@@ -107,3 +107,8 @@ def run_cram_tests(project, logger):
     else:
         logger.info("Cram tests were fine")
         logger.info(result)
+
+
+@task
+def run_integration_tests(project, logger):
+    run_cram_tests(project, logger)
