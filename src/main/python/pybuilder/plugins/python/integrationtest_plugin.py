@@ -26,8 +26,9 @@ except ImportError:
 
 
 from pybuilder.core import init, use_plugin, task, description
-from pybuilder.utils import discover_files_matching, execute_command, Timer
+from pybuilder.utils import discover_files_matching, execute_command, Timer, read_file
 from pybuilder.terminal import print_text_line, print_file_content, print_text
+from pybuilder.ci_server_interaction import test_proxy_for
 from pybuilder.plugins.python.test_plugin_helper import ReportsProcessor
 from pybuilder.terminal import styled_text, fg, GREEN, MAGENTA, GREY
 
@@ -203,28 +204,32 @@ def run_single_test(logger, project, reports_dir, test, output_test_names=True):
     name, _ = os.path.splitext(os.path.basename(test))
     if output_test_names:
         logger.info("Running integration test %s", name)
-    env = prepare_environment(project)
-    test_time = Timer.start()
-    command_and_arguments = (sys.executable, test)
-    report_file_name = os.path.join(reports_dir, name)
-    error_file_name = report_file_name + ".err"
-    return_code = execute_command(
-        command_and_arguments, report_file_name, env, error_file_name=error_file_name)
-    test_time.stop()
-    report_item = {
-        "test": name,
-        "test_file": test,
-        "time": test_time.get_millis(),
-        "success": True
-    }
-    if return_code != 0:
-        logger.error("Integration test failed: %s", test)
-        report_item["success"] = False
 
-        if project.get_property("verbose"):
-            print_file_content(report_file_name)
-            print_text_line()
-            print_file_content(error_file_name)
+    with test_proxy_for(project).and_test_name('Integrationtest.%s' % name) as _test:
+
+        env = prepare_environment(project)
+        test_time = Timer.start()
+        command_and_arguments = (sys.executable, test)
+        report_file_name = os.path.join(reports_dir, name)
+        error_file_name = report_file_name + ".err"
+        return_code = execute_command(
+            command_and_arguments, report_file_name, env, error_file_name=error_file_name)
+        test_time.stop()
+        report_item = {
+            "test": name,
+            "test_file": test,
+            "time": test_time.get_millis(),
+            "success": True
+        }
+        if return_code != 0:
+            _test.fails(read_file(error_file_name))
+            logger.error("Integration test failed: %s", test)
+            report_item["success"] = False
+
+            if project.get_property("verbose"):
+                print_file_content(report_file_name)
+                print_text_line()
+                print_file_content(error_file_name)
 
     return report_item
 
