@@ -24,5 +24,5 @@ Error message:
   BUILD FAILED - Project directory does not contain descriptor file: .* (re)
   ------------------------------------------------------------
   Build finished at .*-.*-.* .*:.*.:.* (re)
-  Build took 0 seconds (0 ms)
+  Build took .* seconds \(.* ms\) (re)
   [1]
