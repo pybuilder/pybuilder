@@ -29,7 +29,7 @@ class TestProxyTests(unittest.TestCase):
 
 class TeamCityProxyTests(unittest.TestCase):
 
-    @patch('pybuilder.ci_server_interaction.flush_text')
+    @patch('pybuilder.ci_server_interaction.flush_text_line')
     def test_should_output_happypath_test_for_teamcity(self, output):
         with TeamCityTestProxy().and_test_name('important-test'):
             pass
@@ -40,7 +40,7 @@ class TeamCityProxyTests(unittest.TestCase):
                              call("##teamcity[testFinished name='important-test']")
                          ])
 
-    @patch('pybuilder.ci_server_interaction.flush_text')
+    @patch('pybuilder.ci_server_interaction.flush_text_line')
     def test_should_output_failed_test_for_teamcity(self, output):
         with TeamCityTestProxy().and_test_name('important-test') as test:
             test.fails('booom')

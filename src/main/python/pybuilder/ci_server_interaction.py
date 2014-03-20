@@ -8,8 +8,8 @@ def test_proxy_for(project):
         return TestProxy()
 
 
-def flush_text(text):
-    print_text(text, flush=True)
+def flush_text_line(text_line):
+    print_text(text_line + '\n', flush=True)
 
 
 class TestProxy(object):
@@ -41,13 +41,13 @@ class TestProxy(object):
 class TeamCityTestProxy(TestProxy):
 
     def test_starts(self):
-        flush_text("##teamcity[testStarted name='{0}']".format(self.test_name))
+        flush_text_line("##teamcity[testStarted name='{0}']".format(self.test_name))
 
     def test_finishes(self):
-        flush_text("##teamcity[testFinished name='{0}']".format(self.test_name))
+        flush_text_line("##teamcity[testFinished name='{0}']".format(self.test_name))
 
     def fails(self, reason):
-        flush_text("##teamcity[testFailed name='{0}' message='See details' details='{1}']".format(
-                   self.test_name,
-                   reason
-                   ))
+        flush_text_line("##teamcity[testFailed name='{0}' message='See details' details='{1}']".format(
+                        self.test_name,
+                        reason
+                        ))
