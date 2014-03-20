@@ -48,7 +48,8 @@ def run_unit_tests(project, logger):
         logger.warn("unittest_file_suffix is deprecated, please use unittest_module_glob")
         module_glob = "*{0}".format(unittest_file_suffix)
         if module_glob.endswith(".py"):
-            module_glob = module_glob[:-3]
+            WITHOUT_DOT_PY = slice(None, -3)
+            module_glob = module_glob[WITHOUT_DOT_PY]
         project.set_property("unittest_module_glob", module_glob)
     else:
         module_glob = project.get_property("unittest_module_glob")
