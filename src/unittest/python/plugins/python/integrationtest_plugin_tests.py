@@ -94,12 +94,7 @@ class TaskPoolProgressTests(unittest.TestCase):
         progress.update(3)
 
         self.assertEqual(progress.render(),
-                         '[---ᗤ//|||]')
-
-    def test_should_alternate_pacman_symbol(self):
-        self.assertEqual(self.progress.pacman_symbol, "ᗤ")
-        self.assertEqual(self.progress.pacman_symbol, "ᗧ")
-        self.assertEqual(self.progress.pacman_symbol, "ᗤ")
+                         '[---ᗧ//|||]')
 
     @patch('pybuilder.plugins.python.integrationtest_plugin.styled_text')
     @patch('pybuilder.plugins.python.integrationtest_plugin.print_text')
@@ -110,10 +105,10 @@ class TaskPoolProgressTests(unittest.TestCase):
         progress.update(2)
 
         progress.render_to_terminal()
-        print_text.assert_called_with('[--ᗤ//||||]', flush=True)
+        print_text.assert_called_with('[--ᗧ//||||]', flush=True)
         progress.render_to_terminal()
         print_text.assert_called_with(
-            '\b' * (10 + len('ᗤ')) + '[--ᗧ//||||]', flush=True)
+            '\b' * (10 + len('ᗧ')) + '[--ᗧ//||||]', flush=True)
 
 
 class IntegrationTestConfigurationTests(unittest.TestCase):

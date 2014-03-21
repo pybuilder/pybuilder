@@ -279,14 +279,11 @@ class TaskPoolProgress(object):
     PENDING_SYMBOL = "/"
     WAITING_SYMBOL = "|"
     PACMAN_FORWARD = "ᗧ"
-    PACMAN_BACKWARD = "ᗤ"
-    PACMAN_CYCLE = [PACMAN_BACKWARD, PACMAN_FORWARD]
 
     def __init__(self, total_tasks_count, workers_count):
         self.total_tasks_count = total_tasks_count
         self.finished_tasks_count = 0
         self.workers_count = workers_count
-        self.pacman_index = 0
         self.last_render_length = 0
 
     def update(self, finished_tasks_count):
@@ -319,10 +316,7 @@ class TaskPoolProgress(object):
 
     @property
     def pacman_symbol(self):
-        pacman_symbol = self.PACMAN_CYCLE[self.pacman_index]
-        self.pacman_index += 1
-        self.pacman_index = self.pacman_index % len(self.PACMAN_CYCLE)
-        return pacman_symbol
+        return self.PACMAN_FORWARD
 
     @property
     def running_tasks_count(self):
