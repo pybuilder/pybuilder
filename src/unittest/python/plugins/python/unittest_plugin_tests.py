@@ -141,7 +141,7 @@ class CIServerInteractionTests(TestCase):
 
         report_to_ci_server(project, result)
 
-        proxy.fails.assert_not_called()
+        mock_proxy.fails.assert_not_called()
 
     @patch('pybuilder.ci_server_interaction.TestProxy')
     def test_should_report_failed_tests_to_ci_server(self, proxy):
