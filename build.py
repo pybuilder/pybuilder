@@ -19,6 +19,9 @@ import subprocess
 
 from pybuilder.core import init, use_plugin, Author, task
 from pybuilder.utils import assert_can_execute
+from pybuilder import bootstrap
+bootstrap(__name__)
+
 
 use_plugin("python.core")
 use_plugin("python.pytddmon")

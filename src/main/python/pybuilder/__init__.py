@@ -15,3 +15,10 @@
 #  limitations under the License.
 
 __version__ = "${version}"
+
+
+def bootstrap(name):
+    if name == '__main__':
+        import pybuilder.cli
+        import sys
+        sys.exit(pybuilder.cli.main(*sys.argv[1:]))
