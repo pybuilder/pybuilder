@@ -92,6 +92,7 @@ class CramPluginTests(unittest.TestCase):
         run_cram_tests(project, logger)
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
+            error_file_name='report_file',
             env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
         )
         expected_info_calls = [call('Running Cram command line tests'),
@@ -130,6 +131,7 @@ class CramPluginTests(unittest.TestCase):
         self.assertRaises(BuildFailedException, run_cram_tests, project, logger)
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
+            error_file_name='report_file',
             env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
         )
         expected_info_calls = [call('Running Cram command line tests'),
@@ -171,6 +173,7 @@ class CramPluginTests(unittest.TestCase):
         self.assertRaises(BuildFailedException, run_cram_tests, project, logger)
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
+            error_file_name='report_file',
             env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
         )
         expected_info_calls = [call('Running Cram command line tests'),
