@@ -16,6 +16,7 @@
 
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import render_report
+from pybuilder.ci_server_interaction import test_proxy_for
 
 
 class ReportsProcessor(object):
@@ -49,3 +50,11 @@ class ReportsProcessor(object):
         self.logger.info("Executed %d integration tests.", self.tests_executed)
         if self.tests_failed:
             raise BuildFailedException("%d of %d integration tests failed." % (self.tests_failed, self.tests_executed))
+
+    def report_to_ci_server(self, project):
+        for report in self.reports:
+            test_name = report['test']
+            test_failed = report['success'] is not True
+            with test_proxy_for(project).and_test_name('Integrationtest.%s' % test_name) as test:
+                if test_failed:
+                    test.fails(report['exception'])
