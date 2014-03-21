@@ -70,7 +70,10 @@ def do_coverage(project, logger, reactor):
     import coverage
 
     start_coverage(coverage)
+    project.set_property('__running_coverage', True)  # tell other plugins that we are not really unit testing right now
     reactor.execute_task("run_unit_tests")
+    project.set_property('__running_coverage', False)
+
     stop_coverage(coverage, project, logger)
 
     coverage_too_low = False

@@ -2,7 +2,7 @@ from pybuilder.terminal import print_text
 
 
 def test_proxy_for(project):
-    if project.get_property('teamcity_output'):
+    if project.get_property('teamcity_output') and not project.get_property('__running_coverage'):
         return TeamCityTestProxy()
     else:
         return TestProxy()

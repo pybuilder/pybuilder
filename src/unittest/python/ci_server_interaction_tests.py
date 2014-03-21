@@ -26,6 +26,14 @@ class TestProxyTests(unittest.TestCase):
 
         self.assertEquals(type(proxy), TestProxy)
 
+    def test_should_use_default_proxy_if_project_property_is_set_but_coverage_is_running(self):
+        self.project.set_property('teamcity_output', True)
+        self.project.set_property('__running_coverage', True)
+
+        proxy = test_proxy_for(self.project)
+
+        self.assertEquals(type(proxy), TestProxy)
+
 
 class TeamCityProxyTests(unittest.TestCase):
 
