@@ -89,8 +89,11 @@ def run_cram_tests(project, logger):
     script_dir = project.expand_path('$dir_source_main_scripts')
     _prepend_path(env, "PATH", script_dir)
 
-    execution_result = execute_command(command_and_arguments, report_file,
-                                       env=env), report_file
+    execution_result = execute_command(command_and_arguments,
+                                       report_file,
+                                       env=env,
+                                       error_file_name=report_file
+                                       ), report_file
 
     report = read_file(report_file)
     result = report[-1][2:].strip()
