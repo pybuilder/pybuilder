@@ -26,8 +26,37 @@ from pybuilder.core import init, task, description, use_plugin
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import discover_modules  # noqa To ensure 0.10.2 compatibility.
 from pybuilder.utils import discover_modules_matching, render_report
+from pybuilder.ci_server_interaction import test_proxy_for
 from pybuilder.terminal import print_text_line
 use_plugin("python.core")
+
+
+class TestNameAwareTextTestRunner(unittest.TextTestRunner):
+
+    def _makeResult(self):
+        return TestNameAwareTestResult(self.stream)
+
+
+class TestNameAwareTestResult(unittest.TestResult):
+
+    def __init__(self, *args, **kwargs):
+        self.test_names = []
+        self.failed_test_names_and_reasons = {}
+        super(TestNameAwareTestResult, self).__init__(*args, **kwargs)
+
+    def startTest(self, test):
+        self.test_names.append(test)
+        super(TestNameAwareTestResult, self).startTest(test)
+
+    def addError(self, test, err):
+        exception_type, exception, traceback = err
+        self.failed_test_names_and_reasons[test] = '{0}: {1}'.format(exception_type, exception)
+        super(TestNameAwareTestResult, self).addError(test, err)
+
+    def addFailure(self, test, err):
+        exception_type, exception, traceback = err
+        self.failed_test_names_and_reasons[test] = '{0}: {1}'.format(exception_type, exception)
+        super(TestNameAwareTestResult, self).addFailure(test, err)
 
 
 @init
@@ -95,7 +124,7 @@ def execute_tests_matching(test_source, file_glob, test_method_prefix=None):
         if test_method_prefix:
             loader.testMethodPrefix = test_method_prefix
         tests = loader.loadTestsFromNames(test_modules)
-        result = unittest.TextTestRunner(stream=output_log_file).run(tests)
+        result = TestNameAwareTextTestRunner(stream=output_log_file).run(tests)
         return result, output_log_file.getvalue()
     finally:
         output_log_file.close()
@@ -133,3 +162,12 @@ def write_report(name, project, logger, result, console_out):
             print_text_line(failure[1])
 
     project.write_report("%s.json" % name, render_report(report))
+
+    report_to_ci_server(project, result)
+
+
+def report_to_ci_server(project, result):
+    for test_name in result.test_names:
+        with test_proxy_for(project).and_test_name(test_name) as test:
+            if test_name in result.failed_test_names_and_reasons:
+                test.fails(result.failed_test_names_and_reasons.get(test_name))
