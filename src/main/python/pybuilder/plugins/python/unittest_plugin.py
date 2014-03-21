@@ -39,12 +39,11 @@ class TestNameAwareTextTestRunner(unittest.TextTestRunner):
 
 class TestNameAwareTestResult(unittest.TestResult):
 
-    def __init__(self, *args, **kwargs):
-        self.test_names = []
-        self.failed_test_names_and_reasons = {}
-        super(TestNameAwareTestResult, self).__init__(*args, **kwargs)
-
     def startTest(self, test):
+        if not hasattr(self, 'test_names'):
+            self.test_names = []
+        if not hasattr(self, 'failed_test_names_and_reasons'):
+            self.failed_test_names_and_reasons = {}
         self.test_names.append(test)
         super(TestNameAwareTestResult, self).startTest(test)
 
