@@ -34,7 +34,11 @@ use_plugin("python.core")
 class TestNameAwareTextTestRunner(unittest.TextTestRunner):
 
     def _makeResult(self):
-        return TestNameAwareTestResult(self.stream)
+        # TestResult in py2.6 does not accept a `stream` in the constructor
+        if sys.version_info <= (2, 7):
+            return TestNameAwareTestResult()
+        else:
+            return TestNameAwareTestResult(self.stream)
 
 
 class TestNameAwareTestResult(unittest.TestResult):
