@@ -30,6 +30,11 @@ from pybuilder.ci_server_interaction import test_proxy_for
 from pybuilder.terminal import print_text_line
 use_plugin("python.core")
 
+if sys.version_info < (2, 7):
+    TextTestResult = unittest._TextTestResult  # brought to you by 2.6
+else:
+    TextTestResult = unittest.TextTestResult
+
 
 class TestNameAwareTextTestRunner(unittest.TextTestRunner):
 
@@ -37,7 +42,7 @@ class TestNameAwareTextTestRunner(unittest.TextTestRunner):
         return TestNameAwareTestResult(self.stream, self.descriptions, self.verbosity)
 
 
-class TestNameAwareTestResult(unittest.TextTestResult):
+class TestNameAwareTestResult(TextTestResult):
 
     def __init__(self, *args, **kwargs):
         self.test_names = []
