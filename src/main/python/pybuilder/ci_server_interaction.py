@@ -27,7 +27,7 @@ class TestProxy(object):
     def test_finishes(self):
         pass
 
-    def fails(self):
+    def fails(self, reason):
         pass
 
     def __enter__(self, *args, **kwargs):

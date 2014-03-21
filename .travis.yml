@@ -14,7 +14,7 @@ before_script:
   - ./bootstrap install_dependencies -v
 
 script:
-  - ./bootstrap -v
+  - ./bootstrap -v -X
   - PYTHONPATH=src/main/python coverage run --source=src/main/python src/main/scripts/pyb run_unit_tests -v
   - (cd target/dist/pybuilder-* && python setup.py install)
 
