@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/pybuilder/pybuilder.png?label=ready&title=Ready)](https://waffle.io/pybuilder/pybuilder)
 [PyBuilder](http://pybuilder.github.io) 
 =========
 
