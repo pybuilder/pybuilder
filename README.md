@@ -5,6 +5,8 @@
 [![PyPI version](https://badge.fury.io/py/pybuilder.png)](http://badge.fury.io/py/pybuilder)
 [![Coverage Status](https://coveralls.io/repos/pybuilder/pybuilder/badge.png?branch=master)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
 [![Ready in backlog](https://badge.waffle.io/pybuilder/pybuilder.png?label=ready&title=Ready)](https://waffle.io/pybuilder/pybuilder)
+[![Open bugs](https://badge.waffle.io/pybuilder/pybuilder.png?label=bug&title=OpenBugs)](https://waffle.io/pybuilder/pybuilder)
+
 
 PyBuilder is a software build tool written in 100% pure Python and mainly
 targets Python applications.
