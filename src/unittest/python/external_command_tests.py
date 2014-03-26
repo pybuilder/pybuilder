@@ -60,3 +60,15 @@ class ExternalCommandBuilderTests(unittest.TestCase):
         self.command.has_argument('--name={0}').formatted_with_property('name').only_if_property_is_truthy('falsy')
 
         self.assertEqual(self.command.as_string, 'command-name')
+
+    def test_should_include_conditional_argument_with_truthy_formatting(self):
+        self.project.set_property('name', 'value')
+        self.command.has_argument('--name={0}').formatted_with_truthy_property('name')
+
+        self.assertEqual(self.command.as_string, 'command-name --name=value')
+
+    def test_should_omit_conditional_argument_with_falsy_formatting(self):
+        self.project.set_property('name', None)
+        self.command.has_argument('--name={0}').formatted_with_truthy_property('name')
+
+        self.assertEqual(self.command.as_string, 'command-name')

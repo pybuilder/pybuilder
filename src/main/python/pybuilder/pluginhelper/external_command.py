@@ -14,6 +14,9 @@ class ExternalCommandBuilder(object):
         self.parts[-1] = self.parts[-1].format(property_value)
         return self
 
+    def formatted_with_truthy_property(self, property_name):
+        return self.formatted_with_property(property_name).only_if_property_is_truthy(property_name)
+
     def only_if_property_is_truthy(self, property_name):
         property_value = self.project.get_property(property_name)
         if not property_value:
