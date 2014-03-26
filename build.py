@@ -16,6 +16,7 @@
 
 from pybuilder.core import init, use_bldsup, use_plugin, Author
 
+
 use_plugin("python.core")
 use_plugin("python.pytddmon")
 use_plugin("python.distutils")
@@ -30,8 +31,8 @@ use_plugin("python.unittest")
 use_plugin("python.integrationtest")
 use_plugin("python.flake8")
 use_plugin("python.frosted")
-use_plugin("python.cram")
-
+if not (sys.version_info.major == 3 and sys.version_info.minor == 2):
+    use_plugin("python.cram")
 use_plugin("python.pydev")
 use_plugin("python.pycharm")
 use_plugin("python.pytddmon")
