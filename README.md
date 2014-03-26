@@ -54,6 +54,7 @@ PyBuilder provides a lot of plugins out ot the box that utilize tools and librar
 * [python.coverage](http://pybuilder.github.com/documentation/plugins.html#measuring_unittest_coverage) - Uses the standard [coverage](http://pypi.python.org/pypi/coverage/) module to calculate unit test line coverage.
 * [python.distutils](http://pybuilder.github.com/documentation/plugins.html#building_a_python_egg) - Provides support to generate [setup.py](http://pypi.python.org/pypi/setuptools) files.
 * **python.django** - Provides support for developing [Django](https://www.djangoproject.com/) applications.
+* [python.frosted](http://pybuilder.github.io/documentation/plugins.html#frosted_plugin) - Lint source files with [frosted](https://github.com/timothycrosley/frosted)
 * [python.flake8](http://pybuilder.github.io/documentation/plugins.html#flake8_plugin) - Provides support for [flake8](http://pypi.python.org/pypi/flake8/)
 * [python.pep8](http://pybuilder.github.io/documentation/plugins.html#pep8_plugin) - Provides support for [pep8](http://pypi.python.org/pypi/pep8)
 * [python.install_dependencies](http://pybuilder.github.io/documentation/plugins.html#installing_build_and_runtime_dependencies) - Installs the projects build and runtime dependencies using `pip`
