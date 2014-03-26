@@ -33,6 +33,7 @@ use_plugin("python.coverage")
 use_plugin("python.unittest")
 use_plugin("python.integrationtest")
 use_plugin("python.flake8")
+use_plugin("python.frosted")
 
 use_plugin("python.pydev")
 use_plugin("python.pycharm")
@@ -82,6 +83,7 @@ def initialize(project):
 
     project.set_property("flake8_break_build", True)
     project.set_property('flake8_include_test_sources', True)
+    project.set_property('frosted_include_test_sources', True)
     project.set_property("flake8_max_line_length", 130)
 
     project.get_property("source_dist_ignore_patterns").append(".project")
