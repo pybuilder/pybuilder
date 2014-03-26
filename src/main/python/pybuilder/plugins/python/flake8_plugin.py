@@ -62,11 +62,9 @@ def analyze(project, logger):
     project.set_property_if_unset("flake8_verbose_output", verbose)
 
     command = ExternalCommandBuilder('flake8', project)
-    command.has_argument('--ignore={0}').formatted_with_property(
-        'flake8_ignore').only_if_property_is_truthy('flake8_ignore')
+    command.has_argument('--ignore={0}').formatted_with_truthy_property('flake8_ignore')
     command.has_argument('--max-line-length={0}').formatted_with_property('flake8_max_line_length')
-    command.has_argument('--exclude={0}').formatted_with_property(
-        'flake8_exclude_patterns').only_if_property_is_truthy('flake8_exclude_patterns')
+    command.has_argument('--exclude={0}').formatted_with_truthy_property('flake8_exclude_patterns')
 
     include_test_sources = project.get_property("flake8_include_test_sources")
 
