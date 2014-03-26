@@ -1,5 +1,7 @@
 import unittest
 
+from mock import Mock, patch, call
+
 from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
 from pybuilder.core import Project
 
@@ -72,3 +74,59 @@ class ExternalCommandBuilderTests(unittest.TestCase):
         self.command.has_argument('--name={0}').formatted_with_truthy_property('name')
 
         self.assertEqual(self.command.as_string, 'command-name')
+
+
+class ExternalCommandExecutionTests(unittest.TestCase):
+
+    def setUp(self):
+        self.project = Project('/base/dir')
+        self.command = ExternalCommandBuilder('command-name', self.project)
+        self.command.has_argument('--foo').has_argument('--bar')
+
+    @patch('pybuilder.pluginhelper.external_command.read_file')
+    @patch('pybuilder.pluginhelper.external_command.execute_tool_on_source_files')
+    def test_should_execute_external_command_on_production_source_files(self, execution, read):
+        execution.return_value = 0, '/tmp/reports/command-name'
+        logger = Mock()
+        self.command.run_on_production_source_files(logger)
+
+        execution.assert_called_with(
+            include_test_sources=False,
+            project=self.project,
+            logger=logger,
+            command_and_arguments=['command-name', '--foo', '--bar'],
+            name='command-name')
+
+    @patch('pybuilder.pluginhelper.external_command.read_file')
+    @patch('pybuilder.pluginhelper.external_command.execute_tool_on_source_files')
+    def test_should_execute_external_command_on_production_and_test_source_files(self, execution, read):
+        execution.return_value = 0, '/tmp/reports/command-name'
+        logger = Mock()
+        self.command.run_on_production_and_test_source_files(logger)
+
+        execution.assert_called_with(
+            include_test_sources=True,
+            project=self.project,
+            logger=logger,
+            command_and_arguments=['command-name', '--foo', '--bar'],
+            name='command-name')
+
+    @patch('pybuilder.pluginhelper.external_command.read_file')
+    @patch('pybuilder.pluginhelper.external_command.execute_tool_on_source_files')
+    def test_should_execute_external_command_and_return_execution_result(self, execution, read):
+        execution.return_value = 0, '/tmp/reports/command-name'
+        read.side_effect = lambda argument: {
+            '/tmp/reports/command-name': ['Running...', 'OK all done!'],
+            '/tmp/reports/command-name.err': ['Oh no! I am not python8 compatible!', 'I will explode now.']
+        }[argument]
+        logger = Mock()
+
+        result = self.command.run_on_production_source_files(logger)
+
+        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(result.report_file, '/tmp/reports/command-name')
+        self.assertEqual(read.call_args_list[0], call('/tmp/reports/command-name'))
+        self.assertEqual(result.report_lines, ['Running...', 'OK all done!'])
+        self.assertEqual(result.error_report_file, '/tmp/reports/command-name.err')
+        self.assertEqual(read.call_args_list[1], call('/tmp/reports/command-name.err'))
+        self.assertEqual(result.error_report_lines, ['Oh no! I am not python8 compatible!', 'I will explode now.'])

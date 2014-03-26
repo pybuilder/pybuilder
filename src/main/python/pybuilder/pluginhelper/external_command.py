@@ -1,3 +1,19 @@
+from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
+from pybuilder.utils import read_file
+
+
+# TODO I need a license header
+
+class ExternalCommandResult(object):
+
+    def __init__(self, exit_code, report_file, report_lines, error_report_file, error_report_lines):
+        self.exit_code = exit_code
+        self.report_file = report_file
+        self.report_lines = report_lines
+        self.error_report_file = error_report_file
+        self.error_report_lines = error_report_lines
+
+
 class ExternalCommandBuilder(object):
 
     def __init__(self, command_name, project):
@@ -26,3 +42,18 @@ class ExternalCommandBuilder(object):
     @property
     def as_string(self):
         return ' '.join(self.parts)
+
+    def run_on_production_source_files(self, logger, include_test_sources=False):
+        execution_result = execute_tool_on_source_files(project=self.project,
+                                                        name=self.command_name,
+                                                        command_and_arguments=self.parts,
+                                                        include_test_sources=include_test_sources,
+                                                        logger=logger)
+        exit_code, report_file = execution_result
+        report_lines = read_file(report_file)
+        error_report_file = '{0}.err'.format(report_file)  # TODO @mriehl not dry, execute_tool... should return this
+        error_report_lines = read_file(error_report_file)
+        return ExternalCommandResult(exit_code, report_file, report_lines, error_report_file, error_report_lines)
+
+    def run_on_production_and_test_source_files(self, logger):
+        return self.run_on_production_source_files(logger, include_test_sources=True)
