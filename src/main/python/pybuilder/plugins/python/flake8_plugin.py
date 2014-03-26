@@ -25,8 +25,7 @@ __author__ = 'Michael Gruber'
 
 from pybuilder.core import after, task, init, use_plugin, depends
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import assert_can_execute, read_file
-from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
+from pybuilder.utils import assert_can_execute
 from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
 
 
@@ -68,15 +67,9 @@ def analyze(project, logger):
 
     include_test_sources = project.get_property("flake8_include_test_sources")
 
-    execution_result = execute_tool_on_source_files(project=project,
-                                                    name="flake8",
-                                                    command_and_arguments=command.parts,
-                                                    logger=logger,
-                                                    include_test_sources=include_test_sources)
+    result = command.run_on_production_source_files(logger, include_test_sources=include_test_sources)
 
-    report_file = execution_result[1]
-    report_lines = read_file(report_file)
-    count_of_warnings = len(report_lines)
+    count_of_warnings = len(result.report_lines)
 
     if count_of_warnings > 0:
         if project.get_property("flake8_break_build"):
