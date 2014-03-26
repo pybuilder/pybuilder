@@ -80,7 +80,6 @@ def initialize(project):
     project.get_property("copy_resources_glob").append("LICENSE")
     project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
 
-    project.set_property("flake8_verbose_output", True)
     project.set_property("flake8_break_build", True)
     project.set_property('flake8_include_test_sources', True)
     project.set_property("flake8_max_line_length", 130)
