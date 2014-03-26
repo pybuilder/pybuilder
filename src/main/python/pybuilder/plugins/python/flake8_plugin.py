@@ -70,6 +70,10 @@ def analyze(project, logger):
     result = command.run_on_production_source_files(logger, include_test_sources=include_test_sources)
 
     count_of_warnings = len(result.report_lines)
+    count_of_errors = len(result.error_report_lines)
+
+    if count_of_errors > 0:
+        logger.error('Errors while running flake8, see {0}'.format(result.error_report_file))
 
     if count_of_warnings > 0:
         if project.get_property("flake8_break_build"):
