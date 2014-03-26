@@ -35,7 +35,7 @@ class ExternalCommandBuilder(object):
         self.parts = [command_name]
         self.project = project
 
-    def has_argument(self, argument):
+    def use_argument(self, argument):
         self.parts.append(argument)
         return self
 
