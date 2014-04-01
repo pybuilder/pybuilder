@@ -16,7 +16,6 @@
 
 from pybuilder.core import init, use_bldsup, use_plugin, Author
 
-
 use_plugin("python.core")
 use_plugin("python.pytddmon")
 use_plugin("python.distutils")
