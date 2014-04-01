@@ -66,6 +66,7 @@ PyBuilder provides a lot of plugins out ot the box that utilize tools and librar
 * [python.unittest](http://pybuilder.github.com/documentation/plugins.html#RunningPythonUnittests) - Executes [unittest](http://docs.python.org/library/unittest.html) test cases
 * [python.integrationtest](http://pybuilder.github.com/documentation/plugins.html#RunningPythonIntegrationTests) - Executes python scripts as integrations tests
 * [python.pytddmon](http://pybuilder.github.io/documentation/plugins.html#Visualfeedbackfortests) - Provides visual feedback about unit tests through [pytddmon](http://pytddmon.org/)
+* [python.cram](http://pybuilder.github.io/documentation/plugins.html#RunningCramtests) - Runs [cram](https://pypi.python.org/pypi/cram) tests
 
 In addition, a few common plugins are provided:
 
