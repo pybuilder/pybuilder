@@ -30,6 +30,8 @@ use_plugin("python.unittest")
 use_plugin("python.integrationtest")
 use_plugin("python.flake8")
 use_plugin("python.frosted")
+if not sys.version_info[0:2] == (3,2):
+    use_plugin("python.cram")
 
 use_plugin("python.pydev")
 use_plugin("python.pycharm")
