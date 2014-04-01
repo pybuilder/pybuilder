@@ -15,6 +15,7 @@
 #   limitations under the License.
 
 from pybuilder.core import init, use_bldsup, use_plugin, Author
+import sys
 
 use_plugin("python.core")
 use_plugin("python.pytddmon")
