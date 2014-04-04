@@ -68,8 +68,8 @@ def suggest(plugin):
 def start_project():
     try:
         scaffolding = collect_project_information()
-    except:
-        print_text_line('Canceled.')
+    except KeyboardInterrupt:
+        print_text_line('\nCanceled.')
         return 1
 
     descriptor = scaffolding.render_build_descriptor()

@@ -21,6 +21,7 @@
 
 import os
 import string
+import sys
 
 from os.path import sep as PATH_SEPARATOR
 
@@ -142,6 +143,19 @@ class before(BaseAction):
 class after(BaseAction):
     def __init__(self, tasks, only_once=False):
         super(after, self).__init__(AFTER_ATTRIBUTE, only_once, tasks)
+
+
+def use_bldsup(build_support_dir="bldsup"):
+    """Specify a local build support directory for build specific extensions.
+
+    use_plugin(name) and import will look for python modules in BUILD_SUPPORT_DIR.
+
+    WARNING: The BUILD_SUPPORT_DIR must exist and must have an __init__.py file in it.
+    """
+    assert os.path.isdir(build_support_dir), "use_bldsup('{0}'): The {0} directory must exist!".format(build_support_dir)
+    init_file = os.path.join(build_support_dir, "__init__.py")
+    assert os.path.isfile(init_file), "use_bldsup('{0}'): The {1} file must exist!".format(build_support_dir, init_file)
+    sys.path.insert(0, build_support_dir)
 
 
 def use_plugin(name):

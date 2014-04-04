@@ -25,8 +25,8 @@ __author__ = 'Michael Gruber'
 
 from pybuilder.core import after, task, init, use_plugin, depends
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import assert_can_execute, read_file
-from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
+from pybuilder.utils import assert_can_execute
+from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
 
 
 use_plugin("python.core")
@@ -60,31 +60,20 @@ def analyze(project, logger):
     verbose = project.get_property("verbose")
     project.set_property_if_unset("flake8_verbose_output", verbose)
 
-    command_and_arguments = ["flake8"]
-
-    flake8_ignore = project.get_property("flake8_ignore")
-    if flake8_ignore is not None:
-        ignore_option = "--ignore={0}".format(flake8_ignore)
-        command_and_arguments.append(ignore_option)
-
-    max_line_length = project.get_property("flake8_max_line_length")
-    command_and_arguments.append("--max-line-length={0}".format(max_line_length))
-
-    exclude_patterns = project.get_property("flake8_exclude_patterns")
-    if exclude_patterns:
-        command_and_arguments.append("--exclude={0}".format(exclude_patterns))
+    command = ExternalCommandBuilder('flake8', project)
+    command.use_argument('--ignore={0}').formatted_with_truthy_property('flake8_ignore')
+    command.use_argument('--max-line-length={0}').formatted_with_property('flake8_max_line_length')
+    command.use_argument('--exclude={0}').formatted_with_truthy_property('flake8_exclude_patterns')
 
     include_test_sources = project.get_property("flake8_include_test_sources")
 
-    execution_result = execute_tool_on_source_files(project=project,
-                                                    name="flake8",
-                                                    command_and_arguments=command_and_arguments,
-                                                    logger=logger,
-                                                    include_test_sources=include_test_sources)
+    result = command.run_on_production_source_files(logger, include_test_sources=include_test_sources)
 
-    report_file = execution_result[1]
-    report_lines = read_file(report_file)
-    count_of_warnings = len(report_lines)
+    count_of_warnings = len(result.report_lines)
+    count_of_errors = len(result.error_report_lines)
+
+    if count_of_errors > 0:
+        logger.error('Errors while running flake8, see {0}'.format(result.error_report_file))
 
     if count_of_warnings > 0:
         if project.get_property("flake8_break_build"):

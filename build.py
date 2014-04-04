@@ -18,8 +18,9 @@ import os
 import subprocess
 from pybuilder import bootstrap
 bootstrap()
-from pybuilder.core import init, use_plugin, Author, task
 from pybuilder.utils import assert_can_execute
+from pybuilder.core import init, use_bldsup, use_plugin, Author
+import sys
 
 
 use_plugin("python.core")
@@ -35,11 +36,16 @@ use_plugin("python.coverage")
 use_plugin("python.unittest")
 use_plugin("python.integrationtest")
 use_plugin("python.flake8")
+use_plugin("python.frosted")
+if not sys.version_info[0:2] == (3,2):
+    use_plugin("python.cram")
 
 use_plugin("python.pydev")
 use_plugin("python.pycharm")
 use_plugin("python.pytddmon")
 
+use_bldsup()
+use_plugin("pdoc")
 
 summary = "An extensible, easy to use continuous build tool for Python"
 description = """PyBuilder is a continuous build tool for multiple languages.
@@ -57,7 +63,7 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            Author("Udo Juettner", "udo.juettner@gmail.com")]
 url = "http://pybuilder.github.io"
 license = "Apache License"
-version = "0.10.10"
+version = "0.10.13"
 
 default_task = ["analyze", "publish"]
 
@@ -82,9 +88,9 @@ def initialize(project):
     project.get_property("copy_resources_glob").append("LICENSE")
     project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
 
-    project.set_property("flake8_verbose_output", True)
     project.set_property("flake8_break_build", True)
     project.set_property('flake8_include_test_sources', True)
+    project.set_property('frosted_include_test_sources', True)
     project.set_property("flake8_max_line_length", 130)
 
     project.get_property("source_dist_ignore_patterns").append(".project")
@@ -110,19 +116,3 @@ def initialize(project):
                          'Topic :: Software Development :: Build Tools',
                          'Topic :: Software Development :: Quality Assurance',
                          'Topic :: Software Development :: Testing'])
-
-
-@task
-def pdoc_generate(project, logger):
-    assert_can_execute(command_and_arguments=["pdoc", "--version"],
-                       prerequisite="pdoc",
-                       caller=pdoc_generate.__name__)
-
-    logger.info("Generating pdoc documentation")
-
-    command_and_arguments = ["pdoc", "--html", "pybuilder", "--all-submodules", "--overwrite", "--html-dir", "api-doc"]
-    source_directory = project.get_property("dir_source_main_python")
-    environment = {"PYTHONPATH": source_directory,
-                   "PATH": os.environ["PATH"]}
-
-    subprocess.check_call(command_and_arguments, shell=False, env=environment)
