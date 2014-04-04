@@ -18,13 +18,13 @@ __version__ = "${version}"
 
 
 def bootstrap():
-    import inspect
+    import sys
     try:
-        _, filename, _, _, _, _ = inspect.getouterframes(inspect.currentframe())[1]
-        if filename == 'build.py':  # a relative path means we ran build.py directly
+        current_frame = sys._current_frames().values()[0]
+        previous_frame = current_frame.f_back
+        name_of_previous_frame = previous_frame.f_globals['__name__']
+        if name_of_previous_frame == '__main__':
             import pybuilder.cli
-            import sys
             sys.exit(pybuilder.cli.main(*sys.argv[1:]))
-
     except:
         pass
