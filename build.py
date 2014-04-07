@@ -16,8 +16,6 @@
 
 import os
 import subprocess
-from pybuilder import bootstrap
-bootstrap()
 from pybuilder.utils import assert_can_execute
 from pybuilder.core import init, use_bldsup, use_plugin, Author
 import sys
