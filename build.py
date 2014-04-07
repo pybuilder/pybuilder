@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 #   This file is part of PyBuilder
 #
 #   Copyright 2011-2014 PyBuilder Team
