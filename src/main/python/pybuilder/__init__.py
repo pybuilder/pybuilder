@@ -19,8 +19,9 @@ __version__ = "${version}"
 
 def bootstrap():
     import sys
+    import inspect
     try:
-        current_frame = sys._current_frames().values()[0]
+        current_frame = inspect.currentframe()
         previous_frame = current_frame.f_back
         name_of_previous_frame = previous_frame.f_globals['__name__']
         if name_of_previous_frame == '__main__':
