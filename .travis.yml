@@ -11,11 +11,11 @@ before_script:
   - sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm
   - sudo apt-get install pymetrics pychecker pylint pep8
   - pip install coveralls
-  - ./bootstrap install_dependencies -v
+  - ./build.py install_dependencies -v
 
 script:
-  - ./bootstrap -v -X
-  - PYTHONPATH=src/main/python coverage run --source=src/main/python src/main/scripts/pyb run_unit_tests -v
+  - ./build.py -v -X
+  - PYTHONPATH=src/main/python coverage run --source=src/main/python build.py run_unit_tests -v
   - (cd target/dist/pybuilder-* && python setup.py install)
 
 after_success:

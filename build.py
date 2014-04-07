@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 #   This file is part of PyBuilder
 #
 #   Copyright 2011-2014 PyBuilder Team
@@ -14,9 +16,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import sys
+sys.path.insert(0, 'src/main/python')
+from pybuilder import bootstrap
+bootstrap()
+
 from pybuilder.utils import assert_can_execute
 from pybuilder.core import init, use_bldsup, use_plugin, Author
-import sys
 
 
 use_plugin("python.core")
@@ -33,7 +39,7 @@ use_plugin("python.unittest")
 use_plugin("python.integrationtest")
 use_plugin("python.flake8")
 use_plugin("python.frosted")
-if not sys.version_info[0:2] == (3,2):
+if not sys.version_info[0:2] == (3, 2):
     use_plugin("python.cram")
 
 use_plugin("python.pydev")
