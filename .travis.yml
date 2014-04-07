@@ -15,7 +15,7 @@ before_script:
 
 script:
   - ./build.py -v -X
-  - PYTHONPATH=src/main/python coverage run --source=src/main/python src/main/scripts/pyb run_unit_tests -v
+  - PYTHONPATH=src/main/python coverage run --source=src/main/python build.py run_unit_tests -v
   - (cd target/dist/pybuilder-* && python setup.py install)
 
 after_success:
