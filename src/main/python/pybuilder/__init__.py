@@ -15,3 +15,17 @@
 #  limitations under the License.
 
 __version__ = "${version}"
+
+
+def bootstrap():
+    import sys
+    import inspect
+    try:
+        current_frame = inspect.currentframe()
+        previous_frame = current_frame.f_back
+        name_of_previous_frame = previous_frame.f_globals['__name__']
+        if name_of_previous_frame == '__main__':
+            import pybuilder.cli
+            sys.exit(pybuilder.cli.main(*sys.argv[1:]))
+    except:
+        pass
