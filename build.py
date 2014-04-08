@@ -91,8 +91,9 @@ def initialize(project):
 
     project.set_property("flake8_break_build", True)
     project.set_property('flake8_include_test_sources', True)
-    project.set_property('frosted_include_test_sources', True)
     project.set_property("flake8_max_line_length", 130)
+
+    project.set_property('frosted_include_test_sources', True)
 
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
