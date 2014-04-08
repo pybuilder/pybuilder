@@ -3,4 +3,4 @@
 
 [COMMIT]
 # This command will be executed before perfoming a commit
-execute_before = ./bootstrap
+execute_before = ./build.py

@@ -17,13 +17,13 @@
 #   limitations under the License.
 
 import sys
-sys.path.insert(0, 'src/main/python')
+
+sys.path.insert(0, 'src/main/python')  # This is only necessary in PyBuilder sources for bootstrap
+
 from pybuilder import bootstrap
+from pybuilder.core import Author, init, use_bldsup, use_plugin
+
 bootstrap()
-
-from pybuilder.utils import assert_can_execute
-from pybuilder.core import init, use_bldsup, use_plugin, Author
-
 
 use_plugin("python.core")
 use_plugin("python.pytddmon")
@@ -39,6 +39,7 @@ use_plugin("python.unittest")
 use_plugin("python.integrationtest")
 use_plugin("python.flake8")
 use_plugin("python.frosted")
+
 if not sys.version_info[0:2] == (3, 2):
     use_plugin("python.cram")
 
@@ -92,8 +93,9 @@ def initialize(project):
 
     project.set_property("flake8_break_build", True)
     project.set_property('flake8_include_test_sources', True)
-    project.set_property('frosted_include_test_sources', True)
     project.set_property("flake8_max_line_length", 130)
+
+    project.set_property('frosted_include_test_sources', True)
 
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
