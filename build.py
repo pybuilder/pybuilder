@@ -18,7 +18,7 @@
 
 import sys
 
-sys.path.insert(0, 'src/main/python')
+sys.path.insert(0, 'src/main/python')  # This is only necessary in PyBuilder sources for bootstrap
 
 from pybuilder import bootstrap
 from pybuilder.core import Author, init, use_bldsup, use_plugin
