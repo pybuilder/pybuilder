@@ -17,12 +17,13 @@
 #   limitations under the License.
 
 import sys
+
 sys.path.insert(0, 'src/main/python')
+
 from pybuilder import bootstrap
+from pybuilder.core import Author, init, use_bldsup, use_plugin
+
 bootstrap()
-
-from pybuilder.core import init, use_bldsup, use_plugin, Author
-
 
 use_plugin("python.core")
 use_plugin("python.pytddmon")
@@ -38,6 +39,7 @@ use_plugin("python.unittest")
 use_plugin("python.integrationtest")
 use_plugin("python.flake8")
 use_plugin("python.frosted")
+
 if not sys.version_info[0:2] == (3, 2):
     use_plugin("python.cram")
 
