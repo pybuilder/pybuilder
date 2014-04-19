@@ -97,6 +97,15 @@ class TaskPoolProgressTests(unittest.TestCase):
                          '[---ᗧ//|||]')
 
     @patch('pybuilder.plugins.python.integrationtest_plugin.styled_text')
+    def test_should_not_render_pacman_when_finished(self, styled):
+        styled.side_effect = lambda text, *styles: text
+        progress = TaskPoolProgress(8, 2)
+        progress.update(8)
+
+        self.assertEqual(progress.render(),
+                         '[--------]')
+
+    @patch('pybuilder.plugins.python.integrationtest_plugin.styled_text')
     @patch('pybuilder.plugins.python.integrationtest_plugin.print_text')
     @patch('pybuilder.plugins.python.integrationtest_plugin.TaskPoolProgress.can_be_displayed')
     def test_should_erase_previous_progress_on_subsequent_renders(self, _, print_text, styled):
