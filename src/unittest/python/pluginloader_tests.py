@@ -123,16 +123,18 @@ class InstallExternalPluginTests(unittest.TestCase):
     def test_should_raise_error_when_protocol_is_invalid(self):
         self.assertRaises(MissingPluginException, _install_external_plugin, "some-plugin", Mock())
 
+    @patch("pybuilder.pluginloader.tempfile")
     @patch("pybuilder.pluginloader.execute_command")
-    def test_should_install_plugin(self, execute):
+    def test_should_install_plugin(self, execute, _):
         execute.return_value = 0
 
         _install_external_plugin("pypi:some-plugin", Mock())
 
         execute.assert_called_with('pip install some-plugin', ANY, shell=True, error_file_name=ANY)
 
+    @patch("pybuilder.pluginloader.tempfile")
     @patch("pybuilder.pluginloader.execute_command")
-    def test_should_raise_error_when_install_from_pypi_fails(self, execute):
+    def test_should_raise_error_when_install_from_pypi_fails(self, execute, _):
         execute.return_value = 1
 
         self.assertRaises(MissingPluginException, _install_external_plugin, "pypi:some-plugin", Mock())
