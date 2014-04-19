@@ -98,7 +98,8 @@ class DispatchingPluginLoader(PluginLoader):
 
 def _install_external_plugin(name, logger):
     if not name.startswith(PYPI_PLUGIN_PROTOCOL):
-        raise MissingPluginException(name, "Only plugins starting with '{0}' are currently supported".format(PYPI_PLUGIN_PROTOCOL))
+        message = "Only plugins starting with '{0}' are currently supported"
+        raise MissingPluginException(name, message.format(PYPI_PLUGIN_PROTOCOL))
     plugin_name_on_pypi = name.replace(PYPI_PLUGIN_PROTOCOL, "")
     log_file = tempfile.NamedTemporaryFile(delete=False).name
     result = execute_command(
