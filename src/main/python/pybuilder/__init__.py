@@ -18,6 +18,7 @@ __version__ = "${version}"
 
 from pybuilder.errors import BuildFailedException
 
+
 def bootstrap():
     import sys
     import inspect

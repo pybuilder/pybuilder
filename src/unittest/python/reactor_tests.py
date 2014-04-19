@@ -19,7 +19,7 @@ import unittest
 
 from mockito import when, verify, unstub, any, times, contains
 from mockito.matchers import Matcher
-from test_utils import mock
+from test_utils import mock  # TODO @mriehl SORCERY!!!!! BURN IT WITH FIRE!!!!
 
 from pybuilder.core import (ACTION_ATTRIBUTE,
                             AFTER_ATTRIBUTE,
