@@ -300,8 +300,9 @@ class TaskPoolProgress(object):
         waiting_tasks_count = self.waiting_tasks_count
         waiting_tasks_progress = styled_text(
             self.WAITING_SYMBOL * waiting_tasks_count, fg(GREY))
+        trailing_space = ' ' if not pacman else ''
 
-        return "[%s%s%s%s]" % (finished_tests_progress, pacman, running_tests_progress, waiting_tasks_progress)
+        return "[%s%s%s%s]%s" % (finished_tests_progress, pacman, running_tests_progress, waiting_tasks_progress, trailing_space)
 
     def render_to_terminal(self):
         if self.can_be_displayed:

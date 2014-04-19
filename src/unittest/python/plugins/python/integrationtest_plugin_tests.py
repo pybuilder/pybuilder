@@ -103,7 +103,7 @@ class TaskPoolProgressTests(unittest.TestCase):
         progress.update(8)
 
         self.assertEqual(progress.render(),
-                         '[--------]')
+                         '[--------] ')
 
     @patch('pybuilder.plugins.python.integrationtest_plugin.styled_text')
     @patch('pybuilder.plugins.python.integrationtest_plugin.print_text')
