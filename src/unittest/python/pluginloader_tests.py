@@ -107,7 +107,6 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         load.assert_called_with(downloader, project, "pypi:external_plugin")
         self.assertEquals(plugin, load.return_value)
 
-
     @patch("pybuilder.pluginloader.ThirdPartyPluginLoader.load_plugin")
     @patch("pybuilder.pluginloader._install_external_plugin")
     def test_should_not_load_module_after_downloading_when_download_fails(self, install, load):
