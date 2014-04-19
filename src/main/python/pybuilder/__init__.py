@@ -16,6 +16,8 @@
 
 __version__ = "${version}"
 
+from pybuilder.errors import BuildFailedException
+
 
 def bootstrap():
     import sys
@@ -27,5 +29,5 @@ def bootstrap():
         if name_of_previous_frame == '__main__':
             import pybuilder.cli
             sys.exit(pybuilder.cli.main(*sys.argv[1:]))
-    except:
-        pass
+    except BuildFailedException:
+        sys.exit(1)

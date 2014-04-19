@@ -24,14 +24,19 @@ except (ImportError) as e:
     import builtins
     builtin_module = builtins
 
-from mockito import when, verify, unstub, never
-from test_utils import mock
+from mockito import when, verify, unstub, never  # TODO @mriehl get rid of mockito here
+from mock import patch, Mock, ANY
+from test_utils import mock  # TODO @mriehl WTF is this sorcery?!
 
 from pybuilder.errors import MissingPluginException
-from pybuilder.pluginloader import BuiltinPluginLoader, DispatchingPluginLoader, ThirdPartyPluginLoader
+from pybuilder.pluginloader import (BuiltinPluginLoader,
+                                    DispatchingPluginLoader,
+                                    ThirdPartyPluginLoader,
+                                    DownloadingPluginLoader,
+                                    _install_external_plugin)
 
 
-class ThirdPartyPluginLoaderTest (unittest.TestCase):
+class ThirdPartyPluginLoaderTest(unittest.TestCase):
 
     def setUp(self):
         self.project = mock()
@@ -65,8 +70,75 @@ class ThirdPartyPluginLoaderTest (unittest.TestCase):
             if old_module:
                 sys.modules["spam"] = old_module
 
+    def test_should_remove_pypi_protocol_when_importing(self):
+        old_module = sys.modules.get("spam")
+        try:
+            plugin_module = mock()
+            sys.modules["spam"] = plugin_module
+            when(builtin_module).__import__(
+                "pypi:spam").thenReturn(plugin_module)
 
-class BuiltinPluginLoaderTest (unittest.TestCase):
+            self.loader.load_plugin(self.project, "spam")
+
+            verify(builtin_module).__import__("spam")
+        finally:
+            del sys.modules["spam"]
+            if old_module:
+                sys.modules["spam"] = old_module
+
+
+class DownloadingPluginLoaderTest(unittest.TestCase):
+
+    @patch("pybuilder.pluginloader.ThirdPartyPluginLoader")
+    @patch("pybuilder.pluginloader._install_external_plugin")
+    def test_should_download_module_from_pypi(self, install, _):
+        logger = Mock()
+        DownloadingPluginLoader(logger).load_plugin(Mock(), "pypi:external_plugin")
+
+        install.assert_called_with("pypi:external_plugin", logger)
+
+    @patch("pybuilder.pluginloader.ThirdPartyPluginLoader.load_plugin")
+    @patch("pybuilder.pluginloader._install_external_plugin")
+    def test_should_load_module_after_downloading_when_download_succeeds(self, _, load):
+        project = Mock()
+        downloader = DownloadingPluginLoader(Mock())
+        plugin = downloader.load_plugin(project, "pypi:external_plugin")
+
+        load.assert_called_with(downloader, project, "pypi:external_plugin")
+        self.assertEquals(plugin, load.return_value)
+
+    @patch("pybuilder.pluginloader.ThirdPartyPluginLoader.load_plugin")
+    @patch("pybuilder.pluginloader._install_external_plugin")
+    def test_should_not_load_module_after_downloading_when_download_fails(self, install, load):
+        install.side_effect = MissingPluginException("BOOM")
+        downloader = DownloadingPluginLoader(Mock())
+        plugin = downloader.load_plugin(Mock(), "pypi:external_plugin")
+
+        self.assertFalse(load.called)
+        self.assertEquals(plugin, None)
+
+
+class InstallExternalPluginTests(unittest.TestCase):
+
+    def test_should_raise_error_when_protocol_is_invalid(self):
+        self.assertRaises(MissingPluginException, _install_external_plugin, "some-plugin", Mock())
+
+    @patch("pybuilder.pluginloader.execute_command")
+    def test_should_install_plugin(self, execute):
+        execute.return_value = 0
+
+        _install_external_plugin("pypi:some-plugin", Mock())
+
+        execute.assert_called_with('pip install some-plugin', ANY, shell=True, error_file_name=ANY)
+
+    @patch("pybuilder.pluginloader.execute_command")
+    def test_should_raise_error_when_install_from_pypi_fails(self, execute):
+        execute.return_value = 1
+
+        self.assertRaises(MissingPluginException, _install_external_plugin, "pypi:some-plugin", Mock())
+
+
+class BuiltinPluginLoaderTest(unittest.TestCase):
 
     def setUp(self):
         self.project = mock()
