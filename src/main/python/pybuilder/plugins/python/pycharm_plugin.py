@@ -26,6 +26,7 @@ PROJECT_TEMPLATE = string.Template("""<?xml version="1.0" encoding="UTF-8"?>
   <component name="NewModuleRootManager">
     <content url="file://$$MODULE_DIR$$">
       <sourceFolder url="file://$$MODULE_DIR$$/${source_dir}" isTestSource="false" />
+      <excludeFolder url="file://$$MODULE_DIR$$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
