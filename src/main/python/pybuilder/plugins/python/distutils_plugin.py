@@ -49,6 +49,7 @@ if __name__ == '__main__':
           url = '$url',
           scripts = $scripts,
           packages = $packages,
+          py_modules = $modules,
           classifiers = $classifiers,
           $data_files   #  data files
           $package_data   # package data
@@ -105,6 +106,7 @@ def render_setup_script(project):
         "url": default(project.url),
         "scripts": build_scripts_string(project),
         "packages": str([package for package in project.list_packages()]),
+        "modules": str([module for module in project.list_modules()]),
         "classifiers": project.get_property("distutils_classifiers"),
         "data_files": build_data_files_string(project),
         "package_data": build_package_data_string(project),

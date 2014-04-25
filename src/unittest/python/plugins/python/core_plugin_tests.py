@@ -15,19 +15,35 @@
 #  limitations under the License.
 import unittest
 
+from mock import patch
+
 from pybuilder.plugins.python.core_plugin import init_python_directories
 from pybuilder.plugins.python.core_plugin import (DISTRIBUTION_PROPERTY,
                                                   PYTHON_SOURCES_PROPERTY,
                                                   SCRIPTS_SOURCES_PROPERTY,
                                                   SCRIPTS_TARGET_PROPERTY)
-
 from pybuilder.core import Project
 
 
 class InitPythonDirectoriesTest (unittest.TestCase):
 
+    def greedy(self, generator):
+        return [element for element in generator]
+
     def setUp(self):
         self.project = Project(".")
+
+    @patch("pybuilder.plugins.python.core_plugin.os.listdir")
+    @patch("pybuilder.plugins.python.core_plugin.os.path.isfile")
+    def test_should_set_list_modules_function_with_project_modules(self, _, source_listdir):
+        source_listdir.return_value = ["foo.py", "bar.py", "some-package"]
+
+        init_python_directories(self.project)
+
+        self.assertEquals(
+            ['foo', 'bar'],
+            self.greedy(self.project.list_modules())
+        )
 
     def test_should_set_python_sources_property(self):
         init_python_directories(self.project)

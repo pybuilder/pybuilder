@@ -48,7 +48,15 @@ def init_python_directories(project):
                     package = package[1:].replace(os.sep, ".")
                     yield package
 
+    def list_modules():
+        source_path = project.expand_path("$dir_source_main_python")
+        for potential_module_file in os.listdir(source_path):
+            potential_module_path = os.path.join(source_path, potential_module_file)
+            if os.path.isfile(potential_module_path) and potential_module_file.endswith(".py"):
+                yield potential_module_file[:-len(".py")]
+
     project.list_packages = list_packages
+    project.list_modules = list_modules
 
     def list_scripts():
         scripts_dir = project.expand_path("$dir_source_main_scripts")

@@ -39,6 +39,7 @@ def init (project):
     project.build_depends_on("eggy")
 """)
         self.create_directory("src/main/python/spam")
+        self.write_file("src/main/python/standalone_module.py")
         self.write_file("src/main/python/spam/__init__.py", "")
         self.write_file("src/main/python/spam/eggs.py", """
 def spam ():
@@ -50,6 +51,7 @@ def spam ():
 
         self.assert_directory_exists("target/dist/integration-test-1.0-SNAPSHOT")
         self.assert_directory_exists("target/dist/integration-test-1.0-SNAPSHOT/spam")
+        self.assert_file_exists("target/dist/integration-test-1.0-SNAPSHOT/standalone_module.py")
         self.assert_file_empty("target/dist/integration-test-1.0-SNAPSHOT/spam/__init__.py")
         self.assert_file_content("target/dist/integration-test-1.0-SNAPSHOT/spam/eggs.py", """
 def spam ():
@@ -76,6 +78,7 @@ if __name__ == '__main__':
           url = '',
           scripts = [],
           packages = ['spam'],
+          py_modules = ['standalone_module'],
           classifiers = ['Development Status :: 3 - Alpha', 'Programming Language :: Python'],
              #  data files
              # package data

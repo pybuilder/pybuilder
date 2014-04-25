@@ -212,6 +212,7 @@ if __name__ == '__main__':
           url = 'http://github.com/pybuilder/pybuilder',
           scripts = ['spam', 'eggs'],
           packages = ['spam', 'eggs'],
+          py_modules = ['spam', 'eggs'],
           classifiers = ['Development Status :: 5 - Beta', 'Environment :: Console'],
           data_files = [('dir', ['file1', 'file2'])],   #  data files
           package_data = {'spam': ['eggs']},   # package data
@@ -255,6 +256,7 @@ def create_project():
 
     project.list_scripts = return_dummy_list
     project.list_packages = return_dummy_list
+    project.list_modules = return_dummy_list
 
     project.set_property("distutils_classifiers", [
                          "Development Status :: 5 - Beta", "Environment :: Console"])
