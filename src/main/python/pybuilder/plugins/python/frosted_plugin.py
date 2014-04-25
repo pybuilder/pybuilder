@@ -61,7 +61,7 @@ def analyze(project, logger):
 
     command = ExternalCommandBuilder('frosted', project)
     for ignored_error_code in project.get_property('frosted_ignore', []):
-        command.use_argument('--ignore {0}'.format(ignored_error_code))
+        command.use_argument('--ignore={0}'.format(ignored_error_code))
 
     include_test_sources = project.get_property("frosted_include_test_sources")
 
