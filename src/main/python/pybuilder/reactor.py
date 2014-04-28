@@ -85,9 +85,11 @@ class Reactor(object):
             raise ProjectValidationFailedException(validation_messages)
 
     def prepare_build(self,
-                      property_overrides={},
+                      property_overrides=None,
                       project_directory=".",
                       project_descriptor="build.py"):
+        if not property_overrides:
+            property_overrides = {}
         Reactor._current_instance = self
 
         project_directory, project_descriptor = self.verify_project_directory(
@@ -108,7 +110,11 @@ class Reactor(object):
 
         self.execution_manager.resolve_dependencies()
 
-    def build(self, tasks=[], environments=[]):
+    def build(self, tasks=None, environments=None):
+        if not tasks:
+            tasks = []
+        if not environments:
+            environments = []
         Reactor._current_instance = self
 
         if environments:
