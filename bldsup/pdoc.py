@@ -4,6 +4,7 @@ import subprocess
 from pybuilder.core import task
 from pybuilder.utils import assert_can_execute
 
+
 @task
 def pdoc_generate(project, logger):
     assert_can_execute(command_and_arguments=["pdoc", "--version"],
