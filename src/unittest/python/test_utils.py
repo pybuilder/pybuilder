@@ -18,10 +18,10 @@ from unittest import TestCase
 import mockito
 
 
-def mock(mocked_obj=None, **keywordArguments):
+def mock(mocked_obj=None, **keyword_arguments):
     result = mockito.mock(mocked_obj)
-    for key in keywordArguments:
-        setattr(result, key, keywordArguments[key])
+    for key in keyword_arguments:
+        setattr(result, key, keyword_arguments[key])
     return result
 
 

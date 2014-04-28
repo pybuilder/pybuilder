@@ -180,7 +180,7 @@ class ExecutionManager(object):
             else:
                 self._tasks[task.name] = task
 
-    def execute_initializers(self, environments=None, **keywordArguments):
+    def execute_initializers(self, environments=None, **keyword_arguments):
         for initializer in self._initializers:
             if not initializer.is_applicable(environments):
                 message = "Not going to execute initializer '%s' from '%s' as environments do not match."
@@ -189,13 +189,13 @@ class ExecutionManager(object):
             else:
                 self.logger.debug("Executing initializer '%s' from '%s'",
                                   initializer.name, initializer.source)
-                initializer.execute(keywordArguments)
+                initializer.execute(keyword_arguments)
 
     def assert_dependencies_resolved(self):
         if not self._dependencies_resolved:
             raise DependenciesNotResolvedException()
 
-    def execute_task(self, task, **keywordArguments):
+    def execute_task(self, task, **keyword_arguments):
         self.assert_dependencies_resolved()
 
         self.logger.debug("Executing task '%s'",
@@ -205,13 +205,13 @@ class ExecutionManager(object):
         number_of_actions = 0
 
         for action in self._execute_before[task.name]:
-            if self.execute_action(action, keywordArguments):
+            if self.execute_action(action, keyword_arguments):
                 number_of_actions += 1
 
-        task.execute(self.logger, keywordArguments)
+        task.execute(self.logger, keyword_arguments)
 
         for action in self._execute_after[task.name]:
-            if self.execute_action(action, keywordArguments):
+            if self.execute_action(action, keyword_arguments):
                 number_of_actions += 1
 
         timer.stop()
@@ -228,13 +228,13 @@ class ExecutionManager(object):
         self._actions_executed.append(action)
         return True
 
-    def execute_execution_plan(self, execution_plan, **keywordArguments):
+    def execute_execution_plan(self, execution_plan, **keyword_arguments):
         self.assert_dependencies_resolved()
 
         summaries = []
 
         for task in execution_plan:
-            summaries.append(self.execute_task(task, **keywordArguments))
+            summaries.append(self.execute_task(task, **keyword_arguments))
 
         return summaries
 

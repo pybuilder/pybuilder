@@ -23,45 +23,45 @@ from pybuilder.core import Logger
 class StdOutLoggerTest (unittest.TestCase):
 
     def setUp(self):
-        self.stdOutLogger = StdOutLogger(Logger)
+        self.stdout_logger = StdOutLogger(Logger)
 
     def test_should_return_debug_message_when_debug_level_given(self):
-        actualMessage = self.stdOutLogger._level_to_string(Logger.DEBUG)
-        self.assertEqual(actualMessage, "[DEBUG]")
+        actual_message = self.stdout_logger._level_to_string(Logger.DEBUG)
+        self.assertEqual(actual_message, "[DEBUG]")
 
     def test_should_return_info_message_when_info_level_given(self):
-        actualMessage = self.stdOutLogger._level_to_string(Logger.INFO)
-        self.assertEqual(actualMessage, "[INFO] ")
+        actual_message = self.stdout_logger._level_to_string(Logger.INFO)
+        self.assertEqual(actual_message, "[INFO] ")
 
     def test_should_return_warning_message_when_warning_level_given(self):
-        actualMessage = self.stdOutLogger._level_to_string(Logger.WARN)
-        self.assertEqual(actualMessage, "[WARN] ")
+        actual_message = self.stdout_logger._level_to_string(Logger.WARN)
+        self.assertEqual(actual_message, "[WARN] ")
 
     def test_should_return_error_message_when_any_not_defined_level_given(self):
-        actualMessage = self.stdOutLogger._level_to_string(-1)
-        self.assertEqual(actualMessage, "[ERROR]")
+        actual_message = self.stdout_logger._level_to_string(-1)
+        self.assertEqual(actual_message, "[ERROR]")
 
 
 class ColoredStdOutLoggerTest (unittest.TestCase):
 
     def setUp(self):
-        self.coloredStdOutLogger = ColoredStdOutLogger(Logger)
+        self.colored_stdout_logger = ColoredStdOutLogger(Logger)
 
     def test_should_return_italic_debug_message_when_debug_level_given(self):
-        actualMessage = self.coloredStdOutLogger._level_to_string(Logger.DEBUG)
-        self.assertEqual(actualMessage, "\x1b[2m[DEBUG]\x1b[0;0m")
+        actual_message = self.colored_stdout_logger._level_to_string(Logger.DEBUG)
+        self.assertEqual(actual_message, "\x1b[2m[DEBUG]\x1b[0;0m")
 
     def test_should_return_bold_info_message_when_info_level_given(self):
-        actualMessage = self.coloredStdOutLogger._level_to_string(Logger.INFO)
-        self.assertEqual(actualMessage, "\x1b[1m[INFO] \x1b[0;0m")
+        actual_message = self.colored_stdout_logger._level_to_string(Logger.INFO)
+        self.assertEqual(actual_message, "\x1b[1m[INFO] \x1b[0;0m")
 
     def test_should_return_brown_and_bold_warning_message_when_warning_level_given(self):
-        actualMessage = self.coloredStdOutLogger._level_to_string(Logger.WARN)
-        self.assertEqual(actualMessage, "\x1b[1;33m[WARN] \x1b[0;0m")
+        actual_message = self.colored_stdout_logger._level_to_string(Logger.WARN)
+        self.assertEqual(actual_message, "\x1b[1;33m[WARN] \x1b[0;0m")
 
     def test_should_return_bold_and_red_error_message_when_any_not_defined_level_given(self):
-        actualMessage = self.coloredStdOutLogger._level_to_string(-1)
-        self.assertEqual(actualMessage, "\x1b[1;31m[ERROR]\x1b[0;0m")
+        actual_message = self.colored_stdout_logger._level_to_string(-1)
+        self.assertEqual(actual_message, "\x1b[1;31m[ERROR]\x1b[0;0m")
 
 
 class ParseOptionsTest (unittest.TestCase):
