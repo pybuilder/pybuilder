@@ -22,7 +22,7 @@ import unittest
 
 try:
     from StringIO import StringIO
-except (ImportError) as e:
+except ImportError as e:
     from io import StringIO
 
 from pybuilder.core import Logger
@@ -55,17 +55,17 @@ class IntegrationTestSupport(unittest.TestCase):
 
     def assert_directory_exists(self, name):
         full_path = self.full_path(name)
-        self.assertTrue(os.path.exists(full_path), msg="Directory does not exist: %s" % (full_path))
-        self.assertTrue(os.path.isdir(full_path), msg="Not a directory: %s" % (full_path))
+        self.assertTrue(os.path.exists(full_path), msg="Directory does not exist: %s" % full_path)
+        self.assertTrue(os.path.isdir(full_path), msg="Not a directory: %s" % full_path)
 
     def assert_file_does_not_exist(self, name):
         full_path = self.full_path(name)
-        self.assertFalse(os.path.exists(full_path), msg="File should NOT exist: %s" % (full_path))
+        self.assertFalse(os.path.exists(full_path), msg="File should NOT exist: %s" % full_path)
 
     def assert_file_exists(self, name):
         full_path = self.full_path(name)
-        self.assertTrue(os.path.exists(full_path), msg="File does not exist: %s" % (full_path))
-        self.assertTrue(os.path.isfile(full_path), msg="Not a file: %s" % (full_path))
+        self.assertTrue(os.path.exists(full_path), msg="File does not exist: %s" % full_path)
+        self.assertTrue(os.path.isfile(full_path), msg="Not a file: %s" % full_path)
 
     def assert_file_permissions(self, expected_permissions, name):
         full_path = self.full_path(name)
@@ -75,7 +75,7 @@ class IntegrationTestSupport(unittest.TestCase):
     def assert_file_empty(self, name):
         self.assert_file_exists(name)
         full_path = self.full_path(name)
-        self.assertEquals(0, os.path.getsize(full_path), msg="File %s is not empty." % (full_path))
+        self.assertEquals(0, os.path.getsize(full_path), msg="File %s is not empty." % full_path)
 
     def assert_file_contains(self, name, expected_content_part):
         full_path = self.full_path(name)

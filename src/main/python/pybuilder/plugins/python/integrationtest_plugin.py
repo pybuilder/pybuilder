@@ -74,7 +74,7 @@ def run_integration_tests_sequentially(project, logger):
 
     total_time.stop()
 
-    return (report_items, total_time)
+    return report_items, total_time
 
 
 def run_integration_tests_in_parallel(project, logger):
@@ -139,7 +139,7 @@ def run_integration_tests_in_parallel(project, logger):
 
     total_time.stop()
 
-    return (reports.items, total_time)
+    return reports.items, total_time
 
 
 def discover_integration_tests(source_path, suffix=".py"):
@@ -332,11 +332,11 @@ class TaskPoolProgress(object):
 
     @property
     def waiting_tasks_count(self):
-        return (self.total_tasks_count - self.finished_tasks_count - self.running_tasks_count)
+        return self.total_tasks_count - self.finished_tasks_count - self.running_tasks_count
 
     @property
     def is_finished(self):
-        return (self.finished_tasks_count == self.total_tasks_count)
+        return self.finished_tasks_count == self.total_tasks_count
 
     @property
     def can_be_displayed(self):

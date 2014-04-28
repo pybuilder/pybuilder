@@ -16,7 +16,7 @@
 
 try:
     from StringIO import StringIO
-except (ImportError) as e:
+except ImportError as e:
     from io import StringIO
 
 import sys

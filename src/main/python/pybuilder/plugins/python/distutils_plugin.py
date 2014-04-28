@@ -21,7 +21,7 @@ import sys
 
 try:
     from StringIO import StringIO
-except (ImportError) as e:
+except ImportError as e:
     from io import StringIO
 
 from pybuilder.core import after, before, use_plugin, init
@@ -197,7 +197,7 @@ def build_dependency_links_string(project):
         return ""
 
     def format_single_dependency(dependency):
-        return '"%s"' % (dependency.url)
+        return '"%s"' % dependency.url
 
     result = "dependency_links = [ "
     result += ", ".join(map(format_single_dependency, dependency_links))

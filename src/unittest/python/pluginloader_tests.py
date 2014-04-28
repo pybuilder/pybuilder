@@ -20,7 +20,7 @@ builtin_module = None
 try:
     import __builtin__
     builtin_module = __builtin__
-except (ImportError) as e:
+except ImportError as e:
     import builtins
     builtin_module = builtins
 
