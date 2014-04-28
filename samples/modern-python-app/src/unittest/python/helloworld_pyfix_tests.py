@@ -18,6 +18,7 @@ from pyfix import test
 
 from helloworld import helloworld
 
+
 @test
 def should_issue_hello_world_message():
     out = mock()

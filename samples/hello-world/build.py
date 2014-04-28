@@ -15,6 +15,7 @@
 #  limitations under the License.
 from pybuilder.core import task
 
+
 @task
-def say_hello (logger):
+def say_hello(logger):
     logger.info("Hello, pybuilder")
