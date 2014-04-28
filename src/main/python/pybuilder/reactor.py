@@ -239,14 +239,16 @@ class Reactor(object):
             value = getattr(self.project_module, property)
             setattr(self.project, property, value)
 
-    def load_project_module(self, project_descriptor):
+    @staticmethod
+    def load_project_module(project_descriptor):
         try:
             return imp.load_source("build", project_descriptor)
         except ImportError as e:
             raise PyBuilderException(
                 "Error importing project descriptor %s: %s" % (project_descriptor, e))
 
-    def verify_project_directory(self, project_directory, project_descriptor):
+    @staticmethod
+    def verify_project_directory(project_directory, project_descriptor):
         project_directory = os.path.abspath(project_directory)
 
         if not os.path.exists(project_directory):

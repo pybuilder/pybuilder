@@ -387,7 +387,8 @@ class Logger(object):
     def _do_log(self, level, message, *arguments):
         pass
 
-    def _format_message(self, message, *arguments):
+    @staticmethod
+    def _format_message(message, *arguments):
         if arguments:
             return message % arguments
         return message

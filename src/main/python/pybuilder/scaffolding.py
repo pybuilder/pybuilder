@@ -147,7 +147,8 @@ def set_properties(project):
             if not os.path.exists(needed_directory):
                 os.makedirs(needed_directory)
 
-    def _build_initializer_body_with_properties(self, properties_to_set):
+    @staticmethod
+    def _build_initializer_body_with_properties(properties_to_set):
         initializer_body = ''
         initializer_body += '\n'.join(
             ['    project.set_property("{0}", "{1}")'.format(k, v) for k, v in properties_to_set])
