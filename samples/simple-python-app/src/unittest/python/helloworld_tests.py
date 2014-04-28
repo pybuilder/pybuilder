@@ -13,9 +13,9 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from mockito import mock, when, any, unstub, verify
 import unittest
-import sys
+
+from mockito import mock, verify
 
 from helloworld import helloworld
 
