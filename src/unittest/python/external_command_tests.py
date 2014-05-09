@@ -107,6 +107,7 @@ class ExternalCommandExecutionTests(unittest.TestCase):
 
         execution.assert_called_with(
             include_test_sources=False,
+            include_scripts=False,
             project=self.project,
             logger=logger,
             command_and_arguments=['command-name', '--foo', '--bar'],
@@ -121,6 +122,7 @@ class ExternalCommandExecutionTests(unittest.TestCase):
 
         execution.assert_called_with(
             include_test_sources=True,
+            include_scripts=False,
             project=self.project,
             logger=logger,
             command_and_arguments=['command-name', '--foo', '--bar'],

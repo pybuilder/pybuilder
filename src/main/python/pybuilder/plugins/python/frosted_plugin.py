@@ -38,6 +38,7 @@ def initialize_frosted_plugin(project):
     project.build_depends_on("frosted")
     project.set_property("frosted_break_build", False)
     project.set_property("frosted_include_test_sources", False)
+    project.set_property("frosted_include_scripts", False)
 
 
 @after("prepare")
@@ -64,8 +65,11 @@ def analyze(project, logger):
         command.use_argument('--ignore={0}'.format(ignored_error_code))
 
     include_test_sources = project.get_property("frosted_include_test_sources")
+    include_scripts = project.get_property("frosted_include_scripts")
 
-    result = command.run_on_production_source_files(logger, include_test_sources=include_test_sources)
+    result = command.run_on_production_source_files(logger,
+                                                    include_test_sources=include_test_sources,
+                                                    include_scripts=include_scripts)
 
     count_of_warnings = len(result.report_lines)
     count_of_errors = len(result.error_report_lines)

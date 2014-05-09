@@ -57,11 +57,12 @@ class ExternalCommandBuilder(object):
     def as_string(self):
         return ' '.join(self.parts)
 
-    def run_on_production_source_files(self, logger, include_test_sources=False):
+    def run_on_production_source_files(self, logger, include_test_sources=False, include_scripts=False):
         execution_result = execute_tool_on_source_files(project=self.project,
                                                         name=self.command_name,
                                                         command_and_arguments=self.parts,
                                                         include_test_sources=include_test_sources,
+                                                        include_scripts=include_scripts,
                                                         logger=logger)
         exit_code, report_file = execution_result
         report_lines = read_file(report_file)
@@ -71,3 +72,6 @@ class ExternalCommandBuilder(object):
 
     def run_on_production_and_test_source_files(self, logger):
         return self.run_on_production_source_files(logger, include_test_sources=True)
+
+    def run_on_production_and_test_source_files_and_scripts(self, logger):
+        return self.run_on_production_source_files(logger, include_test_sources=True, include_scripts=True)

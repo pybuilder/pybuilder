@@ -46,7 +46,7 @@ class DiscoverAffectedFilesTest(unittest.TestCase):
         project.get_property.return_value = 'source_directory'
         discover_python_files.return_value = ['foo.py', 'bar.py']
 
-        files = discover_affected_files(False, project)
+        files = discover_affected_files(False, False, project)
         discover_python_files.assert_called_with('source_directory')
         self.assertEqual(files, ['foo.py', 'bar.py'])
 
@@ -56,12 +56,24 @@ class DiscoverAffectedFilesTest(unittest.TestCase):
 
         project.get_property.side_effect = lambda _property: _property
 
-        discover_affected_files(True, project)
+        discover_affected_files(True, False, project)
 
         self.assertEqual(discover_python_files.call_args_list,
                          [call('dir_source_main_python'),
                           call('dir_source_unittest_python'),
                           call('dir_source_integrationtest_python')])
+
+    @patch('pybuilder.plugins.python.python_plugin_helper.discover_python_files')
+    @patch('pybuilder.plugins.python.python_plugin_helper.discover_files_matching')
+    def test_should_discover_source_files_when_scripts_are_included(self, discover_files_matching, _):
+        project = Mock()
+
+        project.get_property.return_value = True
+        project.get_property.side_effect = lambda _property: _property
+
+        discover_affected_files(False, True, project)
+
+        discover_files_matching.assert_called_with('dir_source_main_scripts', '*')
 
     @patch('pybuilder.plugins.python.python_plugin_helper.discover_python_files')
     def test_should_discover_source_files_when_test_sources_are_included_and_only_unittests(self, discover_python_files):
@@ -73,7 +85,7 @@ class DiscoverAffectedFilesTest(unittest.TestCase):
             return property
         project.get_property.side_effect = get_property
 
-        discover_affected_files(True, project)
+        discover_affected_files(True, False, project)
 
         self.assertEqual(discover_python_files.call_args_list,
                          [call('dir_source_main_python'),
@@ -89,7 +101,7 @@ class DiscoverAffectedFilesTest(unittest.TestCase):
             return property
         project.get_property.side_effect = get_property
 
-        discover_affected_files(True, project)
+        discover_affected_files(True, False, project)
 
         self.assertEqual(discover_python_files.call_args_list,
                          [call('dir_source_main_python'),
@@ -105,7 +117,7 @@ class DiscoverAffectedFilesTest(unittest.TestCase):
             return None
         project.get_property.side_effect = get_property
 
-        discover_affected_files(True, project)
+        discover_affected_files(True, False, project)
 
         self.assertEqual(discover_python_files.call_args_list,
                          [call('dir_source_main_python')])

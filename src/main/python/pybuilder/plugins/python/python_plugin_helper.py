@@ -15,6 +15,7 @@
 #   limitations under the License.
 
 import os
+import itertools
 
 from pybuilder.utils import (discover_modules,
                              discover_files_matching,
@@ -34,23 +35,26 @@ def discover_python_files(directory):
     return discover_files_matching(directory, "*.py")
 
 
-def discover_affected_files(include_test_sources, project):
+def discover_affected_files(include_test_sources, include_scripts, project):
     source_dir = project.get_property("dir_source_main_python")
     files = discover_python_files(source_dir)
 
     if include_test_sources:
-        import itertools
         if project.get_property("dir_source_unittest_python"):
             unittest_dir = project.get_property("dir_source_unittest_python")
             files = itertools.chain(files, discover_python_files(unittest_dir))
         if project.get_property("dir_source_integrationtest_python"):
             integrationtest_dir = project.get_property("dir_source_integrationtest_python")
             files = itertools.chain(files, discover_python_files(integrationtest_dir))
+    if include_scripts and project.get_property("dir_source_main_scripts"):
+        scripts_dir = project.get_property("dir_source_main_scripts")
+        files = itertools.chain(files, discover_files_matching(scripts_dir, "*"))  # we have no idea how scripts might look
     return files
 
 
-def execute_tool_on_source_files(project, name, command_and_arguments, logger=None, include_test_sources=False):
-    files = discover_affected_files(include_test_sources, project)
+def execute_tool_on_source_files(project, name, command_and_arguments, logger=None,
+                                 include_test_sources=False, include_scripts=False):
+    files = discover_affected_files(include_test_sources, include_scripts, project)
 
     command = as_list(command_and_arguments) + [f for f in files]
 
