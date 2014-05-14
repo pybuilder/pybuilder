@@ -202,13 +202,23 @@ def prepare_reports_directory(project):
 
 
 def run_single_test(logger, project, reports_dir, test, output_test_names=True):
+    additional_integrationtest_commandline_text = project.get_property("integrationtest_additional_commandline", "")
+
+    if additional_integrationtest_commandline_text:
+        additional_integrationtest_commandline = tuple(additional_integrationtest_commandline_text.split(" "))
+    else:
+        additional_integrationtest_commandline = ()
+
     name, _ = os.path.splitext(os.path.basename(test))
+
     if output_test_names:
         logger.info("Running integration test %s", name)
 
     env = prepare_environment(project)
     test_time = Timer.start()
     command_and_arguments = (sys.executable, test)
+    command_and_arguments += additional_integrationtest_commandline
+
     report_file_name = os.path.join(reports_dir, name)
     error_file_name = report_file_name + ".err"
     return_code = execute_command(
