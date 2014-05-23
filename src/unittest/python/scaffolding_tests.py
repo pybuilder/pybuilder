@@ -30,6 +30,8 @@ class PythonProjectScaffoldingTests(TestCase):
         self.assertEqual(scaffolding.dir_source_main_python, 'src/main/python')
         self.assertEqual(
             scaffolding.dir_source_unittest_python, 'src/unittest/python')
+        self.assertEqual(
+            scaffolding.dir_source_main_scripts, 'src/main/scripts')
 
     def test_should_build_empty_initializer_when_defaults_are_used(self):
         scaffolding = PythonProjectScaffolding('some-project')
@@ -153,6 +155,7 @@ class CollectProjectInformationTests(TestCase):
                              call('Project name', 'project'),
                              call('Source directory', 'src/main/python'),
                              call('Unittest directory', 'src/unittest/python'),
+                             call('Scripts directory', 'src/main/scripts'),
                              call('Use plugin python.flake8 (Y/n)?', 'y'),
                              call('Use plugin python.coverage (Y/n)?', 'y'),
                              call('Use plugin python.distutils (Y/n)?', 'y')
@@ -181,6 +184,14 @@ class CollectProjectInformationTests(TestCase):
         scaffolding = collect_project_information()
 
         self.assertEqual(scaffolding.dir_source_unittest_python, 'test')
+
+    @patch('pybuilder.scaffolding.os')
+    @patch('pybuilder.scaffolding.prompt_user')
+    def test_should_collect_scripts_dir(self, prompt, os):
+        prompt.return_value = 'scripts'
+        scaffolding = collect_project_information()
+
+        self.assertEqual(scaffolding.dir_source_main_scripts, 'scripts')
 
 
 class PluginSuggestionTests(TestCase):
