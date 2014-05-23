@@ -154,7 +154,8 @@ def set_properties(project):
 
     def set_up_project(self):
         for needed_directory in (self.dir_source_main_python,
-                                 self.dir_source_unittest_python):
+                                 self.dir_source_unittest_python,
+                                 self.dir_source_main_scripts):
             if not os.path.exists(needed_directory):
                 os.makedirs(needed_directory)
 

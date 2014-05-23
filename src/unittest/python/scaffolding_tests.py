@@ -129,7 +129,8 @@ def set_properties(project):
         self.assertEqual(mock_os.makedirs.call_args_list,
                          [
                              call('src/main/python'),
-                             call('src/unittest/python')
+                             call('src/unittest/python'),
+                             call('src/main/scripts')
                          ])
 
     @patch('pybuilder.scaffolding.os')
