@@ -37,19 +37,25 @@ else:
 
 class TestNameAwareTextTestRunner(unittest.TextTestRunner):
 
+    def __init__(self, logger, stream):
+        self.logger = logger
+        super(TestNameAwareTextTestRunner, self).__init__(stream=stream)
+
     def _makeResult(self):
-        return TestNameAwareTestResult(self.stream, self.descriptions, self.verbosity)
+        return TestNameAwareTestResult(self.logger, self.stream, self.descriptions, self.verbosity)
 
 
 class TestNameAwareTestResult(TextTestResult):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, logger, stream, descriptions, verbosity):
         self.test_names = []
         self.failed_test_names_and_reasons = {}
-        super(TestNameAwareTestResult, self).__init__(*args, **kwargs)
+        self.logger = logger
+        super(TestNameAwareTestResult, self).__init__(stream, descriptions, verbosity)
 
     def startTest(self, test):
         self.test_names.append(test)
+        self.logger.debug("starting %s", test)
         super(TestNameAwareTestResult, self).startTest(test)
 
     def addError(self, test, err):
@@ -92,7 +98,7 @@ def run_unit_tests(project, logger):
 
     try:
         test_method_prefix = project.get_property("unittest_test_method_prefix")
-        result, console_out = execute_tests_matching(test_dir, module_glob, test_method_prefix)
+        result, console_out = execute_tests_matching(logger, test_dir, module_glob, test_method_prefix)
 
         if result.testsRun == 0:
             logger.warn("No unittests executed.")
@@ -115,11 +121,11 @@ def run_unit_tests(project, logger):
         raise BuildFailedException("Unable to execute unit tests.")
 
 
-def execute_tests(test_source, suffix, test_method_prefix=None):
-    return execute_tests_matching(test_source, "*{0}".format(suffix), test_method_prefix)
+def execute_tests(logger, test_source, suffix, test_method_prefix=None):
+    return execute_tests_matching(logger, test_source, "*{0}".format(suffix), test_method_prefix)
 
 
-def execute_tests_matching(test_source, file_glob, test_method_prefix=None):
+def execute_tests_matching(logger, test_source, file_glob, test_method_prefix=None):
     output_log_file = StringIO()
 
     try:
@@ -128,7 +134,7 @@ def execute_tests_matching(test_source, file_glob, test_method_prefix=None):
         if test_method_prefix:
             loader.testMethodPrefix = test_method_prefix
         tests = loader.loadTestsFromNames(test_modules)
-        result = TestNameAwareTextTestRunner(stream=output_log_file).run(tests)
+        result = TestNameAwareTextTestRunner(logger, output_log_file).run(tests)
         return result, output_log_file.getvalue()
     finally:
         output_log_file.close()

@@ -56,13 +56,14 @@ class ExecuteTestsTests(TestCase):
 
     def setUp(self):
         self.mock_result = Mock()
+        self.mock_logger = Mock()
 
     @patch('pybuilder.plugins.python.unittest_plugin.TestNameAwareTextTestRunner')
     @patch('pybuilder.plugins.python.unittest_plugin.unittest')
     @patch('pybuilder.plugins.python.unittest_plugin.discover_modules_matching')
     def test_should_discover_modules_by_suffix(self, mock_discover_modules_matching, mock_unittest, runner):
 
-        execute_tests('/path/to/test/sources', '_tests.py')
+        execute_tests(self.mock_logger, '/path/to/test/sources', '_tests.py')
 
         mock_discover_modules_matching.assert_called_with('/path/to/test/sources', '*_tests.py')
 
@@ -71,7 +72,7 @@ class ExecuteTestsTests(TestCase):
     @patch('pybuilder.plugins.python.unittest_plugin.discover_modules_matching')
     def test_should_discover_modules_by_glob(self, mock_discover_modules_matching, mock_unittest, runner):
 
-        execute_tests_matching('/path/to/test/sources', '*_tests.py')
+        execute_tests_matching(self.mock_logger, '/path/to/test/sources', '*_tests.py')
 
         mock_discover_modules_matching.assert_called_with('/path/to/test/sources', '*_tests.py')
 
@@ -83,7 +84,7 @@ class ExecuteTestsTests(TestCase):
         mock_modules = Mock()
         mock_discover_modules_matching.return_value = mock_modules
 
-        execute_tests_matching('/path/to/test/sources', '*_tests.py')
+        execute_tests_matching(self.mock_logger, '/path/to/test/sources', '*_tests.py')
 
         mock_unittest.defaultTestLoader.loadTestsFromNames.assert_called_with(mock_modules)
 
@@ -95,7 +96,7 @@ class ExecuteTestsTests(TestCase):
         mock_tests = Mock()
         mock_unittest.defaultTestLoader.loadTestsFromNames.return_value = mock_tests
 
-        execute_tests('/path/to/test/sources', '_tests.py')
+        execute_tests(self.mock_logger, '/path/to/test/sources', '_tests.py')
 
         runner.return_value.run.assert_called_with(mock_tests)
 
@@ -108,7 +109,7 @@ class ExecuteTestsTests(TestCase):
         mock_unittest.defaultTestLoader.loadTestsFromNames.return_value = mock_tests
         runner.return_value.run.return_value = self.mock_result
 
-        actual, _ = execute_tests('/path/to/test/sources', '_tests.py')
+        actual, _ = execute_tests(self.mock_logger, '/path/to/test/sources', '_tests.py')
 
         self.assertEqual(self.mock_result, actual)
 
@@ -120,7 +121,7 @@ class ExecuteTestsTests(TestCase):
         mock_unittest.defaultTestLoader.loadTestsFromNames.return_value = mock_tests
         runner.return_value.run.return_value = self.mock_result
 
-        actual, _ = execute_tests('/path/to/test/sources', '_tests.py', test_method_prefix='should_')
+        actual, _ = execute_tests(self.mock_logger, '/path/to/test/sources', '_tests.py', test_method_prefix='should_')
 
         self.assertEqual('should_', mock_unittest.defaultTestLoader.testMethodPrefix)
 
