@@ -82,7 +82,7 @@ def install_dependency(logger, project, dependency):
     logger.info("Installing dependency '%s'%s", dependency.name, " from %s" % dependency.url if dependency.url else "")
     log_file = project.expand_path("$dir_install_logs", dependency.name)
 
-    pip_command_line = "pip install {0}'{1}'".format(build_pip_install_options(project), as_pip_argument(dependency))
+    pip_command_line = "pip install {0}'{1}'".format(build_pip_install_options(project, dependency), as_pip_argument(dependency))
     exit_code = execute_command(pip_command_line, log_file, shell=True)
     if exit_code != 0:
         if project.get_property("verbose"):
@@ -94,7 +94,7 @@ def install_dependency(logger, project, dependency):
                                        log_file)
 
 
-def build_pip_install_options(project):
+def build_pip_install_options(project, dependency):
     options = []
     if project.get_property("install_dependencies_index_url"):
         options.append("--index-url " + project.get_property("install_dependencies_index_url"))
@@ -103,6 +103,10 @@ def build_pip_install_options(project):
 
     if project.get_property("install_dependencies_upgrade"):
         options.append("--upgrade")
+
+    for insecure_dependency in project.get_property("install_dependencies_insecure_installation", []):
+        arguments_for_insecure_installation = ["--allow-unverified", insecure_dependency, "--allow-external", insecure_dependency]
+        options.extend(arguments_for_insecure_installation)
 
     result = " ".join(options)
     if result:
