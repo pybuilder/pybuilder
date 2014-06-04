@@ -164,7 +164,9 @@ def build_binary_distribution(project, logger):
     for command in commands:
         logger.debug("Executing distutils command %s", command)
         with open(os.path.join(reports_dir, command), "w") as output_file:
-            process = subprocess.Popen((sys.executable, setup_script, command),
+            commands = [sys.executable, setup_script]
+            commands.extend(command.split())
+            process = subprocess.Popen(commands,
                                        cwd=project.expand_path("$dir_dist"),
                                        stdout=output_file,
                                        stderr=output_file,
