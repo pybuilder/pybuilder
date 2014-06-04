@@ -27,7 +27,7 @@ use_plugin("core")
 
 
 @init
-def initialized_install_dependencies_plugin(project):
+def initialize_install_dependencies_plugin(project):
     project.set_property_if_unset("dir_install_logs", "$dir_logs/install_dependencies")
     project.set_property_if_unset("install_dependencies_index_url", None)
     project.set_property_if_unset("install_dependencies_extra_index_url", None)
