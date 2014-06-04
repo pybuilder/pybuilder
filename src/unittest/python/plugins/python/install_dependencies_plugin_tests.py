@@ -54,6 +54,7 @@ class InstallDependencyTest(unittest.TestCase):
     def test_should_install_dependency_insecurely_when_property_is_set(self):
         dependency = Dependency("spam")
         self.project.set_property("install_dependencies_insecure_installation", ["spam"])
+        when(pybuilder.plugins.python.install_dependencies_plugin)._pip_disallows_insecure_packages_by_default().thenReturn(True)
 
         install_dependency(self.logger, self.project, dependency)
 
@@ -63,6 +64,7 @@ class InstallDependencyTest(unittest.TestCase):
     def test_should_install_dependency_securely_when_property_is_not_set_to_dependency(self):
         dependency = Dependency("spam")
         self.project.set_property("install_dependencies_insecure_installation", ["some-other-dependency"])
+        when(pybuilder.plugins.python.install_dependencies_plugin)._pip_disallows_insecure_packages_by_default().thenReturn(True)
 
         install_dependency(self.logger, self.project, dependency)
 
@@ -71,6 +73,16 @@ class InstallDependencyTest(unittest.TestCase):
             any_value(), shell=True)
         #  some-other-dependency might be a dependency of 'spam'
         #  so we always have to put the insecure dependencies in the command line :-(
+
+    def test_should_not_use_insecure_flags_when_pip_version_is_too_low(self):
+        dependency = Dependency("spam")
+        self.project.set_property("install_dependencies_insecure_installation", ["spam"])
+        when(pybuilder.plugins.python.install_dependencies_plugin)._pip_disallows_insecure_packages_by_default().thenReturn(False)
+
+        install_dependency(self.logger, self.project, dependency)
+
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
+            "pip install 'spam'", any_value(), shell=True)
 
     def test_should_install_dependency_using_custom_index_url(self):
         self.project.set_property(

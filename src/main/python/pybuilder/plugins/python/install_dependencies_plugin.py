@@ -104,9 +104,11 @@ def build_pip_install_options(project, dependency):
     if project.get_property("install_dependencies_upgrade"):
         options.append("--upgrade")
 
-    for insecure_dependency in project.get_property("install_dependencies_insecure_installation", []):
-        arguments_for_insecure_installation = ["--allow-unverified", insecure_dependency, "--allow-external", insecure_dependency]
-        options.extend(arguments_for_insecure_installation)
+    if _pip_disallows_insecure_packages_by_default():
+        for insecure_dependency in project.get_property("install_dependencies_insecure_installation", []):
+            arguments_for_insecure_installation = ["--allow-unverified", insecure_dependency,
+                                                   "--allow-external", insecure_dependency]
+            options.extend(arguments_for_insecure_installation)
 
     result = " ".join(options)
     if result:
@@ -118,3 +120,10 @@ def as_pip_argument(dependency):
     if dependency.url:
         return dependency.url
     return "{0}{1}".format(dependency.name, build_dependency_version_string(dependency))
+
+
+def _pip_disallows_insecure_packages_by_default():
+    import pip
+    # (2014-01-01) BACKWARD INCOMPATIBLE pip no longer will scrape insecure external urls by default
+    # nor will it install externally hosted files by default
+    return pip.__version__ >= '1.5'
