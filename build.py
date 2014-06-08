@@ -52,13 +52,11 @@ use_bldsup()
 use_plugin("pdoc")
 
 summary = "An extensible, easy to use continuous build tool for Python"
-description = """PyBuilder is a continuous build tool for multiple languages.
+description = """PyBuilder is a build automation tool for python.
 
-PyBuilder primarily targets Python projects but due to its extensible
-nature it can be used for other languages as well.
-
-PyBuilder features a powerful yet easy to use plugin mechanism which
-allows programmers to extend the tool in an unlimited way.
+PyBuilder is a software build tool written in pure Python which mainly targets Python applications.
+It is based on the concept of dependency based programming but also comes along with powerful plugin mechanism that
+allows the construction of build life cycles similar to those known from other famous build tools like Apache Maven.
 """
 
 authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
