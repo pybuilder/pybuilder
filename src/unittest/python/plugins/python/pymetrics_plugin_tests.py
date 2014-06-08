@@ -23,7 +23,7 @@ from logging import Logger
 from pybuilder.plugins.python.pymetrics_plugin import check_pymetrics_available
 
 
-class TestListenerTests(TestCase):
+class CheckMyMetricsAvailableTests(TestCase):
 
     @patch('pybuilder.plugins.python.pymetrics_plugin.assert_can_execute')
     def test_should_check_that_pymetrics_can_be_executed(self, mock_assert_can_execute):
