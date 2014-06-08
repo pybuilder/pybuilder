@@ -1,4 +1,6 @@
-#   Flake8 Plugin for PyBuilder
+#   -*- coding: utf-8 -*-
+#
+#   This file is part of PyBuilder
 #
 #   Copyright 2011-2014 PyBuilder Team
 #
