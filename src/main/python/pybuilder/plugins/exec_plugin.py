@@ -62,6 +62,7 @@ def _log_quoted_output(logger, output_type, output, phase):
 
 def run_command(phase, project, logger):
     command_line = project.get_property('%s_command' % phase)
+
     if not command_line:
         return
 
