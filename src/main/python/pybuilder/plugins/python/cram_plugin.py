@@ -89,27 +89,27 @@ def run_cram_tests(project, logger):
     script_dir = project.expand_path('$dir_source_main_scripts')
     _prepend_path(env, "PATH", script_dir)
 
-    execution_result = execute_command(command_and_arguments,
-                                       report_file,
-                                       env=env,
-                                       error_file_name=report_file
-                                       ), report_file
+    return_code = execute_command(command_and_arguments,
+                                  report_file,
+                                  env=env,
+                                  error_file_name=report_file)
 
     report = read_file(report_file)
     result = report[-1][2:].strip()
 
-    if execution_result[0] != 0:
+    if return_code != 0:
         logger.error("Cram tests failed!")
         if project.get_property("verbose"):
             for line in report:
                 logger.error(line.rstrip())
         else:
             logger.error(result)
+
         logger.error("See: '{0}' for details".format(report_file))
         raise BuildFailedException("Cram tests failed!")
-    else:
-        logger.info("Cram tests were fine")
-        logger.info(result)
+
+    logger.info("Cram tests were fine")
+    logger.info(result)
 
 
 @task
