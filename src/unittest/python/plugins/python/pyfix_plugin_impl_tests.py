@@ -16,14 +16,22 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-__author__ = "Alexander Metzner"
+from unittest import TestCase
+from mock import Mock, patch
+from logging import Logger
+
+from pybuilder.plugins.python.pyfix_plugin_impl import TestListener
 
 
-def build_dependency_version_string(dependency):
-    if not dependency.version:
-        return ""
+class TestListenerTests(TestCase):
 
-    if dependency.version[0] in ("<", ">", "="):
-        return dependency.version
+    @patch('pybuilder.plugins.python.pyfix_plugin_impl.execute_tests_matching')
+    def test_should_inform_how_many_tests_are_going_to_be_executed(self, mock_execute_tests_matching):
 
-    return ">=%s" % dependency.version
+        test_definitions = [Mock(), Mock(), Mock()]
+        mock_logger = Mock(Logger)
+        listener = TestListener(mock_logger)
+
+        listener.before_suite(test_definitions)
+
+        mock_logger.info.assert_called_with('Running %d pyfix tests', 3)

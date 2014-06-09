@@ -1,18 +1,20 @@
-# cram Plugin for PyBuilder
+#   -*- coding: utf-8 -*-
 #
-# Copyright 2011-2014 PyBuilder Team
+#   This file is part of PyBuilder
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+#   Copyright 2011-2014 PyBuilder Team
 #
-# http://www.apache.org/licenses/LICENSE-2.0
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
 
 """
     Plugin for Cram, a functional testing framework for command line
@@ -89,27 +91,27 @@ def run_cram_tests(project, logger):
     script_dir = project.expand_path('$dir_source_main_scripts')
     _prepend_path(env, "PATH", script_dir)
 
-    execution_result = execute_command(command_and_arguments,
-                                       report_file,
-                                       env=env,
-                                       error_file_name=report_file
-                                       ), report_file
+    return_code = execute_command(command_and_arguments,
+                                  report_file,
+                                  env=env,
+                                  error_file_name=report_file)
 
     report = read_file(report_file)
     result = report[-1][2:].strip()
 
-    if execution_result[0] != 0:
+    if return_code != 0:
         logger.error("Cram tests failed!")
         if project.get_property("verbose"):
             for line in report:
                 logger.error(line.rstrip())
         else:
             logger.error(result)
+
         logger.error("See: '{0}' for details".format(report_file))
         raise BuildFailedException("Cram tests failed!")
-    else:
-        logger.info("Cram tests were fine")
-        logger.info(result)
+
+    logger.info("Cram tests were fine")
+    logger.info(result)
 
 
 @task

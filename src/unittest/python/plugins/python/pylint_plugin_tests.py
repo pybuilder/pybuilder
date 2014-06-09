@@ -16,14 +16,21 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-__author__ = "Alexander Metzner"
+from unittest import TestCase
+from mock import Mock, patch
+from logging import Logger
+
+from pybuilder.plugins.python.pylint_plugin import check_pylint_availability
 
 
-def build_dependency_version_string(dependency):
-    if not dependency.version:
-        return ""
+class CheckPyLintAvailabilityTests(TestCase):
 
-    if dependency.version[0] in ("<", ">", "="):
-        return dependency.version
+    @patch('pybuilder.plugins.python.pylint_plugin.assert_can_execute')
+    def test_should_check_that_pylint_can_be_executed(self, mock_assert_can_execute):
 
-    return ">=%s" % dependency.version
+        mock_logger = Mock(Logger)
+
+        check_pylint_availability(mock_logger)
+
+        expected_command_line = ('pylint',)
+        mock_assert_can_execute.assert_called_with(expected_command_line, 'pylint', 'plugin python.pylint')

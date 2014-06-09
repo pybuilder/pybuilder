@@ -19,3 +19,6 @@ api-doc
 Vagrantfile
 .vagrant
 **/*.swp
+
+# Ignoring cram test error
+src/cmdlinetest/test_help.t.err

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-
+#
+#   -*- coding: utf-8 -*-
+#
 #   This file is part of PyBuilder
 #
 #   Copyright 2011-2014 PyBuilder Team
@@ -52,13 +54,11 @@ use_bldsup()
 use_plugin("pdoc")
 
 summary = "An extensible, easy to use continuous build tool for Python"
-description = """PyBuilder is a continuous build tool for multiple languages.
+description = """PyBuilder is a build automation tool for python.
 
-PyBuilder primarily targets Python projects but due to its extensible
-nature it can be used for other languages as well.
-
-PyBuilder features a powerful yet easy to use plugin mechanism which
-allows programmers to extend the tool in an unlimited way.
+PyBuilder is a software build tool written in pure Python which mainly targets Python applications.
+It is based on the concept of dependency based programming but also comes along with powerful plugin mechanism that
+allows the construction of build life cycles similar to those known from other famous build tools like Apache Maven.
 """
 
 authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
@@ -95,7 +95,6 @@ def initialize(project):
     project.set_property('flake8_break_build', True)
     project.set_property('flake8_include_test_sources', True)
     project.set_property('flake8_include_scripts', True)
-
     project.set_property('flake8_max_line_length', 130)
 
     project.set_property('frosted_include_test_sources', True)

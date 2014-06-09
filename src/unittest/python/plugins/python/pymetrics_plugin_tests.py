@@ -16,14 +16,21 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-__author__ = "Alexander Metzner"
+from unittest import TestCase
+from mock import Mock, patch
+from logging import Logger
+
+from pybuilder.plugins.python.pymetrics_plugin import check_pymetrics_available
 
 
-def build_dependency_version_string(dependency):
-    if not dependency.version:
-        return ""
+class CheckMyMetricsAvailableTests(TestCase):
 
-    if dependency.version[0] in ("<", ">", "="):
-        return dependency.version
+    @patch('pybuilder.plugins.python.pymetrics_plugin.assert_can_execute')
+    def test_should_check_that_pymetrics_can_be_executed(self, mock_assert_can_execute):
 
-    return ">=%s" % dependency.version
+        mock_logger = Mock(Logger)
+
+        check_pymetrics_available(mock_logger)
+
+        expected_command_line = ('pymetrics', '--nosql', '--nocsv')
+        mock_assert_can_execute.assert_called_with(expected_command_line, 'pymetrics', 'plugin python.pymetrics')
