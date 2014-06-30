@@ -1,4 +1,4 @@
-[PyBuilder](http://pybuilder.github.io) 
+[PyBuilder](http://pybuilder.github.io)
 =========
 
 [![Build Status](https://secure.travis-ci.org/pybuilder/pybuilder.png?branch=master)](http://travis-ci.org/pybuilder/pybuilder)
@@ -73,6 +73,10 @@ In addition, a few common plugins are provided:
 * [copy_resources](http://pybuilder.github.io/documentation/plugins.html#Copyingresourcesintoadistribution) - Copies files.
 * [filter_resources](http://pybuilder.github.io/documentation/plugins.html#Filteringfiles) - Filters files by replacing tokens with configuration values.
 * [source_distribution](http://pybuilder.github.io/documentation/plugins.html#Creatingasourcedistribution) - Bundles a source distribution for shipping.
+
+External plugins:
+* [pybuilder_header_plugin](https://github.com/aelgru/pybuilder_header_plugin) - ensure all your source files have the expected file header
+* [pybuilder_release_plugin](https://github.com/aelgru/pybuilder_release_plugin) - release a new version of your project to PyPI
 
 ## Release Notes
 
