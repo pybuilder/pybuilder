@@ -128,4 +128,5 @@ def _pip_disallows_insecure_packages_by_default():
     import pip
     # (2014-01-01) BACKWARD INCOMPATIBLE pip no longer will scrape insecure external urls by default
     # nor will it install externally hosted files by default
-    return pip.__version__ >= '1.5'
+    # Also pip v1.1 for example has no __version__
+    return hasattr(pip, "__version__") and pip.__version__ >= '1.5'
