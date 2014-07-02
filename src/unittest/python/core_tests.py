@@ -23,7 +23,8 @@ import unittest
 from pyassert import assert_that
 from mockito import when, verify, unstub
 
-from pybuilder.core import Project, Logger, init, INITIALIZER_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE
+from pybuilder.core import (Project, Logger, init, INITIALIZER_ATTRIBUTE,
+                            ENVIRONMENTS_ATTRIBUTE, task, description)
 from pybuilder.errors import MissingPropertyException
 
 
@@ -448,3 +449,42 @@ class InitTest(unittest.TestCase):
         self.assertTrue(getattr(fun, ENVIRONMENTS_ATTRIBUTE), ["spam"])
 
         self.assertTrue(is_callable(fun))
+
+
+class TaskTests(unittest.TestCase):
+
+    def test_should_describe_task_when_description_decorator_is_used(self):
+        @task
+        @description("any-description")
+        def task_with_description():
+            pass
+
+        self.assertEqual(task_with_description._python_builder_task, True)
+        self.assertEqual(task_with_description._python_builder_description, "any-description")
+
+    def test_should_describe_named_task_when_description_decorator_is_used(self):
+        @task("any-task-name")
+        @description("any-description")
+        def task_with_description():
+            pass
+
+        self.assertEqual(task_with_description._python_builder_task, True)
+        self.assertEqual(task_with_description._python_builder_name, "any-task-name")
+        self.assertEqual(task_with_description._python_builder_description, "any-description")
+
+    def test_should_describe_named_task_when_description_kwarg_is_used(self):
+        @task("any-task-name", task_description="any-description")
+        def task_with_description():
+            pass
+
+        self.assertEqual(task_with_description._python_builder_task, True)
+        self.assertEqual(task_with_description._python_builder_name, "any-task-name")
+        self.assertEqual(task_with_description._python_builder_description, "any-description")
+
+    def test_should_describe_task_when_description_kwarg_is_used(self):
+        @task(task_description="any-description")
+        def task_with_description():
+            pass
+
+        self.assertEqual(task_with_description._python_builder_task, True)
+        self.assertEqual(task_with_description._python_builder_description, "any-description")
