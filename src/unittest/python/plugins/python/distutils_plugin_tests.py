@@ -235,11 +235,11 @@ if __name__ == '__main__':
 
         actual_setup_script = render_setup_script(self.project)
 
-        self.assertIn("""
+        self.assertTrue("""
           entry_points={
           'console_scripts':
               ['release = zest.releaser.release:main','prerelease = zest.releaser.prerelease:main']
-          },""", actual_setup_script)
+          },""" in actual_setup_script)
 
 
 class RenderManifestFileTest(unittest.TestCase):
