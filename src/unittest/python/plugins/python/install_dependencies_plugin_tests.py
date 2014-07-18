@@ -21,6 +21,7 @@ __author__ = "Alexander Metzner"
 import unittest
 
 from mockito import mock, when, verify, unstub, any as any_value
+from mock import patch
 
 from pybuilder.core import Project, Logger, Dependency
 from pybuilder.plugins.python.install_dependencies_plugin import (
@@ -52,6 +53,16 @@ class InstallDependencyTest(unittest.TestCase):
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
             "pip install 'spam'", any_value(), shell=True)
+
+    @patch("pybuilder.plugins.python.install_dependencies_plugin.sys.platform")
+    def test_should_install_dependency_without_version_on_windows_derivate(self, platform):
+        platform.return_value = "win32"
+        dependency = Dependency("spam")
+
+        install_dependency(self.logger, self.project, dependency)
+
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
+            "pip install spam", any_value(), shell=True)
 
     def test_should_install_dependency_insecurely_when_property_is_set(self):
         dependency = Dependency("spam")
