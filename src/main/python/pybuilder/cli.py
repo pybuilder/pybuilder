@@ -284,6 +284,8 @@ def print_list_of_tasks(reactor):
 
 
 def main(*args):
+    if not args:
+        args = sys.argv[1:]
     try:
         options, arguments = parse_options(args)
     except CommandLineUsageException as e:

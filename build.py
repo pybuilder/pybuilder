@@ -107,6 +107,7 @@ def initialize(project):
     # enable this to build a bdist on vagrant
     # project.set_property("distutils_issue8876_workaround_enabled", True)
     project.get_property("distutils_commands").append("bdist_wheel")
+    project.set_property("distutils_console_scripts", ["pyb_ = pybuilder.cli:main"])
     project.set_property("distutils_classifiers", [
                          'Programming Language :: Python',
                          'Programming Language :: Python :: Implementation :: CPython',

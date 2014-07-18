@@ -80,6 +80,10 @@ if __name__ == '__main__':
           packages = ['spam'],
           py_modules = ['standalone_module'],
           classifiers = ['Development Status :: 3 - Alpha', 'Programming Language :: Python'],
+          entry_points={
+          'console_scripts':
+              []
+          },
              #  data files
              # package data
           install_requires = [ "eggs==0.2.3", "spam" ],

@@ -217,6 +217,10 @@ if __name__ == '__main__':
           packages = ['spam', 'eggs'],
           py_modules = ['spam', 'eggs'],
           classifiers = ['Development Status :: 5 - Beta', 'Environment :: Console'],
+          entry_points={
+          'console_scripts':
+              []
+          },
           data_files = [('dir', ['file1', 'file2'])],   #  data files
           package_data = {'spam': ['eggs']},   # package data
           install_requires = [ "sometool" ],
@@ -224,6 +228,18 @@ if __name__ == '__main__':
           zip_safe=True
     )
 """, actual_setup_script)
+
+    def test_should_render_console_scripts_when_property_is_set(self):
+        self.project.set_property("distutils_console_scripts", ["release = zest.releaser.release:main",
+                                                                "prerelease = zest.releaser.prerelease:main"])
+
+        actual_setup_script = render_setup_script(self.project)
+
+        self.assertIn("""
+          entry_points={
+          'console_scripts':
+              ['release = zest.releaser.release:main','prerelease = zest.releaser.prerelease:main']
+          },""", actual_setup_script)
 
 
 class RenderManifestFileTest(unittest.TestCase):

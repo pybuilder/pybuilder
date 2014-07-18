@@ -53,6 +53,10 @@ if __name__ == '__main__':
           packages = $packages,
           py_modules = $modules,
           classifiers = $classifiers,
+          entry_points={
+          'console_scripts':
+              [$console_scripts]
+          },
           $data_files   #  data files
           $package_data   # package data
           $dependencies
@@ -95,6 +99,7 @@ def write_setup_script(project, logger):
 def render_setup_script(project):
     author = ", ".join(map(lambda a: a.name, project.authors))
     author_email = ", ".join(map(lambda a: a.email, project.authors))
+    console_scripts = project.get_property("distutils_console_scripts", [])
 
     template_values = {
         "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
@@ -110,6 +115,7 @@ def render_setup_script(project):
         "packages": str([package for package in project.list_packages()]),
         "modules": str([module for module in project.list_modules()]),
         "classifiers": project.get_property("distutils_classifiers"),
+        "console_scripts": ",".join(["'%s'" % stmt for stmt in console_scripts]),
         "data_files": build_data_files_string(project),
         "package_data": build_package_data_string(project),
         "dependencies": build_install_dependencies_string(project),
