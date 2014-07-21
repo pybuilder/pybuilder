@@ -115,7 +115,7 @@ def render_setup_script(project):
         "packages": str([package for package in project.list_packages()]),
         "modules": str([module for module in project.list_modules()]),
         "classifiers": project.get_property("distutils_classifiers"),
-        "console_scripts": ",".join(["'%s'" % stmt for stmt in console_scripts]),
+        "console_scripts": ",".join(["'%s'" % mapping for mapping in console_scripts]),
         "data_files": build_data_files_string(project),
         "package_data": build_package_data_string(project),
         "dependencies": build_install_dependencies_string(project),
