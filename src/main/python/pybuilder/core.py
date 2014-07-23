@@ -87,7 +87,7 @@ def init(*possible_callable, **additional_arguments):
     return do_decoration
 
 
-def task(callable_or_string=None, task_description=None):
+def task(callable_or_string=None, description=None):
     """
     Decorator for functions that should be used as tasks. Tasks are the main
     building blocks of projects.
@@ -98,19 +98,19 @@ def task(callable_or_string=None, task_description=None):
         def set_name_and_task_attribute(callable):
             setattr(callable, TASK_ATTRIBUTE, True)
             setattr(callable, NAME_ATTRIBUTE, callable_or_string)
-            if task_description:
-                setattr(callable, DESCRIPTION_ATTRIBUTE, task_description)
+            if description:
+                setattr(callable, DESCRIPTION_ATTRIBUTE, description)
             return callable
         return set_name_and_task_attribute
     else:
-        if not task_description:
+        if not description:
             setattr(callable_or_string, TASK_ATTRIBUTE, True)
             return callable_or_string
         else:
             def set_task_and_description_attribute(callable):
                 setattr(callable, TASK_ATTRIBUTE, True)
                 setattr(callable, NAME_ATTRIBUTE, callable_or_string)
-                setattr(callable, DESCRIPTION_ATTRIBUTE, task_description)
+                setattr(callable, DESCRIPTION_ATTRIBUTE, description)
                 return callable
             return set_task_and_description_attribute
 

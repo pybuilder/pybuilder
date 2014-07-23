@@ -473,7 +473,7 @@ class TaskTests(unittest.TestCase):
         self.assertEqual(task_with_description._python_builder_description, "any-description")
 
     def test_should_describe_named_task_when_description_kwarg_is_used(self):
-        @task("any-task-name", task_description="any-description")
+        @task("any-task-name", description="any-description")
         def task_with_description():
             pass
 
@@ -482,7 +482,7 @@ class TaskTests(unittest.TestCase):
         self.assertEqual(task_with_description._python_builder_description, "any-description")
 
     def test_should_describe_task_when_description_kwarg_is_used(self):
-        @task(task_description="any-description")
+        @task(description="any-description")
         def task_with_description():
             pass
 
