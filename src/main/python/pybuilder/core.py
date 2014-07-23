@@ -99,7 +99,7 @@ def task(callable_or_string=None, task_description=None):
             setattr(callable, TASK_ATTRIBUTE, True)
             setattr(callable, NAME_ATTRIBUTE, callable_or_string)
             if task_description:
-                description(task_description)(callable)()
+                setattr(callable, DESCRIPTION_ATTRIBUTE, task_description)
             return callable
         return set_name_and_task_attribute
     else:
@@ -110,7 +110,8 @@ def task(callable_or_string=None, task_description=None):
             def set_task_and_description_attribute(callable):
                 setattr(callable, TASK_ATTRIBUTE, True)
                 setattr(callable, NAME_ATTRIBUTE, callable_or_string)
-                return description(task_description)(callable)
+                setattr(callable, DESCRIPTION_ATTRIBUTE, task_description)
+                return callable
             return set_task_and_description_attribute
 
 
