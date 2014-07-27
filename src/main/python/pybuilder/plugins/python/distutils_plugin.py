@@ -192,7 +192,14 @@ def build_install_dependencies_string(project):
         return ""
 
     def format_single_dependency(dependency):
-        return '"%s%s"' % (dependency.name, build_dependency_version_string(dependency))
+        if dependency.is_a_requirements_file():
+            with open(dependency.filename, 'r') as requirements_file:
+                requirements = [d.strip("\n") for d in requirements_file.readlines()]
+                requirements = [d for d in requirements if d]
+                quoted_requirements = ['"%s"' % requirement for requirement in requirements]
+                return ", ".join(quoted_requirements)
+        else:
+            return '"%s%s"' % (dependency.name, build_dependency_version_string(dependency))
 
     result = "install_requires = [ "
     result += ", ".join(map(format_single_dependency, dependencies))

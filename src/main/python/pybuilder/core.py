@@ -208,6 +208,35 @@ class Dependency(object):
     def __lt__(self, other):
         return self.name < other.name
 
+    def is_a_requirements_file(self):
+        return False
+
+
+class RequirementsFileDependency(object):
+    """
+    Defines a dependency on a requirements file (requirements.txt).
+    """
+    def __init__(self, filename):
+        self.filename = filename
+        self.name = self.filename
+        self.version = None
+        self.url = None
+
+    def __eq__(self, other):
+        return self.name == other.name and self.version == other.version and self.url == other.url
+
+    def __ne__(self, other):
+        return not(self == other)
+
+    def __hash__(self):
+        return 13 * hash(self.name) + 17 * hash(self.version)
+
+    def __lt__(self, other):
+        return self.name < other.name
+
+    def is_a_requirements_file(self):
+        return True
+
 
 class Project(object):
     """
@@ -295,6 +324,12 @@ class Project(object):
 
     def build_depends_on(self, name, version=None, url=None):
         self._build_dependencies.add(Dependency(name, version, url))
+
+    def depends_on_requirements(self, file):
+        self._install_dependencies.add(RequirementsFileDependency(file))
+
+    def build_depends_on_requirements(self, file):
+        self._build_dependencies.add(RequirementsFileDependency(file))
 
     @property
     def manifest_included_files(self):

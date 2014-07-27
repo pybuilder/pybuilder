@@ -87,10 +87,10 @@ def install_dependency(logger, project, dependency):
     log_file = project.expand_path("$dir_install_logs", dependency.name)
 
     if sys.platform.startswith("win"):
-        dependency = as_pip_argument(dependency)
+        pip_dependency = as_pip_argument(dependency)
     else:
-        dependency = "'{0}'".format(as_pip_argument(dependency))
-    pip_command_line = "pip install {0}{1}".format(build_pip_install_options(project, dependency), dependency)
+        pip_dependency = "'{0}'".format(as_pip_argument(dependency))
+    pip_command_line = "pip install {0}{1}".format(build_pip_install_options(project, pip_dependency), pip_dependency)
     exit_code = execute_command(pip_command_line, log_file, shell=True)
     if exit_code != 0:
         if project.get_property("verbose"):
@@ -125,6 +125,8 @@ def build_pip_install_options(project, dependency):
 
 
 def as_pip_argument(dependency):
+    if dependency.is_a_requirements_file():
+        return "-r{0}".format(dependency.filename)
     if dependency.url:
         return dependency.url
     return "{0}{1}".format(dependency.name, build_dependency_version_string(dependency))
