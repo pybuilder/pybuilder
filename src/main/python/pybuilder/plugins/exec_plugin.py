@@ -20,6 +20,7 @@ from pybuilder.core import task, use_plugin
 from pybuilder.errors import BuildFailedException
 
 from subprocess import PIPE, Popen
+import sys
 
 use_plugin("core")
 
@@ -70,6 +71,7 @@ def run_command(phase, project, logger):
 
     process_handle = Popen(command_line, stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = process_handle.communicate()
+    stdout, stderr = stdout.decode(sys.stdout.encoding or 'utf-8'), stderr.decode(sys.stderr.encoding or 'utf-8')
     process_return_code = process_handle.returncode
 
     _write_command_report(project,
