@@ -16,6 +16,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+try:
+    from io import FileIO
+    TYPE_FILE = FileIO
+except ImportError:
+    TYPE_FILE = file
+
 import unittest
 
 from mock import patch, MagicMock
@@ -245,7 +251,7 @@ if __name__ == '__main__':
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     def test_should_render_runtime_dependencies_when_requirements_file_used(self, mock_open):
-        mock_open.return_value = MagicMock(spec=file)
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
         handle = mock_open.return_value.__enter__.return_value
         handle.readlines.return_value = ["", "foo", "bar"]
         self.project.depends_on_requirements("requirements.txt")
