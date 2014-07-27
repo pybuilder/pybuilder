@@ -17,10 +17,10 @@
 #   limitations under the License.
 
 try:
+    TYPE_FILE = file
+except NameError:
     from io import FileIO
     TYPE_FILE = FileIO
-except ImportError:
-    TYPE_FILE = file
 
 import unittest
 
