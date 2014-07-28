@@ -73,6 +73,8 @@ def analyze(project, logger):
                 errors.append(error)
     except Exception as e:
         logger.error("Jedi crashed: {0}".format(e))
+        import traceback
+        logger.debug(traceback.format_exc())
 
     number_of_errors = len(errors)
     output = logger.info if number_of_errors == 0 else logger.warn
