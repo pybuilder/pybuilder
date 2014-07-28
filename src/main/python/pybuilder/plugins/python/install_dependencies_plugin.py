@@ -98,7 +98,7 @@ def install_dependency(logger, project, dependency):
             raise BuildFailedException("Unable to install dependency '%s'.", dependency.name)
         else:
             raise BuildFailedException("Unable to install dependency '%s'. See %s for details.",
-                                       dependency.name,
+                                       getattr(dependency, "name", dependency),
                                        log_file)
 
 
