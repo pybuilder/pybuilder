@@ -24,6 +24,8 @@
 
 __author__ = 'Maximilien Riehl'
 
+import os
+
 try:
     import jedi
 except ImportError:
@@ -51,12 +53,14 @@ def assert_jedi_is_installed(logger):
     if not jedi:
         raise MissingPrerequisiteException("Missing build dependency `jedi`, please install_dependencies first.")
     if "_analysis" not in dir(jedi.Script):
-        raise InternalException("The jedi linter API changed, please contact the authors")
+        raise InternalException(
+            "The jedi linter API changed, please file a bug at https://github.com/pybuilder/pybuilder/issues/new")
 
 
 @task
 @depends("prepare")
 def analyze(project, logger):
+    root_directory = os.getcwd()
     source_modules = discover_files_matching(project.get_property("dir_source_main_python"),
                                              "*.py")
     errors = []
@@ -79,3 +83,5 @@ def analyze(project, logger):
 
     if project.get_property("jedi_linter_break_build") and number_of_errors > 0:
         raise BuildFailedException("Jedi linter found errors")
+
+    os.chdir(root_directory)  # jedi chdirs into directories, so undo it
