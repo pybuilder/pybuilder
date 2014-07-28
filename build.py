@@ -42,6 +42,8 @@ use_plugin("python.unittest")
 use_plugin("python.integrationtest")
 use_plugin("python.flake8")
 use_plugin("python.frosted")
+use_plugin("python.jedi_linter")
+
 
 if not sys.version_info[0:2] == (3, 2):
     use_plugin("python.cram")
@@ -88,10 +90,6 @@ def initialize(project):
     project.get_property("coverage_exceptions").append("pybuilder.cli")
     project.get_property("coverage_exceptions").append("pybuilder.plugins.core_plugin")
 
-    project.set_property("copy_resources_target", "$dir_dist")
-    project.get_property("copy_resources_glob").append("LICENSE")
-    project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
-
     project.set_property('flake8_break_build', True)
     project.set_property('flake8_include_test_sources', True)
     project.set_property('flake8_include_scripts', True)
@@ -99,6 +97,10 @@ def initialize(project):
 
     project.set_property('frosted_include_test_sources', True)
     project.set_property('frosted_include_scripts', True)
+
+    project.set_property("copy_resources_target", "$dir_dist")
+    project.get_property("copy_resources_glob").append("LICENSE")
+    project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
 
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
