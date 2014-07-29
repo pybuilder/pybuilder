@@ -51,7 +51,7 @@ def initialize_jedi_linter_plugin(project, logger):
 @after("prepare")
 def assert_jedi_is_installed(logger):
     if not jedi:
-        raise MissingPrerequisiteException("Missing build dependency `jedi`, please install_dependencies first.")
+        raise MissingPrerequisiteException("'jedi'", caller="jedi_linter_plugin")
     if "_analysis" not in dir(jedi.Script):
         raise InternalException(
             "The jedi linter API changed, please file a bug at https://github.com/pybuilder/pybuilder/issues/new")
