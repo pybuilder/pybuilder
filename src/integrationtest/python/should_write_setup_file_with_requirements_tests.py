@@ -92,7 +92,7 @@ if __name__ == '__main__':
           },
              #  data files
              # package data
-          install_requires = [ "awesome>=1.3.37", "foo==42", "eggs==0.2.3", "spam" ],
+          install_requires = [ "eggs==0.2.3", "spam", "awesome>=1.3.37", "foo==42" ],
           dependency_links = [ "https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz" ],
           zip_safe=True
     )

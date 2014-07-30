@@ -258,7 +258,7 @@ if __name__ == '__main__':
 
         actual_setup_script = render_setup_script(self.project)
 
-        self.assertTrue('install_requires = [ "foo", "bar", "sometool" ],' in actual_setup_script)
+        self.assertTrue('install_requires = [ "sometool", "foo", "bar" ],' in actual_setup_script)
 
 
 class RenderManifestFileTest(unittest.TestCase):

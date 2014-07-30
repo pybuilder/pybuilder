@@ -26,7 +26,7 @@ from mock import patch
 from pybuilder.core import (Project,
                             Logger,
                             Dependency,
-                            RequirementsFileDependency)
+                            RequirementsFile)
 from pybuilder.plugins.python.install_dependencies_plugin import (
     install_runtime_dependencies,
     install_build_dependencies,
@@ -58,7 +58,7 @@ class InstallDependencyTest(unittest.TestCase):
             "pip install 'spam'", any_value(), shell=True)
 
     def test_should_install_requirements_file_dependency(self):
-        dependency = RequirementsFileDependency("requirements.txt")
+        dependency = RequirementsFile("requirements.txt")
 
         install_dependency(self.logger, self.project, dependency)
 

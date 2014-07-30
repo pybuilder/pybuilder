@@ -22,7 +22,13 @@ __author__ = "Alexander Metzner"
 
 import sys
 
-from pybuilder.core import before, after, task, description, use_plugin, init
+from pybuilder.core import (before,
+                            after,
+                            task,
+                            description,
+                            use_plugin,
+                            init,
+                            RequirementsFile)
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import assert_can_execute, execute_command, mkdir
 from pybuilder.plugins.python.setuptools_plugin_helper import build_dependency_version_string
@@ -83,12 +89,16 @@ def create_install_log_directory(logger, project):
 
 
 def install_dependency(logger, project, dependency):
-    logger.info("Installing dependency '%s'%s", dependency.name, " from %s" % dependency.url if dependency.url else "")
+    url = getattr(dependency, "url", None)
+    logger.info("Installing dependency '%s'%s", dependency.name,
+                " from %s" % url if url else "")
     log_file = project.expand_path("$dir_install_logs", dependency.name)
 
     if sys.platform.startswith("win"):
+        # we can't use quotes on windows
         pip_dependency = as_pip_argument(dependency)
     else:
+        # on linux we need quotes because version pinning (>=) would be an IO redirect
         pip_dependency = "'{0}'".format(as_pip_argument(dependency))
     pip_command_line = "pip install {0}{1}".format(build_pip_install_options(project, pip_dependency), pip_dependency)
     exit_code = execute_command(pip_command_line, log_file, shell=True)
@@ -125,8 +135,8 @@ def build_pip_install_options(project, dependency):
 
 
 def as_pip_argument(dependency):
-    if dependency.is_a_requirements_file():
-        return "-r{0}".format(dependency.filename)
+    if isinstance(dependency, RequirementsFile):
+        return "-r{0}".format(dependency.name)
     if dependency.url:
         return dependency.url
     return "{0}{1}".format(dependency.name, build_dependency_version_string(dependency))
