@@ -233,6 +233,9 @@ class RequirementsFile(object):
             return False
         return self.name < other.name
 
+    def __hash__(self):
+        return 42 * hash(self.name)
+
 
 class Project(object):
     """
