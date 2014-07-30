@@ -80,4 +80,8 @@ External plugins:
 
 ## Release Notes
 
-The release notes can be found [here](http://pybuilder.github.com/releasenotes/)
+The release notes can be found [here](http://pybuilder.github.com/releasenotes/).
+There will also be a git tag with each release. Please note that we do not currently promote tags to GitHub "releases".
+
+## Development
+See [developing PyBuilder](http://pybuilder.github.io/documentation/developing_pybuilder.html)
