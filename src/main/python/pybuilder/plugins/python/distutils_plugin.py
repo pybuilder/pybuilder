@@ -190,12 +190,20 @@ def build_binary_distribution(project, logger):
                     "Error while executing setup command %s", command)
 
 
-def flatten(requirements_file):
+def strip_comments(requirements):
+    return [requirement for requirement in requirements
+            if not requirement.strip().startswith("#")]
+
+
+def quote(requirements):
+    return ['"%s"' % requirement for requirement in requirements]
+
+
+def flatten_and_quote(requirements_file):
     with open(requirements_file.name, 'r') as requirements_file:
         requirements = [d.strip("\n") for d in requirements_file.readlines()]
         requirements = [d for d in requirements if d]
-        quoted_requirements = ['"%s"' % requirement for requirement in requirements]
-        return quoted_requirements
+        return quote(strip_comments(requirements))
 
 
 def format_single_dependency(dependency):
@@ -214,7 +222,7 @@ def build_install_dependencies_string(project):
         return ""
 
     dependencies = [format_single_dependency(dependency) for dependency in dependencies]
-    requirements = [flatten(requirement) for requirement in requirements]
+    requirements = [strip_comments(flatten_and_quote(requirement)) for requirement in requirements]
     flattened_requirements = [dependency for dependency_list in requirements for dependency in dependency_list]
 
     dependencies.extend(flattened_requirements)

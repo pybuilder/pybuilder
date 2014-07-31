@@ -74,6 +74,46 @@ class InstallDependenciesTest(unittest.TestCase):
         self.assertEqual(
             'install_requires = [ "spam==0.7" ],', build_install_dependencies_string(self.project))
 
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    def test_should_quote_requirements(self, mock_open):
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
+        handle = mock_open.return_value.__enter__.return_value
+        handle.readlines.return_value = ["foo", "bar"]
+        self.project.depends_on_requirements("requirements.txt")
+
+        self.assertEqual(
+            'install_requires = [ "foo", "bar" ],', build_install_dependencies_string(self.project))
+
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    def test_should_ignore_empty_requirement_lines(self, mock_open):
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
+        handle = mock_open.return_value.__enter__.return_value
+        handle.readlines.return_value = ["", "foo", "bar"]
+        self.project.depends_on_requirements("requirements.txt")
+
+        self.assertEqual(
+            'install_requires = [ "foo", "bar" ],', build_install_dependencies_string(self.project))
+
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    def test_should_ignore_comments_from_requirements(self, mock_open):
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
+        handle = mock_open.return_value.__enter__.return_value
+        handle.readlines.return_value = ["#comment", "bar"]
+        self.project.depends_on_requirements("requirements.txt")
+
+        self.assertEqual(
+            'install_requires = [ "bar" ],', build_install_dependencies_string(self.project))
+
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    def test_should_ignore_comments_with_leading_space_from_requirements(self, mock_open):
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
+        handle = mock_open.return_value.__enter__.return_value
+        handle.readlines.return_value = [" # comment", "bar"]
+        self.project.depends_on_requirements("requirements.txt")
+
+        self.assertEqual(
+            'install_requires = [ "bar" ],', build_install_dependencies_string(self.project))
+
 
 class DependencyLinksTest(unittest.TestCase):
 
