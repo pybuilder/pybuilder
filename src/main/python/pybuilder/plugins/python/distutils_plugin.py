@@ -201,8 +201,8 @@ def quote(requirements):
 
 def flatten_and_quote(requirements_file):
     with open(requirements_file.name, 'r') as requirements_file:
-        requirements = [d.strip("\n") for d in requirements_file.readlines()]
-        requirements = [d for d in requirements if d]
+        requirements = [requirement.strip("\n") for requirement in requirements_file.readlines()]
+        requirements = [requirement for requirement in requirements if requirement]
         return quote(strip_comments(requirements))
 
 
