@@ -197,6 +197,8 @@ class Dependency(object):
         self.url = url
 
     def __eq__(self, other):
+        if not isinstance(other, Dependency):
+            return False
         return self.name == other.name and self.version == other.version and self.url == other.url
 
     def __ne__(self, other):
@@ -206,7 +208,33 @@ class Dependency(object):
         return 13 * hash(self.name) + 17 * hash(self.version)
 
     def __lt__(self, other):
+        if not isinstance(other, Dependency):
+            return True
         return self.name < other.name
+
+
+class RequirementsFile(object):
+    """
+    Represents all dependencies in a requirements file (requirements.txt).
+    """
+    def __init__(self, filename):
+        self.name = filename
+
+    def __eq__(self, other):
+        if not isinstance(other, RequirementsFile):
+            return False
+        return self.name == other.name
+
+    def __ne__(self, other):
+        return not(self == other)
+
+    def __lt__(self, other):
+        if not isinstance(other, RequirementsFile):
+            return False
+        return self.name < other.name
+
+    def __hash__(self):
+        return 42 * hash(self.name)
 
 
 class Project(object):
@@ -295,6 +323,12 @@ class Project(object):
 
     def build_depends_on(self, name, version=None, url=None):
         self._build_dependencies.add(Dependency(name, version, url))
+
+    def depends_on_requirements(self, file):
+        self._install_dependencies.add(RequirementsFile(file))
+
+    def build_depends_on_requirements(self, file):
+        self._build_dependencies.add(RequirementsFile(file))
 
     @property
     def manifest_included_files(self):

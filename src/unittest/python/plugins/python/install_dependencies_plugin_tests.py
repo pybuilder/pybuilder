@@ -23,7 +23,10 @@ import unittest
 from mockito import mock, when, verify, unstub, any as any_value
 from mock import patch
 
-from pybuilder.core import Project, Logger, Dependency
+from pybuilder.core import (Project,
+                            Logger,
+                            Dependency,
+                            RequirementsFile)
 from pybuilder.plugins.python.install_dependencies_plugin import (
     install_runtime_dependencies,
     install_build_dependencies,
@@ -53,6 +56,14 @@ class InstallDependencyTest(unittest.TestCase):
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
             "pip install 'spam'", any_value(), shell=True)
+
+    def test_should_install_requirements_file_dependency(self):
+        dependency = RequirementsFile("requirements.txt")
+
+        install_dependency(self.logger, self.project, dependency)
+
+        verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
+            "pip install '-rrequirements.txt'", any_value(), shell=True)
 
     @patch("pybuilder.plugins.python.install_dependencies_plugin.sys.platform")
     def test_should_install_dependency_without_version_on_windows_derivate(self, platform):
@@ -192,6 +203,7 @@ class InstallRuntimeDependenciesTest(unittest.TestCase):
     def test_should_install_multiple_dependencies(self):
         self.project.depends_on("spam")
         self.project.depends_on("eggs")
+        self.project.depends_on_requirements("requirements.txt")
 
         install_runtime_dependencies(self.logger, self.project)
 
@@ -200,6 +212,9 @@ class InstallRuntimeDependenciesTest(unittest.TestCase):
                                                                                   any_value(), shell=True)
         verify(
             pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install 'eggs'",
+                                                                                  any_value(), shell=True)
+        verify(
+            pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install '-rrequirements.txt'",
                                                                                   any_value(), shell=True)
 
 
@@ -219,6 +234,7 @@ class InstallBuildDependenciesTest(unittest.TestCase):
     def test_should_install_multiple_dependencies(self):
         self.project.build_depends_on("spam")
         self.project.build_depends_on("eggs")
+        self.project.build_depends_on_requirements("requirements-dev.txt")
 
         install_build_dependencies(self.logger, self.project)
 
@@ -227,6 +243,9 @@ class InstallBuildDependenciesTest(unittest.TestCase):
                                                                                   any_value(), shell=True)
         verify(
             pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install 'eggs'",
+                                                                                  any_value(), shell=True)
+        verify(
+            pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install '-rrequirements-dev.txt'",
                                                                                   any_value(), shell=True)
 
 

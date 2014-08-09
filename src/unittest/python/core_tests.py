@@ -24,7 +24,8 @@ from pyassert import assert_that
 from mockito import when, verify, unstub
 
 from pybuilder.core import (Project, Logger, init, INITIALIZER_ATTRIBUTE,
-                            ENVIRONMENTS_ATTRIBUTE, task, description)
+                            ENVIRONMENTS_ATTRIBUTE, task, description,
+                            Dependency, RequirementsFile)
 from pybuilder.errors import MissingPropertyException
 
 
@@ -488,3 +489,94 @@ class TaskTests(unittest.TestCase):
 
         self.assertEqual(task_with_description._python_builder_task, True)
         self.assertEqual(task_with_description._python_builder_description, "any-description")
+
+
+class RequirementsFileTests(unittest.TestCase):
+
+    def test_requirements_file_should_be_equal_to_itself(self):
+        requirements_file = RequirementsFile("requirements.txt")
+        self.assertTrue(requirements_file == requirements_file)
+
+    def test_requirements_file_should_not_be_unequal_to_itself(self):
+        requirements_file = RequirementsFile("requirements.txt")
+        self.assertFalse(requirements_file != requirements_file)
+
+    def test_requirements_file_should_not_be_equal_to_other_when_names_differ(self):
+        requirements_file = RequirementsFile("requirements.txt")
+        dev_requirements_file = RequirementsFile("requirements-dev.txt")
+        self.assertFalse(requirements_file == dev_requirements_file)
+
+    def test_requirements_file_should_be_unequal_to_other_when_names_differ(self):
+        requirements_file = RequirementsFile("requirements.txt")
+        dev_requirements_file = RequirementsFile("requirements-dev.txt")
+        self.assertTrue(requirements_file != dev_requirements_file)
+
+    def test_requirements_file_should_be_lesser_than_other_when_name_is_lesser(self):
+        requirements_file = RequirementsFile("requirements.txt")
+        dev_requirements_file = RequirementsFile("requirements-dev.txt")
+        self.assertTrue(requirements_file > dev_requirements_file)
+
+
+class DependencyTests(unittest.TestCase):
+
+    def test_requirements_file_should_be_equal_to_itself(self):
+        dependency = Dependency("foo")
+        self.assertTrue(dependency == dependency)
+
+    def test_dependency_should_not_be_unequal_to_itself(self):
+        dependency = Dependency("foo")
+        self.assertFalse(dependency != dependency)
+
+    def test_dependency_should_not_be_equal_to_other_when_names_differ(self):
+        dependency = Dependency("foo")
+        other_dependency = Dependency("foa")
+        self.assertFalse(dependency == other_dependency)
+
+    def test_dependency_should_be_unequal_to_other_when_names_differ(self):
+        dependency = Dependency("foo")
+        other_dependency = Dependency("foa")
+        self.assertTrue(dependency != other_dependency)
+
+    def test_dependency_should_be_lesser_than_other_when_name_is_lesser(self):
+        dependency = Dependency("foo")
+        other_dependency = Dependency("foa")
+        self.assertTrue(dependency > other_dependency)
+
+
+class DependencyAndRequirementsFileTests(unittest.TestCase):
+
+    def test_requirements_file_should_not_be_equal_to_dependency(self):
+        dependency = Dependency("foo")
+        requirements = RequirementsFile("requirements.txt")
+
+        self.assertFalse(dependency == requirements)
+
+    def test_requirements_file_should_not_be_equal_to_dependency_even_when_name_matches(self):
+        dependency = Dependency("foo")
+        requirements = RequirementsFile("foo")
+
+        self.assertFalse(dependency == requirements)
+
+    def test_requirements_file_should_be_unequal_to_dependency(self):
+        dependency = Dependency("foo")
+        requirements = RequirementsFile("requirements.txt")
+
+        self.assertTrue(dependency != requirements)
+
+    def test_requirements_file_should_be_unequal_to_dependency_even_when_name_matches(self):
+        dependency = Dependency("foo")
+        requirements = RequirementsFile("foo")
+
+        self.assertTrue(dependency != requirements)
+
+    def test_requirements_should_always_be_greater_than_dependencies(self):
+        dependency = Dependency("foo")
+        requirements = RequirementsFile("requirements.txt")
+
+        self.assertTrue(requirements > dependency)
+
+    def test_requirements_should_always_be_greater_than_dependencies_even_when_name_matches(self):
+        dependency = Dependency("foo")
+        requirements = RequirementsFile("foo")
+
+        self.assertTrue(requirements > dependency)

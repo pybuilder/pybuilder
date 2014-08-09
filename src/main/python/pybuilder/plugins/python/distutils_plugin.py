@@ -26,7 +26,12 @@ try:
 except ImportError as e:
     from io import StringIO
 
-from pybuilder.core import after, before, use_plugin, init
+from pybuilder.core import (after,
+                            before,
+                            use_plugin,
+                            init,
+                            RequirementsFile,
+                            Dependency)
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import as_list
 
@@ -185,24 +190,53 @@ def build_binary_distribution(project, logger):
                     "Error while executing setup command %s", command)
 
 
+def strip_comments(requirements):
+    return [requirement for requirement in requirements
+            if not requirement.strip().startswith("#")]
+
+
+def quote(requirements):
+    return ['"%s"' % requirement for requirement in requirements]
+
+
+def flatten_and_quote(requirements_file):
+    with open(requirements_file.name, 'r') as requirements_file:
+        requirements = [requirement.strip("\n") for requirement in requirements_file.readlines()]
+        requirements = [requirement for requirement in requirements if requirement]
+        return quote(strip_comments(requirements))
+
+
+def format_single_dependency(dependency):
+    return '"%s%s"' % (dependency.name, build_dependency_version_string(dependency))
+
+
 def build_install_dependencies_string(project):
     dependencies = [
-        dependency for dependency in project.dependencies if not dependency.url]
-    if not dependencies:
+        dependency for dependency in project.dependencies
+        if isinstance(dependency, Dependency)
+        and not dependency.url]
+    requirements = [
+        requirements for requirements in project.dependencies
+        if isinstance(requirements, RequirementsFile)]
+    if not dependencies and not requirements:
         return ""
 
-    def format_single_dependency(dependency):
-        return '"%s%s"' % (dependency.name, build_dependency_version_string(dependency))
+    dependencies = [format_single_dependency(dependency) for dependency in dependencies]
+    requirements = [strip_comments(flatten_and_quote(requirement)) for requirement in requirements]
+    flattened_requirements = [dependency for dependency_list in requirements for dependency in dependency_list]
+
+    dependencies.extend(flattened_requirements)
 
     result = "install_requires = [ "
-    result += ", ".join(map(format_single_dependency, dependencies))
+    result += ", ".join(dependencies)
     result += " ],"
     return result
 
 
 def build_dependency_links_string(project):
     dependency_links = [
-        dependency for dependency in project.dependencies if dependency.url]
+        dependency for dependency in project.dependencies
+        if isinstance(dependency, Dependency) and dependency.url]
     if not dependency_links:
         return ""
 

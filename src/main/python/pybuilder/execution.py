@@ -38,11 +38,11 @@ from pybuilder.utils import as_list, Timer
 
 def as_task_name_list(mixed):
     result = []
-    for d in as_list(mixed):
-        if isinstance(d, types.FunctionType):
-            result.append(d.__name__)
+    for item in as_list(mixed):
+        if isinstance(item, types.FunctionType):
+            result.append(item.__name__)
         else:
-            result.append(str(d))
+            result.append(str(item))
     return result
 
 

@@ -16,7 +16,15 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+try:
+    TYPE_FILE = file
+except NameError:
+    from io import FileIO
+    TYPE_FILE = FileIO
+
 import unittest
+
+from mock import patch, MagicMock
 
 from test_utils import PyBuilderTestCase
 from pybuilder.core import Project, Author
@@ -65,6 +73,46 @@ class InstallDependenciesTest(unittest.TestCase):
         self.project.depends_on("spam", "==0.7")
         self.assertEqual(
             'install_requires = [ "spam==0.7" ],', build_install_dependencies_string(self.project))
+
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    def test_should_quote_requirements(self, mock_open):
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
+        handle = mock_open.return_value.__enter__.return_value
+        handle.readlines.return_value = ["foo", "bar"]
+        self.project.depends_on_requirements("requirements.txt")
+
+        self.assertEqual(
+            'install_requires = [ "foo", "bar" ],', build_install_dependencies_string(self.project))
+
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    def test_should_ignore_empty_requirement_lines(self, mock_open):
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
+        handle = mock_open.return_value.__enter__.return_value
+        handle.readlines.return_value = ["", "foo", "bar"]
+        self.project.depends_on_requirements("requirements.txt")
+
+        self.assertEqual(
+            'install_requires = [ "foo", "bar" ],', build_install_dependencies_string(self.project))
+
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    def test_should_ignore_comments_from_requirements(self, mock_open):
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
+        handle = mock_open.return_value.__enter__.return_value
+        handle.readlines.return_value = ["#comment", "bar"]
+        self.project.depends_on_requirements("requirements.txt")
+
+        self.assertEqual(
+            'install_requires = [ "bar" ],', build_install_dependencies_string(self.project))
+
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    def test_should_ignore_comments_with_leading_space_from_requirements(self, mock_open):
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
+        handle = mock_open.return_value.__enter__.return_value
+        handle.readlines.return_value = [" # comment", "bar"]
+        self.project.depends_on_requirements("requirements.txt")
+
+        self.assertEqual(
+            'install_requires = [ "bar" ],', build_install_dependencies_string(self.project))
 
 
 class DependencyLinksTest(unittest.TestCase):
@@ -240,6 +288,17 @@ if __name__ == '__main__':
           'console_scripts':
               ['release = zest.releaser.release:main','prerelease = zest.releaser.prerelease:main']
           },""" in actual_setup_script)
+
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    def test_should_render_runtime_dependencies_when_requirements_file_used(self, mock_open):
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
+        handle = mock_open.return_value.__enter__.return_value
+        handle.readlines.return_value = ["", "foo", "bar"]
+        self.project.depends_on_requirements("requirements.txt")
+
+        actual_setup_script = render_setup_script(self.project)
+
+        self.assertTrue('install_requires = [ "sometool", "foo", "bar" ],' in actual_setup_script)
 
 
 class RenderManifestFileTest(unittest.TestCase):
