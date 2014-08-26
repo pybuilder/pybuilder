@@ -57,7 +57,6 @@ class ProjectDictWrapper(object):
         self.project = project
 
     def __getitem__(self, key):
-        if hasattr(self.project, key):
-            return getattr(self.project, key)
-
-        return self.project.get_property(key, key)
+        default_value = "${%s}" % key
+        fallback_value = self.project.get_property(key, default_value)
+        return getattr(self.project, key, fallback_value)

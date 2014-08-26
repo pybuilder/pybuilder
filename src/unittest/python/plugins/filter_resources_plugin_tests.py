@@ -18,7 +18,7 @@
 
 import unittest
 
-from mockito import when, verify, never
+from mockito import when, verify, never, any
 from test_utils import mock
 
 from pybuilder.core import Project
@@ -36,8 +36,8 @@ class ProjectDictWrapperTest (unittest.TestCase):
 
     def test_should_delegate_to_project_get_property_when_attribute_is_not_defined(self):
         project_mock = Project(".")
-        when(project_mock).get_property("spam", "spam").thenReturn("eggs")
+        when(project_mock).get_property("spam", any()).thenReturn("eggs")
 
         self.assertEquals("eggs", ProjectDictWrapper(project_mock)["spam"])
 
-        verify(project_mock).get_property("spam", "spam")
+        verify(project_mock).get_property("spam", "${spam}")
