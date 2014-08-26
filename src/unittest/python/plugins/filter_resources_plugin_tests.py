@@ -16,27 +16,26 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import unittest
-
-from mockito import when, verify, never, any
-from test_utils import mock
+from fluentmock import UnitTests, ANY_VALUE, when, verify, NEVER
+from mock import Mock
 
 from pybuilder.core import Project
 from pybuilder.plugins.filter_resources_plugin import ProjectDictWrapper
 
 
-class ProjectDictWrapperTest (unittest.TestCase):
+class ProjectDictWrapperTest(UnitTests):
 
     def test_should_return_project_property_when_property_is_defined(self):
-        project_mock = mock(Project, name="my name")
+        project_mock = Mock(Project)
+        project_mock.name = "my name"
 
         self.assertEquals("my name", ProjectDictWrapper(project_mock)["name"])
 
-        verify(project_mock, never).get_property("name", "name")
+        verify(project_mock, NEVER).get_property("name", "name")
 
     def test_should_delegate_to_project_get_property_when_attribute_is_not_defined(self):
         project_mock = Project(".")
-        when(project_mock).get_property("spam", any()).thenReturn("eggs")
+        when(project_mock).get_property("spam", ANY_VALUE).then_return("eggs")
 
         self.assertEquals("eggs", ProjectDictWrapper(project_mock)["spam"])
 
