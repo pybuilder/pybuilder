@@ -53,10 +53,12 @@ def filter_resource(absolute_file_name, relative_file_name, dictionary, logger):
 
 
 class ProjectDictWrapper(object):
+
     def __init__(self, project):
         self.project = project
 
     def __getitem__(self, key):
-        default_value = "${%s}" % key
-        fallback_value = self.project.get_property(key, default_value)
-        return getattr(self.project, key, fallback_value)
+        fallback_when_no_substitution_found = "${%s}" % key
+        project_property_or_fallback = self.project.get_property(key,
+                                                                 fallback_when_no_substitution_found)
+        return getattr(self.project, key, project_property_or_fallback)
