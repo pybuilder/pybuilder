@@ -50,6 +50,5 @@ class ProjectDictWrapperTest(UnitTests):
         self.assertEquals("${n/a}", ProjectDictWrapper(project_mock, logger_mock)["n/a"])
 
         verify(project_mock, NEVER).get_property("n/a")
-        # verify(logger_mock).warn()  TODO @mriehl Why doesn't this work???
-        logger_mock.warn.assert_called_with(
+        verify(logger_mock).warn(
             "Skipping impossible substitution for 'n/a' - there is no matching project attribute or property.")
