@@ -9,6 +9,7 @@ python:
   - "pypy"
 
 before_script:
+  - pip freeze
   - sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm
   - sudo apt-get install pymetrics pychecker pylint pep8
   - pip install coveralls
