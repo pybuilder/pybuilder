@@ -40,7 +40,7 @@ class ProjectDictWrapperTest(UnitTests):
 
         self.assertEquals("eggs", ProjectDictWrapper(project_mock, Mock())["spam"])
 
-        verify(project_mock).get_property("spammy")
+        verify(project_mock).get_property("spam")
 
     def test_should_warn_when_substitution_is_skipped(self):
         project_mock = Project(".")
