@@ -40,24 +40,30 @@ def filter_resources(project, logger):
     target = project.expand_path("$filter_resources_target")
     logger.info("Filter resources matching %s in %s", " ".join(globs), target)
 
-    project_dict_wrapper = ProjectDictWrapper(project)
+    project_dict_wrapper = ProjectDictWrapper(project, logger)
 
     apply_on_files(target, filter_resource, globs, project_dict_wrapper, logger)
 
 
-def filter_resource(absolute_file_name, relative_file_name, dict, logger):
+def filter_resource(absolute_file_name, relative_file_name, dictionary, logger):
     logger.debug("Filtering resource %s", absolute_file_name)
     content = "".join(read_file(absolute_file_name))
-    filtered = string.Template(content).safe_substitute(dict)
+    filtered = string.Template(content).safe_substitute(dictionary)
     write_file(absolute_file_name, filtered)
 
 
 class ProjectDictWrapper(object):
-    def __init__(self, project):
+
+    def __init__(self, project, logger):
         self.project = project
+        self.logger = logger
 
     def __getitem__(self, key):
+        fallback_when_no_substitution_possible = "${%s}" % key
         if hasattr(self.project, key):
             return getattr(self.project, key)
-
-        return self.project.get_property(key, key)
+        if self.project.has_property(key):
+            return self.project.get_property(key)
+        self.logger.warn(
+            "Skipping impossible substitution for '{0}' - there is no matching project attribute or property.".format(key))
+        return fallback_when_no_substitution_possible

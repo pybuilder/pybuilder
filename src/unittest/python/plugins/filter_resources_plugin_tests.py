@@ -16,28 +16,39 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import unittest
-
-from mockito import when, verify, never
-from test_utils import mock
+from fluentmock import UnitTests, when, verify, NEVER
+from mock import Mock
 
 from pybuilder.core import Project
 from pybuilder.plugins.filter_resources_plugin import ProjectDictWrapper
 
 
-class ProjectDictWrapperTest (unittest.TestCase):
+class ProjectDictWrapperTest(UnitTests):
 
     def test_should_return_project_property_when_property_is_defined(self):
-        project_mock = mock(Project, name="my name")
+        project_mock = Mock(Project)
+        project_mock.name = "my name"
 
-        self.assertEquals("my name", ProjectDictWrapper(project_mock)["name"])
+        self.assertEquals("my name", ProjectDictWrapper(project_mock, Mock())["name"])
 
-        verify(project_mock, never).get_property("name", "name")
+        verify(project_mock, NEVER).get_property("name", "name")
 
     def test_should_delegate_to_project_get_property_when_attribute_is_not_defined(self):
         project_mock = Project(".")
-        when(project_mock).get_property("spam", "spam").thenReturn("eggs")
+        when(project_mock).has_property("spam").then_return(True)
+        when(project_mock).get_property("spam").then_return("eggs")
 
-        self.assertEquals("eggs", ProjectDictWrapper(project_mock)["spam"])
+        self.assertEquals("eggs", ProjectDictWrapper(project_mock, Mock())["spam"])
 
-        verify(project_mock).get_property("spam", "spam")
+        verify(project_mock).get_property("spam")
+
+    def test_should_warn_when_substitution_is_skipped(self):
+        project_mock = Project(".")
+        logger_mock = Mock()
+        when(project_mock).has_property("n/a").then_return(False)
+
+        self.assertEquals("${n/a}", ProjectDictWrapper(project_mock, logger_mock)["n/a"])
+
+        verify(project_mock, NEVER).get_property("n/a")
+        verify(logger_mock).warn(
+            "Skipping impossible substitution for 'n/a' - there is no matching project attribute or property.")
