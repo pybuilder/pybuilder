@@ -42,7 +42,6 @@ use_plugin("python.unittest")
 use_plugin("python.integrationtest")
 use_plugin("python.flake8")
 use_plugin("python.frosted")
-use_plugin("python.jedi_linter")
 
 
 if not sys.version_info[0:2] == (3, 2):
