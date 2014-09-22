@@ -33,13 +33,28 @@ from fluentmock import when, verify, Mock, ANY_STRING, UnitTests
 class TaskListTests(UnitTests):
 
     def set_up(self):
+        def __eq__(self, other):
+            return False
+
+        def __ne__(self, other):
+            return not self.__eq__(other)
+
+        def __lt__(self, other):
+            return False
+
         self.mock_reactor = Mock()
         self.mock_reactor.project.name = "any-project-name"
         self.task_1 = Mock()
+        self.task_1.__eq__ = __eq__
+        self.task_1.__ne__ = __ne__
+        self.task_1.__lt__ = __lt__
         self.task_1.name = "task-1"
         self.task_1.description = ""
         self.task_1.dependencies = []
         self.task_2 = Mock()
+        self.task_2.__eq__ = __eq__
+        self.task_2.__ne__ = __ne__
+        self.task_2.__lt__ = __lt__
         self.task_2.name = "task-2"
         self.task_2.description = ""
         self.task_2.dependencies = []
