@@ -266,7 +266,7 @@ def print_list_of_tasks(reactor, quiet=False):
 
     tasks = reactor.get_tasks()
     if quiet:
-        print_text_line(" ".join(map(lambda task: task.name, tasks)))
+        print_text_line(" ".join([task.name for task in tasks]))
         return
     column_length = length_of_longest_string(
         list(map(lambda task: task.name, tasks)))
