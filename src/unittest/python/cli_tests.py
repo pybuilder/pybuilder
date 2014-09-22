@@ -18,12 +18,97 @@
 
 import unittest
 
+import pybuilder
 from pybuilder.cli import (parse_options,
                            ColoredStdOutLogger,
                            CommandLineUsageException,
                            StdOutLogger,
-                           length_of_longest_string)
+                           length_of_longest_string,
+                           print_list_of_tasks)
 from pybuilder.core import Logger
+
+from fluentmock import when, verify, Mock, ANY_STRING, UnitTests
+
+
+class TaskListTests(UnitTests):
+
+    def test_should_render_minimal_task_list_when_in_quiet_mode(self):
+        when(pybuilder.cli).print_text_line(ANY_STRING).then_return(None)
+        mock_reactor = Mock()
+        task_1 = Mock()
+        task_1.name = "task-1"
+        task_2 = Mock()
+        task_2.name = "task-2"
+        when(mock_reactor).get_tasks().then_return([task_1,
+                                                    task_2])
+
+        print_list_of_tasks(mock_reactor, quiet=True)
+
+        verify(pybuilder.cli).print_text_line('task-1 task-2')
+
+    def test_should_render_verbose_task_list_without_descriptions_and_dependencies(self):
+        when(pybuilder.cli).print_text_line(ANY_STRING).then_return(None)
+        mock_reactor = Mock()
+        mock_reactor.project.name = "any-project-name"
+        task_1 = Mock()
+        task_1.name = "task-1"
+        task_1.description = ""
+        task_1.dependencies = []
+        task_2 = Mock()
+        task_2.name = "task-2"
+        task_2.description = ""
+        task_2.dependencies = []
+        when(mock_reactor).get_tasks().then_return([task_1,
+                                                    task_2])
+
+        print_list_of_tasks(mock_reactor, quiet=False)
+
+        verify(pybuilder.cli).print_text_line('Tasks found for project "any-project-name":')
+        verify(pybuilder.cli).print_text_line('    task-1 - <no description available>')
+        verify(pybuilder.cli).print_text_line('    task-2 - <no description available>')
+
+    def test_should_render_verbose_task_list_with_dependencies(self):
+        when(pybuilder.cli).print_text_line(ANY_STRING).then_return(None)
+        mock_reactor = Mock()
+        mock_reactor.project.name = "any-project-name"
+        task_1 = Mock()
+        task_1.name = "task-1"
+        task_1.description = ""
+        task_1.dependencies = ["any-dependency", "any-other-dependency"]
+        task_2 = Mock()
+        task_2.name = "task-2"
+        task_2.description = ""
+        task_2.dependencies = []
+        when(mock_reactor).get_tasks().then_return([task_1,
+                                                    task_2])
+
+        print_list_of_tasks(mock_reactor, quiet=False)
+
+        verify(pybuilder.cli).print_text_line('Tasks found for project "any-project-name":')
+        verify(pybuilder.cli).print_text_line('    task-1 - <no description available>')
+        verify(pybuilder.cli).print_text_line('             depends on tasks: any-dependency any-other-dependency')
+        verify(pybuilder.cli).print_text_line('    task-2 - <no description available>')
+
+    def test_should_render_verbose_task_list_with_descriptions(self):
+        when(pybuilder.cli).print_text_line(ANY_STRING).then_return(None)
+        mock_reactor = Mock()
+        mock_reactor.project.name = "any-project-name"
+        task_1 = Mock()
+        task_1.name = "task-1"
+        task_1.description = ["any", "description", "for", "task", "1"]
+        task_1.dependencies = []
+        task_2 = Mock()
+        task_2.name = "task-2"
+        task_2.description = ["any", "description", "for", "task", "2"]
+        task_2.dependencies = []
+        when(mock_reactor).get_tasks().then_return([task_1,
+                                                    task_2])
+
+        print_list_of_tasks(mock_reactor, quiet=False)
+
+        verify(pybuilder.cli).print_text_line('Tasks found for project "any-project-name":')
+        verify(pybuilder.cli).print_text_line('    task-1 - any description for task 1')
+        verify(pybuilder.cli).print_text_line('    task-2 - any description for task 2')
 
 
 class StdOutLoggerTest(unittest.TestCase):
