@@ -18,8 +18,11 @@
 
 import unittest
 
-from pybuilder.cli import parse_options, ColoredStdOutLogger, CommandLineUsageException, StdOutLogger, \
-    length_of_longest_string
+from pybuilder.cli import (parse_options,
+                           ColoredStdOutLogger,
+                           CommandLineUsageException,
+                           StdOutLogger,
+                           length_of_longest_string)
 from pybuilder.core import Logger
 
 
