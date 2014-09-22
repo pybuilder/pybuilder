@@ -83,7 +83,8 @@ def initialize(project):
     project.build_depends_on("wheel")
     project.build_depends_on("pdoc")
     project.build_depends_on("pygments")
-    project.build_depends_on("importlib")
+    if sys.version_info[0:2] == (2, 6):
+        project.build_depends_on("importlib") # for fluentmock
 
     project.set_property("verbose", True)
 
