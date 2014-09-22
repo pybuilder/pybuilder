@@ -83,6 +83,7 @@ def initialize(project):
     project.build_depends_on("wheel")
     project.build_depends_on("pdoc")
     project.build_depends_on("pygments")
+    project.build_depends_on("importlib")
 
     project.set_property("verbose", True)
 
