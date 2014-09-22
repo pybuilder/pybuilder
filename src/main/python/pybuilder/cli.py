@@ -262,13 +262,17 @@ def length_of_longest_string(list_of_strings):
     return result
 
 
-def print_list_of_tasks(reactor):
-    print_text_line('Tasks found for project "%s":' % reactor.project.name)
+def print_list_of_tasks(reactor, quiet=False):
 
     tasks = reactor.get_tasks()
+    if quiet:
+        print_text_line(" ".join(map(lambda task: task.name, tasks)))
+        return
     column_length = length_of_longest_string(
         list(map(lambda task: task.name, tasks)))
     column_length += 4
+
+    print_text_line('Tasks found for project "%s":' % reactor.project.name)
 
     for task in sorted(tasks):
         task_name = task.name.rjust(column_length)
@@ -305,7 +309,7 @@ def main(*args):
         reactor.prepare_build(property_overrides=options.property_overrides,
                               project_directory=options.project_directory)
 
-        print_list_of_tasks(reactor)
+        print_list_of_tasks(reactor, quiet=options.very_quiet)
         return 0
 
     if not options.very_quiet:
