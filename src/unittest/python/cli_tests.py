@@ -32,57 +32,37 @@ from fluentmock import when, verify, Mock, ANY_STRING, UnitTests
 
 class TaskListTests(UnitTests):
 
-    def test_should_render_minimal_task_list_when_in_quiet_mode(self):
+    def set_up(self):
+        self.mock_reactor = Mock()
+        self.mock_reactor.project.name = "any-project-name"
+        self.task_1 = Mock()
+        self.task_1.name = "task-1"
+        self.task_1.description = ""
+        self.task_1.dependencies = []
+        self.task_2 = Mock()
+        self.task_2.name = "task-2"
+        self.task_2.description = ""
+        self.task_2.dependencies = []
+        when(self.mock_reactor).get_tasks().then_return([self.task_1,
+                                                         self.task_2])
         when(pybuilder.cli).print_text_line(ANY_STRING).then_return(None)
-        mock_reactor = Mock()
-        task_1 = Mock()
-        task_1.name = "task-1"
-        task_2 = Mock()
-        task_2.name = "task-2"
-        when(mock_reactor).get_tasks().then_return([task_1,
-                                                    task_2])
 
-        print_list_of_tasks(mock_reactor, quiet=True)
+    def test_should_render_minimal_task_list_when_in_quiet_mode(self):
+        print_list_of_tasks(self.mock_reactor, quiet=True)
 
         verify(pybuilder.cli).print_text_line('task-1 task-2')
 
     def test_should_render_verbose_task_list_without_descriptions_and_dependencies(self):
-        when(pybuilder.cli).print_text_line(ANY_STRING).then_return(None)
-        mock_reactor = Mock()
-        mock_reactor.project.name = "any-project-name"
-        task_1 = Mock()
-        task_1.name = "task-1"
-        task_1.description = ""
-        task_1.dependencies = []
-        task_2 = Mock()
-        task_2.name = "task-2"
-        task_2.description = ""
-        task_2.dependencies = []
-        when(mock_reactor).get_tasks().then_return([task_1,
-                                                    task_2])
-
-        print_list_of_tasks(mock_reactor, quiet=False)
+        print_list_of_tasks(self.mock_reactor, quiet=False)
 
         verify(pybuilder.cli).print_text_line('Tasks found for project "any-project-name":')
         verify(pybuilder.cli).print_text_line('    task-1 - <no description available>')
         verify(pybuilder.cli).print_text_line('    task-2 - <no description available>')
 
     def test_should_render_verbose_task_list_with_dependencies(self):
-        when(pybuilder.cli).print_text_line(ANY_STRING).then_return(None)
-        mock_reactor = Mock()
-        mock_reactor.project.name = "any-project-name"
-        task_1 = Mock()
-        task_1.name = "task-1"
-        task_1.description = ""
-        task_1.dependencies = ["any-dependency", "any-other-dependency"]
-        task_2 = Mock()
-        task_2.name = "task-2"
-        task_2.description = ""
-        task_2.dependencies = []
-        when(mock_reactor).get_tasks().then_return([task_1,
-                                                    task_2])
+        self.task_1.dependencies = ["any-dependency", "any-other-dependency"]
 
-        print_list_of_tasks(mock_reactor, quiet=False)
+        print_list_of_tasks(self.mock_reactor, quiet=False)
 
         verify(pybuilder.cli).print_text_line('Tasks found for project "any-project-name":')
         verify(pybuilder.cli).print_text_line('    task-1 - <no description available>')
@@ -90,21 +70,10 @@ class TaskListTests(UnitTests):
         verify(pybuilder.cli).print_text_line('    task-2 - <no description available>')
 
     def test_should_render_verbose_task_list_with_descriptions(self):
-        when(pybuilder.cli).print_text_line(ANY_STRING).then_return(None)
-        mock_reactor = Mock()
-        mock_reactor.project.name = "any-project-name"
-        task_1 = Mock()
-        task_1.name = "task-1"
-        task_1.description = ["any", "description", "for", "task", "1"]
-        task_1.dependencies = []
-        task_2 = Mock()
-        task_2.name = "task-2"
-        task_2.description = ["any", "description", "for", "task", "2"]
-        task_2.dependencies = []
-        when(mock_reactor).get_tasks().then_return([task_1,
-                                                    task_2])
+        self.task_1.description = ["any", "description", "for", "task", "1"]
+        self.task_2.description = ["any", "description", "for", "task", "2"]
 
-        print_list_of_tasks(mock_reactor, quiet=False)
+        print_list_of_tasks(self.mock_reactor, quiet=False)
 
         verify(pybuilder.cli).print_text_line('Tasks found for project "any-project-name":')
         verify(pybuilder.cli).print_text_line('    task-1 - any description for task 1')
