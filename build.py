@@ -52,7 +52,7 @@ use_plugin("python.pycharm")
 use_plugin("python.pytddmon")
 
 use_bldsup()
-use_plugin("pdoc")
+# use_plugin("pdoc")  # TODO @mriehl markdown dep is broken on 2.6
 
 summary = "An extensible, easy to use continuous build tool for Python"
 description = """PyBuilder is a build automation tool for python.
