@@ -23,7 +23,7 @@ from pybuilder.cli import parse_options, ColoredStdOutLogger, CommandLineUsageEx
 from pybuilder.core import Logger
 
 
-class StdOutLoggerTest (unittest.TestCase):
+class StdOutLoggerTest(unittest.TestCase):
 
     def setUp(self):
         self.stdout_logger = StdOutLogger(Logger)
@@ -45,7 +45,7 @@ class StdOutLoggerTest (unittest.TestCase):
         self.assertEqual(actual_message, "[ERROR]")
 
 
-class ColoredStdOutLoggerTest (unittest.TestCase):
+class ColoredStdOutLoggerTest(unittest.TestCase):
 
     def setUp(self):
         self.colored_stdout_logger = ColoredStdOutLogger(Logger)
@@ -67,7 +67,7 @@ class ColoredStdOutLoggerTest (unittest.TestCase):
         self.assertEqual(actual_message, "\x1b[1;31m[ERROR]\x1b[0;0m")
 
 
-class ParseOptionsTest (unittest.TestCase):
+class ParseOptionsTest(unittest.TestCase):
 
     def assert_options(self, options, **overrides):
         self.assertEquals(options.project_directory,
