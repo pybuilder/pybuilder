@@ -66,6 +66,24 @@ class InitPythonDirectoriesTest (unittest.TestCase):
             self.greedy(self.project.list_packages())
         )
 
+    @patch("pybuilder.plugins.python.core_plugin.os.walk")
+    @patch("pybuilder.plugins.python.core_plugin.os.path.exists")
+    def test_should_not_cut_off_packages_when_path_ends_with_trailing_slash(self, _, walk):
+        walk.return_value = [("./src/main/python/pybuilder",
+                              ['pluginhelper', 'plugins'],
+                              ['execution.py', 'terminal.py', 'execution.pyc', 'scaffolding.py']
+                              )]
+        self.project.set_property("dir_source_main_python",
+                                  "src/main/python/")
+
+        init_python_directories(self.project)
+
+        self.assertEquals(
+            ['pybuilder.pluginhelper',
+             'pybuilder.plugins'],
+            self.greedy(self.project.list_packages())
+        )
+
     def test_should_set_python_sources_property(self):
         init_python_directories(self.project)
         self.assertEquals(
