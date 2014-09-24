@@ -65,7 +65,7 @@ class TaskListTests(UnitTests):
     def test_should_render_minimal_task_list_when_in_quiet_mode(self):
         print_list_of_tasks(self.mock_reactor, quiet=True)
 
-        verify(pybuilder.cli).print_text_line('task-1 task-2')
+        verify(pybuilder.cli).print_text_line('task-1:<no description available>\ntask-2:<no description available>')
 
     def test_should_render_verbose_task_list_without_descriptions_and_dependencies(self):
         print_list_of_tasks(self.mock_reactor, quiet=False)

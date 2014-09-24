@@ -262,24 +262,27 @@ def length_of_longest_string(list_of_strings):
     return result
 
 
+def task_description(task):
+    return " ".join(task.description) or "<no description available>"
+
+
 def print_list_of_tasks(reactor, quiet=False):
     tasks = reactor.get_tasks()
     sorted_tasks = sorted(tasks)
 
     if quiet:
-        print_text_line(" ".join([task.name for task in sorted_tasks]))
+        print_text_line("\n".join([task.name + ":" + task_description(task)
+                                   for task in sorted_tasks]))
         return
+
     column_length = length_of_longest_string(
         list(map(lambda task: task.name, sorted_tasks)))
     column_length += 4
 
     print_text_line('Tasks found for project "%s":' % reactor.project.name)
-
     for task in sorted_tasks:
         task_name = task.name.rjust(column_length)
-        task_description = " ".join(
-            task.description) or "<no description available>"
-        print_text_line("{0} - {1}".format(task_name, task_description))
+        print_text_line("{0} - {1}".format(task_name, task_description(task)))
 
         if task.dependencies:
             whitespace = (column_length + 3) * " "
