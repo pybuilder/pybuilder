@@ -101,9 +101,11 @@ def do_coverage(project, logger, reactor):
         modules.append(module)
 
         module_report_data = build_module_report(coverage, module)
-
-        sum_lines += module_report_data[0]
-        sum_lines_not_covered += module_report_data[2]
+        should_ignore_module = module_name in exceptions
+        
+        if not should_ignore_module:
+            sum_lines += module_report_data[0]
+            sum_lines_not_covered += module_report_data[2]
 
         module_report = {
             "module": module_name,
@@ -118,7 +120,7 @@ def do_coverage(project, logger, reactor):
 
         if module_report_data[4] < threshold:
             msg = "Test coverage below %2d%% for %s: %2d%%" % (threshold, module_name, module_report_data[4])
-            if module_name not in exceptions:
+            if not should_ignore_module:
                 logger.warn(msg)
                 coverage_too_low = True
             else:
