@@ -102,7 +102,7 @@ def do_coverage(project, logger, reactor):
 
         module_report_data = build_module_report(coverage, module)
         should_ignore_module = module_name in exceptions
-        
+
         if not should_ignore_module:
             sum_lines += module_report_data[0]
             sum_lines_not_covered += module_report_data[2]
