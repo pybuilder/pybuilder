@@ -81,7 +81,6 @@ def initialize(project):
     project.build_depends_on("pyfix")  # required test framework
     project.build_depends_on("pyassert")
     project.build_depends_on("wheel")
-    project.build_depends_on("pdoc")
     project.build_depends_on("pygments")
     if sys.version_info[0:2] == (2, 6):
         project.build_depends_on("importlib") # for fluentmock
