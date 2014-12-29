@@ -43,9 +43,7 @@ def assert_sphinx_is_available(logger):
     """
     logger.debug("Checking if sphinx-build is available.")
 
-    assert_can_execute(command_and_arguments=["sphinx-build", "--version"],
-                       prerequisite="sphinx",
-                       caller="plugin python.sphinx")
+    assert_can_execute(["sphinx-build", "--version"], "sphinx", "plugin python.sphinx")
 
 
 @task
