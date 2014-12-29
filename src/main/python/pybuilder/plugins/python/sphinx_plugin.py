@@ -26,15 +26,21 @@ from pybuilder.core import depends
 from pybuilder.core import init
 from pybuilder.core import task
 from pybuilder.core import use_plugin
+from pybuilder.errors import BuildFailedException
 from pybuilder.utils import assert_can_execute
+from pybuilder.utils import execute_command
 
 
-use_plugin("python.core")
+use_plugin("core")
+
+
+DEFAULT_SPHINX_BUILDER = "html"
 
 
 @init
 def initialize_sphinx_plugin(project):
     project.build_depends_on("sphinx")
+    project.set_property_if_unset("sphinx_builder", DEFAULT_SPHINX_BUILDER)
 
 
 @after("prepare")
@@ -51,3 +57,22 @@ def assert_sphinx_is_available(logger):
 def analyze(project, logger):
     """Runs sphinx-build against rst sources for the given project.
     """
+    logger.info("Running sphinx-build")
+
+    log_file = project.expand_path("$dir_target/logs/{0}".format("sphinx-build.err"))
+    build_command = get_sphinx_build_command(project)
+
+    exit_code = execute_command(build_command, log_file, shell=True)
+    if exit_code != 0:
+        raise BuildFailedException("Sphinx build command failed. See %s for details.", log_file)
+
+
+def get_sphinx_build_command(project):
+    """Builds the sphinx-build command using project properties.
+    """
+    options = ["-b %s" % project.get_property("sphinx_builder"),
+               "-c %s" % project.get_mandatory_property("sphinx_config_path"),
+               project.get_mandatory_property("sphinx_source_dir"),
+               project.get_mandatory_property("sphinx_output_dir")]
+    \
+    return "sphinx-build %s" % " ".join(options)
