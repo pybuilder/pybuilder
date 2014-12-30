@@ -34,6 +34,7 @@ from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        build_package_data_string,
                                                        default,
                                                        render_manifest_file,
+                                                       build_scripts_string,
                                                        render_setup_script)
 
 
@@ -244,9 +245,13 @@ class RenderSetupScriptTest(PyBuilderTestCase):
 
         self.assertFalse("import os\ndel os.link\n" in actual_setup_script)
 
+    def test_should_render_build_scripts_properly_when_dir_scripts_is_provided(self):
+        self.project.set_property("dir_dist_scripts", 'scripts')
+        actual_build_script = build_scripts_string(self.project)
+        self.assertEquals("['scripts/spam', 'scripts/eggs']", actual_build_script)
+
     def test_should_render_setup_file(self):
         actual_setup_script = render_setup_script(self.project)
-
         self.assert_line_by_line_equal("""#!/usr/bin/env python
 
 from distutils.core import setup
