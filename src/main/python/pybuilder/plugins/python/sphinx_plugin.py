@@ -52,15 +52,18 @@ def assert_sphinx_is_available(logger):
     assert_can_execute(["sphinx-build", "--version"], "sphinx", "plugin python.sphinx")
 
 
-@task
+@task("sphinx_generate_documentation", "Generates documentation with sphinx")
 @depends("prepare")
-def analyze(project, logger):
+def sphinx_generate(project, logger):
     """Runs sphinx-build against rst sources for the given project.
     """
     logger.info("Running sphinx-build")
 
-    log_file = project.expand_path("$dir_target/logs/{0}".format("sphinx-build.err"))
+    log_file = project.expand_path("$dir_target/reports/{0}".format("sphinx-build"))
     build_command = get_sphinx_build_command(project)
+
+    if project.get_property("verbose"):
+        logger.info(build_command)
 
     exit_code = execute_command(build_command, log_file, shell=True)
     if exit_code != 0:
@@ -74,5 +77,4 @@ def get_sphinx_build_command(project):
                "-c %s" % project.get_mandatory_property("sphinx_config_path"),
                project.get_mandatory_property("sphinx_source_dir"),
                project.get_mandatory_property("sphinx_output_dir")]
-    \
     return "sphinx-build %s" % " ".join(options)
