@@ -254,7 +254,7 @@ def build_scripts_string(project):
 
     scripts_dir = project.get_property("dir_dist_scripts")
     if scripts_dir:
-        scripts = map(lambda s: os.path.join(scripts_dir, s), scripts)
+        scripts = list(map(lambda s: os.path.join(scripts_dir, s), scripts))
 
     return str(scripts)
 
