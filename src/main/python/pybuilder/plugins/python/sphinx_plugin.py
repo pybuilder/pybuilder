@@ -35,7 +35,6 @@ use_plugin("core")
 
 
 DEFAULT_SPHINX_BUILDER = "html"
-DEFAULT_SPHINX_CONFIG_PATH = ""
 DEFAULT_SPHINX_SOURCE_DIR = ""
 DEFAULT_SPHINX_OUTPUT_DIR = "_build/"
 
@@ -44,7 +43,7 @@ DEFAULT_SPHINX_OUTPUT_DIR = "_build/"
 def initialize_sphinx_plugin(project):
     project.build_depends_on("sphinx")
     project.set_property_if_unset("sphinx_builder", DEFAULT_SPHINX_BUILDER)
-    project.set_property_if_unset("sphinx_config_path", DEFAULT_SPHINX_CONFIG_PATH)
+    project.set_property_if_unset("sphinx_config_path", DEFAULT_SPHINX_SOURCE_DIR)
     project.set_property_if_unset("sphinx_source_dir", DEFAULT_SPHINX_SOURCE_DIR)
     project.set_property_if_unset("sphinx_output_dir", DEFAULT_SPHINX_OUTPUT_DIR)
 
