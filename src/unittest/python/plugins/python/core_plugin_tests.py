@@ -17,6 +17,7 @@
 #   limitations under the License.
 
 import unittest
+from os.path import join
 
 from mock import patch
 
@@ -51,7 +52,7 @@ class InitPythonDirectoriesTest (unittest.TestCase):
     @patch("pybuilder.plugins.python.core_plugin.os.walk")
     @patch("pybuilder.plugins.python.core_plugin.os.path.exists")
     def test_should_set_list_packages_function_with_project_packages(self, _, walk):
-        walk.return_value = [("./src/main/python/pybuilder",
+        walk.return_value = [(join(".", "src", "main", "python", "pybuilder"),
                               ['pluginhelper', 'plugins'],
                               ['execution.py', 'terminal.py', 'execution.pyc', 'scaffolding.py']
                               )]
@@ -69,7 +70,7 @@ class InitPythonDirectoriesTest (unittest.TestCase):
     @patch("pybuilder.plugins.python.core_plugin.os.walk")
     @patch("pybuilder.plugins.python.core_plugin.os.path.exists")
     def test_should_not_cut_off_packages_when_path_ends_with_trailing_slash(self, _, walk):
-        walk.return_value = [("./src/main/python/pybuilder",
+        walk.return_value = [(join(".", "src", "main", "python", "pybuilder"),
                               ['pluginhelper', 'plugins'],
                               ['execution.py', 'terminal.py', 'execution.pyc', 'scaffolding.py']
                               )]

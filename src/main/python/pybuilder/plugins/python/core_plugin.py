@@ -47,7 +47,7 @@ def init_python_directories(project):
                 full_path = os.path.join(root, directory)
                 if os.path.exists(os.path.join(full_path, "__init__.py")):
                     package = full_path.replace(source_path, "")
-                    if package.startswith("/"):
+                    if package.startswith(os.sep):
                         package = package[1:]
                     package = package.replace(os.sep, ".")
                     yield package
