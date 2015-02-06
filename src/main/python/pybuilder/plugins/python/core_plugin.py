@@ -36,7 +36,7 @@ use_plugin("core")
 def init_python_directories(project):
     project.set_property_if_unset(PYTHON_SOURCES_PROPERTY, "src/main/python")
     project.set_property_if_unset(SCRIPTS_SOURCES_PROPERTY, "src/main/scripts")
-    project.set_property_if_unset(SCRIPTS_TARGET_PROPERTY, None)
+    project.set_property_if_unset(SCRIPTS_TARGET_PROPERTY, "scripts")
     project.set_property_if_unset(DISTRIBUTION_PROPERTY,
                                   "$dir_target/dist/{0}-{1}".format(project.name, project.version))
 

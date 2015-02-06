@@ -98,7 +98,7 @@ class InitPythonDirectoriesTest (unittest.TestCase):
     def test_should_set_dist_scripts_property(self):
         init_python_directories(self.project)
         self.assertEquals(
-            None, self.project.get_property(SCRIPTS_TARGET_PROPERTY, "caboom"))
+            "scripts", self.project.get_property(SCRIPTS_TARGET_PROPERTY))
 
     def test_should_set_dist_property(self):
         init_python_directories(self.project)
