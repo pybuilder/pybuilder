@@ -176,7 +176,8 @@ def build_binary_distribution(project, logger):
 
     for command in commands:
         logger.debug("Executing distutils command %s", command)
-        with open(os.path.join(reports_dir, command.replace("/", "")), "w") as output_file:
+        output_file_path = os.path.join(reports_dir, command.replace("/", ""))
+        with open(output_file_path, "w") as output_file:
             commands = [sys.executable, setup_script]
             commands.extend(command.split())
             process = subprocess.Popen(commands,
@@ -187,7 +188,7 @@ def build_binary_distribution(project, logger):
             return_code = process.wait()
             if return_code != 0:
                 raise BuildFailedException(
-                    "Error while executing setup command %s", command)
+                    "Error while executing setup command %s, see %s for details" % (command, output_file_path))
 
 
 def strip_comments(requirements):
