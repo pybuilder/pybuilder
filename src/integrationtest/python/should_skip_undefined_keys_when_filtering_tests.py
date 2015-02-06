@@ -41,7 +41,7 @@ def init (project):
         reactor = self.prepare_reactor()
         reactor.build("package")
 
-        self.assert_file_content("target/spam", "1.0-SNAPSHOT ${any_undefined_key}")
+        self.assert_file_content("target/spam", "1.0.dev0 ${any_undefined_key}")
 
 if __name__ == "__main__":
     unittest.main()
