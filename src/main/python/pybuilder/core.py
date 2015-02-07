@@ -242,7 +242,7 @@ class Project(object):
     Descriptor for a project to be built. A project has a number of attributes
     as well as some convenience methods to access these properties.
     """
-    def __init__(self, basedir, version="1.0-SNAPSHOT", name=None):
+    def __init__(self, basedir, version="1.0.dev0", name=None):
         self.name = name
         self.version = version
         self.basedir = basedir

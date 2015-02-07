@@ -48,17 +48,17 @@ def init (project):
         reactor.build()
 
         self.assert_directory_exists(
-            "target/dist/integration-test-1.0-SNAPSHOT")
+            "target/dist/integration-test-1.0.dev0")
         self.assert_directory_exists(
-            "target/dist/integration-test-1.0-SNAPSHOT/spam")
+            "target/dist/integration-test-1.0.dev0/spam")
         self.assert_file_empty(
-            "target/dist/integration-test-1.0-SNAPSHOT/spam/eggs")
+            "target/dist/integration-test-1.0.dev0/spam/eggs")
         self.assert_file_empty(
-            "target/dist/integration-test-1.0-SNAPSHOT/more_spam")
+            "target/dist/integration-test-1.0.dev0/more_spam")
         self.assert_file_empty(
-            "target/dist/integration-test-1.0-SNAPSHOT/more_eggs")
+            "target/dist/integration-test-1.0.dev0/more_eggs")
 
-        manifest_in = "target/dist/integration-test-1.0-SNAPSHOT/MANIFEST.in"
+        manifest_in = "target/dist/integration-test-1.0.dev0/MANIFEST.in"
 
         self.assert_file_exists(manifest_in)
         self.assert_file_permissions(0o664, manifest_in)

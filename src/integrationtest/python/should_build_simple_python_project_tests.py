@@ -43,12 +43,12 @@ def spam ():
         reactor.build()
 
         self.assert_directory_exists(
-            "target/dist/integration-test-1.0-SNAPSHOT")
+            "target/dist/integration-test-1.0.dev0")
         self.assert_directory_exists(
-            "target/dist/integration-test-1.0-SNAPSHOT/spam")
+            "target/dist/integration-test-1.0.dev0/spam")
         self.assert_file_empty(
-            "target/dist/integration-test-1.0-SNAPSHOT/spam/__init__.py")
-        self.assert_file_content("target/dist/integration-test-1.0-SNAPSHOT/spam/eggs.py", """
+            "target/dist/integration-test-1.0.dev0/spam/__init__.py")
+        self.assert_file_content("target/dist/integration-test-1.0.dev0/spam/eggs.py", """
 def spam ():
     pass
 """)

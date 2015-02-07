@@ -102,5 +102,5 @@ class InitPythonDirectoriesTest (unittest.TestCase):
 
     def test_should_set_dist_property(self):
         init_python_directories(self.project)
-        self.assertEquals("$dir_target/dist/.-1.0-SNAPSHOT",
+        self.assertEquals("$dir_target/dist/.-1.0.dev0",
                           self.project.get_property(DISTRIBUTION_PROPERTY, "caboom"))
