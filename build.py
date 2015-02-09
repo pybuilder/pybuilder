@@ -95,7 +95,6 @@ def initialize(project):
     project.set_property('flake8_include_test_sources', True)
     project.set_property('flake8_include_scripts', True)
     project.set_property('flake8_max_line_length', 130)
-    project.set_property('flake8_ignore', 'E402')
 
     project.set_property('frosted_include_test_sources', True)
     project.set_property('frosted_include_scripts', True)
