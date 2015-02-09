@@ -18,8 +18,6 @@
 
 from __future__ import print_function
 
-__author__ = "Alexander Metzner"
-
 import sys
 
 from pybuilder.core import (before,
@@ -33,6 +31,10 @@ from pybuilder.errors import BuildFailedException
 from pybuilder.utils import assert_can_execute, execute_command, mkdir
 from pybuilder.plugins.python.setuptools_plugin_helper import build_dependency_version_string
 from pybuilder.terminal import print_file_content
+
+
+__author__ = "Alexander Metzner"
+
 use_plugin("core")
 
 

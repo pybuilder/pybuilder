@@ -19,8 +19,6 @@
 """Plugin for Sphinx.
 """
 
-__author__ = 'Thomas Prebble'
-
 from pybuilder.core import after
 from pybuilder.core import depends
 from pybuilder.core import init
@@ -29,6 +27,8 @@ from pybuilder.core import use_plugin
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import assert_can_execute
 from pybuilder.utils import execute_command
+
+__author__ = 'Thomas Prebble'
 
 
 use_plugin("core")

@@ -16,9 +16,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-__author__ = "Alexander Metzner"
-
-
 import sys
 
 from pyfix.testcollector import TestCollector
@@ -26,6 +23,9 @@ from pyfix.testrunner import TestRunner, TestRunListener
 
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import discover_modules_matching, render_report
+
+
+__author__ = "Alexander Metzner"
 
 
 def run_unit_tests(project, logger):

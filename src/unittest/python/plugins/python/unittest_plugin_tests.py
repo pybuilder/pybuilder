@@ -16,7 +16,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-__author__ = 'Michael Gruber'
 
 from unittest import TestCase
 
@@ -25,6 +24,9 @@ from pybuilder.core import Project
 from pybuilder.plugins.python.unittest_plugin import (execute_tests, execute_tests_matching,
                                                       _register_test_and_source_path_and_return_test_dir,
                                                       report_to_ci_server)
+
+
+__author__ = 'Michael Gruber'
 
 
 class PythonPathTests(TestCase):

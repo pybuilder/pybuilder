@@ -19,7 +19,6 @@
 import unittest
 import sys
 
-builtin_module = None
 try:
     import __builtin__
     builtin_module = __builtin__

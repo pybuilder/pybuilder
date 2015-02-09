@@ -23,14 +23,16 @@
     https://pypi.python.org/pypi/cram
 """
 
-__author__ = 'Valentin Haenel'
-
 import os
+
 
 from pybuilder.core import after, task, init, use_plugin, depends, description
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import assert_can_execute, discover_files_matching, read_file
 from pybuilder.plugins.python.python_plugin_helper import execute_command
+
+
+__author__ = 'Valentin Haenel'
 
 
 use_plugin("python.core")

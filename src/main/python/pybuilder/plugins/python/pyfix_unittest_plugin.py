@@ -16,9 +16,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-__author__ = "Alexander Metzner"
-
 from pybuilder.core import init, task, description, use_plugin
+
+__author__ = "Alexander Metzner"
 
 use_plugin("python.core")
 

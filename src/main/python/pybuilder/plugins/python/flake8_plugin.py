@@ -23,12 +23,12 @@
     https://bitbucket.org/tarek/flake8
 """
 
-__author__ = 'Michael Gruber'
-
 from pybuilder.core import after, task, init, use_plugin, depends
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import assert_can_execute
 from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
+
+__author__ = 'Michael Gruber'
 
 
 use_plugin("python.core")

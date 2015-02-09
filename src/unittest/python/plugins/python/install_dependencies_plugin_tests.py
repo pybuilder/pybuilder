@@ -16,7 +16,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-__author__ = "Alexander Metzner"
 
 import unittest
 
@@ -34,6 +33,9 @@ from pybuilder.plugins.python.install_dependencies_plugin import (
     install_dependency)
 
 import pybuilder.plugins.python.install_dependencies_plugin
+
+
+__author__ = "Alexander Metzner"
 
 
 class InstallDependencyTest(unittest.TestCase):
