@@ -17,10 +17,17 @@
 #   limitations under the License.
 
 from pybuilder.terminal import print_text
+import os
+
+
+def _is_running_on_teamcity(environment):
+    return "TEAMCITY_VERSION" in environment
 
 
 def test_proxy_for(project):
-    if project.get_property('teamcity_output') and not project.get_property('__running_coverage'):
+    running_coverage = project.get_property('__running_coverage')
+    running_on_teamcity = _is_running_on_teamcity(os.environ) or project.get_property('teamcity_output')
+    if running_on_teamcity and not running_coverage:
         return TeamCityTestProxy()
     else:
         return TestProxy()

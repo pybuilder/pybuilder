@@ -21,6 +21,7 @@ from mock import patch, call
 
 from pybuilder.core import Project
 from pybuilder.ci_server_interaction import (test_proxy_for,
+                                             _is_running_on_teamcity,
                                              TeamCityTestProxy,
                                              TestProxy)
 
@@ -29,15 +30,43 @@ class TestProxyTests(unittest.TestCase):
 
     def setUp(self):
         self.project = Project('basedir')
+        self.os_patcher = patch("pybuilder.ci_server_interaction.os")
+        self.mock_os = self.os_patcher.start()
+
+    def tearDown(self):
+        self.os_patcher.stop()
+
+    def test_should_detect_teamcity_when_environment_variable_set(self):
+        self.assertTrue(_is_running_on_teamcity({"TEAMCITY_VERSION": "1.0.0"}))
+
+    def test_should_not_detect_teamcity_when_environment_variable_unset(self):
+        self.assertFalse(_is_running_on_teamcity({"ANY_OTHER_VARIABLE": "1.0.0"}))
 
     def test_should_use_teamcity_proxy_if_project_property_is_set(self):
+        self.mock_os.environ = {}
         self.project.set_property('teamcity_output', True)
 
         proxy = test_proxy_for(self.project)
 
         self.assertEquals(type(proxy), TeamCityTestProxy)
 
+    def test_should_use_teamcity_proxy_if_project_property_is_set_and_teamcity_in_environment(self):
+        self.mock_os.environ = {"TEAMCITY_VERSION": "1.0.0"}
+        self.project.set_property('teamcity_output', True)
+
+        proxy = test_proxy_for(self.project)
+
+        self.assertEquals(type(proxy), TeamCityTestProxy)
+
+    def test_should_use_teamcity_proxy_if_teamcity_in_environment(self):
+        self.mock_os.environ = {"TEAMCITY_VERSION": "1.0.0"}
+
+        proxy = test_proxy_for(self.project)
+
+        self.assertEquals(type(proxy), TeamCityTestProxy)
+
     def test_should_use_default_proxy_if_project_property_is_not_set(self):
+        self.mock_os.environ = {}
         self.project.set_property('teamcity_output', False)
 
         proxy = test_proxy_for(self.project)
@@ -45,6 +74,24 @@ class TestProxyTests(unittest.TestCase):
         self.assertEquals(type(proxy), TestProxy)
 
     def test_should_use_default_proxy_if_project_property_is_set_but_coverage_is_running(self):
+        self.mock_os.environ = {}
+        self.project.set_property('teamcity_output', True)
+        self.project.set_property('__running_coverage', True)
+
+        proxy = test_proxy_for(self.project)
+
+        self.assertEquals(type(proxy), TestProxy)
+
+    def test_should_use_default_proxy_if_teamcity_in_environment_but_coverage_is_running(self):
+        self.mock_os.environ = {"TEAMCITY_VERSION": "1.0.0"}
+        self.project.set_property('__running_coverage', True)
+
+        proxy = test_proxy_for(self.project)
+
+        self.assertEquals(type(proxy), TestProxy)
+
+    def test_should_use_default_proxy_if_teamcity_in_environment_and_project_property_is_set_but_coverage_is_running(self):
+        self.mock_os.environ = {"TEAMCITY_VERSION": "1.0.0"}
         self.project.set_property('teamcity_output', True)
         self.project.set_property('__running_coverage', True)
 
