@@ -133,7 +133,9 @@ class ExecuteTestsTests(TestCase):
 class CIServerInteractionTests(TestCase):
 
     @patch('pybuilder.ci_server_interaction.TestProxy')
-    def test_should_report_passed_tests_to_ci_server(self, proxy):
+    @patch('pybuilder.ci_server_interaction._is_running_on_teamcity')
+    def test_should_report_passed_tests_to_ci_server(self, teamcity, proxy):
+        teamcity.return_value = False
         project = Project('basedir')
         mock_proxy = Mock()
         proxy.return_value = mock_proxy
@@ -149,7 +151,9 @@ class CIServerInteractionTests(TestCase):
         mock_proxy.fails.assert_not_called()
 
     @patch('pybuilder.ci_server_interaction.TestProxy')
-    def test_should_report_failed_tests_to_ci_server(self, proxy):
+    @patch('pybuilder.ci_server_interaction._is_running_on_teamcity')
+    def test_should_report_failed_tests_to_ci_server(self, teamcity, proxy):
+        teamcity.return_value = False
         project = Project('basedir')
         mock_proxy = Mock()
         proxy.return_value = mock_proxy
