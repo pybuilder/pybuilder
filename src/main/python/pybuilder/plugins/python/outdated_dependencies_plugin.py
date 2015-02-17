@@ -49,7 +49,7 @@ def assert_pip_api_is_available(logger):
     try:
         import pip
         logger.debug("pip API version {0}".format(pip.__version__))
-    except ImportError:
+    except (ImportError, AttributeError):
         raise MissingPrerequisiteException("pip", "update_plugin")
 
 
