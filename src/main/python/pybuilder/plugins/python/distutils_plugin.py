@@ -214,8 +214,7 @@ def format_single_dependency(dependency):
 def build_install_dependencies_string(project):
     dependencies = [
         dependency for dependency in project.dependencies
-        if isinstance(dependency, Dependency)
-        and not dependency.url]
+        if isinstance(dependency, Dependency) and not dependency.url]
     requirements = [
         requirements for requirements in project.dependencies
         if isinstance(requirements, RequirementsFile)]
