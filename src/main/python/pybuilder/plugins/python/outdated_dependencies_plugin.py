@@ -80,7 +80,7 @@ def upgrade_outdated_dependencies(project, logger):
 
     create_install_log_directory(logger, project)
     for dist, remote_parsed_version in get_outdated_versions():
-        upgrade_message = "Replace {0} {1} with {0} {2}? (y/N)".format(
+        upgrade_message = "Replace {0} {1} with {0} {2}? (Y/n)".format(
             dist.project_name,
             dist.version,
             remote_parsed_version)
