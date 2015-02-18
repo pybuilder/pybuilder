@@ -44,14 +44,14 @@ def init_coverage_properties(project):
     project.set_property_if_unset("coverage_fork", False)
 
 
-def start_coverage(coverage_module):
-    coverage_module.erase()
-    coverage_module.start()
+def start_coverage(coverage):
+    coverage.erase()
+    coverage.start()
 
 
-def stop_coverage(coverage_module, project, logger):
+def stop_coverage(coverage, project, logger):
     reimport_source_modules(project, logger)
-    coverage_module.stop()
+    coverage.stop()
 
 
 @after(("analyze", "verify"), only_once=True)
@@ -69,8 +69,10 @@ def verify_coverage(project, logger, reactor):
 
 
 def do_coverage(project, logger, reactor):
-    import coverage
+    from coverage import coverage as coverage_factory
 
+    source_tree_path = project.get_property("dir_source_main_python")
+    coverage = coverage_factory(cover_pylib=False, source=[source_tree_path])
     start_coverage(coverage)
     project.set_property('__running_coverage', True)  # tell other plugins that we are not really unit testing right now
     reactor.execute_task("run_unit_tests")
@@ -155,8 +157,8 @@ def reimport_source_modules(project, logger):
                 imp.reload(sys.modules[module])
 
 
-def build_module_report(coverage_module, module):
-    analysis_result = coverage_module.analysis(module)
+def build_module_report(coverage, module):
+    analysis_result = coverage.analysis(module)
 
     lines_total = len(analysis_result[1])
     lines_not_covered = len(analysis_result[2])
@@ -174,9 +176,11 @@ def build_module_report(coverage_module, module):
             code_coverage)
 
 
-def write_summary_report(coverage_module, project, modules):
+def write_summary_report(coverage, project, modules):
     summary = StringIO()
-    coverage_module.report(modules, file=summary)
+    coverage.report(modules, file=summary)
+    with open(".coverage", "w") as coverage_file:
+        coverage_file.write(summary.getvalue())
     project.write_report("coverage", summary.getvalue())
     summary.close()
 
