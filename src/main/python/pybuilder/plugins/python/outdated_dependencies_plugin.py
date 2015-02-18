@@ -57,11 +57,11 @@ def assert_pip_api_is_available(logger):
       description="Check if dependencies are up-to-date, optionally breaks the build")
 def check_if_dependencies_are_uptodate(project, logger):
     outdated_versions = [outdated_tuple for outdated_tuple in get_outdated_versions()]
-    for dist, remote_raw_version in outdated_versions:
+    for dist, remote_parsed_version in outdated_versions:
         logger.info("A newer version of {0} is available (local '{1}', latest '{2}')".format(
             dist.project_name,
             dist.version,
-            remote_raw_version))
+            remote_parsed_version))
 
     if outdated_versions and project.get_property("outdated_dependencies_break_build"):
         wording = "dependency" if len(outdated_versions) == 1 else "dependencies"
@@ -79,11 +79,11 @@ def upgrade_outdated_dependencies(project, logger):
                                    upgrade_outdated_dependencies.__name__))
 
     create_install_log_directory(logger, project)
-    for dist, remote_raw_version in get_outdated_versions():
+    for dist, remote_parsed_version in get_outdated_versions():
         upgrade_message = "Replace {0} {1} with {0} {2}? (y/N)".format(
             dist.project_name,
             dist.version,
-            remote_raw_version)
+            remote_parsed_version)
 
         choice = prompt_user(upgrade_message, "y")
         if not choice or choice.lower() == "y":
@@ -91,12 +91,12 @@ def upgrade_outdated_dependencies(project, logger):
             install_dependency(logger,
                                project,
                                Dependency(dist.project_name,
-                                          version=remote_raw_version))
+                                          version=str(remote_parsed_version)))
 
 
 def get_outdated_versions():
-    l = ListCommand()
-    options, _ = l.parse_args([])
-    for dist, remote_raw_version, remote_parsed_version in l.find_packages_latests_versions(options):
+    list_command = ListCommand()
+    options, _ = list_command.parse_args([])
+    for dist, remote_parsed_version in list_command.find_packages_latests_versions(options):
         if remote_parsed_version > dist.parsed_version:
-            yield (dist, remote_raw_version)
+            yield (dist, remote_parsed_version)
