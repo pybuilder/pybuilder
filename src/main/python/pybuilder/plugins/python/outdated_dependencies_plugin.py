@@ -79,8 +79,7 @@ def upgrade_outdated_dependencies(project, logger):
                                    upgrade_outdated_dependencies.__name__))
 
     create_install_log_directory(logger, project)
-    outdated_versions = [outdated_tuple for outdated_tuple in get_outdated_versions()]
-    for dist, remote_raw_version in outdated_versions:
+    for dist, remote_raw_version in get_outdated_versions():
         upgrade_message = "Replace {0} {1} with {0} {2}? (y/N)".format(
             dist.project_name,
             dist.version,
