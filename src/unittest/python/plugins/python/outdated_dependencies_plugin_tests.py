@@ -43,7 +43,7 @@ class OutdatedDependenciesTest(unittest.TestCase):
         outdated_dependency = Mock(parsed_version=3)
         fresh_dependency = (Mock(parsed_version=3))
         list_command_instance.find_packages_latests_versions.return_value = [
-            (outdated_dependency, 5, 5), (fresh_dependency, 3, 3)]
+            (outdated_dependency, 5), (fresh_dependency, 3)]
 
         outdated_versions = [version for version in get_outdated_versions()]
 
