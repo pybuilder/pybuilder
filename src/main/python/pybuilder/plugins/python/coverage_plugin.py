@@ -179,6 +179,7 @@ def build_module_report(coverage, module):
 def write_summary_report(coverage, project, modules):
     summary = StringIO()
     coverage.report(modules, file=summary)
+    coverage.xml_report(outfile=project.expand_path("$dir_reports/coverage.xml"))
     coverage.save()
     project.write_report("coverage", summary.getvalue())
     summary.close()
