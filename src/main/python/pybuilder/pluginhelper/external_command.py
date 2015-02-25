@@ -64,7 +64,14 @@ class ExternalCommandBuilder(object):
         return ' '.join(self.parts)
 
     def run(self, outfile_name):
-        return execute_command(self.parts, outfile_name)
+        error_file_name = "{0}.err".format(outfile_name)
+        return_code = execute_command(self.parts, outfile_name)
+        error_file_lines = read_file(error_file_name)
+        outfile_lines = read_file(outfile_name)
+
+        return ExternalCommandResult(return_code,
+                                     outfile_name, outfile_lines,
+                                     error_file_name, error_file_lines)
 
     def run_on_production_source_files(self, logger, include_test_sources=False, include_scripts=False):
         execution_result = execute_tool_on_source_files(project=self.project,

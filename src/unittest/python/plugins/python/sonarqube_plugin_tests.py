@@ -48,13 +48,13 @@ class RunSonarAnalysisTest(TestCase):
 
     @patch("pybuilder.plugins.python.sonarqube_plugin.SonarCommandBuilder.run")
     def test_should_break_build_when_sonar_runner_fails(self, run_sonar_command):
-        run_sonar_command.return_value = 1
+        run_sonar_command.return_value = Mock(exit_code=1)
 
         self.assertRaises(BuildFailedException, run_sonar_analysis, self.project, Mock())
 
     @patch("pybuilder.plugins.python.sonarqube_plugin.SonarCommandBuilder.run")
     def test_should_not_break_build_when_sonar_runner_succeeds(self, run_sonar_command):
-        run_sonar_command.return_value = 0
+        run_sonar_command.return_value = Mock(exit_code=0)
 
         run_sonar_analysis(self.project, Mock())
 

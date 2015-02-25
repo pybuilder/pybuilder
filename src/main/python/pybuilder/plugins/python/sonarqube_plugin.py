@@ -41,13 +41,19 @@ def run_sonar_analysis(project, logger):
 
     sonar_runner = build_sonar_runner(project)
 
-    return_code = sonar_runner.run(project.expand_path("$dir_reports/sonar-runner"))
+    result = sonar_runner.run(project.expand_path("$dir_reports/sonar-runner"))
 
-    if return_code != 0:
-        raise BuildFailedException(
-            "sonar-runner exited with code {exit_code}. See reports at {reports_dir} for more information.".format(
-                exit_code=return_code,
+    if result.exit_code != 0:
+        logger.error(
+            "sonar-runner exited with code {exit_code}. See {reports_dir} for more information.".format(
+                exit_code=result.exit_code,
                 reports_dir=project.expand_path("$dir_reports")))
+
+        if project.get_property("verbose"):
+            logger.error("Contents of {0}:".format(result.error_report_file))
+            logger.error("\n".join(result.error_report_lines))
+
+        raise BuildFailedException("Sonar analysis failed.")
 
 
 def build_sonar_runner(project):
