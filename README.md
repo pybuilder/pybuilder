@@ -69,6 +69,7 @@ PyBuilder provides a lot of plugins out ot the box that utilize tools and librar
 * [python.pytddmon](http://pybuilder.github.io/documentation/plugins.html#Visualfeedbackfortests) - Provides visual feedback about unit tests through [pytddmon](http://pytddmon.org/)
 * [python.cram](http://pybuilder.github.io/documentation/plugins.html#RunningCramtests) - Runs [cram](https://warehouse.python.org/project/cram/) tests
 * [python.sphinx](http://pybuilder.github.io/documentation/plugins.html#Creatingdocumentationwithsphinx) - Build your documentation with [sphinx](http://sphinx-doc.org/)
+* [python.sonarqube](http://pybuilder.github.io/documentation/plugins.html#SonarQubeintegration) - Analyze your project with [SonarQube](http://www.sonarqube.org/).
 
 In addition, a few common plugins are provided:
 
