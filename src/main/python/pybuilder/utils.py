@@ -83,7 +83,7 @@ def as_list(*whatever):
 
 def remove_leading_slash_or_dot_from_path(path):
     if path.startswith('/') or path.startswith('.'):
-            return path[1:]
+        return path[1:]
     return path
 
 
@@ -163,6 +163,7 @@ def write_file(file_name, *lines):
 
 
 class Timer(object):
+
     @staticmethod
     def start():
         return Timer()
@@ -197,6 +198,7 @@ def apply_on_files(start_directory, closure, globs, *additional_closure_argument
 
 
 class GlobExpression(object):
+
     def __init__(self, expression):
         self.expression = expression
         self.regex = "^" + expression.replace("**", ".+").replace("*", "[^/]*") + "$"

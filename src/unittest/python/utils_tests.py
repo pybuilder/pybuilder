@@ -213,7 +213,7 @@ class DiscoverModulesTest(unittest.TestCase):
 
     def test_glob_should_return_list_with_single_module_when_directory_contains_package(self):
         when(os).walk("spam").thenReturn([("spam", ["eggs"], []),
-                                         ("spam/eggs", [], ["__init__.py"])])
+                                          ("spam/eggs", [], ["__init__.py"])])
 
         self.assertEquals(["eggs"], discover_modules_matching("spam", "*"))
 
