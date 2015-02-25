@@ -1,0 +1,73 @@
+#   -*- coding: utf-8 -*-
+#
+#   This file is part of PyBuilder
+#
+#   Copyright 2011-2015 PyBuilder Team
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+from pybuilder.core import task, init, before, depends
+from pybuilder.errors import BuildFailedException
+from pybuilder.utils import assert_can_execute
+from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
+
+
+@before("run_sonar_analysis")
+def check_sonar_runner_availability():
+    assert_can_execute(
+        ("sonar-runner", "-h"),
+        "sonar-runner", "plugin python.sonarqube")
+
+
+@init
+def initialize_sonarqube_plugin(project):
+    project.set_property_if_unset("sonarqube_project_key", project.name)
+    project.set_property_if_unset("sonarqube_project_name", project.name)
+
+
+@task("run_sonar_analysis", description="Writes the sonar-project.properties and launches sonar-runner for analysis.")
+@depends("analyze")
+def run_sonar_analysis(project, logger):
+
+    sonar_runner = build_sonar_runner(project)
+
+    return_code = sonar_runner.run(project.expand_path("$dir_reports/sonar-runner"))
+
+    if return_code != 0:
+        raise BuildFailedException(
+            "sonar-runner exited with code {exit_code}. See reports at {reports_dir} for more information.".format(
+                exit_code=return_code,
+                reports_dir=project.expand_path("$dir_reports")))
+
+
+def build_sonar_runner(project):
+    return (SonarCommandBuilder("sonar-runner", project)
+            .set_sonar_key("sonar.projectKey").to_property_value("sonarqube_project_key")
+            .set_sonar_key("sonar.projectName").to_property_value("sonarqube_project_name")
+            .set_sonar_key("sonar.projectVersion").to(project.version)
+            .set_sonar_key("file.sonar.sources").to_property_value("dir_source_main_python")
+            .set_sonar_key("sonar.python.coverage.reportPath").to(project.expand_path("$dir_reports/coverage.xml")))
+
+
+class SonarCommandBuilder(ExternalCommandBuilder):
+
+    def set_sonar_key(self, key):
+        self.key = key
+        return self
+
+    def to(self, value):
+        self.use_argument("-D{key}={value}".format(key=self.key, value=value))
+        return self
+
+    def to_property_value(self, property_name):
+        return self.to(self.project.get_property(property_name))
