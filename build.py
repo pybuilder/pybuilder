@@ -42,9 +42,10 @@ use_plugin("python.integrationtest")
 use_plugin("python.flake8")
 use_plugin("python.frosted")
 
-
 if not sys.version_info[0:2] == (3, 2):
     use_plugin("python.cram")
+if not sys.version_info[0] == 3:
+    use_plugin("python.snakefood")
 
 use_plugin("python.pydev")
 use_plugin("python.pycharm")
