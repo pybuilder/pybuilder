@@ -44,7 +44,7 @@ class RunSonarAnalysisTest(TestCase):
             "-Dsonar.projectName=project_name "
             "-Dsonar.projectVersion=0.0.1 "
             "-Dsonar.sources=src/main/python "
-            "-Dsonar.python.coverage.reportPath=any-project/target/reports/coverage.xml")
+            "-Dsonar.python.coverage.reportPath=any-project/target/reports/coverage*.xml")
 
     @patch("pybuilder.plugins.python.sonarqube_plugin.SonarCommandBuilder.run")
     def test_should_break_build_when_sonar_runner_fails(self, run_sonar_command):
