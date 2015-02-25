@@ -25,9 +25,11 @@ import fnmatch
 import json
 import os
 import re
+import sys
 import subprocess
 import tempfile
 import time
+from subprocess import Popen, PIPE
 
 from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
 
@@ -136,6 +138,14 @@ def execute_command(command_and_arguments, outfile_name, env=None, cwd=None, err
                                        cwd=cwd,
                                        shell=shell)
             return process.wait()
+
+
+def execute_command_and_capture_output(*command_and_arguments):
+    process_handle = Popen(command_and_arguments, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = process_handle.communicate()
+    stdout, stderr = stdout.decode(sys.stdout.encoding or 'utf-8'), stderr.decode(sys.stderr.encoding or 'utf-8')
+    process_return_code = process_handle.returncode
+    return process_return_code, stdout, stderr
 
 
 def assert_can_execute(command_and_arguments, prerequisite, caller):
