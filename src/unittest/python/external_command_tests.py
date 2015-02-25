@@ -68,6 +68,11 @@ class ExternalCommandBuilderTests(unittest.TestCase):
 
         self.assertEqual(self.command.as_string, 'command-name --name=value')
 
+    def test_should_format_unconditional_argument_with_value_when_given(self):
+        self.command.use_argument('--name={0}').formatted_with('value')
+
+        self.assertEqual(self.command.as_string, 'command-name --name=value')
+
     def test_should_include_conditional_argument_with_formatting_when_property_is_falsy(self):
         self.project.set_property('name', 'value')
         self.command.use_argument('--name={0}').formatted_with_property('name').only_if_property_is_truthy('name')

@@ -41,6 +41,10 @@ class ExternalCommandBuilder(object):
         self.parts.append(argument)
         return self
 
+    def formatted_with(self, contents):
+        self.parts[-1] = self.parts[-1].format(contents)
+        return self
+
     def formatted_with_property(self, property_name):
         property_value = self.project.get_property(property_name)
         self.parts[-1] = self.parts[-1].format(property_value)
