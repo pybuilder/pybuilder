@@ -37,7 +37,7 @@ def initialize_sonarqube_plugin(project):
     project.set_property_if_unset("sonarqube_project_name", project.name)
 
 
-@task("run_sonar_analysis", description="Writes the sonar-project.properties and launches sonar-runner for analysis.")
+@task("run_sonar_analysis", description="Launches sonar-runner for analysis.")
 @depends("analyze")
 def run_sonar_analysis(project, logger):
 
