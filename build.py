@@ -27,7 +27,6 @@ from pybuilder.core import Author, init, use_bldsup, use_plugin
 
 bootstrap()
 
-use_plugin("pypi:pybuilder_external_plugin_demo")
 use_plugin("python.core")
 use_plugin("python.pytddmon")
 use_plugin("python.distutils")
