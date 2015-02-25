@@ -17,7 +17,7 @@
 #   limitations under the License.
 
 from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
-from pybuilder.utils import read_file
+from pybuilder.utils import read_file, execute_command
 
 
 class ExternalCommandResult(object):
@@ -62,6 +62,9 @@ class ExternalCommandBuilder(object):
     @property
     def as_string(self):
         return ' '.join(self.parts)
+
+    def run(self, outfile_name):
+        return execute_command(self.parts, outfile_name)
 
     def run_on_production_source_files(self, logger, include_test_sources=False, include_scripts=False):
         execution_result = execute_tool_on_source_files(project=self.project,

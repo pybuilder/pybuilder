@@ -106,6 +106,12 @@ class ExternalCommandExecutionTests(unittest.TestCase):
         self.command = ExternalCommandBuilder('command-name', self.project)
         self.command.use_argument('--foo').use_argument('--bar')
 
+    @patch("pybuilder.pluginhelper.external_command.execute_command")
+    def test_should_execute_external_command(self, execute_command):
+        self.command.run("any-outfile-name")
+
+        execute_command.assert_called_with(['command-name', '--foo', '--bar'], 'any-outfile-name')
+
     @patch('pybuilder.pluginhelper.external_command.read_file')
     @patch('pybuilder.pluginhelper.external_command.execute_tool_on_source_files')
     def test_should_execute_external_command_on_production_source_files(self, execution, read):
