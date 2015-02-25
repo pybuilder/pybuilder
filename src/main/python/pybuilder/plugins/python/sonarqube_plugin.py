@@ -16,6 +16,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from os.path import join
+
 from pybuilder.core import task, init, before, depends
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import assert_can_execute
@@ -62,7 +64,8 @@ def build_sonar_runner(project):
             .set_sonar_key("sonar.projectName").to_property_value("sonarqube_project_name")
             .set_sonar_key("sonar.projectVersion").to(project.version)
             .set_sonar_key("sonar.sources").to_property_value("dir_source_main_python")
-            .set_sonar_key("sonar.python.coverage.reportPath").to(project.expand_path("$dir_reports/coverage*.xml")))
+            .set_sonar_key("sonar.python.coverage.reportPath").to(
+                join(project.get_property("dir_target"), "reports", "coverage*.xml")))
 
 
 class SonarCommandBuilder(ExternalCommandBuilder):

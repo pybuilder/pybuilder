@@ -35,6 +35,7 @@ class RunSonarAnalysisTest(TestCase):
         self.project.set_property("sonarqube_project_key", "project_key")
         self.project.set_property("sonarqube_project_name", "project_name")
         self.project.set_property("dir_source_main_python", "src/main/python")
+        self.project.set_property("dir_target", "target")
         self.project.set_property("dir_reports", "target/reports")
 
     def test_should_build_sonar_runner_for_project(self):
@@ -44,7 +45,7 @@ class RunSonarAnalysisTest(TestCase):
             "-Dsonar.projectName=project_name "
             "-Dsonar.projectVersion=0.0.1 "
             "-Dsonar.sources=src/main/python "
-            "-Dsonar.python.coverage.reportPath=any-project/target/reports/coverage*.xml")
+            "-Dsonar.python.coverage.reportPath=target/reports/coverage*.xml")
 
     @patch("pybuilder.plugins.python.sonarqube_plugin.SonarCommandBuilder.run")
     def test_should_break_build_when_sonar_runner_fails(self, run_sonar_command):
