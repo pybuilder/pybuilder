@@ -43,7 +43,7 @@ class RunSonarAnalysisTest(TestCase):
             "sonar-runner -Dsonar.projectKey=project_key "
             "-Dsonar.projectName=project_name "
             "-Dsonar.projectVersion=0.0.1 "
-            "-Dfile.sonar.sources=src/main/python "
+            "-Dsonar.sources=src/main/python "
             "-Dsonar.python.coverage.reportPath=any-project/target/reports/coverage.xml")
 
     @patch("pybuilder.plugins.python.sonarqube_plugin.SonarCommandBuilder.run")

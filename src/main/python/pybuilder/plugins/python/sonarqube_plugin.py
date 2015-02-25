@@ -61,7 +61,7 @@ def build_sonar_runner(project):
             .set_sonar_key("sonar.projectKey").to_property_value("sonarqube_project_key")
             .set_sonar_key("sonar.projectName").to_property_value("sonarqube_project_name")
             .set_sonar_key("sonar.projectVersion").to(project.version)
-            .set_sonar_key("file.sonar.sources").to_property_value("dir_source_main_python")
+            .set_sonar_key("sonar.sources").to_property_value("dir_source_main_python")
             .set_sonar_key("sonar.python.coverage.reportPath").to(project.expand_path("$dir_reports/coverage.xml")))
 
 
