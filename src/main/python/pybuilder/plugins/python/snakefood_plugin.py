@@ -34,23 +34,32 @@ def check_snakefood_available(logger):
 def render_snakefood_report(project, logger):
     logger.info("Executing snakefood on project sources")
 
-    report_file = project.expand_path("$dir_reports/snakefood")
-    collect_dependencies(project, report_file)
+    internal_report_file = project.expand_path("$dir_reports/snakefood-internal")
+    external_report_file = project.expand_path("$dir_reports/snakefood-external")
+    collect_dependencies(project, internal_report_file, external_report_file)
 
-    logger.debug("Transforming snakefood graph to graphviz")
-    graph_file = project.expand_path("$dir_reports/snakefood.dot")
-    generate_graph(report_file, graph_file)
+    logger.debug("Transforming snakefood graphs to graphviz")
+    internal_graph_file = project.expand_path("$dir_reports/snakefood-internal.dot")
+    external_graph_file = project.expand_path("$dir_reports/snakefood-external.dot")
+    generate_graph(internal_report_file, internal_graph_file)
+    generate_graph(external_report_file, external_graph_file)
 
-    logger.debug("Rendering pdf")
-    pdf_file = project.expand_path("$dir_reports/snakefood.pdf")
-    generate_pdf(graph_file, pdf_file)
+    logger.debug("Rendering pdfs")
+    internal_pdf_file = project.expand_path("$dir_reports/snakefood-internal.pdf")
+    external_pdf_file = project.expand_path("$dir_reports/snakefood-external.pdf")
+    generate_pdf(internal_graph_file, internal_pdf_file)
+    logger.debug("Created {0}".format(internal_pdf_file))
+    logger.debug("Created {0}".format(external_pdf_file))
+    generate_pdf(external_graph_file, external_pdf_file)
 
 
-def collect_dependencies(project, report_file):
+def collect_dependencies(project, internal_report_file, external_report_file):
     source_dir = project.expand_path("$dir_source_main_python")
-    command = ["sfood", "--internal"]
+    internal_command = ["sfood", "--internal"]
+    external_command = ["sfood", "--external"]
 
-    execute_command(command, report_file, cwd=source_dir)
+    execute_command(internal_command, internal_report_file, cwd=source_dir)
+    execute_command(external_command, external_report_file, cwd=source_dir)
 
 
 def generate_graph(report_file, graph_file):
