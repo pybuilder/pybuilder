@@ -36,9 +36,9 @@ use_plugin("copy_resources")
 use_plugin("filter_resources")
 use_plugin("source_distribution")
 
-use_plugin("python.coverage")
 use_plugin("python.unittest")
 use_plugin("python.integrationtest")
+use_plugin("python.coverage")
 use_plugin("python.flake8")
 use_plugin("python.frosted")
 
