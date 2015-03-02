@@ -177,10 +177,14 @@ def build_module_report(coverage, module):
 
 
 def write_summary_report(coverage, project, modules):
+    from coverage import CoverageException
     summary = StringIO()
     coverage.report(modules, file=summary)
-    coverage.xml_report(outfile=project.expand_path("$dir_reports/coverage.xml"))
-    coverage.save()
+    try:
+        coverage.xml_report(outfile=project.expand_path("$dir_reports/coverage.xml"))
+        coverage.save()
+    except CoverageException:
+        pass  # coverage raises when there is no data
     project.write_report("coverage", summary.getvalue())
     summary.close()
 
