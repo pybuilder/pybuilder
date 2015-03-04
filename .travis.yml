@@ -1,3 +1,5 @@
+sudo: False
+
 language: python
 
 python:
@@ -8,8 +10,8 @@ python:
   - "3.4"
   - "pypy"
 
+
 before_script:
-  #- sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm
   - pip install coveralls
   - ./build.py install_dependencies -v
 
