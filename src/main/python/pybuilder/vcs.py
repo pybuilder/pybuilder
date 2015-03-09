@@ -45,17 +45,20 @@ class VCSRevision(object):
             "Cannot determine VCS revision: project is neither a git nor a svn repo.")
 
     def get_git_revision_count(self):
+        # NOTE: git rev-list HEAD --count does not work on RHEL6, hence we count ourselves.
         exit_code, stdout, stderr = execute_command_and_capture_output(
-            "git", "rev-list", "HEAD", "--count")
+            "git", "rev-list", "HEAD")
         if exit_code != 0:
-            raise PyBuilderException("Cannot determine git revision: git rev-list HEAD failed.")
-        return stdout.strip()
+            raise PyBuilderException("Cannot determine git revision: git rev-list HEAD failed:\n{0}".
+                                     format(stderr))
+        return str(len(stdout.splitlines()))
 
     def get_svn_revision_count(self):
         exit_code, stdout, stderr = execute_command_and_capture_output(
             "svnversion")
         if exit_code != 0 or "Unversioned directory" in stdout or "Uncommitted" in stdout:
-            raise PyBuilderException("Cannot determine svn revision: svnversion failed or unversioned directory.")
+            raise PyBuilderException("Cannot determine svn revision: svnversion failed or unversioned directory:\n{0}".
+                                     format(stderr))
         return stdout.strip().replace("M", "").replace("S", "").replace("P", "").split(":")[0]
 
     def is_a_git_repo(self):
