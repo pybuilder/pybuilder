@@ -73,12 +73,8 @@ class VCSRevisionTest(unittest.TestCase):
         self.assertEquals("451", VCSRevision().get_svn_revision_count())
 
     def test_should_return_revision_when_git_revlist_succeeds(self):
-        self.execute_command.return_value = 0, "451", "any-stderr"
-        self.assertEquals("451", VCSRevision().get_git_revision_count())
-
-    def test_should_return_revision_without_trailing_emptiness_when_git_revlist_succeeds(self):
-        self.execute_command.return_value = 0, "451  \n", "any-stderr"
-        self.assertEquals("451", VCSRevision().get_git_revision_count())
+        self.execute_command.return_value = 0, "1\n2\n3", "any-stderr"
+        self.assertEquals("3", VCSRevision().get_git_revision_count())
 
     def test_should_detect_svn_when_status_succeeds(self):
         self.execute_command.return_value = 0, "", ""
