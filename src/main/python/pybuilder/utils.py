@@ -34,6 +34,18 @@ from subprocess import Popen, PIPE
 from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
 
 
+def get_all_dependencies_for_task(task):
+    """
+    Returns a list containing all tasks required by the given
+    task function (but not the given task itself)
+    """
+    from pybuilder.reactor import Reactor
+    task_name = task.__name__
+    execution_manager = Reactor.current_instance().execution_manager
+    task_and_all_dependencies = execution_manager.collect_all_transitive_tasks([task_name])
+    return [dependency for dependency in task_and_all_dependencies if dependency.name != task_name]
+
+
 def render_report(report_dict):
     return json.dumps(report_dict, indent=2, sort_keys=True)
 
