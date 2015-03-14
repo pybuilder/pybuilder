@@ -476,6 +476,43 @@ class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
 
 class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
 
+    def test_should_collect_all_tasks_when_there_are_no_dependencies(self):
+        one = mock(name="one", dependencies=[])
+        self.execution_manager.register_task(one)
+
+        self.assertEqual(self.execution_manager.collect_all_transitive_tasks(["one"]), set([one]))
+
+    def test_should_collect_all_tasks_when_there_is_a_simple_dependency(self):
+        one = mock(name="one", dependencies=["two"])
+        two = mock(name="two", dependencies=[])
+        self.execution_manager.register_task(one, two)
+
+        self.assertEqual(self.execution_manager.collect_all_transitive_tasks(["one"]), set([one, two]))
+
+    def test_should_collect_all_tasks_when_there_is_a_transitive_dependency(self):
+        one = mock(name="one", dependencies=["two"])
+        two = mock(name="two", dependencies=["three"])
+        three = mock(name="three", dependencies=[])
+        self.execution_manager.register_task(one, two, three)
+
+        self.assertEqual(self.execution_manager.collect_all_transitive_tasks(["one"]), set([one, two, three]))
+
+    def test_should_collect_all_tasks_when_several_tasks_given(self):
+        one = mock(name="one", dependencies=[])
+        two = mock(name="two", dependencies=["three"])
+        three = mock(name="three", dependencies=[])
+        self.execution_manager.register_task(one, two, three)
+
+        self.assertEqual(self.execution_manager.collect_all_transitive_tasks(["one", "two"]), set([one, two, three]))
+
+    def test_should_only_collect_required_tasks(self):
+        one = mock(name="one", dependencies=["three"])
+        two = mock(name="two", dependencies=[])
+        three = mock(name="three", dependencies=[])
+        self.execution_manager.register_task(one, two, three)
+
+        self.assertEqual(self.execution_manager.collect_all_transitive_tasks(["one"]), set([one, three]))
+
     def test_should_raise_exception_when_building_execution_plan_and_dependencies_are_not_resolved(self):
         self.assertRaises(DependenciesNotResolvedException,
                           self.execution_manager.build_execution_plan, ("boom",))
@@ -557,6 +594,18 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
         one = mock(name="one", dependencies=["three"])
         two = mock(name="two", dependencies=["one"])
         three = mock(name="three", dependencies=["one", "two"])
+
+        self.execution_manager.register_task(one, two, three)
+
+        self.execution_manager.resolve_dependencies()
+
+        self.assertRaises(CircularTaskDependencyException,
+                          self.execution_manager.build_execution_plan, ["one"])
+
+    def test_should_raise_exception_when_circular_reference_is_detected_on_indirect_required_tasks(self):
+        one = mock(name="one", dependencies=["two"])
+        two = mock(name="two", dependencies=["three"])
+        three = mock(name="three", dependencies=["two"])
 
         self.execution_manager.register_task(one, two, three)
 

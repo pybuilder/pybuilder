@@ -34,6 +34,7 @@ from pybuilder.errors import (CircularTaskDependencyException,
                               MissingActionDependencyException,
                               NoSuchTaskException)
 from pybuilder.utils import as_list, Timer
+from pybuilder.graph_utils import Graph, GraphHasCycles
 
 
 def as_task_name_list(mixed):
@@ -242,39 +243,55 @@ class ExecutionManager(object):
         return summaries
 
     def get_task(self, name):
+        if not self.has_task(name):
+            raise NoSuchTaskException(name)
         return self._tasks[name]
 
     def has_task(self, name):
         return name in self._tasks
 
+    def _collect_transitive_tasks(self, task, visited=None):
+        if not visited:
+            visited = set()
+        if task in visited:
+            return visited
+        visited.add(task)
+        dependencies = [self.get_task(dependency_name) for dependency_name in task.dependencies]
+        for dependency in dependencies:
+            self._collect_transitive_tasks(dependency, visited)
+        return visited
+
+    def collect_all_transitive_tasks(self, task_names):
+        all_tasks = set()
+        for task_name in task_names:
+            all_tasks.update(self._collect_transitive_tasks(self.get_task(task_name)))
+        return all_tasks
+
     def build_execution_plan(self, task_names):
         self.assert_dependencies_resolved()
 
         execution_plan = []
-        for name in as_list(task_names):
-            self.enqueue_task(execution_plan, name)
+
+        dependency_edges = {}
+        for task in self.collect_all_transitive_tasks(as_list(task_names)):
+            dependency_edges[task.name] = task.dependencies
+        try:
+            Graph(dependency_edges).assert_no_cycles_present()
+        except GraphHasCycles as cycles:
+            raise CircularTaskDependencyException(str(cycles))
+
+        for task_name in as_list(task_names):
+            self.enqueue_task(execution_plan, task_name)
         return execution_plan
 
-    def enqueue_task(self, execution_plan, task_name, circular_check=None):
-        if not self.has_task(task_name):
-            raise NoSuchTaskException(task_name)
-
+    def enqueue_task(self, execution_plan, task_name):
         task = self.get_task(task_name)
-
-        if task == circular_check:
-            raise CircularTaskDependencyException(task.name)
 
         if task in execution_plan:
             return
 
-        try:
-            for dependency in self._task_dependencies[task.name]:
-                self.enqueue_task(execution_plan, dependency.name,
-                                  circular_check=circular_check if circular_check else task)
-        except CircularTaskDependencyException as e:
-            if e.second:
-                raise
-            raise CircularTaskDependencyException(e.first, task.name)
+        for dependency in self._task_dependencies[task.name]:
+            self.enqueue_task(execution_plan, dependency.name)
 
         execution_plan.append(task)
 
