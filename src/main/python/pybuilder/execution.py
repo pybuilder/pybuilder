@@ -101,6 +101,9 @@ class Task(object):
             return self.name == other.name
         return False
 
+    def __hash__(self):
+        return 9 * hash(self.name)
+
     def __ne__(self, other):
         return not self.__eq__(other)
 
