@@ -187,46 +187,38 @@ class TestNameAwareTestResult(TestCase):
         TestNameAwareTestResultFromPlugin.addFailure(
             self.mock_test_result,
             "test_with_failure",
-            ("type", "exception", "traceback")
-        )
+            ("type", "exception", "traceback"))
 
         self.assertEqual(
             self.mock_test_result.failed_test_names_and_reasons,
-            {'test_with_failure': 'type: exception'}
-        )
+            {'test_with_failure': 'type: exception'})
 
     def test_should_save_exception_details_when_test_error_occurs(self):
         TestNameAwareTestResultFromPlugin.addError(
             self.mock_test_result,
             "test_with_failure",
-            ("type", "exception", "traceback")
-        )
+            ("type", "exception", "traceback"))
 
         self.assertEqual(
             self.mock_test_result.failed_test_names_and_reasons,
-            {'test_with_failure': 'type: exception'}
-        )
+            {'test_with_failure': 'type: exception'})
 
     def test_should_save_exception_details_when_test_failure_with_unicode_occurs(self):
         TestNameAwareTestResultFromPlugin.addFailure(
             self.mock_test_result,
             "test_with_failure",
-            ("type", u"exception with ünicode", "traceback")
-        )
+            ("type", u"exception with ünicode", "traceback"))
 
         self.assertEqual(
             self.mock_test_result.failed_test_names_and_reasons,
-            {'test_with_failure': 'type: exception with ünicode'}
-        )
+            {'test_with_failure': u'type: exception with ünicode'})
 
     def test_should_save_exception_details_when_test_error_with_unicode_occurs(self):
         TestNameAwareTestResultFromPlugin.addError(
             self.mock_test_result,
             "test_with_failure",
-            ("type", u"exception with ünicode", "traceback")
-        )
+            ("type", u"exception with ünicode", "traceback"))
 
         self.assertEqual(
             self.mock_test_result.failed_test_names_and_reasons,
-            {'test_with_failure': 'type: exception with ünicode'}
-        )
+            {'test_with_failure': u'type: exception with ünicode'})
