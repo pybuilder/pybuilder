@@ -177,7 +177,7 @@ class TestNameAwareTestResult(TestCase):
 
     def setUp(self):
         self.mock_test_result = Mock(TestNameAwareTestResultFromPlugin)
-        TestNameAwareTestResultFromPlugin.__init__(self.mock_test_result, Mock(), Mock(), Mock(), Mock())
+        TestNameAwareTestResultFromPlugin.__init__(self.mock_test_result, Mock(), Mock(), Mock(), 42)
 
     def test_should_append_test_name_when_running_test(self):
         TestNameAwareTestResultFromPlugin.startTest(self.mock_test_result, "any_test_name")
