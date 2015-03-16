@@ -230,4 +230,3 @@ class TestNameAwareTestResult(TestCase):
                 self.mock_test_result.failed_test_names_and_reasons,
                 {'test_with_failure': 'type: exception with ünicode'}
         )
-
