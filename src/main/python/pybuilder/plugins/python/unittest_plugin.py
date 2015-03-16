@@ -16,6 +16,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from __future__ import unicode_literals
+
 try:
     from StringIO import StringIO
 except ImportError as e:
@@ -62,12 +64,12 @@ class TestNameAwareTestResult(TextTestResult):
 
     def addError(self, test, err):
         exception_type, exception, traceback = err
-        self.failed_test_names_and_reasons[test] = u'{0}: {1}'.format(exception_type, exception).replace('\'', '')
+        self.failed_test_names_and_reasons[test] = '{0}: {1}'.format(exception_type, exception).replace('\'', '')
         super(TestNameAwareTestResult, self).addError(test, err)
 
     def addFailure(self, test, err):
         exception_type, exception, traceback = err
-        self.failed_test_names_and_reasons[test] = u'{0}: {1}'.format(exception_type, exception).replace('\'', '')
+        self.failed_test_names_and_reasons[test] = '{0}: {1}'.format(exception_type, exception).replace('\'', '')
         super(TestNameAwareTestResult, self).addFailure(test, err)
 
 
