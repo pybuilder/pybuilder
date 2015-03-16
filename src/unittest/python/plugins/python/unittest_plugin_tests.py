@@ -21,6 +21,7 @@ from unittest import TestCase
 
 from mock import Mock, patch
 from pybuilder.core import Project
+from pybuilder.plugins.python.unittest_plugin import TestNameAwareTestResult as TestNameAwareTestResultFromPlugin
 from pybuilder.plugins.python.unittest_plugin import (execute_tests, execute_tests_matching,
                                                       _register_test_and_source_path_and_return_test_dir,
                                                       report_to_ci_server)
@@ -169,3 +170,40 @@ class CIServerInteractionTests(TestCase):
         report_to_ci_server(project, result)
 
         mock_proxy.fails.assert_called_with('Something went very wrong')
+
+
+class TestNameAwareTestResult(TestCase):
+
+    def setUp(self):
+        self.mock_test_result = Mock(TestNameAwareTestResultFromPlugin)
+        TestNameAwareTestResultFromPlugin.__init__(self.mock_test_result, Mock(), Mock(), Mock(), Mock())
+
+    def test_should_append_test_name_when_running_test(self):
+        TestNameAwareTestResultFromPlugin.startTest(self.mock_test_result, "any_test_name")
+
+        self.assertEqual(self.mock_test_result.test_names, ["any_test_name"])
+
+    def test_should_save_exception_details_when_test_failure_occurs(self):
+        TestNameAwareTestResultFromPlugin.addFailure(
+            self.mock_test_result,
+            "test_with_failure",
+            ("type", "exception", "traceback")
+        )
+
+        self.assertEqual(
+                self.mock_test_result.failed_test_names_and_reasons,
+                {'test_with_failure': 'type: exception'}
+        )
+
+    def test_should_save_exception_details_when_test_error_occurs(self):
+        TestNameAwareTestResultFromPlugin.addError(
+            self.mock_test_result,
+            "test_with_failure",
+            ("type", "exception", "traceback")
+        )
+
+        self.assertEqual(
+                self.mock_test_result.failed_test_names_and_reasons,
+                {'test_with_failure': 'type: exception'}
+        )
+
