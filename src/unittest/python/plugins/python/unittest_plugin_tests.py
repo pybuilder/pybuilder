@@ -191,8 +191,8 @@ class TestNameAwareTestResult(TestCase):
         )
 
         self.assertEqual(
-                self.mock_test_result.failed_test_names_and_reasons,
-                {'test_with_failure': 'type: exception'}
+            self.mock_test_result.failed_test_names_and_reasons,
+            {'test_with_failure': 'type: exception'}
         )
 
     def test_should_save_exception_details_when_test_error_occurs(self):
@@ -203,8 +203,8 @@ class TestNameAwareTestResult(TestCase):
         )
 
         self.assertEqual(
-                self.mock_test_result.failed_test_names_and_reasons,
-                {'test_with_failure': 'type: exception'}
+            self.mock_test_result.failed_test_names_and_reasons,
+            {'test_with_failure': 'type: exception'}
         )
 
     def test_should_save_exception_details_when_test_failure_with_unicode_occurs(self):
@@ -215,8 +215,8 @@ class TestNameAwareTestResult(TestCase):
         )
 
         self.assertEqual(
-                self.mock_test_result.failed_test_names_and_reasons,
-                {'test_with_failure': 'type: exception with ünicode'}
+            self.mock_test_result.failed_test_names_and_reasons,
+            {'test_with_failure': 'type: exception with ünicode'}
         )
 
     def test_should_save_exception_details_when_test_error_with_unicode_occurs(self):
@@ -227,6 +227,6 @@ class TestNameAwareTestResult(TestCase):
         )
 
         self.assertEqual(
-                self.mock_test_result.failed_test_names_and_reasons,
-                {'test_with_failure': 'type: exception with ünicode'}
+            self.mock_test_result.failed_test_names_and_reasons,
+            {'test_with_failure': 'type: exception with ünicode'}
         )
