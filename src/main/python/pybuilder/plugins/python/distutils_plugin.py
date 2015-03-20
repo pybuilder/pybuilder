@@ -259,7 +259,7 @@ def build_dependency_links_string(project):
     def format_single_dependency(dependency):
         return '"%s"' % dependency.url
 
-    all_dependency_links = map(format_single_dependency, dependency_links)
+    all_dependency_links = [link for link in map(format_single_dependency, dependency_links)]
     all_dependency_links.extend(editable_links_from_requirements)
 
     result = "dependency_links = [ "
