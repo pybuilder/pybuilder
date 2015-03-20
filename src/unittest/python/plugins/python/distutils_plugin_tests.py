@@ -115,6 +115,26 @@ class InstallDependenciesTest(unittest.TestCase):
         self.assertEqual(
             'install_requires = [ "bar" ],', build_install_dependencies_string(self.project))
 
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    def test_should_ignore_editable_urls_from_requirements(self, mock_open):
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
+        handle = mock_open.return_value.__enter__.return_value
+        handle.readlines.return_value = ["foo", "-e git+https://github.com/someuser/someproject.git#egg=some_package"]
+        self.project.depends_on_requirements("requirements.txt")
+
+        self.assertEqual(
+            'install_requires = [ "foo" ],', build_install_dependencies_string(self.project))
+
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    def test_should_ignore_expanded_editable_urls_from_requirements(self, mock_open):
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
+        handle = mock_open.return_value.__enter__.return_value
+        handle.readlines.return_value = ["foo", "--editable git+https://github.com/someuser/someproject.git#egg=some_package"]
+        self.project.depends_on_requirements("requirements.txt")
+
+        self.assertEqual(
+            'install_requires = [ "foo" ],', build_install_dependencies_string(self.project))
+
 
 class DependencyLinksTest(unittest.TestCase):
 
@@ -139,6 +159,48 @@ class DependencyLinksTest(unittest.TestCase):
         self.assertEqual('dependency_links = [ "https://github.com/downloads/halimath/pyassert/pyassert1-0.2.2.tar.gz",'
                          ' "https://github.com/downloads/halimath/pyassert/pyassert2-0.2.2.tar.gz" ],',
                          build_dependency_links_string(self.project))
+
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    def test_should_use_editable_urls_from_requirements_as_dependency_links(self, mock_open):
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
+        handle = mock_open.return_value.__enter__.return_value
+        handle.readlines.return_value = [
+            "-e git+https://github.com/someuser/someproject.git#egg=some_package",
+            "-e svn+https://github.com/someuser/someproject#egg=some_package"]
+        self.project.depends_on_requirements("requirements.txt")
+
+        self.assertEqual(
+            'dependency_links = [ "git+https://github.com/someuser/someproject.git#egg=some_package",'
+            ' "svn+https://github.com/someuser/someproject#egg=some_package" ],',
+            build_dependency_links_string(self.project))
+
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    def test_should_use_expanded_editable_urls_from_requirements_as_dependency_links(self, mock_open):
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
+        handle = mock_open.return_value.__enter__.return_value
+        handle.readlines.return_value = [
+            "--editable git+https://github.com/someuser/someproject.git#egg=some_package",
+            "--editable svn+https://github.com/someuser/someproject#egg=some_package"]
+        self.project.depends_on_requirements("requirements.txt")
+
+        self.assertEqual(
+            'dependency_links = [ "git+https://github.com/someuser/someproject.git#egg=some_package",'
+            ' "svn+https://github.com/someuser/someproject#egg=some_package" ],',
+            build_dependency_links_string(self.project))
+
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    def test_should_use_editable_urls_from_requirements_combined_with_url_dependencies(self, mock_open):
+        mock_open.return_value = MagicMock(spec=TYPE_FILE)
+        handle = mock_open.return_value.__enter__.return_value
+        handle.readlines.return_value = [
+            "-e svn+https://github.com/someuser/someproject#egg=some_package"]
+        self.project.depends_on("jedi", url="git+https://github.com/davidhalter/jedi")
+        self.project.depends_on_requirements("requirements.txt")
+
+        self.assertEqual(
+            'dependency_links = [ "git+https://github.com/davidhalter/jedi",'
+            ' "svn+https://github.com/someuser/someproject#egg=some_package" ],',
+            build_dependency_links_string(self.project))
 
 
 class DefaultTest(unittest.TestCase):

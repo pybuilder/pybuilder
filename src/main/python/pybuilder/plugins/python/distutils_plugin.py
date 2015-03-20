@@ -200,6 +200,10 @@ def quote(requirements):
     return ['"%s"' % requirement for requirement in requirements]
 
 
+def is_editable_requirement(requirement):
+    return "-e " in requirement or "--editable " in requirement
+
+
 def flatten_and_quote(requirements_file):
     with open(requirements_file.name, 'r') as requirements_file:
         requirements = [requirement.strip("\n") for requirement in requirements_file.readlines()]
@@ -216,16 +220,18 @@ def build_install_dependencies_string(project):
         dependency for dependency in project.dependencies
         if isinstance(dependency, Dependency) and not dependency.url]
     requirements = [
-        requirements for requirements in project.dependencies
-        if isinstance(requirements, RequirementsFile)]
+        requirement for requirement in project.dependencies
+        if isinstance(requirement, RequirementsFile)]
     if not dependencies and not requirements:
         return ""
 
     dependencies = [format_single_dependency(dependency) for dependency in dependencies]
     requirements = [strip_comments(flatten_and_quote(requirement)) for requirement in requirements]
     flattened_requirements = [dependency for dependency_list in requirements for dependency in dependency_list]
+    flattened_requirements_without_editables = [
+        requirement for requirement in flattened_requirements if not is_editable_requirement(requirement)]
 
-    dependencies.extend(flattened_requirements)
+    dependencies.extend(flattened_requirements_without_editables)
 
     result = "install_requires = [ "
     result += ", ".join(dependencies)
@@ -237,14 +243,27 @@ def build_dependency_links_string(project):
     dependency_links = [
         dependency for dependency in project.dependencies
         if isinstance(dependency, Dependency) and dependency.url]
-    if not dependency_links:
+    requirements = [
+        requirement for requirement in project.dependencies
+        if isinstance(requirement, RequirementsFile)]
+
+    editable_links_from_requirements = []
+    for requirement in requirements:
+        editables = [editable for editable in flatten_and_quote(requirement) if is_editable_requirement(editable)]
+        editable_links_from_requirements.extend(
+            [editable.replace("--editable ", "").replace("-e ", "") for editable in editables])
+
+    if not dependency_links and not requirements:
         return ""
 
     def format_single_dependency(dependency):
         return '"%s"' % dependency.url
 
+    all_dependency_links = map(format_single_dependency, dependency_links)
+    all_dependency_links.extend(editable_links_from_requirements)
+
     result = "dependency_links = [ "
-    result += ", ".join(map(format_single_dependency, dependency_links))
+    result += ", ".join(all_dependency_links)
     result += " ],"
     return result
 
