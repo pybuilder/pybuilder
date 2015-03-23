@@ -1,6 +1,7 @@
 *.pyc
 __pycache__
 target
+.DS_Store
 .coverage
 user
 .project

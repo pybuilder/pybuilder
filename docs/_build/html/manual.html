@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tutorial &mdash; PyBuilder 0.10 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.10',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PyBuilder 0.10 documentation" href="index.html" />
+    <link rel="prev" title="User Documentaion" href="user-doc.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="user-doc.html" title="User Documentaion"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PyBuilder 0.10 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="tutorial">
+<h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>PyBuilder is a multi-purpose software build tool. Most commonly it targets the building and management of software with a strong focus on Python.</p>
+</div>
+<div class="section" id="building-python-projects">
+<h2>Building Python Projects<a class="headerlink" href="#building-python-projects" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>Some of the capabilities provided by PyBuilder out-of-the box are:</dt>
+<dd><ul class="first last simple">
+<li>Automatic execution of unit and integration tests on every build</li>
+<li>Automatic analysis of the code coverage</li>
+<li>Automatic execution and result interpretation of analysis tools, such as flake8</li>
+<li>Automatic generation of distutils script <code class="docutils literal"><span class="pre">setup.py</span></code></li>
+</ul>
+</dd>
+</dl>
+<p>The general idea is that everything you do in your continuous integration chain, you also do locally before checking in your work.</p>
+</div>
+<div class="section" id="why-another-build-tool">
+<h2>Why Another Build Tool<a class="headerlink" href="#why-another-build-tool" title="Permalink to this headline">¶</a></h2>
+<p>When working on large scale software projects based on Java and Groovy I delved into the build process using tools such as Apache Ant, Apache Maven or Gradle. Although none of these tools is perfect they all provide a powerful and extensible way for building and testing software.</p>
+<p>When focusing on Python I looked for a similar tool and got frustrated by the large number of tools that all match some aspect of the build and test process. Unfortunately, many of those tools were not suitable for composition and there was no central point of entry.</p>
+<p>I suddenly found myself writing “build scripts” in Python over and over again using the tools I found out to be useful.</p>
+<dl class="docutils">
+<dt>PyBuilder was born on the attempt to create a reusable tool that should:</dt>
+<dd><ul class="first last simple">
+<li>Make simple things simple * Make hard things as simple as possible</li>
+<li>Let me use whatever tool I want to integrate</li>
+<li>Integrate these tools into a common view</li>
+<li>Let me use Python (which is really great) to write my build files</li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section" id="concepts">
+<h2>Concepts<a class="headerlink" href="#concepts" title="Permalink to this headline">¶</a></h2>
+<p>PyBuilder executes build logic that is organized into tasks and actions.</p>
+<p>Tasks are the main building blocks of the build logic. A task is an enclosed piece of build logic to be executed as a single unit. Each task can name a set of other tasks that it depends on. PyBuilder ensures that a task gets executed only after all of its dependencies have been executed.</p>
+<p>Actions are smaller pieces of build logic than tasks. They are bound to the execution of task. Each action states that it needs to be executed before or after a named task. PyBuilder will execute the action if and only if the named task is executed, either directly or through another tasks’ dependencies.</p>
+<p>Actions as well as tasks are decorated plain Python functions. Thus, you can structure your code the way you like if you provide a single point of entry to a build step.</p>
+<p>Both task and action functions can request parameters known to PyBuilder through dependency injection by parameter name.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Tutorial</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#building-python-projects">Building Python Projects</a></li>
+<li><a class="reference internal" href="#why-another-build-tool">Why Another Build Tool</a></li>
+<li><a class="reference internal" href="#concepts">Concepts</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="user-doc.html"
+                        title="previous chapter">User Documentaion</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/manual.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, PyBuilder Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+      |
+      <a href="_sources/manual.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>
