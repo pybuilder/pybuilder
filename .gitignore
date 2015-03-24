@@ -23,3 +23,8 @@ Vagrantfile
 
 # Ignoring cram test error
 src/cmdlinetest/test_help.t.err
+
+# sphinx doc artefacts
+docs/_build/
+docs/_static/
+docs/_templates/
