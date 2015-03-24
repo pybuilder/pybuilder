@@ -30,7 +30,8 @@ When focusing on Python I looked for a similar tool and got frustrated by the la
 I suddenly found myself writing “build scripts” in Python over and over again using the tools I found out to be useful.
 
 PyBuilder was born on the attempt to create a reusable tool that should:
-    * Make simple things simple * Make hard things as simple as possible
+    * Make simple things simple
+    * Make hard things as simple as possible
     * Let me use whatever tool I want to integrate
     * Integrate these tools into a common view
     * Let me use Python (which is really great) to write my build files
