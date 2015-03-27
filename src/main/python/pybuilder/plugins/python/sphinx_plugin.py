@@ -37,7 +37,8 @@ use_plugin("core")
 
 
 DEFAULT_SPHINX_BUILDER = "html"
-DEFAULT_SPHINX_OUTPUT_DIR = "_build/"
+# TODO Fix output path
+DEFAULT_SPHINX_OUTPUT_DIR = "docs/_build/"
 PROJECT_NAME = os.path.basename(os.getcwd())
 VERSION = __version__
 # TODO get authors information from build.py
