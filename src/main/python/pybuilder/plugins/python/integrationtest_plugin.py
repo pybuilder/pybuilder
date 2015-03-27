@@ -43,7 +43,7 @@ def init_test_source_directory(project):
     project.set_property_if_unset("integrationtest_file_suffix", None)  # deprecated, use integrationtest_file_glob.
     project.set_property_if_unset("integrationtest_additional_environment", {})
     project.set_property_if_unset("integrationtest_inherit_environment", False)
-    project.set_property_if_unset("integrationtest_verbose", False)
+    project.set_property_if_unset("integrationtest_always_verbose", False)
 
 
 @task
@@ -236,12 +236,12 @@ def run_single_test(logger, project, reports_dir, test, output_test_names=True):
         logger.error("Integration test failed: %s", test)
         report_item["success"] = False
 
-        if project.get_property("verbose") or project.get_property("integrationtest_verbose"):
+        if project.get_property("verbose") or project.get_property("integrationtest_always_verbose"):
             print_file_content(report_file_name)
             print_text_line()
             print_file_content(error_file_name)
             report_item['exception'] = ''.join(read_file(error_file_name)).replace('\'', '')
-    elif project.get_property("integrationtest_verbose"):
+    elif project.get_property("integrationtest_always_verbose"):
         print_file_content(report_file_name)
         print_text_line()
         print_file_content(error_file_name)
