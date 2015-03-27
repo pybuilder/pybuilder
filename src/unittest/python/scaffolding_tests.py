@@ -33,6 +33,7 @@ class PythonProjectScaffoldingTests(TestCase):
         self.assertEqual(scaffolding.dir_source_main_python, 'src/main/python')
         self.assertEqual(
             scaffolding.dir_source_unittest_python, 'src/unittest/python')
+        self.assertEqual(scaffolding.dir_docs, 'docs')
         self.assertEqual(
             scaffolding.dir_source_main_scripts, 'src/main/scripts')
 
@@ -133,6 +134,7 @@ def set_properties(project):
                          [
                              call('src/main/python'),
                              call('src/unittest/python'),
+                             call('docs'),
                              call('src/main/scripts')
                          ])
 
@@ -158,6 +160,7 @@ class CollectProjectInformationTests(TestCase):
                          [
                              call('Project name', 'project'),
                              call('Source directory', 'src/main/python'),
+                             call('Docs directory', 'docs'),
                              call('Unittest directory', 'src/unittest/python'),
                              call('Scripts directory', 'src/main/scripts'),
                              call('Use plugin python.flake8 (Y/n)?', 'y'),

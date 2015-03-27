@@ -30,6 +30,7 @@ except NameError:
 DEFAULT_SOURCE_DIRECTORY = 'src/main/python'
 DEFAULT_UNITTEST_DIRECTORY = 'src/unittest/python'
 DEFAULT_SCRIPTS_DIRECTORY = 'src/main/scripts'
+DEFAULT_DOCS_DIRECTORY = 'docs'
 PLUGINS_TO_SUGGEST = ['python.flake8', 'python.coverage', 'python.distutils']
 
 
@@ -44,6 +45,7 @@ def collect_project_information():
     scaffolding = PythonProjectScaffolding(project_name)
 
     dir_source_main_python = prompt_user('Source directory', DEFAULT_SOURCE_DIRECTORY)
+    dir_docs = prompt_user('Docs directory', DEFAULT_DOCS_DIRECTORY)
     dir_source_unittest_python = prompt_user(
         'Unittest directory', DEFAULT_UNITTEST_DIRECTORY)
     dir_source_main_scripts = prompt_user("Scripts directory", DEFAULT_SCRIPTS_DIRECTORY)
@@ -57,6 +59,8 @@ def collect_project_information():
         scaffolding.dir_source_unittest_python = dir_source_unittest_python
     if dir_source_main_scripts:
         scaffolding.dir_source_main_scripts = dir_source_main_scripts
+    if dir_docs:
+        scaffolding.dir_docs = dir_docs
 
     return scaffolding
 
@@ -112,6 +116,7 @@ def set_properties(project):
         self.dir_source_main_python = DEFAULT_SOURCE_DIRECTORY
         self.dir_source_unittest_python = DEFAULT_UNITTEST_DIRECTORY
         self.dir_source_main_scripts = DEFAULT_SCRIPTS_DIRECTORY
+        self.dir_docs = DEFAULT_DOCS_DIRECTORY
         self.core_imports = ['use_plugin']
         self.plugins = ['python.core', 'python.unittest', 'python.install_dependencies']
         self.initializer = ''
@@ -138,6 +143,8 @@ def set_properties(project):
             properties_to_set.append(('dir_source_unittest_python', self.dir_source_unittest_python))
         if not self.is_default_source_main_scripts:
             properties_to_set.append(('dir_source_main_scripts', self.dir_source_main_scripts))
+        if not self.is_default_docs:
+            properties_to_set.append(('dir_docs', self.dir_docs))
 
         initializer_body = self._build_initializer_body_with_properties(properties_to_set)
 
@@ -152,12 +159,17 @@ def set_properties(project):
         return self.dir_source_unittest_python == DEFAULT_UNITTEST_DIRECTORY
 
     @property
+    def is_default_docs(self):
+        return self.dir_docs == DEFAULT_DOCS_DIRECTORY
+
+    @property
     def is_default_source_main_scripts(self):
         return self.dir_source_main_scripts == DEFAULT_SCRIPTS_DIRECTORY
 
     def set_up_project(self):
         for needed_directory in (self.dir_source_main_python,
                                  self.dir_source_unittest_python,
+                                 self.dir_docs,
                                  self.dir_source_main_scripts):
             if not os.path.exists(needed_directory):
                 os.makedirs(needed_directory)
