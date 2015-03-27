@@ -11,8 +11,12 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   user-doc
    manual
+   user-doc
+   project-structure
+   build-py
+   build-software
+
 
 Indices and tables
 ==================
