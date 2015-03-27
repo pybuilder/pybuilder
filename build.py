@@ -42,6 +42,7 @@ use_plugin("python.integrationtest")
 use_plugin("python.coverage")
 use_plugin("python.flake8")
 use_plugin("python.frosted")
+use_plugin("python.sphinx")
 
 if not sys.version_info[0] == 3:
     use_plugin("python.snakefood")
