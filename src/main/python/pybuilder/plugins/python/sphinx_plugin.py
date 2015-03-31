@@ -28,7 +28,6 @@ from pybuilder.errors import BuildFailedException
 from pybuilder.utils import assert_can_execute
 from pybuilder.utils import execute_command
 from pybuilder import scaffolding as SCAFFODING
-from pybuilder import __version__
 
 __author__ = 'Thomas Prebble', 'Marcel Wolf'
 
@@ -37,10 +36,9 @@ use_plugin("core")
 
 
 DEFAULT_SPHINX_BUILDER = "html"
-# TODO Fix output path
-DEFAULT_SPHINX_OUTPUT_DIR = "docs/_build/"
+DEFAULT_SPHINX_OUTPUT_DIR = SCAFFODING.DEFAULT_DOCS_DIRECTORY + "/_build/"
 PROJECT_NAME = os.path.basename(os.getcwd())
-VERSION = __version__
+VERSION = "0.10.59"
 # TODO get authors information from build.py
 AUTHORS = "Pybuilder_Team"
 
@@ -120,6 +118,9 @@ def sphinx_generate(project, logger):
     if project.get_property("verbose"):
         logger.info(build_command)
         exit_code = execute_command(build_command, log_file, shell=True)
+        logger.info("documentation was build as %s"
+                    % DEFAULT_SPHINX_BUILDER + ", check %s"
+                    % DEFAULT_SPHINX_OUTPUT_DIR)
     if exit_code != 0:
         raise BuildFailedException(
             "Sphinx build command failed. See %s for details.", log_file)
@@ -129,8 +130,6 @@ def get_sphinx_build_command(project):
     """Builds the sphinx-build command using project properties.
     """
     options = ["-b %s" % project.get_property("sphinx_builder"),
-               "-c %s" % project.expand_path
-               (project.get_property("sphinx_config_path")),
-               project.expand_path(project.get_property("sphinx_source_dir")),
+               project.expand_path(project.get_property("sphinx_config_path")),
                project.expand_path(project.get_property("sphinx_output_dir"))]
     return "sphinx-build %s" % " ".join(options)
