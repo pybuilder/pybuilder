@@ -101,7 +101,6 @@ def get_sphinx_quickstart_command(project):
                "-v %s" % project.version,
                "%s" % project.expand_path
                (project.get_property("sphinx_source_dir"))]
-    print project.author
     return "sphinx-quickstart %s" % " ".join(options)
 
 
