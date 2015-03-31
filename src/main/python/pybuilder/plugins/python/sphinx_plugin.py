@@ -38,9 +38,8 @@ use_plugin("core")
 DEFAULT_SPHINX_BUILDER = "html"
 DEFAULT_SPHINX_OUTPUT_DIR = SCAFFODING.DEFAULT_DOCS_DIRECTORY + "/_build/"
 PROJECT_NAME = os.path.basename(os.getcwd())
-VERSION = "0.10.59"
-# TODO get authors information from build.py
-AUTHORS = "Pybuilder_Team"
+__version__ = '${version}'
+AUTHORS = '${doc_author}'
 
 
 @init
@@ -98,10 +97,11 @@ def get_sphinx_quickstart_command(project):
     """
     options = ["-q",
                "-p %s" % PROJECT_NAME,
-               "-a %s" % AUTHORS,
-               "-v %s" % VERSION,
+               "-a %s" % project.doc_author,
+               "-v %s" % project.version,
                "%s" % project.expand_path
                (project.get_property("sphinx_source_dir"))]
+    print project.author
     return "sphinx-quickstart %s" % " ".join(options)
 
 

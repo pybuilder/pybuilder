@@ -43,6 +43,7 @@ use_plugin("python.coverage")
 use_plugin("python.flake8")
 use_plugin("python.frosted")
 use_plugin("python.sphinx")
+use_plugin('filter_resources')
 
 if not sys.version_info[0] == 3:
     use_plugin("python.snakefood")
@@ -101,7 +102,10 @@ def initialize(project):
 
     project.set_property("copy_resources_target", "$dir_dist")
     project.get_property("copy_resources_glob").append("LICENSE")
-    project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
+    project.get_property("filter_resources_glob").append(["**/pybuilder/__init__.py",
+                                                        '**/pybuilder/plugins/python/sphinx_plugin.py'])
+
+    project.doc_author = "PyBuilder_Team"
 
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
