@@ -22,6 +22,7 @@ from logging import Logger
 
 from pybuilder.core import Project
 from pybuilder.plugins.python.sphinx_plugin import assert_sphinx_is_available
+from pybuilder.plugins.python.sphinx_plugin import assert_sphinx_quickstart_is_available
 from pybuilder.plugins.python.sphinx_plugin import get_sphinx_build_command
 
 
@@ -38,6 +39,18 @@ class CheckSphinxAvailableTests(TestCase):
         mock_assert_can_execute.assert_called_with(expected_command_line, 'sphinx', 'plugin python.sphinx')
 
 
+class FooBar(TestCase):
+
+    @patch('pybuilder.plugins.python.sphinx_plugin.assert_can_execute')
+    def test_should_check_that_sphinx_quickstart_can_be_executed(self, mock_assert_can_execute):
+
+        mock_logger = Mock(Logger)
+
+        assert_sphinx_quickstart_is_available(mock_logger)
+        expected_command_line = ['sphinx-quickstart', '--version']
+        mock_assert_can_execute.assert_called_with(expected_command_line, 'sphinx', 'plugin python.sphinx')
+
+
 class SphinxBuildCommandTests(TestCase):
 
     def test_should_generate_sphinx_build_command_per_project_properties(self):
@@ -51,4 +64,4 @@ class SphinxBuildCommandTests(TestCase):
         sphinx_build_command = get_sphinx_build_command(project)
 
         self.assertEqual(sphinx_build_command,
-                         "sphinx-build -b html -c basedir/docs/ basedir/docs/ basedir/docs/_build/")
+                         "sphinx-build -b html basedir/docs/ basedir/docs/_build/")
