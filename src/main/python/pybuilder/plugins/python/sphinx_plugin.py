@@ -16,9 +16,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-"""Plugin for Sphinx.
+"""Sphinx-plugin for PyBuilder to make a sphinx-quickstart and sphinx-generate_documentation.
 """
-import os
+
 from pybuilder.core import after
 from pybuilder.core import depends
 from pybuilder.core import init
@@ -35,17 +35,27 @@ __author__ = 'Thomas Prebble', 'Marcel Wolf'
 use_plugin("core")
 
 
-DEFAULT_SPHINX_BUILDER = "html"
 DEFAULT_SPHINX_OUTPUT_DIR = SCAFFODING.DEFAULT_DOCS_DIRECTORY + "/_build/"
-PROJECT_NAME = os.path.basename(os.getcwd())
-__version__ = '${version}'
+
+"""
+                           build.py:
+    :param ${name}:        name = "project name"
+    :param ${version}:     version = "0.01"
+    :param ${doc_author}   project.doc_author = "project team"
+    :param ${doc_builder}  project.doc_builder = "html"
+
+"""
+
 AUTHORS = '${doc_author}'
+DEFAULT_SPHINX_BUILDER = '${doc_builder}'
+PROJECT_NAME = '${name}'
+
+__version__ = '${version}'
 
 
 @init
 def initialize_sphinx_plugin(project):
     project.build_depends_on("sphinx")
-    project.set_property_if_unset("sphinx_builder", DEFAULT_SPHINX_BUILDER)
     project.set_property_if_unset(
         "sphinx_source_dir", SCAFFODING.DEFAULT_DOCS_DIRECTORY)
     project.set_property_if_unset(
@@ -74,7 +84,7 @@ def assert_sphinx_quickstart_is_available(logger):
         ["sphinx-quickstart", "--version"], "sphinx", "plugin python.sphinx")
 
 
-@task("sphinx_quickstart", "starts a new phinx project")
+@task("sphinx_quickstart", "starts a new sphinx project")
 @depends("prepare")
 def sphinx_quickstart_generate(project, logger):
     """Runs sphinx-build against rst sources for the given project.
@@ -94,9 +104,13 @@ def sphinx_quickstart_generate(project, logger):
 
 def get_sphinx_quickstart_command(project):
     """Builds the sphinx-quickstart command using project properties.
+        :param -q: Quiet mode that will skips interactive wizard to specify options.
+        :param -p: Project name will be set.
+        :param -a: Author names.
+        :param -v: Version of project.
     """
     options = ["-q",
-               "-p %s" % PROJECT_NAME,
+               "-p %s" % project.name,
                "-a %s" % project.doc_author,
                "-v %s" % project.version,
                "%s" % project.expand_path
@@ -110,7 +124,6 @@ def sphinx_generate(project, logger):
     """Runs sphinx-build against rst sources for the given project.
     """
     logger.info("Running sphinx-build")
-
     log_file = project.expand_path(
         "$dir_target/reports/{0}".format("sphinx-build"))
     build_command = get_sphinx_build_command(project)
@@ -118,7 +131,7 @@ def sphinx_generate(project, logger):
         logger.info(build_command)
         exit_code = execute_command(build_command, log_file, shell=True)
         logger.info("documentation was build as %s"
-                    % DEFAULT_SPHINX_BUILDER + ", check %s"
+                    % project.doc_builder + ", check %s"
                     % DEFAULT_SPHINX_OUTPUT_DIR)
     if exit_code != 0:
         raise BuildFailedException(
@@ -126,9 +139,9 @@ def sphinx_generate(project, logger):
 
 
 def get_sphinx_build_command(project):
-    """Builds the sphinx-build command using project properties.
+    """Builds the sphinx-build command using properties.
     """
-    options = ["-b %s" % project.get_property("sphinx_builder"),
+    options = ["-b %s" % project.doc_builder,
                project.expand_path(project.get_property("sphinx_config_path")),
                project.expand_path(project.get_property("sphinx_output_dir"))]
     return "sphinx-build %s" % " ".join(options)
