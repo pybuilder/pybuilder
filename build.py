@@ -55,6 +55,7 @@ use_plugin("python.pytddmon")
 use_bldsup()
 use_plugin("pdoc")
 
+name = "PyBuilder"
 summary = "An extensible, easy to use continuous build tool for Python"
 description = """PyBuilder is a build automation tool for python.
 
@@ -84,7 +85,7 @@ def initialize(project):
     project.build_depends_on("wheel")
     project.build_depends_on("pygments")
     if sys.version_info[0:2] == (2, 6):
-        project.build_depends_on("importlib") # for fluentmock
+        project.build_depends_on("importlib")  # for fluentmock
 
     project.set_property("verbose", True)
 
@@ -106,6 +107,7 @@ def initialize(project):
                                                         '**/pybuilder/plugins/python/sphinx_plugin.py'])
 
     project.doc_author = "PyBuilder_Team"
+    project.doc_builder = "html"
 
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
