@@ -82,6 +82,7 @@ def set_properties(project):
         self.assertEqual(scaffolding.render_build_descriptor(), '''\
 from pybuilder.core import use_plugin, init
 
+use_plugin("python.sphinx")
 use_plugin("python.core")
 use_plugin("python.unittest")
 use_plugin("python.install_dependencies")
@@ -103,6 +104,7 @@ def set_properties(project):
         self.assertEqual(scaffolding.render_build_descriptor(), '''\
 from pybuilder.core import use_plugin, init
 
+use_plugin("python.sphinx")
 use_plugin("python.core")
 use_plugin("python.unittest")
 use_plugin("python.install_dependencies")
@@ -163,6 +165,7 @@ class CollectProjectInformationTests(TestCase):
                              call('Docs directory', 'docs'),
                              call('Unittest directory', 'src/unittest/python'),
                              call('Scripts directory', 'src/main/scripts'),
+                             call('Use plugin python.sphinx (Y/n)?', 'y'),
                              call('Use plugin python.flake8 (Y/n)?', 'y'),
                              call('Use plugin python.coverage (Y/n)?', 'y'),
                              call('Use plugin python.distutils (Y/n)?', 'y')

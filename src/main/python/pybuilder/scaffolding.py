@@ -31,7 +31,7 @@ DEFAULT_SOURCE_DIRECTORY = 'src/main/python'
 DEFAULT_UNITTEST_DIRECTORY = 'src/unittest/python'
 DEFAULT_SCRIPTS_DIRECTORY = 'src/main/scripts'
 DEFAULT_DOCS_DIRECTORY = 'docs'
-PLUGINS_TO_SUGGEST = ['python.flake8', 'python.coverage', 'python.distutils']
+PLUGINS_TO_SUGGEST = ['python.sphinx', 'python.flake8', 'python.coverage', 'python.distutils']
 
 
 def prompt_user(description, default):
@@ -118,7 +118,7 @@ def set_properties(project):
         self.dir_source_main_scripts = DEFAULT_SCRIPTS_DIRECTORY
         self.dir_docs = DEFAULT_DOCS_DIRECTORY
         self.core_imports = ['use_plugin']
-        self.plugins = ['python.core', 'python.unittest', 'python.install_dependencies']
+        self.plugins = ['python.sphinx', 'python.core', 'python.unittest', 'python.install_dependencies']
         self.initializer = ''
 
     def add_plugins(self, plugins):
