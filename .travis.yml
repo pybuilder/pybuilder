@@ -17,7 +17,7 @@ before_script:
 
 script:
   - ./build.py -v -X
-  - (cd target/dist/pybuilder-* && python setup.py install)
+  - (cd target/dist/PyBuilder-* && python setup.py install)
 
 after_success:
   - coveralls --verbose

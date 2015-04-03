@@ -39,9 +39,6 @@ class CheckSphinxAvailableTests(TestCase):
         expected_command_line = ['sphinx-build', '--version']
         mock_assert_can_execute.assert_called_with(expected_command_line, 'sphinx', 'plugin python.sphinx')
 
-
-class test_should_check_that_sphinx_quickstart_can_be_executed(TestCase):
-
     @patch('pybuilder.plugins.python.sphinx_plugin.assert_can_execute')
     def test_should_check_that_sphinx_quickstart_can_be_executed(self, mock_assert_can_execute):
 

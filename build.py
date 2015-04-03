@@ -55,7 +55,7 @@ use_plugin("python.pytddmon")
 use_bldsup()
 use_plugin("pdoc")
 
-name = "pybuilder"
+name = "PyBuilder"
 summary = "An extensible, easy to use continuous build tool for Python"
 description = """PyBuilder is a build automation tool for python.
 
@@ -104,7 +104,7 @@ def initialize(project):
     project.set_property("copy_resources_target", "$dir_dist")
     project.get_property("copy_resources_glob").append("LICENSE")
     project.get_property("filter_resources_glob").extend(["**/pybuilder/__init__.py",
-                                                        '**/pybuilder/plugins/python/sphinx_plugin.py'])
+                                                          '**/pybuilder/plugins/python/sphinx_plugin.py'])
 
     project.doc_author = "PyBuilder_Team"
     project.doc_builder = "html"
