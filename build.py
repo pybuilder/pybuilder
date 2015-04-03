@@ -55,7 +55,7 @@ use_plugin("python.pytddmon")
 use_bldsup()
 use_plugin("pdoc")
 
-name = "PyBuilder"
+name = "pybuilder"
 summary = "An extensible, easy to use continuous build tool for Python"
 description = """PyBuilder is a build automation tool for python.
 
