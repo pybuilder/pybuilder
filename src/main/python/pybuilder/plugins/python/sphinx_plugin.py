@@ -28,6 +28,7 @@ from pybuilder.errors import BuildFailedException
 from pybuilder.utils import assert_can_execute
 from pybuilder.utils import execute_command
 from pybuilder import scaffolding as SCAFFODING
+from pybuilder.core import NAME_ATTRIBUTE
 
 __author__ = 'Thomas Prebble', 'Marcel Wolf'
 
@@ -84,22 +85,38 @@ def assert_sphinx_quickstart_is_available(logger):
         ["sphinx-quickstart", "--version"], "sphinx", "plugin python.sphinx")
 
 
+def run_build(task_name, logger, project):
+    logger.info("Running %s" % task_name)
+    log_file = project.expand_path(
+        "$dir_target/reports/{0}".format(task_name))
+    if task_name == "sphinx_quickstart":
+        build_command = get_sphinx_quickstart_command(project)
+    if task_name == "sphinx_generate_documentation":
+        build_command = get_sphinx_build_command(project)
+
+        if project.get_property("verbose"):
+            logger.info(build_command)
+            exit_code = execute_command(build_command, log_file, shell=True)
+            if exit_code != 0:
+                raise BuildFailedException("Sphinx build command failed. See %s for details.", log_file)
+
+
+@task("sphinx_generate_documentation", "Generates documentation with sphinx")
+@depends("prepare")
+def sphinx_generate(project, logger):
+    """Runs sphinx-build against rst sources for the given project.
+    """
+    task_name = getattr(sphinx_generate, NAME_ATTRIBUTE)
+    run_build(task_name, logger, project)
+
+
 @task("sphinx_quickstart", "starts a new sphinx project")
 @depends("prepare")
 def sphinx_quickstart_generate(project, logger):
     """Runs sphinx-build against rst sources for the given project.
     """
-    logger.info("Running sphinx-quickstart")
-
-    log_file = project.expand_path(
-        "$dir_target/reports/{0}".format("sphinx-quickstart"))
-    build_command = get_sphinx_quickstart_command(project)
-    if project.get_property("verbose"):
-        logger.info(build_command)
-        exit_code = execute_command(build_command, log_file, shell=True)
-    if exit_code != 0:
-        raise BuildFailedException(
-            "Sphinx build command failed. See %s for details.", log_file)
+    task_name = getattr(sphinx_quickstart_generate, NAME_ATTRIBUTE)
+    run_build(task_name, logger, project)
 
 
 def get_sphinx_quickstart_command(project):
@@ -116,26 +133,6 @@ def get_sphinx_quickstart_command(project):
                "%s" % project.expand_path
                (project.get_property("sphinx_source_dir"))]
     return "sphinx-quickstart %s" % " ".join(options)
-
-
-@task("sphinx_generate_documentation", "Generates documentation with sphinx")
-@depends("prepare")
-def sphinx_generate(project, logger):
-    """Runs sphinx-build against rst sources for the given project.
-    """
-    logger.info("Running sphinx-build")
-    log_file = project.expand_path(
-        "$dir_target/reports/{0}".format("sphinx-build"))
-    build_command = get_sphinx_build_command(project)
-    if project.get_property("verbose"):
-        logger.info(build_command)
-        exit_code = execute_command(build_command, log_file, shell=True)
-        logger.info("documentation was build as %s"
-                    % project.doc_builder + ", check %s"
-                    % DEFAULT_SPHINX_OUTPUT_DIR)
-    if exit_code != 0:
-        raise BuildFailedException(
-            "Sphinx build command failed. See %s for details.", log_file)
 
 
 def get_sphinx_build_command(project):
