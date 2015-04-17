@@ -85,20 +85,15 @@ def assert_sphinx_quickstart_is_available(logger):
         ["sphinx-quickstart", "--version"], "sphinx", "plugin python.sphinx")
 
 
-def run_build(task_name, logger, project):
+def run_build(build_command, task_name, logger, project):
     logger.info("Running %s" % task_name)
     log_file = project.expand_path(
         "$dir_target/reports/{0}".format(task_name))
-    if task_name == "sphinx_quickstart":
-        build_command = get_sphinx_quickstart_command(project)
-    if task_name == "sphinx_generate_documentation":
-        build_command = get_sphinx_build_command(project)
-
-        if project.get_property("verbose"):
-            logger.info(build_command)
-            exit_code = execute_command(build_command, log_file, shell=True)
-            if exit_code != 0:
-                raise BuildFailedException("Sphinx build command failed. See %s for details.", log_file)
+    if project.get_property("verbose"):
+        logger.info(build_command)
+        exit_code = execute_command(build_command, log_file, shell=True)
+        if exit_code != 0:
+            raise BuildFailedException("Sphinx build command failed. See %s for details.", log_file)
 
 
 @task("sphinx_generate_documentation", "Generates documentation with sphinx")
@@ -107,7 +102,8 @@ def sphinx_generate(project, logger):
     """Runs sphinx-build against rst sources for the given project.
     """
     task_name = getattr(sphinx_generate, NAME_ATTRIBUTE)
-    run_build(task_name, logger, project)
+    build_command = get_sphinx_build_command(project)
+    run_build(build_command, task_name, logger, project)
 
 
 @task("sphinx_quickstart", "starts a new sphinx project")
@@ -116,7 +112,8 @@ def sphinx_quickstart_generate(project, logger):
     """Runs sphinx-build against rst sources for the given project.
     """
     task_name = getattr(sphinx_quickstart_generate, NAME_ATTRIBUTE)
-    run_build(task_name, logger, project)
+    build_command = get_sphinx_quickstart_command(project)
+    run_build(build_command, task_name, logger, project)
 
 
 def get_sphinx_quickstart_command(project):
