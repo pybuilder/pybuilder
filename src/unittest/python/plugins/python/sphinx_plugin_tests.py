@@ -70,8 +70,6 @@ class SphinxBuildCommandTests(TestCase):
         project.set_property("sphinx_doc_author", "bar")
         project.set_property("sphinx_project_name", "foo")
         project.set_property("sphinx_project_version", "3")
-        project.set_property("project.name", "foo")
-        project.set_property("project.version", "3")
         project.set_property("sphinx_source_dir", "docs/")
 
         sphinx_quickstart_command = get_sphinx_quickstart_command(project)
