@@ -53,23 +53,23 @@ class SphinxBuildCommandTests(TestCase):
 
     def test_should_generate_sphinx_build_command_per_project_properties(self):
         project = Project('basedir')
-        setattr(project, 'doc_builder', 'html')
 
         project.set_property("sphinx_config_path", "docs/")
         project.set_property("sphinx_source_dir", "docs/")
         project.set_property("sphinx_output_dir", "docs/_build/")
+        project.set_property("sphinx_doc_builder", 'JSONx')
 
         sphinx_build_command = get_sphinx_build_command(project)
 
         self.assertEqual(sphinx_build_command,
-                         "sphinx-build -b html basedir/docs/ basedir/docs/_build/")
+                         "sphinx-build -b JSONx basedir/docs/ basedir/docs/_build/")
 
     def test_should_generate_sphinx_quickstart_command_with_project_properties(self):
         project = Project('basedir')
-        setattr(project, 'doc_author', 'bar')
-        setattr(project, 'version', '3')
-        setattr(project, 'name', 'foo')
 
+        project.set_property("sphinx_doc_author", "bar")
+        project.set_property("sphinx_project_name", "foo")
+        project.set_property("sphinx_project_version", "3")
         project.set_property("project.name", "foo")
         project.set_property("project.version", "3")
         project.set_property("sphinx_source_dir", "docs/")

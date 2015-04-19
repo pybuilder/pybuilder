@@ -103,11 +103,12 @@ def initialize(project):
 
     project.set_property("copy_resources_target", "$dir_dist")
     project.get_property("copy_resources_glob").append("LICENSE")
-    project.get_property("filter_resources_glob").extend(["**/pybuilder/__init__.py",
-                                                          '**/pybuilder/plugins/python/sphinx_plugin.py'])
+    project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
 
-    project.doc_author = "PyBuilder_Team"
-    project.doc_builder = "html"
+    project.set_property("sphinx_doc_author", "PyBuilder_Team")
+    project.set_property("sphinx_doc_builder", "html")
+    project.set_property("sphinx_project_name", 'PyBuilder')
+    project.set_property("sphinx_project_version", '0.10.59')
 
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")

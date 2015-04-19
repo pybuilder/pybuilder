@@ -27,7 +27,7 @@ from pybuilder.core import use_plugin
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import assert_can_execute
 from pybuilder.utils import execute_command
-from pybuilder import scaffolding as SCAFFODING
+from pybuilder import scaffolding as SCAFFOLDING
 from pybuilder.core import NAME_ATTRIBUTE
 
 __author__ = 'Thomas Prebble', 'Marcel Wolf'
@@ -36,33 +36,32 @@ __author__ = 'Thomas Prebble', 'Marcel Wolf'
 use_plugin("core")
 
 
-DEFAULT_SPHINX_OUTPUT_DIR = SCAFFODING.DEFAULT_DOCS_DIRECTORY + "/_build/"
+DEFAULT_SPHINX_OUTPUT_DIR = SCAFFOLDING.DEFAULT_DOCS_DIRECTORY + "/_build/"
 
-"""
-                           build.py:
-    :param ${name}:        name = "project name"
-    :param ${version}:     version = "0.01"
-    :param ${doc_author}   project.doc_author = "project team"
-    :param ${doc_builder}  project.doc_builder = "html"
-
-"""
-
-AUTHORS = '${doc_author}'
-DEFAULT_SPHINX_BUILDER = '${doc_builder}'
-PROJECT_NAME = '${name}'
-
-__version__ = '${version}'
+PROJECT_NAME = ""
+SPHINX_DOC_AUTHOR = ""
+SPHINX_DOC_BUILDER = ""
+SPHINX_PROJECT_NAME = ""
+SPHINX_PROJECT_VERSION = ""
 
 
 @init
 def initialize_sphinx_plugin(project):
     project.build_depends_on("sphinx")
     project.set_property_if_unset(
-        "sphinx_source_dir", SCAFFODING.DEFAULT_DOCS_DIRECTORY)
+        "sphinx_source_dir", SCAFFOLDING.DEFAULT_DOCS_DIRECTORY)
     project.set_property_if_unset(
         "sphinx_output_dir", DEFAULT_SPHINX_OUTPUT_DIR)
     project.set_property_if_unset(
-        "sphinx_config_path", SCAFFODING.DEFAULT_DOCS_DIRECTORY)
+        "sphinx_config_path", SCAFFOLDING.DEFAULT_DOCS_DIRECTORY)
+    project.set_property_if_unset(
+        "sphinx_doc_author", SPHINX_DOC_AUTHOR)
+    project.set_property_if_unset(
+        "sphinx_doc_builder", SPHINX_DOC_BUILDER)
+    project.set_property_if_unset(
+        "sphinx_project_name", SPHINX_PROJECT_NAME)
+    project.set_property_if_unset(
+        "sphinx_project_version", SPHINX_PROJECT_VERSION)
 
 
 @after("prepare")
@@ -124,9 +123,9 @@ def get_sphinx_quickstart_command(project):
         :param -v: Version of project.
     """
     options = ["-q",
-               "-p %s" % project.name,
-               "-a %s" % project.doc_author,
-               "-v %s" % project.version,
+               "-p %s" % project.get_property("sphinx_project_name"),
+               "-a %s" % project.get_property("sphinx_doc_author"),
+               "-v %s" % project.get_property("sphinx_project_version"),
                "%s" % project.expand_path
                (project.get_property("sphinx_source_dir"))]
     return "sphinx-quickstart %s" % " ".join(options)
@@ -135,7 +134,7 @@ def get_sphinx_quickstart_command(project):
 def get_sphinx_build_command(project):
     """Builds the sphinx-build command using properties.
     """
-    options = ["-b %s" % project.doc_builder,
+    options = ["-b %s" % project.get_property("sphinx_doc_builder"),
                project.expand_path(project.get_property("sphinx_config_path")),
                project.expand_path(project.get_property("sphinx_output_dir"))]
     return "sphinx-build %s" % " ".join(options)
