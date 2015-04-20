@@ -22,6 +22,8 @@
     build.py project descriptor.
 """
 
+import fnmatch
+import itertools
 import string
 import sys
 
@@ -280,6 +282,7 @@ class Project(object):
         self._install_dependencies = set()
         self._build_dependencies = set()
         self._manifest_included_files = []
+        self._manifest_included_directories = []
         self._package_data = {}
         self._files_to_install = []
 
@@ -352,11 +355,27 @@ class Project(object):
     def manifest_included_files(self):
         return self._manifest_included_files
 
+    @property
+    def manifest_included_directories(self):
+        return self._manifest_included_directories
+
     def _manifest_include(self, glob_pattern):
         if not glob_pattern or glob_pattern.strip() == "":
             raise ValueError("Missing glob_pattern argument.")
 
         self._manifest_included_files.append(glob_pattern)
+
+    def _manifest_include_directory(self, directory, patterns_list):
+        if not directory or directory.strip() == "":
+            raise ValueError("Missing directory argument.")
+
+        patterns_list = map(lambda s: s.strip(), patterns_list)
+        patterns_list = tuple(filter(bool, patterns_list))
+        if len(patterns_list) == 0:
+            raise ValueError("Missing patterns_list argument.")
+
+        directory_to_include = (directory, patterns_list)
+        self._manifest_included_directories.append(directory_to_include)
 
     @property
     def package_data(self):
@@ -376,6 +395,24 @@ class Project(object):
             self._package_data[package_name] = [filename]
             return
         self._package_data[package_name].append(filename)
+
+    def include_directory(self, package_path, patterns_list):
+        if not package_path or package_path.strip() == "":
+            raise ValueError("Missing argument package_path.")
+
+        if not patterns_list:
+            raise ValueError("Missing argument patterns_list.")
+
+        package_name = package_path.replace(PATH_SEPARATOR, '.')
+        self._manifest_include_directory(package_path, patterns_list)
+
+        for root, dirnames, filenames in os.walk(package_path):
+            filenames = list(fnmatch.filter(filenames, pattern) for pattern in patterns_list)
+
+            for filename in itertools.chain.from_iterable(filenames):
+                full_path = os.path.join(root, filename)
+                relative_path = full_path.replace(package_path, '', 1).lstrip(PATH_SEPARATOR)
+                self._package_data.setdefault(package_name, []).append(relative_path)
 
     @property
     def files_to_install(self):
