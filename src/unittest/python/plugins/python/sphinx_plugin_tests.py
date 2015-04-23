@@ -71,12 +71,12 @@ class SphinxPluginInitializationTests(TestCase):
             "sphinx_project_version": "project_version"
         }
 
-        for property_name, property_value in expected_properties.iteritems():
+        for property_name, property_value in expected_properties.items():
             self.project.set_property(property_name, property_value)
 
             initialize_sphinx_plugin(self.project)
 
-        for property_name, property_value in expected_properties.iteritems():
+        for property_name, property_value in expected_properties.items():
             self.assertEquals(
 
                 self.project.get_property(property_name),
