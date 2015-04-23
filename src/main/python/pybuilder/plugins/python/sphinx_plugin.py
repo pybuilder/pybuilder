@@ -16,7 +16,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-"""Sphinx-plugin for PyBuilder to make a sphinx-quickstart and sphinx-generate_documentation.
+"""Sphinx-plugin for PyBuildern to run a sphinx quickstart and generate the documentation once set up.
 """
 
 from pybuilder.core import after
@@ -40,12 +40,14 @@ DEFAULT_SPHINX_OUTPUT_DIR = SCAFFOLDING.DEFAULT_DOCS_DIRECTORY + "/_build/"
 
 SPHINX_DOC_AUTHOR = "doc_author"
 SPHINX_DOC_BUILDER = "html"
-SPHINX_PROJECT_NAME = "myproject"
-SPHINX_PROJECT_VERSION = "0.1"
 
 
 @init
 def initialize_sphinx_plugin(project):
+
+    SPHINX_PROJECT_VERSION = project.version
+    SPHINX_PROJECT_NAME = project.name
+
     project.build_depends_on("sphinx")
     project.set_property_if_unset(
         "sphinx_source_dir", SCAFFOLDING.DEFAULT_DOCS_DIRECTORY)
@@ -83,7 +85,7 @@ def assert_sphinx_quickstart_is_available(logger):
         ["sphinx-quickstart", "--version"], "sphinx", "plugin python.sphinx")
 
 
-def run_build(build_command, task_name, logger, project):
+def run_sphinx_build(build_command, task_name, logger, project):
     logger.info("Running %s" % task_name)
     log_file = project.expand_path(
         "$dir_target/reports/{0}".format(task_name))
@@ -101,7 +103,7 @@ def sphinx_generate(project, logger):
     """
     task_name = getattr(sphinx_generate, NAME_ATTRIBUTE)
     build_command = get_sphinx_build_command(project)
-    run_build(build_command, task_name, logger, project)
+    run_sphinx_build(build_command, task_name, logger, project)
 
 
 @task("sphinx_quickstart", "starts a new sphinx project")
@@ -111,7 +113,7 @@ def sphinx_quickstart_generate(project, logger):
     """
     task_name = getattr(sphinx_quickstart_generate, NAME_ATTRIBUTE)
     build_command = get_sphinx_quickstart_command(project)
-    run_build(build_command, task_name, logger, project)
+    run_sphinx_build(build_command, task_name, logger, project)
 
 
 def get_sphinx_quickstart_command(project):

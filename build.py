@@ -108,7 +108,7 @@ def initialize(project):
     project.set_property("sphinx_doc_author", "PyBuilder_Team")
     project.set_property("sphinx_doc_builder", "html")
     project.set_property("sphinx_project_name", 'PyBuilder')
-    project.set_property("sphinx_project_version", '0.10.59')
+    project.set_property("sphinx_project_version", project.version)
 
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
