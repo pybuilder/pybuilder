@@ -38,15 +38,15 @@ use_plugin("core")
 
 DEFAULT_SPHINX_OUTPUT_DIR = SCAFFOLDING.DEFAULT_DOCS_DIRECTORY + "/_build/"
 
-SPHINX_DOC_AUTHOR = "doc_author"
 SPHINX_DOC_BUILDER = "html"
 
 
 @init
 def initialize_sphinx_plugin(project):
 
-    SPHINX_PROJECT_VERSION = project.version
-    SPHINX_PROJECT_NAME = project.name
+    default_project_version = project.version
+    default_project_name = project.name
+    defautl_doc_author = ", ".join([author.name for author in project.authors])
 
     project.build_depends_on("sphinx")
     project.set_property_if_unset(
@@ -56,13 +56,13 @@ def initialize_sphinx_plugin(project):
     project.set_property_if_unset(
         "sphinx_config_path", SCAFFOLDING.DEFAULT_DOCS_DIRECTORY)
     project.set_property_if_unset(
-        "sphinx_doc_author", SPHINX_DOC_AUTHOR)
+        "sphinx_doc_author", defautl_doc_author)
     project.set_property_if_unset(
         "sphinx_doc_builder", SPHINX_DOC_BUILDER)
     project.set_property_if_unset(
-        "sphinx_project_name", SPHINX_PROJECT_NAME)
+        "sphinx_project_name", default_project_name)
     project.set_property_if_unset(
-        "sphinx_project_version", SPHINX_PROJECT_VERSION)
+        "sphinx_project_version", default_project_version)
 
 
 @after("prepare")
@@ -118,14 +118,15 @@ def sphinx_quickstart_generate(project, logger):
 
 def get_sphinx_quickstart_command(project):
     """Builds the sphinx-quickstart command using project properties.
+        sphinx-quickstart parameters:
         :param -q: Quiet mode that will skips interactive wizard to specify options.
         :param -p: Project name will be set.
         :param -a: Author names.
         :param -v: Version of project.
     """
     options = ["-q",
-               "-p %s" % project.get_property("sphinx_project_name"),
-               "-a %s" % project.get_property("sphinx_doc_author"),
+               "-p '%s'" % project.get_property("sphinx_project_name"),
+               "-a '%s'" % project.get_property("sphinx_doc_author"),
                "-v %s" % project.get_property("sphinx_project_version"),
                "%s" % project.expand_path
                (project.get_property("sphinx_source_dir"))]

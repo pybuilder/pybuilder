@@ -67,7 +67,8 @@ allows the construction of build life cycles similar to those known from other f
 authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            Author("Maximilien Riehl", "max@riehl.io"),
            Author("Michael Gruber", "aelgru@gmail.com"),
-           Author("Udo Juettner", "udo.juettner@gmail.com")]
+           Author("Udo Juettner", "udo.juettner@gmail.com"),
+           Author("Marcel Wolf", "marcel.wolf@me.com")]
 url = "http://pybuilder.github.io"
 license = "Apache License"
 version = "0.10.59"
@@ -105,9 +106,9 @@ def initialize(project):
     project.get_property("copy_resources_glob").append("LICENSE")
     project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
 
-    project.set_property("sphinx_doc_author", "PyBuilder_Team")
+    project.set_property("sphinx_doc_author", "PyBuilder Team")
     project.set_property("sphinx_doc_builder", "html")
-    project.set_property("sphinx_project_name", 'PyBuilder')
+    project.set_property("sphinx_project_name", project.name)
     project.set_property("sphinx_project_version", project.version)
 
     project.get_property("source_dist_ignore_patterns").append(".project")

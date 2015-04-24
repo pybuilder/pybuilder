@@ -20,7 +20,7 @@ from unittest import TestCase
 from mock import Mock, patch
 from logging import Logger
 
-from pybuilder.core import Project
+from pybuilder.core import Project, Author
 from pybuilder.plugins.python.sphinx_plugin import (
     assert_sphinx_is_available,
     assert_sphinx_quickstart_is_available,
@@ -83,7 +83,9 @@ class SphinxPluginInitializationTests(TestCase):
                 property_value)
 
     def test_should_set_default_values_when_initializing_plugin(self):
-
+        self.project.authors = [
+            Author("John Doe", "John.doe@example.com"),
+            Author("Jane Doe", "Jane.doe@example.com")]
         initialize_sphinx_plugin(self.project)
 
         self.project.set_property("sphinx_project_name", "foo")
@@ -92,7 +94,7 @@ class SphinxPluginInitializationTests(TestCase):
         self.assertEquals(self.project.get_property("sphinx_source_dir"), "docs")
         self.assertEquals(self.project.get_property("sphinx_output_dir"), "docs/_build/")
         self.assertEquals(self.project.get_property("sphinx_config_path"), "docs")
-        self.assertEquals(self.project.get_property("sphinx_doc_author"), "doc_author")
+        self.assertEquals(self.project.get_property("sphinx_doc_author"), 'John Doe, Jane Doe')
         self.assertEquals(self.project.get_property("sphinx_doc_builder"), "html")
         self.assertEquals(self.project.get_property("sphinx_project_name"), "foo")
         self.assertEquals(self.project.get_property("sphinx_project_version"), "1.0")
@@ -125,4 +127,4 @@ class SphinxBuildCommandTests(TestCase):
         sphinx_quickstart_command = get_sphinx_quickstart_command(self.project)
 
         self.assertEqual(sphinx_quickstart_command,
-                         "sphinx-quickstart -q -p foo -a bar -v 3 basedir/docs/")
+                         "sphinx-quickstart -q -p 'foo' -a 'bar' -v 3 basedir/docs/")
