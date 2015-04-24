@@ -20,9 +20,14 @@ from unittest import TestCase
 from mock import Mock, patch
 from logging import Logger
 
-from pybuilder.core import Project
-from pybuilder.plugins.python.sphinx_plugin import assert_sphinx_is_available
-from pybuilder.plugins.python.sphinx_plugin import get_sphinx_build_command
+from pybuilder.core import Project, Author
+from pybuilder.plugins.python.sphinx_plugin import (
+    assert_sphinx_is_available,
+    assert_sphinx_quickstart_is_available,
+    get_sphinx_build_command,
+    get_sphinx_quickstart_command,
+    initialize_sphinx_plugin
+    )
 
 
 class CheckSphinxAvailableTests(TestCase):
@@ -35,20 +40,91 @@ class CheckSphinxAvailableTests(TestCase):
         assert_sphinx_is_available(mock_logger)
 
         expected_command_line = ['sphinx-build', '--version']
-        mock_assert_can_execute.assert_called_with(expected_command_line, 'sphinx', 'plugin python.sphinx')
+        mock_assert_can_execute.assert_called_with(
+            expected_command_line, 'sphinx', 'plugin python.sphinx')
+
+    @patch('pybuilder.plugins.python.sphinx_plugin.assert_can_execute')
+    def test_should_check_that_sphinx_quickstart_can_be_executed(self, mock_assert_can_execute):
+
+        mock_logger = Mock(Logger)
+
+        assert_sphinx_quickstart_is_available(mock_logger)
+        expected_command_line = ['sphinx-quickstart', '--version']
+        mock_assert_can_execute.assert_called_with(
+            expected_command_line, 'sphinx', 'plugin python.sphinx')
+
+
+class SphinxPluginInitializationTests(TestCase):
+
+    def setUp(self):
+        self.project = Project("basedir")
+
+    def test_should_leave_user_specified_properties_when_initializing_plugin(self):
+
+        expected_properties = {
+            "sphinx_source_dir": "source_dir",
+            "sphinx_output_dir": "output_dir",
+            "sphinx_config_path": "config_path",
+            "sphinx_doc_author": "author",
+            "sphinx_doc_builder": "doc_builder",
+            "sphinx_project_name": "project_name",
+            "sphinx_project_version": "project_version"
+        }
+
+        for property_name, property_value in expected_properties.items():
+            self.project.set_property(property_name, property_value)
+
+            initialize_sphinx_plugin(self.project)
+
+        for property_name, property_value in expected_properties.items():
+            self.assertEquals(
+
+                self.project.get_property(property_name),
+                property_value)
+
+    def test_should_set_default_values_when_initializing_plugin(self):
+        self.project.authors = [
+            Author("John Doe", "John.doe@example.com"),
+            Author("Jane Doe", "Jane.doe@example.com")]
+        initialize_sphinx_plugin(self.project)
+
+        self.project.set_property("sphinx_project_name", "foo")
+        self.project.set_property("sphinx_project_version", "1.0")
+
+        self.assertEquals(self.project.get_property("sphinx_source_dir"), "docs")
+        self.assertEquals(self.project.get_property("sphinx_output_dir"), "docs/_build/")
+        self.assertEquals(self.project.get_property("sphinx_config_path"), "docs")
+        self.assertEquals(self.project.get_property("sphinx_doc_author"), 'John Doe, Jane Doe')
+        self.assertEquals(self.project.get_property("sphinx_doc_builder"), "html")
+        self.assertEquals(self.project.get_property("sphinx_project_name"), "foo")
+        self.assertEquals(self.project.get_property("sphinx_project_version"), "1.0")
 
 
 class SphinxBuildCommandTests(TestCase):
 
+    def setUp(self):
+        self.project = Project("basedir")
+
     def test_should_generate_sphinx_build_command_per_project_properties(self):
-        project = Project('basedir')
 
-        project.set_property("sphinx_builder", "html")
-        project.set_property("sphinx_config_path", "docs/")
-        project.set_property("sphinx_source_dir", "docs/")
-        project.set_property("sphinx_output_dir", "docs/_build/")
+        self.project.set_property("sphinx_config_path", "docs/")
+        self.project.set_property("sphinx_source_dir", "docs/")
+        self.project.set_property("sphinx_output_dir", "docs/_build/")
+        self.project.set_property("sphinx_doc_builder", 'JSONx')
 
-        sphinx_build_command = get_sphinx_build_command(project)
+        sphinx_build_command = get_sphinx_build_command(self.project)
 
         self.assertEqual(sphinx_build_command,
-                         "sphinx-build -b html -c basedir/docs/ basedir/docs/ basedir/docs/_build/")
+                         "sphinx-build -b JSONx basedir/docs/ basedir/docs/_build/")
+
+    def test_should_generate_sphinx_quickstart_command_with_project_properties(self):
+
+        self.project.set_property("sphinx_doc_author", "bar")
+        self.project.set_property("sphinx_project_name", "foo")
+        self.project.set_property("sphinx_project_version", "3")
+        self.project.set_property("sphinx_source_dir", "docs/")
+
+        sphinx_quickstart_command = get_sphinx_quickstart_command(self.project)
+
+        self.assertEqual(sphinx_quickstart_command,
+                         "sphinx-quickstart -q -p 'foo' -a 'bar' -v 3 basedir/docs/")
