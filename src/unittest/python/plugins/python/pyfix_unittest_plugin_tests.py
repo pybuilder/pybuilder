@@ -26,7 +26,7 @@ from pybuilder.plugins.python.pyfix_unittest_plugin import init_test_source_dire
 class InitTestSourceDirectoryTests(TestCase):
 
     @patch('pybuilder.plugins.python.pyfix_plugin_impl.execute_tests_matching')
-    def test_should_set_pyfix_dependencey(self, mock_execute_tests_matching):
+    def test_should_set_pyfix_dependency(self, mock_execute_tests_matching):
 
         mock_project = Mock(Project)
 
