@@ -17,13 +17,20 @@
 #   limitations under the License.
 
 from unittest import TestCase
+from pybuilder.core import Project
 from mock import Mock, patch
 from logging import Logger
 
-from pybuilder.plugins.python.pep8_plugin import check_pep8_available
+from pybuilder.plugins.python.pep8_plugin import (
+    check_pep8_available,
+    init_pep8_properties
+    )
 
 
 class CheckPep8AvailableTests(TestCase):
+
+    def setUp(self):
+        self.project = Project("basedir")
 
     @patch('pybuilder.plugins.python.pep8_plugin.assert_can_execute')
     def test_should_check_that_pylint_can_be_executed(self, mock_assert_can_execute):
@@ -34,3 +41,8 @@ class CheckPep8AvailableTests(TestCase):
 
         expected_command_line = ('pep8',)
         mock_assert_can_execute.assert_called_with(expected_command_line, 'pep8', 'plugin python.pep8')
+
+    def test_should_set_dependency(self):
+        mock_project = Mock(Project)
+        init_pep8_properties(mock_project)
+        mock_project.build_depends_on.assert_called_with('pep8')
