@@ -25,15 +25,40 @@ except ImportError:
 from mock import patch
 
 from pybuilder.core import Project
-from pybuilder.plugins.python.integrationtest_plugin import (TaskPoolProgress,
-                                                             add_additional_environment_keys,
-                                                             ConsumingQueue)
+from pybuilder.plugins.python.integrationtest_plugin import (
+    TaskPoolProgress,
+    add_additional_environment_keys,
+    ConsumingQueue,
+    init_test_source_directory
+    )
 
 
 class TaskPoolProgressTests(unittest.TestCase):
 
     def setUp(self):
         self.progress = TaskPoolProgress(42, 8)
+        self.project = Project("basedir")
+
+    def test_should_generate_command_abiding_to_configuration(self):
+
+        expected_properties = {
+            "dir_source_integrationtest_python": "src/integrationtest/python",
+            "integrationtest_file_glob": "*_tests.py",
+            "integrationtest_file_suffix": None,
+            "integrationtest_additional_environment": {},
+            "integrationtest_inherit_environment": False,
+            "integrationtest_always_verbose": False
+            }
+        for property_name, property_value in expected_properties.items():
+            self.project.set_property(property_name, property_value)
+
+            init_test_source_directory(self.project)
+
+        for property_name, property_value in expected_properties.items():
+            self.assertEquals(
+
+                self.project.get_property(property_name),
+                property_value)
 
     def test_should_create_new_progress(self):
         self.assertEqual(self.progress.workers_count, 8)
