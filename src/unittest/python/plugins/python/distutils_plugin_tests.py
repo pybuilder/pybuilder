@@ -35,13 +35,37 @@ from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        default,
                                                        render_manifest_file,
                                                        build_scripts_string,
-                                                       render_setup_script)
+                                                       render_setup_script,
+                                                       initialize_distutils_plugin)
 
 
 class InstallDependenciesTest(unittest.TestCase):
 
     def setUp(self):
         self.project = Project(".")
+
+    def test_should_generate_command_abiding_to_configuration(self):
+
+        expected_properties = {
+            "distutils_commands": ["sdist", "bdist_dumb"],
+            "distutils_issue8876_workaround_enabled": False,
+            "distutils_classifiers": [
+                "Development Status :: 3 - Alpha",
+                "Programming Language :: Python"
+            ],
+            "distutils_use_setuptools": True
+        }
+
+        for property_name, property_value in expected_properties.items():
+            self.project.set_property(property_name, property_value)
+
+            initialize_distutils_plugin(self.project)
+
+        for property_name, property_value in expected_properties.items():
+            self.assertEquals(
+
+                self.project.get_property(property_name),
+                property_value)
 
     def test_should_return_empty_string_when_no_dependency_is_given(self):
         self.assertEqual("", build_install_dependencies_string(self.project))
