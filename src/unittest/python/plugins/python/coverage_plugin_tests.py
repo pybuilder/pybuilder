@@ -1,7 +1,5 @@
 from unittest import TestCase
 from pybuilder.core import Project
-# from mock import Mock, patch
-# from logging import Logger
 from pybuilder.plugins.python.coverage_plugin import (
     init_coverage_properties
     )
