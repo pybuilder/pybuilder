@@ -30,6 +30,10 @@ def check_snakefood_available(logger):
     assert_can_execute(("sfood", "-h"), "sfood", "plugin python.snakefood")
     logger.debug("snakefood has been found")
 
+
+@before("render_snakefood_report")
+def check_graphviz_available(logger):
+
     logger.debug("Checking availability of graphviz")
     assert_can_execute(("dot", "-V"), "graphviz", "plugin python.snakefood")
     logger.debug("graphviz has been found")

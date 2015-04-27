@@ -5,6 +5,7 @@ from pybuilder.core import Project
 from pybuilder.plugins.python.snakefood_plugin import (
     depend_on_snakefood,
     check_snakefood_available,
+    check_graphviz_available,
     generate_graph,
     generate_pdf
     )
@@ -26,6 +27,16 @@ class CheckSnakeFoodAvailableTests(TestCase):
         mock_logger = Mock(Logger)
 
         check_snakefood_available(mock_logger)
+
+        mock_assert_can_execute.assert_called_with(
+            ("sfood", "-h"), "sfood", "plugin python.snakefood")
+
+    @patch('pybuilder.plugins.python.snakefood_plugin.assert_can_execute')
+    def test_should_check_that_graphviz_is_available(self, mock_assert_can_execute):
+
+        mock_logger = Mock(Logger)
+
+        check_graphviz_available(mock_logger)
 
         mock_assert_can_execute.assert_called_with(
             ('dot', '-V'), 'graphviz', 'plugin python.snakefood')
