@@ -35,9 +35,13 @@ class CheckSnakeFoodAvailableTests(TestCase):
         report_file = "foo"
         graph_file = "bar.dot"
         generate_graph(report_file, graph_file)
+        mock_assert_can_execute.assert_called_with(
+            ["sfood-graph", report_file], graph_file)
 
     @patch('pybuilder.plugins.python.snakefood_plugin.execute_command')
     def test_should_call_generate_pdf(self, mock_assert_can_execute):
         pdf_file = "foo.pdf"
         graph_file = "bar.dot"
         generate_pdf(graph_file, pdf_file)
+        mock_assert_can_execute.assert_called_with(
+            ["dot", "-Tpdf", graph_file], pdf_file)
