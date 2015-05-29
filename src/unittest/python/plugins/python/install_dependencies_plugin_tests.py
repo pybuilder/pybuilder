@@ -219,6 +219,28 @@ class InstallRuntimeDependenciesTest(unittest.TestCase):
             pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install '-rrequirements.txt'",
                                                                                   any_value(), shell=True)
 
+    def test_should_install_multiple_dependencies_locally(self):
+        self.project.depends_on("spam")
+        self.project.depends_on("eggs")
+        self.project.depends_on("foo")
+        self.project.set_property("install_dependencies_local_mapping", {
+            "spam": "any-dir",
+            "eggs": "any-other-dir"
+        })
+
+        install_runtime_dependencies(self.logger, self.project)
+
+        verify(
+            pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install -t any-dir 'spam'",
+                                                                                  any_value(), shell=True)
+        verify(
+            pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install -t any-other-dir 'eggs'",
+                                                                                  any_value(), shell=True)
+
+        verify(
+            pybuilder.plugins.python.install_dependencies_plugin).execute_command("pip install 'foo'",
+                                                                                  any_value(), shell=True)
+
 
 class InstallBuildDependenciesTest(unittest.TestCase):
 

@@ -42,6 +42,7 @@ use_plugin("core")
 def initialize_install_dependencies_plugin(project):
     project.set_property_if_unset("dir_install_logs", "$dir_logs/install_dependencies")
     project.set_property_if_unset("install_dependencies_index_url", None)
+    project.set_property_if_unset("install_dependencies_local_mapping", {})
     project.set_property_if_unset("install_dependencies_extra_index_url", None)
     project.set_property_if_unset("install_dependencies_upgrade", False)
 
@@ -102,7 +103,7 @@ def install_dependency(logger, project, dependency):
     else:
         # on linux we need quotes because version pinning (>=) would be an IO redirect
         pip_dependency = "'{0}'".format(as_pip_argument(dependency))
-    pip_command_line = "pip install {0}{1}".format(build_pip_install_options(project, pip_dependency), pip_dependency)
+    pip_command_line = "pip install {0}{1}".format(build_pip_install_options(project, dependency.name), pip_dependency)
     exit_code = execute_command(pip_command_line, log_file, shell=True)
     if exit_code != 0:
         if project.get_property("verbose"):
@@ -123,6 +124,11 @@ def build_pip_install_options(project, dependency):
 
     if project.get_property("install_dependencies_upgrade"):
         options.append("--upgrade")
+
+    dependency_mapping = project.get_property("install_dependencies_local_mapping", {})
+
+    if dependency in dependency_mapping:
+        options.append("-t " + dependency_mapping[dependency])
 
     if _pip_disallows_insecure_packages_by_default():
         for insecure_dependency in project.get_property("install_dependencies_insecure_installation", []):
