@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 #
+
 #   -*- coding: utf-8 -*-
 #
 #   This file is part of PyBuilder
@@ -41,7 +42,6 @@ use_plugin("python.cram")
 use_plugin("python.integrationtest")
 use_plugin("python.coverage")
 use_plugin("python.flake8")
-use_plugin("python.frosted")
 use_plugin("python.sphinx")
 use_plugin('filter_resources')
 
