@@ -109,6 +109,9 @@ def run_unit_tests(project, logger):
         else:
             logger.info("Executed %d unittests", result.testsRun)
 
+        if result.skipped:
+            logger.info("Skipped %d unittests", len(result.skipped))
+
         write_report("unittest", project, logger, result, console_out)
 
         if not result.wasSuccessful():
