@@ -27,9 +27,7 @@ PROJECT_TEMPLATE = string.Template("""<?xml version="1.0" encoding="UTF-8"?>
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$$MODULE_DIR$$">
-      <sourceFolder url="file://$$MODULE_DIR$$/${source_dir}" isTestSource="false" />
-      <sourceFolder url="file://$$MODULE_DIR$$/${unittest_source_dir}" isTestSource="true" />
-      <sourceFolder url="file://$$MODULE_DIR$$/${integrationtest_source_dir}" isTestSource="true" />
+      <sourceFolder url="file://$$MODULE_DIR$$/${source_dir}" isTestSource="false" />${unit_tests}${integration_tests}
       <excludeFolder url="file://$$MODULE_DIR$$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
@@ -62,11 +60,19 @@ def pycharm_generate(project, logger):
     project_file_name = "{0}.iml".format(project.name)
 
     _ensure_directory_present(pycharm_directory)
+    unit_tests = ""
+    integration_tests = ""
+    if project.get_property("dir_source_unittest_python"):
+        unit_tests = """\n      <sourceFolder url="file://$MODULE_DIR$/""" + project.get_property(
+            "dir_source_unittest_python") + """" isTestSource="true" />"""
+    if project.get_property("dir_source_integrationtest_python"):
+        integration_tests = """\n      <sourceFolder url="file://$MODULE_DIR$/""" + project.get_property(
+            "dir_source_integrationtest_python") + """" isTestSource="true" />"""
 
     project_metadata = PROJECT_TEMPLATE.substitute({
         "source_dir": project.get_property("dir_source_main_python"),
-        "unittest_source_dir": project.get_property("dir_source_unittest_python"),
-        "integrationtest_source_dir": project.get_property("dir_source_integrationtest_python")
+        "unit_tests": unit_tests,
+        "integration_tests": integration_tests
     })
 
     project_file_path = os.path.join(pycharm_directory, project_file_name)
