@@ -55,6 +55,8 @@ class PycharmPluginTests(unittest.TestCase):
     def test_should_write_pycharm_file(self, os, mock_open):
         project = Project('basedir', name='pybuilder')
         project.set_property('dir_source_main_python', 'src/main/python')
+        project.set_property('dir_source_unittest_python', 'src/unittest/python')
+        project.set_property('dir_source_integrationtest_python', 'src/integrationtest/python')
         mock_open.return_value = MagicMock(spec=TYPE_FILE)
         os.path.join.side_effect = lambda first, second: first + '/' + second
 
@@ -69,6 +71,8 @@ class PycharmPluginTests(unittest.TestCase):
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src/main/python" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/unittest/python" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/src/integrationtest/python" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
