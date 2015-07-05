@@ -114,7 +114,7 @@ def execute_tests_matching(runner_generator, logger, test_source, file_glob, tes
 def _create_runner(runner_generator):
     if (isinstance(runner_generator, list) or isinstance(runner_generator, tuple)) and len(runner_generator) > 1:
         runner_generator = runner_generator[0]
-    if type(runner_generator) == str or type(runner_generator) == unicode:
+    if not hasattr(runner_generator, '__call__'):
         runner_generator = reduce(getattr, runner_generator.split("."), sys.modules[__name__])
     return runner_generator()
 
