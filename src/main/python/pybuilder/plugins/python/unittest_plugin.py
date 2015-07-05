@@ -31,46 +31,9 @@ from pybuilder.errors import BuildFailedException
 from pybuilder.utils import discover_modules_matching, render_report
 from pybuilder.ci_server_interaction import test_proxy_for
 from pybuilder.terminal import print_text_line
+from types import MethodType, FunctionType
+
 use_plugin("python.core")
-
-if sys.version_info < (2, 7):
-    TextTestResult = unittest._TextTestResult  # brought to you by 2.6
-else:
-    TextTestResult = unittest.TextTestResult
-
-
-class TestNameAwareTextTestRunner(unittest.TextTestRunner):
-
-    def __init__(self, logger, stream):
-        self.logger = logger
-        super(TestNameAwareTextTestRunner, self).__init__(stream=stream)
-
-    def _makeResult(self):
-        return TestNameAwareTestResult(self.logger, self.stream, self.descriptions, self.verbosity)
-
-
-class TestNameAwareTestResult(TextTestResult):
-
-    def __init__(self, logger, stream, descriptions, verbosity):
-        self.test_names = []
-        self.failed_test_names_and_reasons = {}
-        self.logger = logger
-        super(TestNameAwareTestResult, self).__init__(stream, descriptions, verbosity)
-
-    def startTest(self, test):
-        self.test_names.append(test)
-        self.logger.debug("starting %s", test)
-        super(TestNameAwareTestResult, self).startTest(test)
-
-    def addError(self, test, err):
-        exception_type, exception, traceback = err
-        self.failed_test_names_and_reasons[test] = '{0}: {1}'.format(exception_type, exception).replace('\'', '')
-        super(TestNameAwareTestResult, self).addError(test, err)
-
-    def addFailure(self, test, err):
-        exception_type, exception, traceback = err
-        self.failed_test_names_and_reasons[test] = '{0}: {1}'.format(exception_type, exception).replace('\'', '')
-        super(TestNameAwareTestResult, self).addFailure(test, err)
 
 
 @init
@@ -79,6 +42,7 @@ def init_test_source_directory(project):
     project.set_property_if_unset("unittest_module_glob", "*_tests")
     project.set_property_if_unset("unittest_file_suffix", None)  # deprecated, use unittest_module_glob.
     project.set_property_if_unset("unittest_test_method_prefix", None)
+    project.set_property_if_unset("unittest_runner", unittest.TextTestRunner)
 
 
 @task
@@ -102,7 +66,9 @@ def run_unit_tests(project, logger):
 
     try:
         test_method_prefix = project.get_property("unittest_test_method_prefix")
-        result, console_out = execute_tests_matching(logger, test_dir, module_glob, test_method_prefix)
+        runner_generator = project.get_property("unittest_runner")
+        result, console_out = execute_tests_matching(runner_generator, logger, test_dir, module_glob,
+                                                     test_method_prefix)
 
         if result.testsRun == 0:
             logger.warn("No unittests executed.")
@@ -117,6 +83,7 @@ def run_unit_tests(project, logger):
         logger.info("All unittests passed.")
     except ImportError as e:
         import traceback
+
         _, _, import_error_traceback = sys.exc_info()
         file_with_error, error_line, _, statement_causing_error = traceback.extract_tb(import_error_traceback)[-1]
         logger.error("Import error in unittest file {0}, due to statement '{1}' on line {2}".format(
@@ -125,11 +92,11 @@ def run_unit_tests(project, logger):
         raise BuildFailedException("Unable to execute unit tests.")
 
 
-def execute_tests(logger, test_source, suffix, test_method_prefix=None):
-    return execute_tests_matching(logger, test_source, "*{0}".format(suffix), test_method_prefix)
+def execute_tests(runner_generator, logger, test_source, suffix, test_method_prefix=None):
+    return execute_tests_matching(runner_generator, logger, test_source, "*{0}".format(suffix), test_method_prefix)
 
 
-def execute_tests_matching(logger, test_source, file_glob, test_method_prefix=None):
+def execute_tests_matching(runner_generator, logger, test_source, file_glob, test_method_prefix=None):
     output_log_file = StringIO()
 
     try:
@@ -138,10 +105,71 @@ def execute_tests_matching(logger, test_source, file_glob, test_method_prefix=No
         if test_method_prefix:
             loader.testMethodPrefix = test_method_prefix
         tests = loader.loadTestsFromNames(test_modules)
-        result = TestNameAwareTextTestRunner(logger, output_log_file).run(tests)
+        result = _instrument_runner(runner_generator, logger, _create_runner(runner_generator)).run(tests)
         return result, output_log_file.getvalue()
     finally:
         output_log_file.close()
+
+
+def _create_runner(runner_generator):
+    if (isinstance(runner_generator, list) or isinstance(runner_generator, tuple)) and len(runner_generator) > 1:
+        runner_generator = runner_generator[0]
+    if type(runner_generator) == str or type(runner_generator) == unicode:
+        runner_generator = reduce(getattr, runner_generator.split("."), sys.modules[__name__])
+    return runner_generator()
+
+
+def _get_make_result_method_name(runner_generator):
+    if (isinstance(runner_generator, list) or isinstance(runner_generator, tuple)) and len(runner_generator) > 1:
+        method = runner_generator[1]
+        if type(method) == MethodType or type(method) == FunctionType:
+            method = method.__name__
+    else:
+        method = "_makeResult"
+    return method
+
+
+def _instrument_runner(runner_generator, logger, runner):
+    method_name = _get_make_result_method_name(runner_generator)
+    old_make_result = getattr(runner, method_name)
+    runner.logger = logger
+
+    def _instrumented_make_result(self):
+        result = old_make_result()
+        return _instrument_result(logger, result)
+
+    setattr(runner, method_name, MethodType(_instrumented_make_result, runner))
+    return runner
+
+
+def _instrument_result(logger, result):
+    old_startTest = result.startTest
+    old_addError = result.addError
+    old_addFailure = result.addFailure
+
+    def startTest(self, test):
+        self.test_names.append(test)
+        self.logger.debug("starting %s", test)
+        old_startTest(test)
+
+    def addError(self, test, err):
+        exception_type, exception, traceback = err
+        self.failed_test_names_and_reasons[test] = '{0}: {1}'.format(exception_type, exception).replace('\'', '')
+        old_addError(test, err)
+
+    def addFailure(self, test, err):
+        exception_type, exception, traceback = err
+        self.failed_test_names_and_reasons[test] = '{0}: {1}'.format(exception_type, exception).replace('\'', '')
+        old_addFailure(test, err)
+
+    result.startTest = MethodType(startTest, result)
+    result.addError = MethodType(addError, result)
+    result.addFailure = MethodType(addFailure, result)
+
+    result.test_names = []
+    result.failed_test_names_and_reasons = {}
+    result.logger = logger
+    return result
 
 
 def _register_test_and_source_path_and_return_test_dir(project, system_path):
