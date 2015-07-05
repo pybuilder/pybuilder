@@ -32,6 +32,7 @@ from pybuilder.utils import discover_modules_matching, render_report
 from pybuilder.ci_server_interaction import test_proxy_for
 from pybuilder.terminal import print_text_line
 from types import MethodType, FunctionType
+from functools import reduce
 
 use_plugin("python.core")
 
