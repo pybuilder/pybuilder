@@ -32,7 +32,7 @@ from pybuilder.utils import discover_modules_matching, render_report
 from pybuilder.ci_server_interaction import test_proxy_for
 from pybuilder.terminal import print_text_line
 from types import MethodType, FunctionType
-from functools import reduce
+from functools import reduce, partial
 
 use_plugin("python.core")
 
@@ -43,7 +43,7 @@ def init_test_source_directory(project):
     project.set_property_if_unset("unittest_module_glob", "*_tests")
     project.set_property_if_unset("unittest_file_suffix", None)  # deprecated, use unittest_module_glob.
     project.set_property_if_unset("unittest_test_method_prefix", None)
-    project.set_property_if_unset("unittest_runner", unittest.TextTestRunner)
+    project.set_property_if_unset("unittest_runner", partial(unittest.TextTestRunner, verbosity=0, stream=StringIO()))
 
 
 @task
