@@ -65,21 +65,18 @@ def compile_sources():
 
 @task
 @depends(compile_sources)
-@description("Runs all unit tests.")
 def run_unit_tests():
     pass
 
 
 @task
 @depends(run_unit_tests)
-@description("Packages the application.")
 def package():
     pass
 
 
 @task
 @depends(package)
-@description("Runs integration tests on the packaged application.")
 def run_integration_tests():
     pass
 
