@@ -263,7 +263,7 @@ def length_of_longest_string(list_of_strings):
 
 
 def task_description(task):
-    return " ".join(task.description) or "<no description available>"
+    return "".join(task.description) or "<no description available>"
 
 
 def print_list_of_tasks(reactor, quiet=False):
