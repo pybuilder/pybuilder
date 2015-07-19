@@ -18,6 +18,9 @@
 #
 
 from pybuilder.utils import assert_can_execute
+from pybuilder.utils import execute_command
+from pybuilder.errors import BuildFailedException
+from pybuilder.core import NAME_ATTRIBUTE
 from pybuilder.core import (after,
                             task,
                             init,
@@ -26,6 +29,8 @@ from pybuilder.core import (after,
 
 __author__ = 'Marcel Wolf'
 
+DEB_PACKAGE_MAINTAINER = "John Doe <changeme@example.com>"
+
 use_plugin("core")
 
 
@@ -33,7 +38,19 @@ use_plugin("core")
 def initialize_make_deb_plugin(project):
 
     project.build_depends_on("stdeb")
-    project.build_depends_on("subprocess32")
+
+    package_name = project.name + "-" + project.version + ".tar.gz"
+
+    PATH_TO_SOURCE_TARBALL = project.expand_path(
+        "$dir_dist/dist/" + package_name)
+    PATH_FINAL_BUILD = project.expand_path("$dir_dist/dist/")
+
+    project.set_property_if_unset(
+        "deb_package_maintainer", DEB_PACKAGE_MAINTAINER)
+    project.set_property_if_unset(
+        "path_final_build", PATH_FINAL_BUILD)
+    project.set_property_if_unset(
+        "path_to_source_tarball", PATH_TO_SOURCE_TARBALL)
 
 
 @after("prepare")
@@ -43,25 +60,48 @@ def assert_py2dsc_deb_is_available(logger):
     logger.debug("Checking if py2dsc-deb is available.")
 
     assert_can_execute(
-        ["py2dsc-deb", "-h"], "py2dsc-deb", "plugin python.py2dsc_deb")
+        ["py2dsc-deb", "-h"], "py2dsc-deb", "plugin python.stdeb")
 
 
-@task("py2dsc_prepare", "prepare for buiding a debian package")
+@after("prepare")
+def assert_dpkg_is_available(logger):
+    """Asserts that the dpkg-buildpackage is available.
+    """
+    logger.debug("Checking if dpkg-buildpackage is available")
+
+    assert_can_execute(
+        ["dpkg-buildpackage", "--help"], "dpkg-buildpackage", "plugin python.stdeb")
+
+
+@task("make_deb", "converts a source tarball into a Debian source package and build a .deb package")
 @depends("publish")
-def prepare():
-    pass
-
-
-@task("py2dsc_deb", "convert a source tarball into a Debian source package and build a .deb package")
-@depends("py2dsc_prepare")
 def py2dsc_deb(project, logger):
     """Runs py2dsc-deb against the setup.py for the given project.
     """
-    import subprocess32 as subprocess
-    logger.info("converting to deb package")
-    package_name = project.name + "-" + project.version + ".tar.gz"
-    path_to_source_tarball = project.expand_path(
-        "$dir_dist/dist/" + package_name)
-    path_final_build = project.expand_path("$dir_dist/dist/")
+    task_name = getattr(py2dsc_deb, NAME_ATTRIBUTE)
+    build_command = get_py2dsc_deb_command(project)
+    run_py2dsc_deb_build(build_command, task_name, logger, project)
 
-    subprocess.call(["py2dsc-deb", "-d", path_final_build, path_to_source_tarball])
+
+def get_py2dsc_deb_command(project):
+    """Builds the py2dsc_deb command using project properties.
+        py2dsc_deb parameters:
+        :param --maintainer: maintainer name and email to use.
+        :param -d: directory to put final built.
+    """
+    options = ["--maintainer '%s'" % project.get_property("deb_package_maintainer"),
+               "-d '%s'" % project.get_property("path_final_build"),
+               project.get_property("path_to_source_tarball")]
+    return "py2dsc-deb %s" % " ".join(options)
+
+
+def run_py2dsc_deb_build(build_command, task_name, logger, project):
+    logger.info("Running %s" % task_name)
+    log_file = project.expand_path(
+        "$dir_target/reports/{0}".format(task_name))
+    if project.get_property("verbose"):
+        logger.info(build_command)
+        exit_code = execute_command(build_command, log_file, shell=True)
+        if exit_code != 0:
+            raise BuildFailedException(
+                "py2dsc_deb build command failed. See %s for details.", log_file)
