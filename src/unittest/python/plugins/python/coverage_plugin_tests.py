@@ -2,7 +2,7 @@ from unittest import TestCase
 from pybuilder.core import Project
 from pybuilder.plugins.python.coverage_plugin import (
     init_coverage_properties
-    )
+)
 
 
 class CoveragePluginTests(TestCase):
@@ -13,11 +13,11 @@ class CoveragePluginTests(TestCase):
     def test_should_leave_user_specified_properties_when_initializing_plugin(self):
 
         expected_properties = {
-            "coverage_threshold_warn": 70,
-            "coverage_break_build": True,
-            "coverage_reload_modules": True,
-            "coverage_exceptions": [],
-            "coverage_fork": False
+            "coverage_threshold_warn": 120,
+            "coverage_break_build": False,
+            "coverage_reload_modules": False,
+            "coverage_exceptions": ["foo"],
+            "coverage_fork": True
         }
 
         for property_name, property_value in expected_properties.items():
@@ -27,6 +27,12 @@ class CoveragePluginTests(TestCase):
 
         for property_name, property_value in expected_properties.items():
             self.assertEquals(
-
-                self.project.get_property(property_name),
-                property_value)
+                self.project.get_property("coverage_threshold_warn"), 120)
+            self.assertEquals(
+                self.project.get_property("coverage_break_build"), False)
+            self.assertEquals(
+                self.project.get_property("coverage_reload_modules"), False)
+            self.assertEquals(
+                self.project.get_property("coverage_exceptions"), ["foo"])
+            self.assertEquals(
+                self.project.get_property("coverage_fork"), True)

@@ -26,8 +26,7 @@ from pybuilder.plugins.python.sphinx_plugin import (
     assert_sphinx_quickstart_is_available,
     get_sphinx_build_command,
     get_sphinx_quickstart_command,
-    initialize_sphinx_plugin
-    )
+    initialize_sphinx_plugin)
 
 
 class CheckSphinxAvailableTests(TestCase):
@@ -91,13 +90,20 @@ class SphinxPluginInitializationTests(TestCase):
         self.project.set_property("sphinx_project_name", "foo")
         self.project.set_property("sphinx_project_version", "1.0")
 
-        self.assertEquals(self.project.get_property("sphinx_source_dir"), "docs")
-        self.assertEquals(self.project.get_property("sphinx_output_dir"), "docs/_build/")
-        self.assertEquals(self.project.get_property("sphinx_config_path"), "docs")
-        self.assertEquals(self.project.get_property("sphinx_doc_author"), 'John Doe, Jane Doe')
-        self.assertEquals(self.project.get_property("sphinx_doc_builder"), "html")
-        self.assertEquals(self.project.get_property("sphinx_project_name"), "foo")
-        self.assertEquals(self.project.get_property("sphinx_project_version"), "1.0")
+        self.assertEquals(
+            self.project.get_property("sphinx_source_dir"), "docs")
+        self.assertEquals(
+            self.project.get_property("sphinx_output_dir"), "docs/_build/")
+        self.assertEquals(
+            self.project.get_property("sphinx_config_path"), "docs")
+        self.assertEquals(
+            self.project.get_property("sphinx_doc_author"), 'John Doe, Jane Doe')
+        self.assertEquals(
+            self.project.get_property("sphinx_doc_builder"), "html")
+        self.assertEquals(
+            self.project.get_property("sphinx_project_name"), "foo")
+        self.assertEquals(
+            self.project.get_property("sphinx_project_version"), "1.0")
 
 
 class SphinxBuildCommandTests(TestCase):

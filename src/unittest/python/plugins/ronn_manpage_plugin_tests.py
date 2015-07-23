@@ -75,7 +75,7 @@ class RonnPluginInitializationTests(TestCase):
             prerequisite='ronn')
 
     @patch('pybuilder.plugins.ronn_manpage_plugin.assert_can_execute')
-    def test_should_check_that_gzip_is_excecuteble(self, mock_assert_can_execute):
+    def test_should_check_that_gzip_is_executable(self, mock_assert_can_execute):
 
         mock_logger = Mock(Logger)
 

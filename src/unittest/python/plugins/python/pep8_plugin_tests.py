@@ -29,9 +29,6 @@ from pybuilder.plugins.python.pep8_plugin import (
 
 class CheckPep8AvailableTests(TestCase):
 
-    def setUp(self):
-        self.project = Project("basedir")
-
     @patch('pybuilder.plugins.python.pep8_plugin.assert_can_execute')
     def test_should_check_that_pylint_can_be_executed(self, mock_assert_can_execute):
 

@@ -39,15 +39,15 @@ class TaskPoolProgressTests(unittest.TestCase):
         self.progress = TaskPoolProgress(42, 8)
         self.project = Project("basedir")
 
-    def test_should_generate_command_abiding_to_configuration(self):
+    def test_should_leave_user_specified_properties_when_initializing_plugin(self):
 
         expected_properties = {
-            "dir_source_integrationtest_python": "src/integrationtest/python",
-            "integrationtest_file_glob": "*_tests.py",
-            "integrationtest_file_suffix": None,
-            "integrationtest_additional_environment": {},
-            "integrationtest_inherit_environment": False,
-            "integrationtest_always_verbose": False
+            "dir_source_integrationtest_python": "foo/bar/python",
+            "integrationtest_file_glob": "*foo.py",
+            "integrationtest_file_suffix": True,
+            "integrationtest_additional_environment": {"env3": "foo"},
+            "integrationtest_inherit_environment": True,
+            "integrationtest_always_verbose": True
             }
         for property_name, property_value in expected_properties.items():
             self.project.set_property(property_name, property_value)
@@ -56,9 +56,15 @@ class TaskPoolProgressTests(unittest.TestCase):
 
         for property_name, property_value in expected_properties.items():
             self.assertEquals(
-
-                self.project.get_property(property_name),
-                property_value)
+                self.project.get_property("dir_source_integrationtest_python"), "foo/bar/python")
+            self.assertEquals(
+                self.project.get_property("integrationtest_file_glob"), "*foo.py")
+            self.assertEquals(
+                self.project.get_property("integrationtest_file_suffix"), True)
+            self.assertEquals(
+                self.project.get_property("integrationtest_additional_environment"), {"env3": "foo"}),
+            self.assertEquals(
+                self.project.get_property("integrationtest_always_verbose"), True)
 
     def test_should_create_new_progress(self):
         self.assertEqual(self.progress.workers_count, 8)
