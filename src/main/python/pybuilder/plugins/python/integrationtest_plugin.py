@@ -36,7 +36,7 @@ use_plugin("python.core")
 
 
 @init
-def init_test_source_directory(project):
+def initialize_integrationtest_plugin(project):
     project.set_property_if_unset(
         "dir_source_integrationtest_python", "src/integrationtest/python")
     project.set_property_if_unset("integrationtest_file_glob", "*_tests.py")

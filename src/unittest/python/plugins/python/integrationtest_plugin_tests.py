@@ -29,7 +29,7 @@ from pybuilder.plugins.python.integrationtest_plugin import (
     TaskPoolProgress,
     add_additional_environment_keys,
     ConsumingQueue,
-    init_test_source_directory
+    initialize_integrationtest_plugin
     )
 
 
@@ -52,7 +52,7 @@ class TaskPoolProgressTests(unittest.TestCase):
         for property_name, property_value in expected_properties.items():
             self.project.set_property(property_name, property_value)
 
-            init_test_source_directory(self.project)
+            initialize_integrationtest_plugin(self.project)
 
         for property_name, property_value in expected_properties.items():
             self.assertEquals(
