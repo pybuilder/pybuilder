@@ -25,6 +25,7 @@ except ImportError as e:
 
 import sys
 import unittest
+import multiprocessing
 
 from pybuilder.core import init, task, description, use_plugin
 from pybuilder.errors import BuildFailedException
@@ -44,53 +45,75 @@ def init_test_source_directory(project):
     project.set_property_if_unset("unittest_file_suffix", None)  # deprecated, use unittest_module_glob.
     project.set_property_if_unset("unittest_test_method_prefix", None)
     project.set_property_if_unset("unittest_runner", unittest.TextTestRunner)
+    project.set_property_if_unset("unittest_fork", False)
 
 
 @task
 @description("Runs unit tests based on Python's unittest module")
 def run_unit_tests(project, logger):
-    test_dir = _register_test_and_source_path_and_return_test_dir(project, sys.path)
+    run_tests(project, logger, "unittest", "unit tests")
 
-    unittest_file_suffix = project.get_property("unittest_file_suffix")
-    if unittest_file_suffix is not None:
-        logger.warn("unittest_file_suffix is deprecated, please use unittest_module_glob")
-        module_glob = "*{0}".format(unittest_file_suffix)
+
+def run_tests(project, logger, property_prefix, test_group_name):
+    logger.info("Running %s", test_group_name)
+    if (not project.get_property('__running_coverage')) and project.get_property("%s_fork" % property_prefix):
+        logger.debug("Forking process to run %s", test_group_name)
+        process = multiprocessing.Process(target=do_run_tests,
+                                          args=(
+                                              project, logger, property_prefix, test_group_name))
+        process.start()
+        process.join()
+        if process.exitcode:
+            raise BuildFailedException(
+                "Forked %s process indicated failure with error code %d" % (test_group_name, process.exitcode))
+    else:
+        do_run_tests(project, logger, property_prefix, test_group_name)
+
+
+def do_run_tests(project, logger, property_prefix, test_group_name):
+    test_dir = _register_test_and_source_path_and_return_test_dir(project, sys.path, property_prefix)
+
+    file_suffix = project.get_property("%s_file_suffix" % property_prefix)
+    if file_suffix is not None:
+        logger.warn(
+            "%(prefix)s_file_suffix is deprecated, please use %(prefix)s_module_glob" % {"prefix": property_prefix})
+        module_glob = "*{0}".format(file_suffix)
         if module_glob.endswith(".py"):
             WITHOUT_DOT_PY = slice(0, -3)
             module_glob = module_glob[WITHOUT_DOT_PY]
-        project.set_property("unittest_module_glob", module_glob)
+        project.set_property("%s_module_glob" % property_prefix, module_glob)
     else:
-        module_glob = project.get_property("unittest_module_glob")
+        module_glob = project.get_property("%s_module_glob" % property_prefix)
 
-    logger.info("Executing unittest Python modules in %s", test_dir)
+    logger.info("Executing %s from Python modules in %s", test_group_name, test_dir)
     logger.debug("Including files matching '%s'", module_glob)
 
     try:
-        test_method_prefix = project.get_property("unittest_test_method_prefix")
-        runner_generator = project.get_property("unittest_runner")
+        test_method_prefix = project.get_property("%s_test_method_prefix" % property_prefix)
+        runner_generator = project.get_property("%s_runner" % property_prefix)
         result, console_out = execute_tests_matching(runner_generator, logger, test_dir, module_glob,
                                                      test_method_prefix)
 
         if result.testsRun == 0:
-            logger.warn("No unittests executed.")
+            logger.warn("No %s executed.", test_group_name)
         else:
-            logger.info("Executed %d unittests", result.testsRun)
+            logger.info("Executed %d %s", result.testsRun, test_group_name)
 
-        write_report("unittest", project, logger, result, console_out)
+        write_report(property_prefix, project, logger, result, console_out)
 
         if not result.wasSuccessful():
-            raise BuildFailedException("There were %d test error(s) and %d failure(s)"
-                                       % (len(result.errors), len(result.failures)))
-        logger.info("All unittests passed.")
+            raise BuildFailedException("There were %d error(s) and %d failure(s) in %s"
+                                       % (len(result.errors), len(result.failures), test_group_name))
+        logger.info("All %s passed.", test_group_name)
     except ImportError as e:
         import traceback
 
         _, _, import_error_traceback = sys.exc_info()
         file_with_error, error_line, _, statement_causing_error = traceback.extract_tb(import_error_traceback)[-1]
-        logger.error("Import error in unittest file {0}, due to statement '{1}' on line {2}".format(
+        logger.error("Import error in test file {0}, due to statement '{1}' on line {2}".format(
             file_with_error, statement_causing_error, error_line))
-        logger.error("Error importing unittests: %s", e)
-        raise BuildFailedException("Unable to execute unit tests.")
+        logger.error("Error importing %s: %s", property_prefix, e)
+        raise BuildFailedException("Unable to execute %s." % test_group_name)
 
 
 def execute_tests(runner_generator, logger, test_source, suffix, test_method_prefix=None):
@@ -100,11 +123,11 @@ def execute_tests(runner_generator, logger, test_source, suffix, test_method_pre
 def execute_tests_matching(runner_generator, logger, test_source, file_glob, test_method_prefix=None):
     output_log_file = StringIO()
     try:
-        if("stream" in runner_generator.func_code.co_varnames):
+        if "stream" in runner_generator.func_code.co_varnames:
             runner_generator = partial(runner_generator, stream=output_log_file)
     except AttributeError:  # not a function, maybe a class?
         try:
-            if("stream" in runner_generator.__init__.func_code.co_varnames):
+            if "stream" in runner_generator.__init__.func_code.co_varnames:
                 runner_generator = partial(runner_generator, stream=output_log_file)
         except Exception:
             pass
@@ -182,8 +205,8 @@ def _instrument_result(logger, result):
     return result
 
 
-def _register_test_and_source_path_and_return_test_dir(project, system_path):
-    test_dir = project.expand_path("$dir_source_unittest_python")
+def _register_test_and_source_path_and_return_test_dir(project, system_path, property_prefix):
+    test_dir = project.expand_path("$dir_source_%s_python" % property_prefix)
     system_path.insert(0, test_dir)
     system_path.insert(0, project.expand_path("$dir_source_main_python"))
 
