@@ -17,11 +17,11 @@ class FlakePluginInitializationTests(TestCase):
     def test_should_leave_user_specified_properties_when_initializing_plugin(self):
 
         expected_properties = {
-            "flake8_break_build": False,
-            "flake8_max_line_length": 120,
-            "flake8_exclude_patterns": None,
-            "flake8_include_test_sources": False,
-            "flake8_include_scripts": False
+            "flake8_break_build": True,
+            "flake8_max_line_length": 80,
+            "flake8_exclude_patterns": ".svn",
+            "flake8_include_test_sources": True,
+            "flake8_include_scripts": True
             }
         for property_name, property_value in expected_properties.items():
             self.project.set_property(property_name, property_value)
@@ -30,6 +30,12 @@ class FlakePluginInitializationTests(TestCase):
 
         for property_name, property_value in expected_properties.items():
             self.assertEquals(
-
-                self.project.get_property(property_name),
-                property_value)
+                self.project.get_property("flake8_break_build"), True)
+            self.assertEquals(
+                self.project.get_property("flake8_max_line_length"), 80)
+            self.assertEquals(
+                self.project.get_property("flake8_exclude_patterns"), ".svn")
+            self.assertEquals(
+                self.project.get_property("flake8_include_test_sources"), True)
+            self.assertEquals(
+                self.project.get_property("flake8_include_scripts"), True)
