@@ -54,57 +54,57 @@ def run_unit_tests(project, logger):
     run_tests(project, logger, "unittest", "unit tests")
 
 
-def run_tests(project, logger, property_prefix, test_group_name):
-    logger.info("Running %s", test_group_name)
-    if (not project.get_property('__running_coverage')) and project.get_property("%s_fork" % property_prefix):
-        logger.debug("Forking process to run %s", test_group_name)
+def run_tests(project, logger, execution_prefix, execution_name):
+    logger.info("Running %s", execution_name)
+    if (not project.get_property('__running_coverage')) and project.get_property("%s_fork" % execution_prefix):
+        logger.debug("Forking process to run %s", execution_name)
         process = multiprocessing.Process(target=do_run_tests,
                                           args=(
-                                              project, logger, property_prefix, test_group_name))
+                                              project, logger, execution_prefix, execution_name))
         process.start()
         process.join()
         if process.exitcode:
             raise BuildFailedException(
-                "Forked %s process indicated failure with error code %d" % (test_group_name, process.exitcode))
+                "Forked %s process indicated failure with error code %d" % (execution_name, process.exitcode))
     else:
-        do_run_tests(project, logger, property_prefix, test_group_name)
+        do_run_tests(project, logger, execution_prefix, execution_name)
 
 
-def do_run_tests(project, logger, property_prefix, test_group_name):
-    test_dir = _register_test_and_source_path_and_return_test_dir(project, sys.path, property_prefix)
+def do_run_tests(project, logger, execution_prefix, execution_name):
+    test_dir = _register_test_and_source_path_and_return_test_dir(project, sys.path, execution_prefix)
 
-    file_suffix = project.get_property("%s_file_suffix" % property_prefix)
+    file_suffix = project.get_property("%s_file_suffix" % execution_prefix)
     if file_suffix is not None:
         logger.warn(
-            "%(prefix)s_file_suffix is deprecated, please use %(prefix)s_module_glob" % {"prefix": property_prefix})
+            "%(prefix)s_file_suffix is deprecated, please use %(prefix)s_module_glob" % {"prefix": execution_prefix})
         module_glob = "*{0}".format(file_suffix)
         if module_glob.endswith(".py"):
             WITHOUT_DOT_PY = slice(0, -3)
             module_glob = module_glob[WITHOUT_DOT_PY]
-        project.set_property("%s_module_glob" % property_prefix, module_glob)
+        project.set_property("%s_module_glob" % execution_prefix, module_glob)
     else:
-        module_glob = project.get_property("%s_module_glob" % property_prefix)
+        module_glob = project.get_property("%s_module_glob" % execution_prefix)
 
-    logger.info("Executing %s from Python modules in %s", test_group_name, test_dir)
+    logger.info("Executing %s from Python modules in %s", execution_name, test_dir)
     logger.debug("Including files matching '%s'", module_glob)
 
     try:
-        test_method_prefix = project.get_property("%s_test_method_prefix" % property_prefix)
-        runner_generator = project.get_property("%s_runner" % property_prefix)
+        test_method_prefix = project.get_property("%s_test_method_prefix" % execution_prefix)
+        runner_generator = project.get_property("%s_runner" % execution_prefix)
         result, console_out = execute_tests_matching(runner_generator, logger, test_dir, module_glob,
                                                      test_method_prefix)
 
         if result.testsRun == 0:
-            logger.warn("No %s executed.", test_group_name)
+            logger.warn("No %s executed.", execution_name)
         else:
-            logger.info("Executed %d %s", result.testsRun, test_group_name)
+            logger.info("Executed %d %s", result.testsRun, execution_name)
 
-        write_report(property_prefix, project, logger, result, console_out)
+        write_report(execution_prefix, project, logger, result, console_out)
 
         if not result.wasSuccessful():
             raise BuildFailedException("There were %d error(s) and %d failure(s) in %s"
-                                       % (len(result.errors), len(result.failures), test_group_name))
-        logger.info("All %s passed.", test_group_name)
+                                       % (len(result.errors), len(result.failures), execution_name))
+        logger.info("All %s passed.", execution_name)
     except ImportError as e:
         import traceback
 
@@ -112,8 +112,8 @@ def do_run_tests(project, logger, property_prefix, test_group_name):
         file_with_error, error_line, _, statement_causing_error = traceback.extract_tb(import_error_traceback)[-1]
         logger.error("Import error in test file {0}, due to statement '{1}' on line {2}".format(
             file_with_error, statement_causing_error, error_line))
-        logger.error("Error importing %s: %s", property_prefix, e)
-        raise BuildFailedException("Unable to execute %s." % test_group_name)
+        logger.error("Error importing %s: %s", execution_prefix, e)
+        raise BuildFailedException("Unable to execute %s." % execution_name)
 
 
 def execute_tests(runner_generator, logger, test_source, suffix, test_method_prefix=None):
@@ -205,8 +205,8 @@ def _instrument_result(logger, result):
     return result
 
 
-def _register_test_and_source_path_and_return_test_dir(project, system_path, property_prefix):
-    test_dir = project.expand_path("$dir_source_%s_python" % property_prefix)
+def _register_test_and_source_path_and_return_test_dir(project, system_path, execution_prefix):
+    test_dir = project.expand_path("$dir_source_%s_python" % execution_prefix)
     system_path.insert(0, test_dir)
     system_path.insert(0, project.expand_path("$dir_source_main_python"))
 

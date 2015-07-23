@@ -49,26 +49,26 @@ def verify_coverage(project, logger, reactor):
     run_coverage(project, logger, reactor, "coverage", "coverage", "run_unit_tests")
 
 
-def run_coverage(project, logger, reactor, property_prefix, coverage_group_name, target_task):
+def run_coverage(project, logger, reactor, execution_prefix, execution_name, target_task):
     logger.info("Collecting coverage information")
 
-    if project.get_property("%s_fork" % property_prefix):
-        logger.debug("Forking process to do %s analysis", coverage_group_name)
+    if project.get_property("%s_fork" % execution_prefix):
+        logger.debug("Forking process to do %s analysis", execution_name)
         process = multiprocessing.Process(target=do_coverage,
                                           args=(
-                                              project, logger, reactor, property_prefix, coverage_group_name,
+                                              project, logger, reactor, execution_prefix, execution_name,
                                               target_task))
         process.start()
         process.join()
-        if process.exitcode and project.get_property("%s_break_build" % property_prefix):
+        if process.exitcode and project.get_property("%s_break_build" % execution_prefix):
             raise BuildFailedException(
-                "Forked %s process indicated failure with error code %d" % (coverage_group_name, process.exitcode))
+                "Forked %s process indicated failure with error code %d" % (execution_name, process.exitcode))
     else:
-        do_coverage(project, logger, reactor, property_prefix, coverage_group_name,
+        do_coverage(project, logger, reactor, execution_prefix, execution_name,
                     target_task)
 
 
-def do_coverage(project, logger, reactor, property_prefix, coverage_group_name, target_task):
+def do_coverage(project, logger, reactor, execution_prefix, execution_name, target_task):
     from coverage import coverage as coverage_factory
 
     source_tree_path = project.get_property("dir_source_main_python")
@@ -78,11 +78,11 @@ def do_coverage(project, logger, reactor, property_prefix, coverage_group_name, 
     reactor.execute_task(target_task)
     project.set_property('__running_coverage', False)
 
-    _stop_coverage(coverage, project, logger, property_prefix)
+    _stop_coverage(coverage, project, logger, execution_prefix)
 
     coverage_too_low = False
-    threshold = project.get_property("%s_threshold_warn" % property_prefix)
-    exceptions = project.get_property("%s_exceptions" % property_prefix)
+    threshold = project.get_property("%s_threshold_warn" % execution_prefix)
+    exceptions = project.get_property("%s_exceptions" % execution_prefix)
 
     report = {
         "module_names": []
@@ -135,16 +135,16 @@ def do_coverage(project, logger, reactor, property_prefix, coverage_group_name, 
     report["overall_coverage"] = overall_coverage
 
     if overall_coverage < threshold:
-        logger.warn("Overall %s is below %2d%%: %2d%%", coverage_group_name, threshold, overall_coverage)
+        logger.warn("Overall %s is below %2d%%: %2d%%", execution_name, threshold, overall_coverage)
         coverage_too_low = True
     else:
-        logger.info("Overall %s is %2d%%", coverage_group_name, overall_coverage)
+        logger.info("Overall %s is %2d%%", execution_name, overall_coverage)
 
-    project.write_report("%s.json" % property_prefix, render_report(report))
+    project.write_report("%s.json" % execution_prefix, render_report(report))
 
-    _write_summary_report(coverage, project, modules, property_prefix)
+    _write_summary_report(coverage, project, modules, execution_prefix)
 
-    if coverage_too_low and project.get_property("%s_break_build" % property_prefix):
+    if coverage_too_low and project.get_property("%s_break_build" % execution_prefix):
         raise BuildFailedException("Test coverage for at least one module is below %d%%", threshold)
 
 
@@ -153,13 +153,13 @@ def _start_coverage(coverage):
     coverage.start()
 
 
-def _stop_coverage(coverage, project, logger, property_prefix):
-    _reimport_source_modules(project, logger, property_prefix)
+def _stop_coverage(coverage, project, logger, execution_prefix):
+    _reimport_source_modules(project, logger, execution_prefix)
     coverage.stop()
 
 
-def _reimport_source_modules(project, logger, property_prefix):
-    if project.get_property("%s_reload_modules" % property_prefix):
+def _reimport_source_modules(project, logger, execution_prefix):
+    if project.get_property("%s_reload_modules" % execution_prefix):
         modules = _discover_modules_to_cover(project)
         for module in modules:
             logger.debug("Reloading module %s", module)
@@ -186,17 +186,17 @@ def build_module_report(coverage, module):
             code_coverage)
 
 
-def _write_summary_report(coverage, project, modules, property_prefix):
+def _write_summary_report(coverage, project, modules, execution_prefix):
     from coverage import CoverageException
 
     summary = StringIO()
     coverage.report(modules, file=summary)
     try:
-        coverage.xml_report(outfile=project.expand_path("$dir_reports/%s.xml" % property_prefix))
+        coverage.xml_report(outfile=project.expand_path("$dir_reports/%s.xml" % execution_prefix))
         coverage.save()
     except CoverageException:
         pass  # coverage raises when there is no data
-    project.write_report(property_prefix, summary.getvalue())
+    project.write_report(execution_prefix, summary.getvalue())
     summary.close()
 
 
