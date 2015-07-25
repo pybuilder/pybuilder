@@ -49,7 +49,7 @@ def verify_coverage(project, logger, reactor):
     run_coverage(project, logger, reactor, "coverage", "coverage", "run_unit_tests")
 
 
-def run_coverage(project, logger, reactor, execution_prefix, execution_name, target_task):
+def run_coverage(project, logger, reactor, execution_prefix, execution_name, target_task, shortest_plan=False):
     logger.info("Collecting coverage information")
 
     if project.get_property("%s_fork" % execution_prefix):
@@ -57,7 +57,7 @@ def run_coverage(project, logger, reactor, execution_prefix, execution_name, tar
         process = multiprocessing.Process(target=do_coverage,
                                           args=(
                                               project, logger, reactor, execution_prefix, execution_name,
-                                              target_task))
+                                              target_task, shortest_plan))
         process.start()
         process.join()
         if process.exitcode and project.get_property("%s_break_build" % execution_prefix):
@@ -65,17 +65,20 @@ def run_coverage(project, logger, reactor, execution_prefix, execution_name, tar
                 "Forked %s process indicated failure with error code %d" % (execution_name, process.exitcode))
     else:
         do_coverage(project, logger, reactor, execution_prefix, execution_name,
-                    target_task)
+                    target_task, shortest_plan)
 
 
-def do_coverage(project, logger, reactor, execution_prefix, execution_name, target_task):
+def do_coverage(project, logger, reactor, execution_prefix, execution_name, target_task, shortest_plan):
     from coverage import coverage as coverage_factory
 
     source_tree_path = project.get_property("dir_source_main_python")
     coverage = coverage_factory(cover_pylib=False, source=[source_tree_path])
     _start_coverage(coverage)
     project.set_property('__running_coverage', True)  # tell other plugins that we are not really unit testing right now
-    reactor.execute_task(target_task)
+    if shortest_plan:
+        reactor.execute_task_shortest_plan(target_task)
+    else:
+        reactor.execute_task(target_task)
     project.set_property('__running_coverage', False)
 
     _stop_coverage(coverage, project, logger, execution_prefix)
