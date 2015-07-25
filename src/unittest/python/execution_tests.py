@@ -645,8 +645,8 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
         self.execution_manager._tasks_executed.append(one)
         self.execution_manager._current_task = two
 
-        with self.assertRaises(CircularTaskDependencyException):
-            self.execution_manager.build_shortest_execution_plan(["three"])
+        self.assertRaises(CircularTaskDependencyException, self.execution_manager.build_shortest_execution_plan,
+                          ["three"])
 
     def test_shortest_execution_plan_reruns_on_demand(self):
         one = mock(name="one", dependencies=[])
