@@ -35,13 +35,42 @@ from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        default,
                                                        render_manifest_file,
                                                        build_scripts_string,
-                                                       render_setup_script)
+                                                       render_setup_script,
+                                                       initialize_distutils_plugin)
 
 
 class InstallDependenciesTest(unittest.TestCase):
 
     def setUp(self):
         self.project = Project(".")
+
+    def test_should_leave_user_specified_properties_when_initializing_plugin(self):
+
+        expected_properties = {
+            "distutils_commands": ["foo", "bar"],
+            "distutils_issue8876_workaround_enabled": True,
+            "distutils_classifiers": [
+                "Development Status :: 3 - Beta",
+                "Programming Language :: Rust"
+            ],
+            "distutils_use_setuptools": False
+        }
+
+        for property_name, property_value in expected_properties.items():
+            self.project.set_property(property_name, property_value)
+
+            initialize_distutils_plugin(self.project)
+
+        for property_name, property_value in expected_properties.items():
+            self.assertEquals(
+                self.project.get_property("distutils_commands"), ["foo", "bar"])
+            self.assertEquals(
+                self.project.get_property("distutils_issue8876_workaround_enabled"), True)
+            self.assertEquals(
+                self.project.get_property("distutils_classifiers"), ["Development Status :: 3 - Beta",
+                                                                     "Programming Language :: Rust"])
+            self.assertEquals(
+                self.project.get_property("distutils_use_setuptools"), False)
 
     def test_should_return_empty_string_when_no_dependency_is_given(self):
         self.assertEqual("", build_install_dependencies_string(self.project))
@@ -119,7 +148,8 @@ class InstallDependenciesTest(unittest.TestCase):
     def test_should_ignore_editable_urls_from_requirements(self, mock_open):
         mock_open.return_value = MagicMock(spec=TYPE_FILE)
         handle = mock_open.return_value.__enter__.return_value
-        handle.readlines.return_value = ["foo", "-e git+https://github.com/someuser/someproject.git#egg=some_package"]
+        handle.readlines.return_value = [
+            "foo", "-e git+https://github.com/someuser/someproject.git#egg=some_package"]
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
@@ -129,7 +159,8 @@ class InstallDependenciesTest(unittest.TestCase):
     def test_should_ignore_expanded_editable_urls_from_requirements(self, mock_open):
         mock_open.return_value = MagicMock(spec=TYPE_FILE)
         handle = mock_open.return_value.__enter__.return_value
-        handle.readlines.return_value = ["foo", "--editable git+https://github.com/someuser/someproject.git#egg=some_package"]
+        handle.readlines.return_value = [
+            "foo", "--editable git+https://github.com/someuser/someproject.git#egg=some_package"]
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
@@ -194,7 +225,8 @@ class DependencyLinksTest(unittest.TestCase):
         handle = mock_open.return_value.__enter__.return_value
         handle.readlines.return_value = [
             "-e svn+https://github.com/someuser/someproject#egg=some_package"]
-        self.project.depends_on("jedi", url="git+https://github.com/davidhalter/jedi")
+        self.project.depends_on(
+            "jedi", url="git+https://github.com/davidhalter/jedi")
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
@@ -294,14 +326,16 @@ class RenderSetupScriptTest(PyBuilderTestCase):
         self.project = create_project()
 
     def test_should_remove_hardlink_capabilities_when_workaround_is_enabled(self):
-        self.project.set_property("distutils_issue8876_workaround_enabled", True)
+        self.project.set_property(
+            "distutils_issue8876_workaround_enabled", True)
 
         actual_setup_script = render_setup_script(self.project)
 
         self.assertTrue("import os\ndel os.link\n" in actual_setup_script)
 
     def test_should_not_remove_hardlink_capabilities_when_workaround_is_disabled(self):
-        self.project.set_property("distutils_issue8876_workaround_enabled", False)
+        self.project.set_property(
+            "distutils_issue8876_workaround_enabled", False)
 
         actual_setup_script = render_setup_script(self.project)
 
@@ -310,7 +344,8 @@ class RenderSetupScriptTest(PyBuilderTestCase):
     def test_should_render_build_scripts_properly_when_dir_scripts_is_provided(self):
         self.project.set_property("dir_dist_scripts", 'scripts')
         actual_build_script = build_scripts_string(self.project)
-        self.assertEquals("['scripts/spam', 'scripts/eggs']", actual_build_script)
+        self.assertEquals(
+            "['scripts/spam', 'scripts/eggs']", actual_build_script)
 
     def test_should_render_setup_file(self):
         actual_setup_script = render_setup_script(self.project)
@@ -365,7 +400,8 @@ if __name__ == '__main__':
 
         actual_setup_script = render_setup_script(self.project)
 
-        self.assertTrue('install_requires = [ "sometool", "foo", "bar" ],' in actual_setup_script)
+        self.assertTrue(
+            'install_requires = [ "sometool", "foo", "bar" ],' in actual_setup_script)
 
 
 class RenderManifestFileTest(unittest.TestCase):

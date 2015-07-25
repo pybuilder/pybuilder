@@ -25,15 +25,46 @@ except ImportError:
 from mock import patch
 
 from pybuilder.core import Project
-from pybuilder.plugins.python.integrationtest_plugin import (TaskPoolProgress,
-                                                             add_additional_environment_keys,
-                                                             ConsumingQueue)
+from pybuilder.plugins.python.integrationtest_plugin import (
+    TaskPoolProgress,
+    add_additional_environment_keys,
+    ConsumingQueue,
+    initialize_integrationtest_plugin
+    )
 
 
 class TaskPoolProgressTests(unittest.TestCase):
 
     def setUp(self):
         self.progress = TaskPoolProgress(42, 8)
+        self.project = Project("basedir")
+
+    def test_should_leave_user_specified_properties_when_initializing_plugin(self):
+
+        expected_properties = {
+            "dir_source_integrationtest_python": "foo/bar/python",
+            "integrationtest_file_glob": "*foo.py",
+            "integrationtest_file_suffix": True,
+            "integrationtest_additional_environment": {"env3": "foo"},
+            "integrationtest_inherit_environment": True,
+            "integrationtest_always_verbose": True
+            }
+        for property_name, property_value in expected_properties.items():
+            self.project.set_property(property_name, property_value)
+
+            initialize_integrationtest_plugin(self.project)
+
+        for property_name, property_value in expected_properties.items():
+            self.assertEquals(
+                self.project.get_property("dir_source_integrationtest_python"), "foo/bar/python")
+            self.assertEquals(
+                self.project.get_property("integrationtest_file_glob"), "*foo.py")
+            self.assertEquals(
+                self.project.get_property("integrationtest_file_suffix"), True)
+            self.assertEquals(
+                self.project.get_property("integrationtest_additional_environment"), {"env3": "foo"}),
+            self.assertEquals(
+                self.project.get_property("integrationtest_always_verbose"), True)
 
     def test_should_create_new_progress(self):
         self.assertEqual(self.progress.workers_count, 8)

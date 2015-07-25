@@ -37,11 +37,11 @@ use_plugin("python.core")
 @init
 def initialize_flake8_plugin(project):
     project.build_depends_on("flake8")
-    project.set_property("flake8_break_build", False)
-    project.set_property("flake8_max_line_length", 120)
-    project.set_property("flake8_exclude_patterns", None)
-    project.set_property("flake8_include_test_sources", False)
-    project.set_property("flake8_include_scripts", False)
+    project.set_property_if_unset("flake8_break_build", False)
+    project.set_property_if_unset("flake8_max_line_length", 120)
+    project.set_property_if_unset("flake8_exclude_patterns", None)
+    project.set_property_if_unset("flake8_include_test_sources", False)
+    project.set_property_if_unset("flake8_include_scripts", False)
 
 
 @after("prepare")
