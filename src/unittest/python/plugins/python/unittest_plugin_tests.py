@@ -42,7 +42,7 @@ class PythonPathTests(TestCase):
     def test_should_register_source_paths(self):
         system_path = ['some/python/path']
 
-        _register_test_and_source_path_and_return_test_dir(self.project, system_path)
+        _register_test_and_source_path_and_return_test_dir(self.project, system_path, "unittest")
 
         self.assertTrue('/path/to/project/unittest' in system_path)
         self.assertTrue('/path/to/project/src' in system_path)
@@ -50,7 +50,7 @@ class PythonPathTests(TestCase):
     def test_should_put_project_sources_before_other_sources(self):
         system_path = ['irrelevant/sources']
 
-        _register_test_and_source_path_and_return_test_dir(self.project, system_path)
+        _register_test_and_source_path_and_return_test_dir(self.project, system_path, "unittest")
 
         test_sources_index_in_path = system_path.index('/path/to/project/unittest')
         main_sources_index_in_path = system_path.index('/path/to/project/src')

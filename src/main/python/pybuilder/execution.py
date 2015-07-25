@@ -26,6 +26,7 @@
 import inspect
 import re
 import types
+import copy
 
 from pybuilder.errors import (CircularTaskDependencyException,
                               DependenciesNotResolvedException,
@@ -158,6 +159,8 @@ class ExecutionManager(object):
 
         self._dependencies_resolved = False
         self._actions_executed = []
+        self._tasks_executed = []
+        self._current_task = None
 
     @property
     def initializers(self):
@@ -211,6 +214,8 @@ class ExecutionManager(object):
         timer = Timer.start()
         number_of_actions = 0
 
+        self._current_task = task
+
         for action in self._execute_before[task.name]:
             if self.execute_action(action, keyword_arguments):
                 number_of_actions += 1
@@ -220,6 +225,10 @@ class ExecutionManager(object):
         for action in self._execute_after[task.name]:
             if self.execute_action(action, keyword_arguments):
                 number_of_actions += 1
+
+        self._current_task = None
+        if task not in self._tasks_executed:
+            self._tasks_executed.append(task)
 
         timer.stop()
         return TaskExecutionSummary(task.name, number_of_actions, timer.get_millis())
@@ -286,6 +295,27 @@ class ExecutionManager(object):
         for task_name in as_list(task_names):
             self.enqueue_task(execution_plan, task_name)
         return execution_plan
+
+    def build_shortest_execution_plan(self, task_names):
+        """
+        Finds the shortest execution plan taking into the account tasks already executed
+        This is useful when you want to execute tasks dynamically without repeating pre-requisite
+        tasks you've already executed
+        """
+        execution_plan = self.build_execution_plan(task_names)
+        shortest_plan = copy.copy(execution_plan)
+        for executed_task in self._tasks_executed:
+            candidate_task = shortest_plan[0]
+            if candidate_task.name not in task_names and candidate_task == executed_task:
+                shortest_plan.pop(0)
+            else:
+                break
+
+        if self._current_task and self._current_task in shortest_plan:
+            raise CircularTaskDependencyException("Task '%s' attempted to invoke tasks %s, "
+                                                  "resulting in plan %s, creating circular dependency" %
+                                                  (self._current_task, task_names, shortest_plan))
+        return shortest_plan
 
     def enqueue_task(self, execution_plan, task_name):
         task = self.get_task(task_name)

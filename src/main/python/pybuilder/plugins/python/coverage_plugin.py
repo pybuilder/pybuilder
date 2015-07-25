@@ -44,45 +44,48 @@ def init_coverage_properties(project):
     project.set_property_if_unset("coverage_fork", False)
 
 
-def start_coverage(coverage):
-    coverage.erase()
-    coverage.start()
-
-
-def stop_coverage(coverage, project, logger):
-    reimport_source_modules(project, logger)
-    coverage.stop()
-
-
 @after(("analyze", "verify"), only_once=True)
 def verify_coverage(project, logger, reactor):
+    run_coverage(project, logger, reactor, "coverage", "coverage", "run_unit_tests")
+
+
+def run_coverage(project, logger, reactor, execution_prefix, execution_name, target_task, shortest_plan=False):
     logger.info("Collecting coverage information")
 
-    if project.get_property("coverage_fork"):
-        logger.debug("Forking process to do coverage analysis")
+    if project.get_property("%s_fork" % execution_prefix):
+        logger.debug("Forking process to do %s analysis", execution_name)
         process = multiprocessing.Process(target=do_coverage,
-                                          args=(project, logger, reactor))
+                                          args=(
+                                              project, logger, reactor, execution_prefix, execution_name,
+                                              target_task, shortest_plan))
         process.start()
         process.join()
+        if process.exitcode and project.get_property("%s_break_build" % execution_prefix):
+            raise BuildFailedException(
+                "Forked %s process indicated failure with error code %d" % (execution_name, process.exitcode))
     else:
-        do_coverage(project, logger, reactor)
+        do_coverage(project, logger, reactor, execution_prefix, execution_name,
+                    target_task, shortest_plan)
 
 
-def do_coverage(project, logger, reactor):
+def do_coverage(project, logger, reactor, execution_prefix, execution_name, target_task, shortest_plan):
     from coverage import coverage as coverage_factory
 
     source_tree_path = project.get_property("dir_source_main_python")
     coverage = coverage_factory(cover_pylib=False, source=[source_tree_path])
-    start_coverage(coverage)
+    _start_coverage(coverage)
     project.set_property('__running_coverage', True)  # tell other plugins that we are not really unit testing right now
-    reactor.execute_task("run_unit_tests")
+    if shortest_plan:
+        reactor.execute_task_shortest_plan(target_task)
+    else:
+        reactor.execute_task(target_task)
     project.set_property('__running_coverage', False)
 
-    stop_coverage(coverage, project, logger)
+    _stop_coverage(coverage, project, logger, execution_prefix)
 
     coverage_too_low = False
-    threshold = project.get_property("coverage_threshold_warn")
-    exceptions = project.get_property("coverage_exceptions")
+    threshold = project.get_property("%s_threshold_warn" % execution_prefix)
+    exceptions = project.get_property("%s_exceptions" % execution_prefix)
 
     report = {
         "module_names": []
@@ -91,7 +94,7 @@ def do_coverage(project, logger, reactor):
     sum_lines = 0
     sum_lines_not_covered = 0
 
-    module_names = discover_modules_to_cover(project)
+    module_names = _discover_modules_to_cover(project)
     modules = []
     for module_name in module_names:
         try:
@@ -135,22 +138,32 @@ def do_coverage(project, logger, reactor):
     report["overall_coverage"] = overall_coverage
 
     if overall_coverage < threshold:
-        logger.warn("Overall coverage is below %2d%%: %2d%%", threshold, overall_coverage)
+        logger.warn("Overall %s is below %2d%%: %2d%%", execution_name, threshold, overall_coverage)
         coverage_too_low = True
     else:
-        logger.info("Overall coverage is %2d%%", overall_coverage)
+        logger.info("Overall %s is %2d%%", execution_name, overall_coverage)
 
-    project.write_report("coverage.json", render_report(report))
+    project.write_report("%s.json" % execution_prefix, render_report(report))
 
-    write_summary_report(coverage, project, modules)
+    _write_summary_report(coverage, project, modules, execution_prefix)
 
-    if coverage_too_low and project.get_property("coverage_break_build"):
+    if coverage_too_low and project.get_property("%s_break_build" % execution_prefix):
         raise BuildFailedException("Test coverage for at least one module is below %d%%", threshold)
 
 
-def reimport_source_modules(project, logger):
-    if project.get_property("coverage_reload_modules"):
-        modules = discover_modules_to_cover(project)
+def _start_coverage(coverage):
+    coverage.erase()
+    coverage.start()
+
+
+def _stop_coverage(coverage, project, logger, execution_prefix):
+    _reimport_source_modules(project, logger, execution_prefix)
+    coverage.stop()
+
+
+def _reimport_source_modules(project, logger, execution_prefix):
+    if project.get_property("%s_reload_modules" % execution_prefix):
+        modules = _discover_modules_to_cover(project)
         for module in modules:
             logger.debug("Reloading module %s", module)
             if module in sys.modules:
@@ -176,18 +189,19 @@ def build_module_report(coverage, module):
             code_coverage)
 
 
-def write_summary_report(coverage, project, modules):
+def _write_summary_report(coverage, project, modules, execution_prefix):
     from coverage import CoverageException
+
     summary = StringIO()
     coverage.report(modules, file=summary)
     try:
-        coverage.xml_report(outfile=project.expand_path("$dir_reports/coverage.xml"))
+        coverage.xml_report(outfile=project.expand_path("$dir_reports/%s.xml" % execution_prefix))
         coverage.save()
     except CoverageException:
         pass  # coverage raises when there is no data
-    project.write_report("coverage", summary.getvalue())
+    project.write_report(execution_prefix, summary.getvalue())
     summary.close()
 
 
-def discover_modules_to_cover(project):
+def _discover_modules_to_cover(project):
     return discover_modules(project.expand_path("$dir_source_main_python"))

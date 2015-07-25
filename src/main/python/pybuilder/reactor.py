@@ -40,7 +40,6 @@ from pybuilder.execution import Action, Initializer, Task
 
 
 class BuildSummary(object):
-
     def __init__(self, project, task_execution_summaries):
         self.project = project
         self.task_summaries = task_execution_summaries
@@ -61,7 +60,8 @@ class Reactor(object):
             installed_thirdparty_plugin_loader = ThirdPartyPluginLoader(self.logger)
             downloading_thirdparty_plugin_loader = DownloadingPluginLoader(self.logger)
             self.plugin_loader = DispatchingPluginLoader(
-                self.logger, builtin_plugin_loader, installed_thirdparty_plugin_loader, downloading_thirdparty_plugin_loader)
+                self.logger, builtin_plugin_loader, installed_thirdparty_plugin_loader,
+                downloading_thirdparty_plugin_loader)
         else:
             self.plugin_loader = plugin_loader
         self._plugins = []
@@ -163,6 +163,14 @@ class Reactor(object):
 
     def execute_task(self, task_name):
         execution_plan = self.execution_manager.build_execution_plan(task_name)
+
+        self.execution_manager.execute_execution_plan(execution_plan,
+                                                      logger=self.logger,
+                                                      project=self.project,
+                                                      reactor=self)
+
+    def execute_task_shortest_plan(self, task_name):
+        execution_plan = self.execution_manager.build_shortest_execution_plan(task_name)
 
         self.execution_manager.execute_execution_plan(execution_plan,
                                                       logger=self.logger,
