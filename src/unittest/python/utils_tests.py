@@ -23,8 +23,9 @@ import tempfile
 import time
 import unittest
 import shutil
-
+import sys
 from json import loads
+
 from mockito import when, verify, unstub, any
 
 import pybuilder.utils
@@ -39,12 +40,12 @@ from pybuilder.utils import (GlobExpression,
                              format_timestamp,
                              mkdir,
                              render_report,
-                             timedelta_in_millis)
+                             timedelta_in_millis,
+                             fork_process)
 from pybuilder.errors import PyBuilderException
 
 
 class TimerTest(unittest.TestCase):
-
     def test_ensure_that_start_starts_timer(self):
         timer = Timer.start()
         self.assertTrue(timer.start_time > 0)
@@ -62,7 +63,6 @@ class TimerTest(unittest.TestCase):
 
 
 class RenderReportTest(unittest.TestCase):
-
     def test_should_render_report(self):
         report = {
             "eggs": ["foo", "bar"],
@@ -80,7 +80,6 @@ class RenderReportTest(unittest.TestCase):
 
 
 class FormatTimestampTest(unittest.TestCase):
-
     def assert_matches(self, regex, actual, message=None):
         if not re.match(regex, actual):
             if not message:
@@ -94,7 +93,6 @@ class FormatTimestampTest(unittest.TestCase):
 
 
 class AsListTest(unittest.TestCase):
-
     def test_should_return_empty_list_when_no_argument_is_given(self):
         self.assertEquals([], as_list())
 
@@ -134,11 +132,11 @@ class AsListTest(unittest.TestCase):
     def test_should_return_list_of_function(self):
         def foo():
             pass
+
         self.assertEquals([foo], as_list(foo))
 
 
 class TimedeltaInMillisTest(unittest.TestCase):
-
     def assertMillis(self, expected_millis, **timedelta_constructor_args):
         self.assertEquals(expected_millis, timedelta_in_millis(
             datetime.timedelta(**timedelta_constructor_args)))
@@ -184,7 +182,6 @@ class DiscoverFilesTest(unittest.TestCase):
 
 
 class DiscoverModulesTest(unittest.TestCase):
-
     def tearDown(self):
         unstub()
 
@@ -231,7 +228,6 @@ class DiscoverModulesTest(unittest.TestCase):
 
 
 class GlobExpressionTest(unittest.TestCase):
-
     def test_static_expression_should_match_exact_file_name(self):
         self.assertTrue(GlobExpression("spam.eggs").matches("spam.eggs"))
 
@@ -256,12 +252,12 @@ class GlobExpressionTest(unittest.TestCase):
 
 
 class ApplyOnFilesTest(unittest.TestCase):
-
     def setUp(self):
         self.old_os_path_join = os.path.join
 
         def join(*elements):
             return "/".join(elements)
+
         os.path.join = join
 
     def tearDown(self):
@@ -313,7 +309,6 @@ class ApplyOnFilesTest(unittest.TestCase):
 
 
 class MkdirTest(unittest.TestCase):
-
     def setUp(self):
         self.basedir = tempfile.mkdtemp(self.__class__.__name__)
         self.any_directory = os.path.join(self.basedir, "any_dir")
@@ -351,3 +346,42 @@ class MkdirTest(unittest.TestCase):
 
         self.assertTrue(os.path.exists(self.any_directory))
         self.assertFalse(os.path.isdir(self.any_directory))
+
+
+class ForkTest(unittest.TestCase):
+    def testForkNoException(self):
+        def test_func():
+            return "success"
+
+        val = fork_process(target=test_func)
+
+        self.assertEquals(len(val), 2)
+        self.assertEquals(val[0], 0)
+        self.assertEquals(val[1], "success")
+
+    def testForkParamPassing(self):
+        def test_func(foo, bar):
+            return "%s%s" % (foo, bar)
+
+        val = fork_process(target=test_func, kwargs={"foo": "foo", "bar": 10})
+        self.assertEquals(len(val), 2)
+        self.assertEquals(val[0], 0)
+        self.assertEquals(val[1], "foo10")
+
+        val = fork_process(target=test_func, args=("foo", 20))
+        self.assertEquals(len(val), 2)
+        self.assertEquals(val[0], 0)
+        self.assertEquals(val[1], "foo20")
+
+    def testForkWithException(self):
+        def test_func():
+            raise PyBuilderException("Test failure message")
+
+        try:
+            val = fork_process(target=test_func)
+            self.fail("should not have reached here, returned %s", val)
+        except:
+            ex_type, ex, tb = sys.exc_info()
+            self.assertEquals(ex_type, PyBuilderException)
+            self.assertEquals(ex.message, "Test failure message")
+            self.assertTrue(tb)

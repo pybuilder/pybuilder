@@ -88,6 +88,8 @@ def initialize(project):
     if sys.version_info[0:2] == (2, 6):
         project.build_depends_on("importlib")  # for fluentmock
 
+    project.depends_on("tblib")
+
     project.set_property("verbose", True)
 
     project.set_property("coverage_break_build", False)

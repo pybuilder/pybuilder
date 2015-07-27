@@ -16,8 +16,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import imp
-import multiprocessing
 import sys
 
 try:
@@ -26,7 +24,7 @@ except ImportError as e:
     from io import StringIO
 
 from pybuilder.core import init, after, use_plugin
-from pybuilder.utils import discover_modules, render_report
+from pybuilder.utils import discover_modules, render_report, fork_process
 from pybuilder.errors import BuildFailedException
 
 use_plugin("python.core")
@@ -39,9 +37,9 @@ def init_coverage_properties(project):
 
     project.set_property_if_unset("coverage_threshold_warn", 70)
     project.set_property_if_unset("coverage_break_build", True)
-    project.set_property_if_unset("coverage_reload_modules", True)
+    project.set_property_if_unset("coverage_reload_modules", None)  # deprecated, unused
     project.set_property_if_unset("coverage_exceptions", [])
-    project.set_property_if_unset("coverage_fork", False)
+    project.set_property_if_unset("coverage_fork", None)  # deprecated, unused
 
 
 @after(("analyze", "verify"), only_once=True)
@@ -52,20 +50,22 @@ def verify_coverage(project, logger, reactor):
 def run_coverage(project, logger, reactor, execution_prefix, execution_name, target_task, shortest_plan=False):
     logger.info("Collecting coverage information")
 
-    if project.get_property("%s_fork" % execution_prefix):
-        logger.debug("Forking process to do %s analysis", execution_name)
-        process = multiprocessing.Process(target=do_coverage,
-                                          args=(
-                                              project, logger, reactor, execution_prefix, execution_name,
-                                              target_task, shortest_plan))
-        process.start()
-        process.join()
-        if process.exitcode and project.get_property("%s_break_build" % execution_prefix):
-            raise BuildFailedException(
-                "Forked %s process indicated failure with error code %d" % (execution_name, process.exitcode))
-    else:
-        do_coverage(project, logger, reactor, execution_prefix, execution_name,
-                    target_task, shortest_plan)
+    if project.get_property("%s_fork" % execution_prefix) is not None:
+        logger.warn(
+            "%s_fork is deprecated, coverage always runs in its own fork", execution_prefix)
+
+    if project.get_property("%s_reload_modules" % execution_prefix) is not None:
+        logger.warn(
+            "%s_reload_modules is deprecated - modules are no longer reloaded", execution_prefix)
+
+    logger.debug("Forking process to do %s analysis", execution_name)
+    exit_code, _ = fork_process(target=do_coverage,
+                                args=(
+                                    project, logger, reactor, execution_prefix, execution_name,
+                                    target_task, shortest_plan))
+    if exit_code and project.get_property("%s_break_build" % execution_prefix):
+        raise BuildFailedException(
+            "Forked %s process indicated failure with error code %d" % (execution_name, exit_code))
 
 
 def do_coverage(project, logger, reactor, execution_prefix, execution_name, target_task, shortest_plan):
@@ -73,7 +73,9 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
 
     source_tree_path = project.get_property("dir_source_main_python")
     coverage = coverage_factory(cover_pylib=False, source=[source_tree_path])
+
     _start_coverage(coverage)
+
     project.set_property('__running_coverage', True)  # tell other plugins that we are not really unit testing right now
     if shortest_plan:
         reactor.execute_task_shortest_plan(target_task)
@@ -81,7 +83,7 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
         reactor.execute_task(target_task)
     project.set_property('__running_coverage', False)
 
-    _stop_coverage(coverage, project, logger, execution_prefix)
+    _stop_coverage(coverage)
 
     coverage_too_low = False
     threshold = project.get_property("%s_threshold_warn" % execution_prefix)
@@ -156,18 +158,8 @@ def _start_coverage(coverage):
     coverage.start()
 
 
-def _stop_coverage(coverage, project, logger, execution_prefix):
-    _reimport_source_modules(project, logger, execution_prefix)
+def _stop_coverage(coverage):
     coverage.stop()
-
-
-def _reimport_source_modules(project, logger, execution_prefix):
-    if project.get_property("%s_reload_modules" % execution_prefix):
-        modules = _discover_modules_to_cover(project)
-        for module in modules:
-            logger.debug("Reloading module %s", module)
-            if module in sys.modules:
-                imp.reload(sys.modules[module])
 
 
 def build_module_report(coverage, module):
