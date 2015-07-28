@@ -169,11 +169,13 @@ def build_binary_distribution(project, logger):
     commands = as_list(project.get_property("distutils_commands"))
     execute_distutils(project, logger, commands)
 
+
 @before("install")
 def install_distribution(project, logger):
     logger.info("Installing project %s-%s", project.name, project.version)
 
     execute_distutils(project, logger, as_list("install"))
+
 
 def execute_distutils(project, logger, commands):
     reports_dir = project.expand_path("$dir_reports/distutils")
@@ -197,6 +199,7 @@ def execute_distutils(project, logger, commands):
             if return_code != 0:
                 raise BuildFailedException(
                     "Error while executing setup command %s, see %s for details" % (command, output_file_path))
+
 
 def strip_comments(requirements):
     return [requirement for requirement in requirements
