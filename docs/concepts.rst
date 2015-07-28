@@ -8,8 +8,8 @@ Introduction
 PyBuilder is a multi-purpose software build tool. Most commonly it targets the building and management of software with a strong focus on Python.
 
 
-Building Python Projects
-########################
+Advantages for python projects
+##############################
 
 Some of the capabilities provided by PyBuilder out-of-the box are:
     * Automatic execution of unit and integration tests on every build

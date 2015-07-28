@@ -8,11 +8,12 @@ Using PyBuilder
    concepts
    walkthrough-new
    walkthrough-existing
-   tldr-usage
+   customizing-the-build
    packaging-tips
    test-plugins
    linter-plugins
    fancy-plugins
+   ide-integration
 
 Extending PyBuilder
 =======================
