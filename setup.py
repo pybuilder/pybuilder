@@ -21,14 +21,34 @@
 
 #
 # This script allows to support installation via:
-#   pip install git://github.com/pybuilder/pybuilder.git@<branch>
+#   pip install git+git://github.com/pybuilder/pybuilder.git@<branch>
+#
+# THIS IS A HACK, DO NOT RUN LOCALLY
 #
 
 import os
 import subprocess
 import sys
+import glob
+import shutil
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 build_script = os.path.join(script_dir, "build.py")
-exit_code = subprocess.call([build_script, "install"])
+exit_code = 0
+try:
+    subprocess.check_call([build_script, "clean", "publish"])
+    dist_dir = glob.glob(os.path.join(script_dir, "target", "dist", "*"))[0]
+    for src_file in glob.glob(os.path.join(dist_dir, "*")):
+        file_name = os.path.basename(src_file)
+        target_file_name = os.path.join(script_dir, file_name)
+        if os.path.exists(target_file_name):
+            if os.path.isdir(target_file_name):
+                os.removedirs(target_file_name)
+            else:
+                os.remove(target_file_name)
+        shutil.move(src_file, script_dir)
+    setup_args = sys.argv[1:]
+    subprocess.check_call(["./setup.py"] + setup_args, cwd=script_dir)
+except subprocess.CalledProcessError as e:
+    exit_code = e.returncode
 sys.exit(exit_code)
