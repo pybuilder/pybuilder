@@ -2,7 +2,7 @@ Walkthrough working on an existing PyBuilder project
 #####################################################
 
 Getting the project
----------------------
+*********************
 
 We'll use `yadtshell`_ as an example to checkout and build a PyBuilder project from scratch.
 
@@ -16,7 +16,7 @@ and then move into the new directory:
 
 
 Ensuring your environment is ready
------------------------------------
+***********************************
 
 Please make sure you have `virtualenv`_ installed. You will need it to isolate the yadtshell dependencies
 from your system python.
@@ -35,7 +35,7 @@ Now install PyBuilder in your new virtualenv:
 
 
 Building the project
----------------------
+*********************
 
 We're finally ready to build our project.
 You can start by asking PyBuilder what tasks it knows about::

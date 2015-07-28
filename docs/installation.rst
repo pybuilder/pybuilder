@@ -6,7 +6,7 @@ PyBuilder is available on PyPI, so you can install it with
 ``$ pip install pybuilder``
 
 Virtual Environment
-------------------------------
+******************************
 
 We recommend installing PyBuilder into a `virtual environment`_ using `pip`_:
 
@@ -17,7 +17,7 @@ We recommend installing PyBuilder into a `virtual environment`_ using `pip`_:
 
 
 Installing completions
------------------------------
+*****************************
 
 If you are a zsh or fish shell user, we recommend installing the `pybuilder-completions`_.
 These will provide tab-based completions for PyBuilder options and tasks on a per-project basis.
