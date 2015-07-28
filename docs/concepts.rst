@@ -1,15 +1,15 @@
-Tutorial
-*******************
+Concepts
+#########
 
 
 
 Introduction
-###########################
+***************************
 PyBuilder is a multi-purpose software build tool. Most commonly it targets the building and management of software with a strong focus on Python.
 
 
-Building Python Projects
-########################
+Advantages for python projects
+******************************
 
 Some of the capabilities provided by PyBuilder out-of-the box are:
     * Automatic execution of unit and integration tests on every build
@@ -21,7 +21,7 @@ The general idea is that everything you do in your continuous integration chain,
 
 
 Why Another Build Tool
-######################
+**********************
 
 When working on large scale software projects based on Java and Groovy I delved into the build process using tools such as Apache Ant, Apache Maven or Gradle. Although none of these tools is perfect they all provide a powerful and extensible way for building and testing software.
 
@@ -36,8 +36,8 @@ PyBuilder was born on the attempt to create a reusable tool that should:
     * Integrate these tools into a common view
     * Let me use Python (which is really great) to write my build files
 
-Concepts
-#########
+Design
+*********
 
 PyBuilder executes build logic that is organized into tasks and actions.
 

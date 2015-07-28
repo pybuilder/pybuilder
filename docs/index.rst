@@ -1,27 +1,29 @@
-.. PyBuilder documentation master file, created by
-   sphinx-quickstart on Mon Mar 23 20:15:57 2015.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to PyBuilder's documentation!
-=====================================
-
-Contents:
+Using PyBuilder
+==================
 
 .. toctree::
    :maxdepth: 2
 
-   manual
-   user-doc
-   project-structure
-   build-py
-   build-software
+   installation
+   concepts
+   walkthrough-new
+   walkthrough-existing
+   customizing-the-build
+   packaging-tips
+   test-plugins
+   linter-plugins
+   fancy-plugins
+   ide-integration
 
+Extending PyBuilder
+=======================
 
-Indices and tables
-==================
+.. toctree::
+   :maxdepth: 2
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   writing-tasks
+   writing-plugins
+
+...or try searching for what you want: :ref:`search`
+
 
