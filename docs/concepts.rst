@@ -1,4 +1,4 @@
-Tutorial
+Concepts
 *******************
 
 
@@ -36,7 +36,7 @@ PyBuilder was born on the attempt to create a reusable tool that should:
     * Integrate these tools into a common view
     * Let me use Python (which is really great) to write my build files
 
-Concepts
+Design
 #########
 
 PyBuilder executes build logic that is organized into tasks and actions.
