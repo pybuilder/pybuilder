@@ -163,16 +163,24 @@ def render_manifest_file(project):
 
 @before("publish")
 def build_binary_distribution(project, logger):
+    logger.info("Building binary distribution in %s",
+                project.expand_path("$dir_dist"))
+
+    commands = as_list(project.get_property("distutils_commands"))
+    execute_distutils(project, logger, commands)
+
+@before("install")
+def install_distribution(project, logger):
+    logger.info("Installing project %s-%s", project.name, project.version)
+
+    execute_distutils(project, logger, as_list("install"))
+
+def execute_distutils(project, logger, commands):
     reports_dir = project.expand_path("$dir_reports/distutils")
     if not os.path.exists(reports_dir):
         os.mkdir(reports_dir)
 
     setup_script = project.expand_path("$dir_dist/setup.py")
-
-    logger.info("Building binary distribution in %s",
-                project.expand_path("$dir_dist"))
-
-    commands = as_list(project.get_property("distutils_commands"))
 
     for command in commands:
         logger.debug("Executing distutils command %s", command)
@@ -189,7 +197,6 @@ def build_binary_distribution(project, logger):
             if return_code != 0:
                 raise BuildFailedException(
                     "Error while executing setup command %s, see %s for details" % (command, output_file_path))
-
 
 def strip_comments(requirements):
     return [requirement for requirement in requirements

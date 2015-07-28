@@ -96,3 +96,10 @@ def verify():
 @description("Publishes the project.")
 def publish():
     pass
+
+
+@task
+@depends(publish)
+@description("Installs the published project.")
+def install():
+    pass
