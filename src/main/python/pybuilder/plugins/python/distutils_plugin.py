@@ -30,6 +30,7 @@ from pybuilder.core import (after,
                             before,
                             use_plugin,
                             init,
+                            task,
                             RequirementsFile,
                             Dependency)
 from pybuilder.errors import BuildFailedException
@@ -170,7 +171,7 @@ def build_binary_distribution(project, logger):
     execute_distutils(project, logger, commands)
 
 
-@before("install")
+@task("install")
 def install_distribution(project, logger):
     logger.info("Installing project %s-%s", project.name, project.version)
 
