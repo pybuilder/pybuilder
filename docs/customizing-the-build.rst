@@ -143,9 +143,49 @@ setuptools tarball with a ``setup.py`` will fill the ``install_requires`` list.
 Installing files
 ^^^^^^^^^^^^^^^^^
 
+Installing non-python files is easily done with ``project.install_file(target, source)``.
+The target path may be absolute, or relative to the installation prefix (``/usr/`` on most linux systems).
+
+As an important sidenote, the path to ``source`` *must* be relative to the distribution directory.
+Since non-python files are not copied to the distribution directory by default, it is necessary to use
+the ``copy_resources`` plugin to include them.
+
+Consider you want to install ``src/main/resources/my-config.yaml`` in ``/etc/defaults``.
+It would be done like so:
+
+First, we use copy_resources to copy the file into the distribution directory::
+
+    use_plugin("copy_resources")
+
+    @init
+    def initialize(project):
+        project.get_property("copy_resources_glob").append("src/main/resources/my-config.yaml")
+        project.set_property("copy_resources_target", "$dir_dist")
+
+Now, whenever copy_resources run, we will have the path ``src/main/resources/my-config.yaml`` copied
+into ``target/dist/myproject-0.0.1/src/main/resources/my-config.yaml``.
+We're now able to do::
+
+    use_plugin("copy_resources")
+
+    @init
+    def initialize(project):
+        project.get_property("copy_resources_glob").append("src/main/resources/my-config.yaml")
+        project.set_property("copy_resources_target", "$dir_dist")
+        project.install_file("/etc/defaults", "src/main/resources/my-config.yaml")
+
+.. note::
+    It's important to realize that the source path ``src/main/resources/my-config.yaml`` is NOT relative to
+    the project root directory, but relative to the distribution directory instead. It just incidentally
+    happens to be the same here.
+
 
 Including files
 ^^^^^^^^^^^^^^^^^
+
+Simply use the ``include_file`` directive::
+
+    project.include_file(package_name, filename)
 
 Tasks
 ******
@@ -153,5 +193,58 @@ Tasks
 Creating a task
 ----------------
 
+To create a task, one can simply write a function in the ``build.py`` and annotate
+it with the ``@task`` decorator.
+
+::
+
+    from pybuilder.core import task, init
+
+    @init
+    def initialize(project):
+        pass
+
+    @task
+    def mytask(project, logger):
+        logger.info("Hello from my task")
+
+Like with initializer, PyBuilder will inject the arguments ``project``
+and ``logger`` if the task function accepts them.
+
+We'll now be able to call ``pyb mytask``.
+
+
+The project API can be used to get configuration properties (so that the task is configurable).
+It's also possible to compute paths by using ``expand_path``::
+
+    from pybuilder.core import task
+
+    @task
+    def mytask(project, logger):
+        logger.info("Will build the distribution in %s" % project.expand_path("$dir_dist"))
+
+
 Task dependencies
 ------------------
+
+A task can declare dependencies on other tasks by using the ``@depends`` decorator::
+
+    from pybuilder.core import task, depends
+
+    @task
+    def task1(logger):
+        logger.info("Hello from task1")
+
+    @task
+    @depends("task1")
+    def task2(logger):
+        logger.info("Hello from task2")
+
+    @task
+    @depends("task2", "run_unit_tests")
+    def task3(logger):
+        logger.info("Hello from task3")
+
+Here, running task1 will just run task1. Running task2 will run task1 first, then task2.
+Running task3 will run task1 first (dependency of task2), then run task2, then run unit tests,
+and finally run task3.
