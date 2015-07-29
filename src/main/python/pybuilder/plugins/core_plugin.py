@@ -31,6 +31,7 @@ def init(project):
     def write_report(file, *content):
         with open(project.expand_path("$dir_reports", file), "w") as report_file:
             report_file.writelines(content)
+
     project.write_report = write_report
 
 
@@ -95,4 +96,11 @@ def verify():
 @depends(verify)
 @description("Publishes the project.")
 def publish():
+    pass
+
+
+@task
+@depends(publish)
+@description("Installs the published project.")
+def install():
     pass

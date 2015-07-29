@@ -30,6 +30,7 @@ from pybuilder.core import (after,
                             before,
                             use_plugin,
                             init,
+                            task,
                             RequirementsFile,
                             Dependency)
 from pybuilder.errors import BuildFailedException
@@ -163,16 +164,26 @@ def render_manifest_file(project):
 
 @before("publish")
 def build_binary_distribution(project, logger):
+    logger.info("Building binary distribution in %s",
+                project.expand_path("$dir_dist"))
+
+    commands = as_list(project.get_property("distutils_commands"))
+    execute_distutils(project, logger, commands)
+
+
+@task("install")
+def install_distribution(project, logger):
+    logger.info("Installing project %s-%s", project.name, project.version)
+
+    execute_distutils(project, logger, as_list("install"))
+
+
+def execute_distutils(project, logger, commands):
     reports_dir = project.expand_path("$dir_reports/distutils")
     if not os.path.exists(reports_dir):
         os.mkdir(reports_dir)
 
     setup_script = project.expand_path("$dir_dist/setup.py")
-
-    logger.info("Building binary distribution in %s",
-                project.expand_path("$dir_dist"))
-
-    commands = as_list(project.get_property("distutils_commands"))
 
     for command in commands:
         logger.debug("Executing distutils command %s", command)
