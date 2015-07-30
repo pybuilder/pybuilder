@@ -23,6 +23,9 @@ try:
 except ImportError as e:
     from io import StringIO
 
+import os
+from distutils import sysconfig
+
 from pybuilder.core import init, after, use_plugin
 from pybuilder.utils import discover_modules, render_report, fork_process
 from pybuilder.errors import BuildFailedException
@@ -69,21 +72,39 @@ def run_coverage(project, logger, reactor, execution_prefix, execution_name, tar
 
 
 def do_coverage(project, logger, reactor, execution_prefix, execution_name, target_task, shortest_plan):
+    """
+    This function MUST ALWAYS execute in a fork.
+    The sys.modules will be manipulated extensively to stage the tests properly, which may affect execute down the line.
+    It's best to simple let this method exit and the fork die rather than to try to recover.
+    """
+    source_tree_path = project.get_property("dir_source_main_python")
+    module_names = _discover_modules_to_cover(project)
+
+    for module_name in module_names:
+        logger.debug("Module '%s' coverage to be verified", module_name)
+
+    _delete_non_essential_modules()
+
+    # Reimport self
+    __import__("pybuilder.plugins.python")
+
+    # Starting fresh
     from coverage import coverage as coverage_factory
 
-    source_tree_path = project.get_property("dir_source_main_python")
     coverage = coverage_factory(cover_pylib=False, source=[source_tree_path])
 
-    _start_coverage(coverage)
+    try:
+        project.set_property('__running_coverage',
+                             True)  # tell other plugins that we are not really unit testing right now
+        _start_coverage(coverage)
 
-    project.set_property('__running_coverage', True)  # tell other plugins that we are not really unit testing right now
-    if shortest_plan:
-        reactor.execute_task_shortest_plan(target_task)
-    else:
-        reactor.execute_task(target_task)
-    project.set_property('__running_coverage', False)
-
-    _stop_coverage(coverage)
+        if shortest_plan:
+            reactor.execute_task_shortest_plan(target_task)
+        else:
+            reactor.execute_task(target_task)
+    finally:
+        _stop_coverage(coverage)
+        project.set_property('__running_coverage', False)
 
     coverage_too_low = False
     threshold = project.get_property("%s_threshold_warn" % execution_prefix)
@@ -96,14 +117,18 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
     sum_lines = 0
     sum_lines_not_covered = 0
 
-    module_names = _discover_modules_to_cover(project)
     modules = []
     for module_name in module_names:
         try:
             module = sys.modules[module_name]
         except KeyError:
-            logger.warn("Module not imported: {0}. No coverage information available.".format(module_name))
-            continue
+            logger.warn("Module '%s' was not imported by the covered tests", module_name)
+            try:
+                module = __import__(module_name)
+            except SyntaxError as e:
+                logger.warn("Coverage for module '%s' cannot be established - the module doesn't compile: %s",
+                            module_name, e)
+                continue
 
         modules.append(module)
 
@@ -123,8 +148,8 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
             "lines_not_covered": module_report_data[3],
         }
 
+        logger.debug("Module coverage report: %s", module_report)
         report["module_names"].append(module_report)
-
         if module_report_data[4] < threshold:
             msg = "Test coverage below %2d%% for %s: %2d%%" % (threshold, module_name, module_report_data[4])
             if not should_ignore_module:
@@ -197,3 +222,81 @@ def _write_summary_report(coverage, project, modules, execution_prefix):
 
 def _discover_modules_to_cover(project):
     return discover_modules(project.expand_path("$dir_source_main_python"))
+
+
+def _delete_non_essential_modules():
+    sys_packages, sys_modules = _get_system_assets()
+    for module_name in list(sys.modules.keys()):
+        module = sys.modules[module_name]
+        if module:
+            if not _is_module_essential(module.__name__, sys_packages, sys_modules):
+                _delete_module(module_name, module)
+
+
+def _delete_module(module_name, module):
+    del sys.modules[module_name]
+    try:
+        delattr(module, module_name)
+    except AttributeError:
+        pass
+
+
+def _is_module_essential(module_name, sys_packages, sys_modules):
+    if module_name in sys.builtin_module_names:
+        return True
+
+    if module_name in sys_modules:
+        return True
+
+    # Essential since we're in a fork for communicating exceptions back
+    sys_packages.append("tblib")
+
+    for package in sys_packages:
+        if module_name == package or module_name.startswith(package + "."):
+            return True
+
+    return False
+
+
+def _get_system_assets():
+    """
+    Returns all system packages and all modules that should not be touched during module deletion
+
+    @return: tuple(packages, modules) to ignore
+    """
+    canon_sys_path = [os.path.realpath(package_dir) for package_dir in sys.path]
+    std_lib = sysconfig.get_python_lib(standard_lib=True)
+    canon_sys_path = [package_dir for package_dir in canon_sys_path if package_dir.startswith(std_lib)]
+
+    packages = []
+    package_dirs = []
+    modules = []
+    module_files = []
+    for top, files, files in os.walk(std_lib):
+        for nm in files:
+            if nm == "__init__.py":
+                init_file = os.path.join(top, nm)
+                package_dirs.append(init_file[:-len("__init__.py") - len(os.sep)])
+            elif nm[-3:] in (".so", ".py") or nm[-4:] in (".pyd", ".dll"):
+                module_file = os.path.join(top, nm)
+                module_files.append(module_file)
+
+    for package_dir in package_dirs:
+        for sys_path_dir in canon_sys_path:
+            if package_dir.startswith(sys_path_dir):
+                package_parts = package_dir[len(sys_path_dir) + len(os.sep):].split(os.sep)
+                for idx, part in enumerate(package_parts):
+                    if part not in packages:
+                        if idx + 1 == len(package_parts):
+                            packages.append(".".join(package_parts))
+                        else:
+                            break
+
+    for module_file in module_files:
+        module_dir = os.path.dirname(module_file)
+        for sys_path_dir in canon_sys_path:
+            if module_dir == sys_path_dir:
+                modules.append(os.path.basename(module_file).split(".")[0])
+                break
+
+    return packages, modules
