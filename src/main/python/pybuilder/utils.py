@@ -258,6 +258,14 @@ def fork_process(group=None, target=None, name=None, args=(), kwargs={}):
     If a target raises an exception, the exception is re-raised in the parent process
     @return tuple consisting of process exit code and target's return value
     """
+    from sys import modules
+
+    try:
+        modules["tblib.pickling_support"]
+    except KeyError:
+        import tblib.pickling_support
+
+        tblib.pickling_support.install()
 
     q = multiprocessing.Queue()
 

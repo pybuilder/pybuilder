@@ -20,14 +20,6 @@ from pybuilder.errors import BuildFailedException
 
 __version__ = "${version}"
 
-try:
-    import tblib.pickling_support
-
-    tblib.pickling_support.install()
-except ImportError:
-    # This will happen if we have not yet installed dependencies
-    pass
-
 
 def bootstrap():
     import sys
