@@ -16,8 +16,7 @@ before_script:
   - ./build.py install_dependencies -v
 
 script:
-  - ./build.py -v -X
-  - (cd target/dist/PyBuilder-* && python setup.py install)
+  - ./build.py -v -X analyze install
 
 after_success:
   - coveralls --verbose

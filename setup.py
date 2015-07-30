@@ -36,7 +36,7 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 build_script = os.path.join(script_dir, "build.py")
 exit_code = 0
 try:
-    subprocess.check_call([build_script, "clean", "publish"])
+    subprocess.check_call([build_script, "clean", "install_dependencies", "publish"])
     dist_dir = glob.glob(os.path.join(script_dir, "target", "dist", "*"))[0]
     for src_file in glob.glob(os.path.join(dist_dir, "*")):
         file_name = os.path.basename(src_file)
