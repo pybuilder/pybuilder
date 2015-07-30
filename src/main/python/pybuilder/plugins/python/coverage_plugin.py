@@ -277,7 +277,7 @@ def _get_system_assets():
             if nm == "__init__.py":
                 init_file = os.path.join(top, nm)
                 package_dirs.append(init_file[:-len("__init__.py") - len(os.sep)])
-            elif nm[-3:] in (".so", ".py") or nm[-4:] in (".pyd", ".dll"):
+            elif nm[-3:] in (".so", ".py") or nm[-4:] in (".pyd", ".dll", ".pyw") or nm[-2:] == ".o":
                 module_file = os.path.join(top, nm)
                 module_files.append(module_file)
 
@@ -296,7 +296,11 @@ def _get_system_assets():
         module_dir = os.path.dirname(module_file)
         for sys_path_dir in canon_sys_path:
             if module_dir == sys_path_dir:
-                modules.append(os.path.basename(module_file).split(".")[0])
+                module_name_parts = os.path.basename(module_file).split(".")
+                module_name = module_name_parts[0]
+                if module_name_parts[1] in ("so", "dll", "o") and module_name_parts[0].endswith("module"):
+                    module_name = module_name[:-6]
+                modules.append(module_name)
                 break
 
     return packages, modules
