@@ -84,9 +84,7 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
         logger.debug("Module '%s' coverage to be verified", module_name)
 
     _delete_non_essential_modules()
-
-    # Reimport self
-    __import__("pybuilder.plugins.python")
+    __import__("pybuilder.plugins.python")  # Reimport self
 
     # Starting fresh
     from coverage import coverage as coverage_factory
@@ -126,7 +124,7 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
             try:
                 module = __import__(module_name)
             except SyntaxError as e:
-                logger.warn("Coverage for module '%s' cannot be established - the module doesn't compile: %s",
+                logger.warn("Coverage for module '%s' cannot be established - syntax error: %s",
                             module_name, e)
                 continue
 
@@ -250,6 +248,7 @@ def _is_module_essential(module_name, sys_packages, sys_modules):
 
     # Essential since we're in a fork for communicating exceptions back
     sys_packages.append("tblib")
+    sys_packages.append("pybuilder.errors")
 
     for package in sys_packages:
         if module_name == package or module_name.startswith(package + "."):

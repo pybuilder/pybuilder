@@ -29,8 +29,14 @@ import sys
 import subprocess
 import tempfile
 import time
+import traceback
 from subprocess import Popen, PIPE
-import multiprocessing
+from multiprocessing import Process
+
+try:
+    from multiprocessing import SimpleQueue
+except ImportError:
+    from multiprocessing.queues import SimpleQueue
 
 from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
 
@@ -258,33 +264,43 @@ def fork_process(group=None, target=None, name=None, args=(), kwargs={}):
     If a target raises an exception, the exception is re-raised in the parent process
     @return tuple consisting of process exit code and target's return value
     """
-    from sys import modules
-
     try:
-        modules["tblib.pickling_support"]
+        sys.modules["tblib.pickling_support"]
     except KeyError:
         import tblib.pickling_support
 
         tblib.pickling_support.install()
 
-    q = multiprocessing.Queue()
+    q = SimpleQueue()
 
     def instrumented_target(*args, **kwargs):
+        ex = tb = None
         try:
-            q.put((target(*args, **kwargs), None, None))
+            send_value = (target(*args, **kwargs), None, None)
         except:
             _, ex, tb = sys.exc_info()
-            q.put((None, ex, tb))
-        finally:
-            q.close()
-            q.join_thread()
+            send_value = (None, ex, tb)
 
-    p = multiprocessing.Process(group=group, target=instrumented_target, name=name, args=args, kwargs=kwargs)
+        try:
+            q.put(send_value)
+        except:
+            _, send_ex, send_tb = sys.exc_info()
+            e_out = Exception(str(send_ex), send_tb, None if ex is None else str(ex), tb)
+            q.put(e_out)
+
+    p = Process(group=group, target=instrumented_target, name=name, args=args, kwargs=kwargs)
     p.start()
     result = q.get()
-    q.close()
-    q.join_thread()
     p.join()
-    if result[1]:
-        raise_exception(result[1], result[2])
-    return p.exitcode, result[0]
+    if isinstance(result, tuple):
+        if result[1]:
+            raise_exception(result[1], result[2])
+        return p.exitcode, result[0]
+    else:
+        msg = "Fatal error occurred in the forked process %s: %s" % (p, result.args[0])
+        if result.args[2]:
+            chained_message = "This error masked the send error '%s':\n%s" % (
+                result.args[2], "".join(traceback.format_tb(result.args[3])))
+            msg += "\n" + chained_message
+        ex = Exception(msg)
+        raise_exception(ex, result.args[1])

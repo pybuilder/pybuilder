@@ -379,9 +379,70 @@ class ForkTest(unittest.TestCase):
 
         try:
             val = fork_process(target=test_func)
-            self.fail("should not have reached here, returned %s", val)
+            self.fail("should not have reached here, returned %s" % val)
         except:
             ex_type, ex, tb = sys.exc_info()
             self.assertEquals(ex_type, PyBuilderException)
             self.assertEquals(ex.message, "Test failure message")
             self.assertTrue(tb)
+
+    def testForkWithValuePicklingError(self):
+        class FooError(Exception):
+            def __init__(self):
+                self.val = 'Blah'
+
+        def test_func():
+            return FooError()
+
+        try:
+            fork_process(target=test_func)
+            self.fail("should not have reached here")
+        except:
+            ex_type, ex, tb = sys.exc_info()
+            self.assertEquals(ex_type, Exception)
+            self.assertTrue(str(ex).startswith("Fatal error occurred in the forked process"))
+            self.assertTrue("Can't pickle" in str(ex))
+            self.assertTrue("FooError" in str(ex))
+
+    def testForkWithExceptionPicklingError(self):
+        class FooError(Exception):
+            def __init__(self):
+                self.val = 'Blah'
+
+        def test_func():
+            raise FooError()
+
+        try:
+            val = fork_process(target=test_func)
+            self.fail("should not have reached here, returned %s" % val)
+        except:
+            ex_type, ex, tb = sys.exc_info()
+            self.assertEquals(ex_type, Exception)
+            self.assertTrue(str(ex).startswith("Fatal error occurred in the forked process"))
+            self.assertTrue("Can't pickle" in str(ex))
+            self.assertTrue("FooError" in str(ex))
+
+    def testForkWithSendPicklingError(self):
+        class Foo(object):
+            @staticmethod
+            def bar():
+                pass
+
+        class FooError(Exception):
+            def __init__(self, message):
+                super(Exception, self).__init__(message)
+
+        def test_func():
+            raise FooError(Foo.bar)
+
+        try:
+            val = fork_process(target=test_func)
+            self.fail("should not have reached here, returned %s" % val)
+        except:
+            ex_type, ex, tb = sys.exc_info()
+            self.assertEquals(ex_type, Exception)
+            self.assertTrue(str(ex).startswith("Fatal error occurred in the forked process"))
+            self.assertTrue("Can't pickle" in str(ex))
+            self.assertTrue("FooError" in str(ex))
+            self.assertTrue("This error masked the send error '<function" in str(ex))
+            self.assertTrue("raise FooError(Foo.bar)" in str(ex))
