@@ -29,9 +29,21 @@ import sys
 import subprocess
 import tempfile
 import time
+import traceback
 from subprocess import Popen, PIPE
+from multiprocessing import Process
+
+try:
+    from multiprocessing import SimpleQueue
+except ImportError:
+    from multiprocessing.queues import SimpleQueue
 
 from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
+
+if sys.version_info[0] < 3:  # if major is less than 3
+    from .excp_util_2 import raise_exception
+else:
+    from .excp_util_3 import raise_exception
 
 
 def get_all_dependencies_for_task(task):
@@ -40,6 +52,7 @@ def get_all_dependencies_for_task(task):
     task function (but not the given task itself)
     """
     from pybuilder.reactor import Reactor
+
     task_name = task.__name__
     execution_manager = Reactor.current_instance().execution_manager
     task_and_all_dependencies = execution_manager.collect_all_transitive_tasks([task_name])
@@ -55,7 +68,7 @@ def format_timestamp(timestamp):
 
 
 def timedelta_in_millis(timedelta):
-    return((timedelta.days * 24 * 60 * 60) + timedelta.seconds) * 1000 + round(timedelta.microseconds / 1000)
+    return ((timedelta.days * 24 * 60 * 60) + timedelta.seconds) * 1000 + round(timedelta.microseconds / 1000)
 
 
 def as_list(*whatever):
@@ -185,7 +198,6 @@ def write_file(file_name, *lines):
 
 
 class Timer(object):
-
     @staticmethod
     def start():
         return Timer()
@@ -220,7 +232,6 @@ def apply_on_files(start_directory, closure, globs, *additional_closure_argument
 
 
 class GlobExpression(object):
-
     def __init__(self, expression):
         self.expression = expression
         self.regex = "^" + expression.replace("**", ".+").replace("*", "[^/]*") + "$"
@@ -245,3 +256,51 @@ def mkdir(directory):
             raise PyBuilderException(message, directory)
         return
     os.makedirs(directory)
+
+
+def fork_process(group=None, target=None, name=None, args=(), kwargs={}):
+    """
+    Forks a child, making sure that all exceptions from the child are safely sent to the parent
+    If a target raises an exception, the exception is re-raised in the parent process
+    @return tuple consisting of process exit code and target's return value
+    """
+    try:
+        sys.modules["tblib.pickling_support"]
+    except KeyError:
+        import tblib.pickling_support
+
+        tblib.pickling_support.install()
+
+    q = SimpleQueue()
+
+    def instrumented_target(*args, **kwargs):
+        ex = tb = None
+        try:
+            send_value = (target(*args, **kwargs), None, None)
+        except:
+            _, ex, tb = sys.exc_info()
+            send_value = (None, ex, tb)
+
+        try:
+            q.put(send_value)
+        except:
+            _, send_ex, send_tb = sys.exc_info()
+            e_out = Exception(str(send_ex), send_tb, None if ex is None else str(ex), tb)
+            q.put(e_out)
+
+    p = Process(group=group, target=instrumented_target, name=name, args=args, kwargs=kwargs)
+    p.start()
+    result = q.get()
+    p.join()
+    if isinstance(result, tuple):
+        if result[1]:
+            raise_exception(result[1], result[2])
+        return p.exitcode, result[0]
+    else:
+        msg = "Fatal error occurred in the forked process %s: %s" % (p, result.args[0])
+        if result.args[2]:
+            chained_message = "This error masked the send error '%s':\n%s" % (
+                result.args[2], "".join(traceback.format_tb(result.args[3])))
+            msg += "\n" + chained_message
+        ex = Exception(msg)
+        raise_exception(ex, result.args[1])

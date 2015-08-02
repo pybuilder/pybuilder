@@ -25,11 +25,10 @@ except ImportError as e:
 
 import sys
 import unittest
-import multiprocessing
 
 from pybuilder.core import init, task, description, use_plugin
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import discover_modules_matching, render_report
+from pybuilder.utils import discover_modules_matching, render_report, fork_process
 from pybuilder.ci_server_interaction import test_proxy_for
 from pybuilder.terminal import print_text_line
 from types import MethodType, FunctionType
@@ -45,7 +44,6 @@ def init_test_source_directory(project):
     project.set_property_if_unset("unittest_file_suffix", None)  # deprecated, use unittest_module_glob.
     project.set_property_if_unset("unittest_test_method_prefix", None)
     project.set_property_if_unset("unittest_runner", unittest.TextTestRunner)
-    project.set_property_if_unset("unittest_fork", False)
 
 
 @task
@@ -56,16 +54,14 @@ def run_unit_tests(project, logger):
 
 def run_tests(project, logger, execution_prefix, execution_name):
     logger.info("Running %s", execution_name)
-    if (not project.get_property('__running_coverage')) and project.get_property("%s_fork" % execution_prefix):
+    if not project.get_property('__running_coverage'):
         logger.debug("Forking process to run %s", execution_name)
-        process = multiprocessing.Process(target=do_run_tests,
-                                          args=(
-                                              project, logger, execution_prefix, execution_name))
-        process.start()
-        process.join()
-        if process.exitcode:
+        exit_code, _ = fork_process(target=do_run_tests,
+                                    args=(
+                                        project, logger, execution_prefix, execution_name))
+        if exit_code:
             raise BuildFailedException(
-                "Forked %s process indicated failure with error code %d" % (execution_name, process.exitcode))
+                "Forked %s process indicated failure with error code %d" % (execution_name, exit_code))
     else:
         do_run_tests(project, logger, execution_prefix, execution_name)
 
