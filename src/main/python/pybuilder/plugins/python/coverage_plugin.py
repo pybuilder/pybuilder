@@ -89,7 +89,7 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
     # Starting fresh
     from coverage import coverage as coverage_factory
 
-    coverage = coverage_factory(cover_pylib=False, source=[source_tree_path])
+    coverage = coverage_factory(cover_pylib=False, branch=True, source=[source_tree_path])
 
     try:
         project.set_property('__running_coverage',
@@ -128,7 +128,8 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
                             module_name, e)
                 continue
 
-        modules.append(module)
+        if module not in modules:
+            modules.append(module)
 
         module_report_data = build_module_report(coverage, module)
         should_ignore_module = module_name in exceptions
@@ -170,7 +171,7 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
 
     project.write_report("%s.json" % execution_prefix, render_report(report))
 
-    _write_summary_report(coverage, project, modules, execution_prefix)
+    _write_summary_report(coverage, project, modules, execution_prefix, execution_name)
 
     if coverage_too_low and project.get_property("%s_break_build" % execution_prefix):
         raise BuildFailedException("Test coverage for at least one module is below %d%%", threshold)
@@ -204,13 +205,15 @@ def build_module_report(coverage, module):
             code_coverage)
 
 
-def _write_summary_report(coverage, project, modules, execution_prefix):
+def _write_summary_report(coverage, project, modules, execution_prefix, execution_name):
     from coverage import CoverageException
 
     summary = StringIO()
     coverage.report(modules, file=summary)
     try:
-        coverage.xml_report(outfile=project.expand_path("$dir_reports/%s.xml" % execution_prefix))
+        coverage.xml_report(modules, outfile=project.expand_path("$dir_reports/%s.xml" % execution_prefix))
+        coverage.html_report(modules, directory=project.expand_path("$dir_reports/%s_html" % execution_prefix),
+                             title=execution_name)
         coverage.save()
     except CoverageException:
         pass  # coverage raises when there is no data
