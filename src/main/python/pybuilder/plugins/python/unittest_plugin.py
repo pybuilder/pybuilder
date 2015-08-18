@@ -118,15 +118,26 @@ def execute_tests(runner_generator, logger, test_source, suffix, test_method_pre
 
 def execute_tests_matching(runner_generator, logger, test_source, file_glob, test_method_prefix=None):
     output_log_file = StringIO()
-    try:
-        if "stream" in runner_generator.func_code.co_varnames:
-            runner_generator = partial(runner_generator, stream=output_log_file)
-    except AttributeError:  # not a function, maybe a class?
+    if (isinstance(runner_generator, list) or isinstance(runner_generator, tuple)) and len(runner_generator) > 1:
         try:
-            if "stream" in runner_generator.__init__.func_code.co_varnames:
+            if "stream" in runner_generator[0].func_code.co_varnames:
+                runner_generator = (partial(runner_generator[0], stream=output_log_file),) + runner_generator[1:]
+        except AttributeError:  # not a function, maybe a class?
+            try:
+                if "stream" in runner_generator[0].__init__.func_code.co_varnames:
+                    runner_generator = (partial(runner_generator[0], stream=output_log_file),) + runner_generator[1:]
+            except Exception:
+                pass
+    else:
+        try:
+            if "stream" in runner_generator.func_code.co_varnames:
                 runner_generator = partial(runner_generator, stream=output_log_file)
-        except Exception:
-            pass
+        except AttributeError:  # not a function, maybe a class?
+            try:
+                if "stream" in runner_generator.__init__.func_code.co_varnames:
+                    runner_generator = partial(runner_generator, stream=output_log_file)
+            except Exception:
+                pass
 
     try:
         test_modules = discover_modules_matching(test_source, file_glob)
