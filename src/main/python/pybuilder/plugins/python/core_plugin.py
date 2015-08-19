@@ -74,7 +74,7 @@ def init_python_directories(project):
 
 
 @task
-@description("Package a python application.")
+@description("Packages the application.")
 def package(project, logger):
     init_dist_target(project, logger)
 
