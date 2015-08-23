@@ -32,7 +32,7 @@ from pybuilder.utils import discover_modules_matching, render_report, fork_proce
 from pybuilder.ci_server_interaction import test_proxy_for
 from pybuilder.terminal import print_text_line
 from types import MethodType, FunctionType
-from functools import reduce, partial
+from functools import reduce
 
 use_plugin("python.core")
 
@@ -43,7 +43,8 @@ def init_test_source_directory(project):
     project.set_property_if_unset("unittest_module_glob", "*_tests")
     project.set_property_if_unset("unittest_file_suffix", None)  # deprecated, use unittest_module_glob.
     project.set_property_if_unset("unittest_test_method_prefix", None)
-    project.set_property_if_unset("unittest_runner", unittest.TextTestRunner)
+    project.set_property_if_unset("unittest_runner",
+                                  lambda output: __import__("unittest").TextTestRunner(stream=output))
 
 
 @task
@@ -118,45 +119,25 @@ def execute_tests(runner_generator, logger, test_source, suffix, test_method_pre
 
 def execute_tests_matching(runner_generator, logger, test_source, file_glob, test_method_prefix=None):
     output_log_file = StringIO()
-    if (isinstance(runner_generator, list) or isinstance(runner_generator, tuple)) and len(runner_generator) > 1:
-        try:
-            if "stream" in runner_generator[0].func_code.co_varnames:
-                runner_generator = (partial(runner_generator[0], stream=output_log_file),) + runner_generator[1:]
-        except AttributeError:  # not a function, maybe a class?
-            try:
-                if "stream" in runner_generator[0].__init__.func_code.co_varnames:
-                    runner_generator = (partial(runner_generator[0], stream=output_log_file),) + runner_generator[1:]
-            except Exception:
-                pass
-    else:
-        try:
-            if "stream" in runner_generator.func_code.co_varnames:
-                runner_generator = partial(runner_generator, stream=output_log_file)
-        except AttributeError:  # not a function, maybe a class?
-            try:
-                if "stream" in runner_generator.__init__.func_code.co_varnames:
-                    runner_generator = partial(runner_generator, stream=output_log_file)
-            except Exception:
-                pass
-
     try:
         test_modules = discover_modules_matching(test_source, file_glob)
         loader = unittest.defaultTestLoader
         if test_method_prefix:
             loader.testMethodPrefix = test_method_prefix
         tests = loader.loadTestsFromNames(test_modules)
-        result = _instrument_runner(runner_generator, logger, _create_runner(runner_generator)).run(tests)
+        result = _instrument_runner(runner_generator, logger, _create_runner(runner_generator, output_log_file)).run(
+            tests)
         return result, output_log_file.getvalue()
     finally:
         output_log_file.close()
 
 
-def _create_runner(runner_generator):
+def _create_runner(runner_generator, output_log_file=None):
     if (isinstance(runner_generator, list) or isinstance(runner_generator, tuple)) and len(runner_generator) > 1:
         runner_generator = runner_generator[0]
     if not hasattr(runner_generator, '__call__'):
         runner_generator = reduce(getattr, runner_generator.split("."), sys.modules[__name__])
-    return runner_generator()
+    return runner_generator(output_log_file)
 
 
 def _get_make_result_method_name(runner_generator):
