@@ -23,12 +23,13 @@
 """
 
 import imp
+
 import os.path
 
 from pybuilder.core import (TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE,
                             DESCRIPTION_ATTRIBUTE, AFTER_ATTRIBUTE,
                             BEFORE_ATTRIBUTE, INITIALIZER_ATTRIBUTE,
-                            ACTION_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE,
+                            ACTION_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, TEARDOWN_ATTRIBUTE,
                             Project, NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE)
 from pybuilder.errors import PyBuilderException, ProjectValidationFailedException
 from pybuilder.pluginloader import (BuiltinPluginLoader,
@@ -221,10 +222,13 @@ class Reactor(object):
                 only_once = False
                 if hasattr(candidate, ONLY_ONCE_ATTRIBUTE):
                     only_once = getattr(candidate, ONLY_ONCE_ATTRIBUTE)
+                teardown = False
+                if hasattr(candidate, TEARDOWN_ATTRIBUTE):
+                    teardown = getattr(candidate, TEARDOWN_ATTRIBUTE)
 
                 self.logger.debug("Found action %s", name)
                 self.execution_manager.register_action(
-                    Action(name, candidate, before, after, description, only_once))
+                    Action(name, candidate, before, after, description, only_once, teardown))
 
             elif hasattr(candidate, INITIALIZER_ATTRIBUTE) and getattr(candidate, INITIALIZER_ATTRIBUTE):
                 environments = []

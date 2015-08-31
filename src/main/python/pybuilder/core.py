@@ -38,6 +38,7 @@ ENVIRONMENTS_ATTRIBUTE = "_python_builder_environments"
 NAME_ATTRIBUTE = "_python_builder_name"
 ACTION_ATTRIBUTE = "_python_builder_action"
 ONLY_ONCE_ATTRIBUTE = "_python_builder_action_only_once"
+TEARDOWN_ATTRIBUTE = "_python_builder_action_teardown"
 BEFORE_ATTRIBUTE = "_python_builder_before"
 AFTER_ATTRIBUTE = "_python_builder_after"
 
@@ -134,17 +135,19 @@ class depends(object):
 
 
 class BaseAction(object):
-    def __init__(self, attribute, only_once, tasks):
+    def __init__(self, attribute, only_once, tasks, teardown=False):
         self.tasks = tasks
         self.attribute = attribute
         self.only_once = only_once
+        self.teardown = teardown
 
     def __call__(self, callable):
         setattr(callable, ACTION_ATTRIBUTE, True)
         setattr(callable, self.attribute, self.tasks)
         if self.only_once:
             setattr(callable, ONLY_ONCE_ATTRIBUTE, True)
-
+        if self.teardown:
+            setattr(callable, TEARDOWN_ATTRIBUTE, True)
         return callable
 
 
@@ -154,8 +157,8 @@ class before(BaseAction):
 
 
 class after(BaseAction):
-    def __init__(self, tasks, only_once=False):
-        super(after, self).__init__(AFTER_ATTRIBUTE, only_once, tasks)
+    def __init__(self, tasks, only_once=False, teardown=False):
+        super(after, self).__init__(AFTER_ATTRIBUTE, only_once, tasks, teardown)
 
 
 def use_bldsup(build_support_dir="bldsup"):
