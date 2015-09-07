@@ -39,12 +39,15 @@ use_plugin("python.core")
 
 @init
 def init_test_source_directory(project):
+    project.build_depends_on("unittest-xml-reporting")
+
     project.set_property_if_unset("dir_source_unittest_python", "src/unittest/python")
     project.set_property_if_unset("unittest_module_glob", "*_tests")
     project.set_property_if_unset("unittest_file_suffix", None)  # deprecated, use unittest_module_glob.
     project.set_property_if_unset("unittest_test_method_prefix", None)
-    project.set_property_if_unset("unittest_runner",
-                                  lambda output: __import__("unittest").TextTestRunner(stream=output))
+    project.set_property_if_unset("unittest_runner", (
+        lambda stream: __import__("xmlrunner").XMLTestRunner(output=project.expand_path("$dir_target/reports"),
+                                                             stream=stream), "_make_result"))
 
 
 @task
@@ -137,7 +140,7 @@ def _create_runner(runner_generator, output_log_file=None):
         runner_generator = runner_generator[0]
     if not hasattr(runner_generator, '__call__'):
         runner_generator = reduce(getattr, runner_generator.split("."), sys.modules[__name__])
-    return runner_generator(output_log_file)
+    return runner_generator(stream=output_log_file)
 
 
 def _get_make_result_method_name(runner_generator):
