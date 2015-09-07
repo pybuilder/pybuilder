@@ -22,9 +22,10 @@
     build.py project descriptor.
 """
 
-import os
 import string
 import sys
+
+import os
 
 from os.path import sep as PATH_SEPARATOR
 
@@ -102,6 +103,7 @@ def task(callable_or_string=None, description=None):
             if description:
                 setattr(callable, DESCRIPTION_ATTRIBUTE, description)
             return callable
+
         return set_name_and_task_attribute
     else:
         if not description:
@@ -113,6 +115,7 @@ def task(callable_or_string=None, description=None):
                 setattr(callable, NAME_ATTRIBUTE, callable_or_string)
                 setattr(callable, DESCRIPTION_ATTRIBUTE, description)
                 return callable
+
             return set_task_and_description_attribute
 
 
@@ -132,6 +135,14 @@ class depends(object):
     def __call__(self, callable):
         setattr(callable, DEPENDS_ATTRIBUTE, self._depends)
         return callable
+
+
+class optional(object):
+    def __init__(self, *names):
+        self._names = names
+
+    def __call__(self):
+        return self._names
 
 
 class BaseAction(object):
@@ -168,7 +179,8 @@ def use_bldsup(build_support_dir="bldsup"):
 
     WARNING: The BUILD_SUPPORT_DIR must exist and must have an __init__.py file in it.
     """
-    assert os.path.isdir(build_support_dir), "use_bldsup('{0}'): The {0} directory must exist!".format(build_support_dir)
+    assert os.path.isdir(build_support_dir), "use_bldsup('{0}'): The {0} directory must exist!".format(
+        build_support_dir)
     init_file = os.path.join(build_support_dir, "__init__.py")
     assert os.path.isfile(init_file), "use_bldsup('{0}'): The {1} file must exist!".format(build_support_dir, init_file)
     sys.path.insert(0, build_support_dir)
@@ -194,6 +206,7 @@ class Dependency(object):
         depends_on
     method from class Project to add a dependency to a project.
     """
+
     def __init__(self, name, version=None, url=None):
         self.name = name
         self.version = version
@@ -205,7 +218,7 @@ class Dependency(object):
         return self.name == other.name and self.version == other.version and self.url == other.url
 
     def __ne__(self, other):
-        return not(self == other)
+        return not (self == other)
 
     def __hash__(self):
         return 13 * hash(self.name) + 17 * hash(self.version)
@@ -220,6 +233,7 @@ class RequirementsFile(object):
     """
     Represents all dependencies in a requirements file (requirements.txt).
     """
+
     def __init__(self, filename):
         self.name = filename
 
@@ -229,7 +243,7 @@ class RequirementsFile(object):
         return self.name == other.name
 
     def __ne__(self, other):
-        return not(self == other)
+        return not (self == other)
 
     def __lt__(self, other):
         if not isinstance(other, RequirementsFile):
@@ -245,6 +259,7 @@ class Project(object):
     Descriptor for a project to be built. A project has a number of attributes
     as well as some convenience methods to access these properties.
     """
+
     def __init__(self, basedir, version="1.0.dev0", name=None):
         self.name = name
         self.version = version
@@ -378,7 +393,7 @@ class Project(object):
             destination_name = installation_tuple[0]
 
             if destination_name == destination:
-                    current_tuple = installation_tuple
+                current_tuple = installation_tuple
 
         if current_tuple:
             list_of_files_within_tuple = current_tuple[1]

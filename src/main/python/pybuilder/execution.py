@@ -35,6 +35,7 @@ from pybuilder.errors import (CircularTaskDependencyException,
                               DependenciesNotResolvedException,
                               InvalidNameException,
                               MissingTaskDependencyException,
+                              RequiredTaskExclusionException,
                               MissingActionDependencyException,
                               NoSuchTaskException)
 from pybuilder.utils import as_list, Timer, odict
@@ -100,10 +101,11 @@ class Action(Executable):
 
 
 class Task(object):
-    def __init__(self, name, callable, dependencies=None, description=""):
+    def __init__(self, name, callable, dependencies=None, description="", optional_dependencies=None):
         self.name = name
         self.executables = [Executable(name, callable, description)]
         self.dependencies = as_task_name_list(dependencies)
+        self.optional_dependencies = as_task_name_list(optional_dependencies)
         self.description = [description]
 
     def __eq__(self, other):
@@ -170,6 +172,9 @@ class ExecutionManager(object):
         self._actions_executed = []
         self._tasks_executed = []
         self._current_task = None
+
+        self._exclude_optional_tasks = []
+        self._exclude_tasks = []
 
     @property
     def initializers(self):
@@ -370,25 +375,50 @@ class ExecutionManager(object):
 
         execution_plan.append(task)
 
-    def resolve_dependencies(self):
+    def resolve_dependencies(self, exclude_optional_tasks=None, exclude_tasks=None):
+        self._exclude_optional_tasks = as_task_name_list(exclude_optional_tasks or [])
+        self._exclude_tasks = as_task_name_list(exclude_tasks or [])
+
         for task in self._tasks.values():
             self._execute_before[task.name] = []
             self._execute_after[task.name] = []
             self._task_dependencies[task.name] = []
+            if self.is_task_excluded(task.name) or self.is_optional_task_excluded(task.name):
+                self.logger.debug("Skipping resolution for excluded task '%s'", task.name)
+                continue
             for d in task.dependencies:
                 if not self.has_task(d):
                     raise MissingTaskDependencyException(task.name, d)
-                self._task_dependencies[task.name].append(self.get_task(d))
+                if self.is_optional_task_excluded(d):
+                    raise RequiredTaskExclusionException(task.name, d)
+                if not self.is_task_excluded(d):
+                    self._task_dependencies[task.name].append(self.get_task(d))
+                    self.logger.debug("Adding '%s' as a required dependency of task '%s'", d, task.name)
+
+            for d in task.optional_dependencies:
+                if not self.has_task(d):
+                    raise MissingTaskDependencyException(task.name, d)
+                if not (self.is_task_excluded(d) or self.is_optional_task_excluded(d)):
+                    self._task_dependencies[task.name].append(self.get_task(d))
+                    self.logger.debug("Adding '%s' as an optional dependency of task '%s'", d, task.name)
 
         for action in self._actions.values():
             for task in action.execute_before:
                 if not self.has_task(task):
                     raise MissingActionDependencyException(action.name, task)
                 self._execute_before[task].append(action)
+                self.logger.debug("Adding before action '%s' for task '%s'", action.name, task)
 
             for task in action.execute_after:
                 if not self.has_task(task):
                     raise MissingActionDependencyException(action.name, task)
                 self._execute_after[task].append(action)
+                self.logger.debug("Adding after action '%s' for task '%s'", action.name, task)
 
         self._dependencies_resolved = True
+
+    def is_task_excluded(self, task):
+        return task in self._exclude_tasks
+
+    def is_optional_task_excluded(self, task):
+        return task in self._exclude_optional_tasks

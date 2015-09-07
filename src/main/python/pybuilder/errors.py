@@ -71,6 +71,13 @@ class MissingTaskDependencyException(PyBuilderException):
                                                            dependency, source)
 
 
+class RequiredTaskExclusionException(PyBuilderException):
+    def __init__(self, source, dependency):
+        super(
+            RequiredTaskExclusionException, self).__init__("Task '%s' is required for task '%s' and cannot be excluded",
+                                                           dependency, source)
+
+
 class MissingActionDependencyException(PyBuilderException):
     def __init__(self, source, dependency):
         super(

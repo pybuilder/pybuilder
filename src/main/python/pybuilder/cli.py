@@ -23,9 +23,10 @@
 
 import datetime
 import optparse
-import re
 import sys
 import traceback
+
+import re
 
 from pybuilder import __version__
 from pybuilder.core import Logger
@@ -42,14 +43,12 @@ PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
 
 
 class CommandLineUsageException(PyBuilderException):
-
     def __init__(self, usage, message):
         super(CommandLineUsageException, self).__init__(message)
         self.usage = usage
 
 
 class StdOutLogger(Logger):
-
     def _level_to_string(self, level):
         if Logger.DEBUG == level:
             return "[DEBUG]"
@@ -66,7 +65,6 @@ class StdOutLogger(Logger):
 
 
 class ColoredStdOutLogger(StdOutLogger):
-
     def _level_to_string(self, level):
         if Logger.DEBUG == level:
             return italic("[DEBUG]")
@@ -125,6 +123,21 @@ def parse_options(args):
                              default=[],
                              metavar="<property>=<value>",
                              help="Set/ override a property value")
+
+    project_group.add_option("-x", "--exclude",
+                             action="append",
+                             dest="exclude_optional_tasks",
+                             default=[],
+                             metavar="<task>",
+                             help="Exclude optional task dependencies")
+
+    project_group.add_option("--force-exclude",
+                             action="append",
+                             dest="exclude_tasks",
+                             default=[],
+                             metavar="<task>",
+                             help="Exclude any task dependencies "
+                                  "(dangerous, may break the build in unexpected ways)")
 
     parser.add_option_group(project_group)
 
@@ -233,8 +246,7 @@ def print_build_status(failure_message, options, successful):
 
 def print_elapsed_time_summary(start, end):
     time_needed = end - start
-    millis = ((time_needed.days * 24 * 60 * 60) + time_needed.seconds) * \
-        1000 + time_needed.microseconds / 1000
+    millis = ((time_needed.days * 24 * 60 * 60) + time_needed.seconds) * 1000 + time_needed.microseconds / 1000
     print_text_line("Build finished at %s" % format_timestamp(end))
     print_text_line("Build took %d seconds (%d ms)" %
                     (time_needed.seconds, millis))
@@ -330,7 +342,9 @@ def main(*args):
         try:
             reactor.prepare_build(
                 property_overrides=options.property_overrides,
-                project_directory=options.project_directory)
+                project_directory=options.project_directory,
+                exclude_optional_tasks=options.exclude_optional_tasks,
+                exclude_tasks=options.exclude_tasks)
 
             if options.verbose or options.debug:
                 logger.debug("Verbose output enabled.\n")
