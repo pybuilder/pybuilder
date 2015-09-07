@@ -24,9 +24,12 @@
 """
 
 import inspect
+import copy
+import traceback
+import sys
+
 import re
 import types
-import copy
 
 from pybuilder.errors import (CircularTaskDependencyException,
                               DependenciesNotResolvedException,
@@ -34,8 +37,13 @@ from pybuilder.errors import (CircularTaskDependencyException,
                               MissingTaskDependencyException,
                               MissingActionDependencyException,
                               NoSuchTaskException)
-from pybuilder.utils import as_list, Timer
+from pybuilder.utils import as_list, Timer, odict
 from pybuilder.graph_utils import Graph, GraphHasCycles
+
+if sys.version_info[0] < 3:  # if major is less than 3
+    from .excp_util_2 import raise_exception
+else:
+    from .excp_util_3 import raise_exception
 
 
 def as_task_name_list(mixed):
@@ -83,11 +91,12 @@ class Executable(object):
 
 
 class Action(Executable):
-    def __init__(self, name, callable, before=None, after=None, description="", only_once=False):
+    def __init__(self, name, callable, before=None, after=None, description="", only_once=False, teardown=False):
         super(Action, self).__init__(name, callable, description)
         self.execute_before = as_task_name_list(before)
         self.execute_after = as_task_name_list(after)
         self.only_once = only_once
+        self.teardown = teardown
 
 
 class Task(object):
@@ -148,12 +157,12 @@ class ExecutionManager(object):
     def __init__(self, logger):
         self.logger = logger
 
-        self._tasks = {}
-        self._task_dependencies = {}
+        self._tasks = odict()
+        self._task_dependencies = odict()
 
-        self._actions = {}
-        self._execute_before = {}
-        self._execute_after = {}
+        self._actions = odict()
+        self._execute_before = odict()
+        self._execute_after = odict()
 
         self._initializers = []
 
@@ -216,16 +225,49 @@ class ExecutionManager(object):
 
         self._current_task = task
 
-        for action in self._execute_before[task.name]:
-            if self.execute_action(action, keyword_arguments):
-                number_of_actions += 1
+        suppressed_errors = []
+        task_error = None
 
-        task.execute(self.logger, keyword_arguments)
+        has_teardown_tasks = False
+        after_actions = self._execute_after[task.name]
+        for action in after_actions:
+            if action.teardown:
+                has_teardown_tasks = True
+                break
 
-        for action in self._execute_after[task.name]:
-            if self.execute_action(action, keyword_arguments):
-                number_of_actions += 1
+        try:
+            for action in self._execute_before[task.name]:
+                if self.execute_action(action, keyword_arguments):
+                    number_of_actions += 1
 
+            task.execute(self.logger, keyword_arguments)
+        except:
+            if not has_teardown_tasks:
+                raise
+            else:
+                task_error = sys.exc_info()
+
+        for action in after_actions:
+            try:
+                if not task_error or action.teardown:
+                    if self.execute_action(action, keyword_arguments):
+                        number_of_actions += 1
+            except:
+                if not has_teardown_tasks:
+                    raise
+                elif task_error:
+                    suppressed_errors.append((action, sys.exc_info()))
+                else:
+                    task_error = sys.exc_info()
+
+        for suppressed_error in suppressed_errors:
+            action = suppressed_error[0]
+            action_error = suppressed_error[1]
+            self.logger.error("Executing action '%s' from '%s' resulted in an error that was suppressed:\n%s",
+                              action.name, action.source,
+                              "".join(traceback.format_exception(action_error[0], action_error[1], action_error[2])))
+        if task_error:
+            raise_exception(task_error[1], task_error[2])
         self._current_task = None
         if task not in self._tasks_executed:
             self._tasks_executed.append(task)

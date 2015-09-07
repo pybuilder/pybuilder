@@ -251,7 +251,7 @@ class InitializerTest(unittest.TestCase):
 
 class ExecutionManagerTestBase(unittest.TestCase):
     def setUp(self):
-        self.execution_manager = ExecutionManager(Logger())
+        self.execution_manager = ExecutionManager(mock(Logger))
 
     def tearDown(self):
         unstub()
@@ -345,6 +345,105 @@ class ExecutionManagerTaskTest(ExecutionManagerTestBase):
 
         verify(action).execute({})
         verify(task).execute(any(), {})
+
+    def test_ensure_after_action_teardown_is_executed_when_task_fails(self):
+        task = mock(name="task", dependencies=[])
+        when(task).execute(any(), {}).thenRaise(ValueError("simulated task error"))
+        action = mock(name="action", execute_before=[], execute_after=["task"], teardown=True)
+
+        self.execution_manager.register_action(action)
+        self.execution_manager.register_task(task)
+        self.execution_manager.resolve_dependencies()
+
+        try:
+            self.execution_manager.execute_task(task)
+            self.assertTrue(False, "should not have reached here")
+        except Exception as e:
+            self.assertEquals(type(e), ValueError)
+            self.assertEquals(str(e), "simulated task error")
+
+        verify(action).execute({})
+        verify(task).execute(any(), {})
+
+    def test_ensure_after_action_teardown_is_executed_when_action_fails(self):
+        task = mock(name="task", dependencies=[])
+        action_regular = mock(name="action_regular", execute_before=[], execute_after=["task"], teardown=False)
+        when(action_regular).execute({}).thenRaise(ValueError("simulated action error"))
+        action_teardown = mock(name="action_teardown", execute_before=[], execute_after=["task"], teardown=True)
+        action_after_teardown = mock(name="action_after_teardown", execute_before=[], execute_after=["task"],
+                                     teardown=False)
+
+        self.execution_manager.register_action(action_regular)
+        self.execution_manager.register_action(action_teardown)
+        self.execution_manager.register_action(action_after_teardown)
+        self.execution_manager.register_task(task)
+        self.execution_manager.resolve_dependencies()
+
+        try:
+            self.execution_manager.execute_task(task)
+            self.assertTrue(False, "should not have reached here")
+        except Exception as e:
+            self.assertEquals(type(e), ValueError)
+            self.assertEquals(str(e), "simulated action error")
+
+        verify(task).execute(any(), {})
+        verify(action_regular).execute({})
+        verify(action_teardown).execute({})
+        verify(action_after_teardown, times(0)).execute({})
+
+    def test_ensure_after_action_teardown_suppression_works_when_action_fails(self):
+        task = mock(name="task", dependencies=[])
+        action_regular = mock(name="action_regular", execute_before=[], execute_after=["task"], teardown=False)
+        when(action_regular).execute({}).thenRaise(ValueError("simulated action error"))
+        action_teardown = mock(name="action_teardown", execute_before=[], execute_after=["task"], teardown=True)
+        action_after_teardown = mock(name="action_after_teardown", execute_before=[], execute_after=["task"],
+                                     teardown=False)
+
+        self.execution_manager.register_action(action_regular)
+        self.execution_manager.register_action(action_teardown)
+        self.execution_manager.register_action(action_after_teardown)
+        self.execution_manager.register_task(task)
+        self.execution_manager.resolve_dependencies()
+
+        try:
+            self.execution_manager.execute_task(task)
+            self.assertTrue(False, "should not have reached here")
+        except Exception as e:
+            self.assertEquals(type(e), ValueError)
+            self.assertEquals(str(e), "simulated action error")
+
+        verify(task).execute(any(), {})
+        verify(action_regular).execute({})
+        verify(action_teardown).execute({})
+        verify(action_after_teardown, times(0)).execute({})
+
+    def test_ensure_after_action_teardown_is_executed_and_suppresses(self):
+        task = mock(name="task", dependencies=[])
+        when(task).execute(any(), {}).thenRaise(ValueError("simulated task error"))
+        action_teardown1 = mock(name="action_teardown1", execute_before=[], execute_after=["task"], teardown=True,
+                                source="task")
+        when(action_teardown1).execute({}).thenRaise(ValueError("simulated action error teardown1"))
+        action_teardown2 = mock(name="action_teardown2", execute_before=[], execute_after=["task"], teardown=True,
+                                source="task")
+
+        self.execution_manager.register_action(action_teardown1)
+        self.execution_manager.register_action(action_teardown2)
+        self.execution_manager.register_task(task)
+        self.execution_manager.resolve_dependencies()
+
+        try:
+            self.execution_manager.execute_task(task)
+            self.assertTrue(False, "should not have reached here")
+        except Exception as e:
+            self.assertEquals(type(e), ValueError)
+            self.assertEquals(str(e), "simulated task error")
+
+        verify(task).execute(any(), {})
+        verify(action_teardown1).execute({})
+        verify(action_teardown2).execute({})
+        verify(self.execution_manager.logger).error(
+            "Executing action '%s' from '%s' resulted in an error that was suppressed:\n%s", "action_teardown1",
+            "task", any())
 
     def test_should_return_single_task_name(self):
         self.execution_manager.register_task(mock(name="spam"))
