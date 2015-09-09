@@ -68,7 +68,9 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            Author("Maximilien Riehl", "max@riehl.io"),
            Author("Michael Gruber", "aelgru@gmail.com"),
            Author("Udo Juettner", "udo.juettner@gmail.com"),
-           Author("Marcel Wolf", "marcel.wolf@me.com")]
+           Author("Marcel Wolf", "marcel.wolf@me.com"),
+           Author("Arcadiy Ivanov", "arcadiy@ivanov.biz"),
+           ]
 url = "http://pybuilder.github.io"
 license = "Apache License"
 version = "0.11.0"
@@ -128,7 +130,6 @@ def initialize(project):
                          'Programming Language :: Python :: 2.6',
                          'Programming Language :: Python :: 2.7',
                          'Programming Language :: Python :: 3',
-                         'Programming Language :: Python :: 3.2',
                          'Programming Language :: Python :: 3.3',
                          'Programming Language :: Python :: 3.4',
                          'Development Status :: 4 - Beta',
