@@ -18,6 +18,7 @@
 
 from __future__ import print_function
 
+import re
 import sys
 
 from pybuilder.core import (before,
@@ -96,6 +97,7 @@ def install_dependency(logger, project, dependency):
     logger.info("Installing dependency '%s'%s", dependency.name,
                 " from %s" % url if url else "")
     log_file = project.expand_path("$dir_install_logs", dependency.name)
+    log_file = re.sub(r'<|>|=', '_', log_file)
 
     if sys.platform.startswith("win"):
         # we can't use quotes on windows
