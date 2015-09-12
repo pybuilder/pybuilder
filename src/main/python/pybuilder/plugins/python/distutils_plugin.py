@@ -191,8 +191,8 @@ def upload(project, logger):
     upload_cmd_line.append("upload")
     upload_cmd_line.extend(repository_args)
 
-    logger.info("Uploading project %s-%s%s", project.version,
-                (" to repository '%s'" % repository if repository else ""))
+    logger.info("Uploading project %s-%s%s", project.name, project.version,
+                (" to repository '%s'" % (repository if repository else "")))
     execute_distutils(project, logger, [upload_cmd_line])
 
 

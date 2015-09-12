@@ -38,7 +38,10 @@ from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        build_scripts_string,
                                                        render_setup_script,
                                                        initialize_distutils_plugin,
-                                                       execute_distutils)
+                                                       execute_distutils,
+                                                       upload,
+                                                       install_distribution,
+                                                       build_binary_distribution)
 
 
 class InstallDependenciesTest(unittest.TestCase):
@@ -427,8 +430,7 @@ class ExecuteDistUtilsTest(PyBuilderTestCase):
         commands = ["a", "b", "c"]
         execute_distutils(self.project, MagicMock(Logger), commands)
 
-        self.assertEquals(len(popen.mock_calls), 7)
-        self.assertEquals([call_args[0][0][2] for call_args in popen.call_args_list if len(call_args[0]) > 0],
+        self.assertEquals(popen_distutils_args(self, 3, popen),
                           commands)
 
     @patch("os.mkdir")
@@ -440,12 +442,46 @@ class ExecuteDistUtilsTest(PyBuilderTestCase):
         commands = ["a", "b", "c"]
         execute_distutils(self.project, MagicMock(Logger), [commands])
 
-        call_args = [call_args[0][0] for call_args in popen.call_args_list if
-                     len(call_args[0]) > 0 and len(call_args[0][0]) == 5]
-        self.assertEquals(len(call_args), 1)
-        call_args = call_args[0]
-        self.assertEquals(len(call_args), 5)
-        self.assertEquals(call_args[2:], commands)
+        self.assertEquals(popen_distutils_args(self, 1, popen), commands)
+
+
+class TasksTest(PyBuilderTestCase):
+    def setUp(self):
+        self.project = create_project()
+        self.project.set_property("dir_reports", "whatever reports")
+        self.project.set_property("dir_dist", "whatever dist")
+        self.project.set_property("distutils_commands", ["sdist", "bdist_dumb"])
+
+    @patch("os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("subprocess.Popen")
+    def test_upload(self, popen, *args):
+        popen().wait.return_value = 0
+
+        upload(self.project, MagicMock(Logger))
+        self.assertEquals(popen_distutils_args(self, 1, popen), ["sdist", "bdist_dumb"] + ["upload"])
+
+    @patch("os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("subprocess.Popen")
+    def test_install(self, popen, *args):
+        popen().wait.return_value = 0
+
+        install_distribution(self.project, MagicMock(Logger))
+
+    @patch("os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("subprocess.Popen")
+    def test_binary_distribution(self, popen, *args):
+        popen().wait.return_value = 0
+
+        build_binary_distribution(self.project, MagicMock(Logger))
+        self.assertEquals(popen_distutils_args(self, 2, popen), ["sdist", "bdist_dumb"])
+
+
+def popen_distutils_args(self, call_count, popen):
+    self.assertEquals(len([call_args[0] for call_args in popen.call_args_list if len(call_args[0]) > 0]), call_count)
+    return [item for call_args in popen.call_args_list if len(call_args[0]) > 0 for item in call_args[0][0][2:]]
 
 
 def create_project():
