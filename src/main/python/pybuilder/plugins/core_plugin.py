@@ -101,7 +101,7 @@ def publish():
 
 
 @task
-@depends(publish)
+@depends(package, optional(publish))
 @description("Installs the published project.")
 def install():
     pass

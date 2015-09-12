@@ -42,9 +42,11 @@ except ImportError:
 from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
 
 if sys.version_info[0] < 3:  # if major is less than 3
-    from .excp_util_2 import raise_exception
+    from .excp_util_2 import raise_exception, is_string
+    is_string = is_string
 else:
-    from .excp_util_3 import raise_exception
+    from .excp_util_3 import raise_exception, is_string
+    is_string = is_string
 
 
 def get_all_dependencies_for_task(task):

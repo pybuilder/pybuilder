@@ -16,10 +16,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
 import string
 import subprocess
 import sys
+
+import os
 
 try:
     from StringIO import StringIO
@@ -34,7 +35,7 @@ from pybuilder.core import (after,
                             RequirementsFile,
                             Dependency)
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import as_list
+from pybuilder.utils import as_list, is_string
 
 from .setuptools_plugin_helper import build_dependency_version_string
 
@@ -89,11 +90,12 @@ def initialize_distutils_plugin(project):
         "Programming Language :: Python"
     ])
     project.set_property_if_unset("distutils_use_setuptools", True)
+    project.set_property_if_unset("distutils_upload_repository", None)
 
 
 @after("package")
 def write_setup_script(project, logger):
-    setup_script = project.expand_path("$dir_dist/setup.py")
+    setup_script = project.expand_path("$dir_dist", "setup.py")
     logger.info("Writing setup.py as %s", setup_script)
 
     with open(setup_script, "w") as setup_file:
@@ -144,7 +146,7 @@ def write_manifest_file(project, logger):
     logger.debug("Files included in MANIFEST.in: %s" %
                  project.manifest_included_files)
 
-    manifest_filename = project.expand_path("$dir_dist/MANIFEST.in")
+    manifest_filename = project.expand_path("$dir_dist", "MANIFEST.in")
     logger.info("Writing MANIFEST.in as %s", manifest_filename)
 
     with open(manifest_filename, "w") as manifest_file:
@@ -178,19 +180,43 @@ def install_distribution(project, logger):
     execute_distutils(project, logger, as_list("install"))
 
 
-def execute_distutils(project, logger, commands):
-    reports_dir = project.expand_path("$dir_reports/distutils")
+@task("upload")
+def upload(project, logger):
+    repository = project.get_property("$distutils_upload_repository")
+    repository_args = []
+    if repository:
+        repository_args = ["-r", repository]
+    upload_cmd_line = []
+    upload_cmd_line.extend(project.get_property("distutils_commands"))
+    upload_cmd_line.append("upload")
+    upload_cmd_line.extend(repository_args)
+
+    logger.info("Uploading project %s-%s%s", project.version,
+                (" to repository '%s'" % repository if repository else ""))
+    execute_distutils(project, logger, [upload_cmd_line])
+
+
+def execute_distutils(project, logger, distutils_commands):
+    reports_dir = project.expand_path("$dir_reports", "distutils")
     if not os.path.exists(reports_dir):
         os.mkdir(reports_dir)
 
-    setup_script = project.expand_path("$dir_dist/setup.py")
+    setup_script = project.expand_path("$dir_dist", "setup.py")
 
-    for command in commands:
+    for command in distutils_commands:
         logger.debug("Executing distutils command %s", command)
-        output_file_path = os.path.join(reports_dir, command.replace("/", ""))
+        if is_string(command):
+            output_file_path = os.path.join(reports_dir, command.replace("/", ""))
+        else:
+            output_file_path = os.path.join(reports_dir, "__".join(command).replace("/", ""))
         with open(output_file_path, "w") as output_file:
             commands = [sys.executable, setup_script]
-            commands.extend(command.split())
+            if project.get_property("verbose"):
+                commands.append("-v")
+            if is_string(command):
+                commands.extend(command.split())
+            else:
+                commands.extend(command)
             process = subprocess.Popen(commands,
                                        cwd=project.expand_path("$dir_dist"),
                                        stdout=output_file,

@@ -20,7 +20,12 @@
     The PyBuilder exception utils module for Python version 2.x
 """
 
+
 # flake8: noqa
 
 def raise_exception(ex, tb):
     raise ex, None, tb
+
+
+def is_string(val):
+    return isinstance(val, basestring)
