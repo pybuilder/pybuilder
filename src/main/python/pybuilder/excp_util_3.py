@@ -1,4 +1,4 @@
-#   -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 #   This file is part of PyBuilder
 #
@@ -20,7 +20,12 @@
     The PyBuilder exception utils module for Python version 3.x
 """
 
+
 # flake8: noqa
 
 def raise_exception(ex, tb):
     raise ex.with_traceback(tb)
+
+
+def is_string(val):
+    return isinstance(val, str)
