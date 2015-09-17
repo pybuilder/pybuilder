@@ -9,11 +9,11 @@
 [![Open bugs](https://badge.waffle.io/pybuilder/pybuilder.png?label=bug&title=Open%20Bugs)](https://waffle.io/pybuilder/pybuilder)
 
 
-PyBuilder is a software build tool written in 100% pure Python and mainly
-targets Python applications.
+PyBuilder is a software build tool written in 100% pure Python, mainly
+targeting Python applications.
 
-PyBuilder is based on the concept of dependency based programming but also comes
-along with powerful plugin mechanism that allows the construction of build life
+PyBuilder is based on the concept of dependency based programming, but it also
+comes with a powerful plugin mechanism, allowing the construction of build life
 cycles similar to those known from other famous (Java) build tools.
 
 PyBuilder is running on the following versions of Python: 2.6, 2.7, 3.2, 3.3, 3.4 and PyPy.
@@ -50,7 +50,7 @@ See the [PyBuilder homepage](http://pybuilder.github.com/) for more details.
 
 ## Plugins
 
-PyBuilder provides a lot of plugins out ot the box that utilize tools and libraries commonly used in Python projects:
+PyBuilder provides a lot of plugins out of the box that utilize tools and libraries commonly used in Python projects:
 
 * [python.coverage](http://pybuilder.github.com/documentation/plugins.html#Measuringunittestcoverage) - Uses the standard [coverage](https://warehouse.python.org/project/coverage/) module to calculate unit test line coverage.
 * [python.distutils](http://pybuilder.github.com/documentation/plugins.html#BuildingaPythonpackage) - Provides support to generate and use [setup.py](https://warehouse.python.org/project/setuptools/) files.
