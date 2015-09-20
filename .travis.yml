@@ -5,19 +5,21 @@ language: python
 python:
   - "2.6"
   - "2.7"
-  - "3.2"
   - "3.3"
   - "3.4"
   - "pypy"
 
+branches:
+  only:
+    - master
+    - doc/sphinxdoc
 
 before_script:
   - pip install coveralls
   - ./build.py install_dependencies -v
 
 script:
-  - ./build.py -v -X
-  - (cd target/dist/PyBuilder-* && python setup.py install)
+  - ./build.py -v -X analyze install
 
 after_success:
   - coveralls --verbose

@@ -20,25 +20,32 @@ import unittest
 
 from integrationtest_support import IntegrationTestSupport
 
+__author__ = 'arcivanov'
 
-class Test (IntegrationTestSupport):
 
+class Test(IntegrationTestSupport):
     def test(self):
         self.write_build_file("""
-from pybuilder.core import use_plugin
+from pybuilder.core import task, before, after
 
-use_plugin("core")
+@task
+def foo():
+    raise ValueError("simulated task failure")
+
+@after(["foo"], teardown=True)
+def teardown1_foo(project):
+    raise ArithmeticError("simulated teardown error")
+
+@after(["foo"], teardown=True)
+def teardown2_foo(project):
+    project.set_property("teardown2_foo completed", True)
+
         """)
         reactor = self.prepare_reactor()
+        project = reactor.project
 
-        tasks = reactor.get_tasks()
-
-        self.assertEquals(9, len(tasks))
-
-        task_names = list(map(lambda task: task.name, tasks))
-
-        self.assertTrue("clean" in task_names)
-        self.assertTrue("publish" in task_names)
+        self.assertRaises(ValueError, reactor.build, "foo")
+        self.assertTrue(project.get_property("teardown2_foo completed"))
 
 if __name__ == "__main__":
     unittest.main()

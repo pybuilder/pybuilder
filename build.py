@@ -68,10 +68,12 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            Author("Maximilien Riehl", "max@riehl.io"),
            Author("Michael Gruber", "aelgru@gmail.com"),
            Author("Udo Juettner", "udo.juettner@gmail.com"),
-           Author("Marcel Wolf", "marcel.wolf@me.com")]
+           Author("Marcel Wolf", "marcel.wolf@me.com"),
+           Author("Arcadiy Ivanov", "arcadiy@ivanov.biz"),
+           ]
 url = "http://pybuilder.github.io"
 license = "Apache License"
-version = "0.10.63"
+version = "0.11.2.dev0"
 
 default_task = ["analyze", "publish"]
 
@@ -87,6 +89,8 @@ def initialize(project):
     project.build_depends_on("pygments")
     if sys.version_info[0:2] == (2, 6):
         project.build_depends_on("importlib")  # for fluentmock
+
+    project.depends_on("tblib")
 
     project.set_property("verbose", True)
 
@@ -126,7 +130,6 @@ def initialize(project):
                          'Programming Language :: Python :: 2.6',
                          'Programming Language :: Python :: 2.7',
                          'Programming Language :: Python :: 3',
-                         'Programming Language :: Python :: 3.2',
                          'Programming Language :: Python :: 3.3',
                          'Programming Language :: Python :: 3.4',
                          'Development Status :: 4 - Beta',

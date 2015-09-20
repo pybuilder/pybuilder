@@ -1,4 +1,4 @@
-#   -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 #   This file is part of PyBuilder
 #
@@ -16,22 +16,16 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pybuilder.errors import BuildFailedException
+"""
+    The PyBuilder exception utils module for Python version 3.x
+"""
 
-__version__ = "${version}"
+
+# flake8: noqa
+
+def raise_exception(ex, tb):
+    raise ex.with_traceback(tb)
 
 
-def bootstrap():
-    import sys
-    import inspect
-
-    try:
-        current_frame = inspect.currentframe()
-        previous_frame = current_frame.f_back
-        name_of_previous_frame = previous_frame.f_globals['__name__']
-        if name_of_previous_frame == '__main__':
-            import pybuilder.cli
-
-            sys.exit(pybuilder.cli.main(*sys.argv[1:]))
-    except BuildFailedException:
-        sys.exit(1)
+def is_string(val):
+    return isinstance(val, str)

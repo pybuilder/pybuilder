@@ -16,10 +16,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
 import shutil
 
-from pybuilder.core import init, task, description, depends
+import os
+
+from pybuilder.core import init, task, description, depends, optional
 
 
 @init
@@ -31,6 +32,7 @@ def init(project):
     def write_report(file, *content):
         with open(project.expand_path("$dir_reports", file), "w") as report_file:
             report_file.writelines(content)
+
     project.write_report = write_report
 
 
@@ -71,7 +73,7 @@ def run_unit_tests():
 
 
 @task
-@depends(run_unit_tests)
+@depends(compile_sources, optional(run_unit_tests))
 @description("Packages the application.")
 def package():
     pass
@@ -92,7 +94,14 @@ def verify():
 
 
 @task
-@depends(verify)
+@depends(package, optional(verify))
 @description("Publishes the project.")
 def publish():
+    pass
+
+
+@task
+@depends(package, optional(publish))
+@description("Installs the published project.")
+def install():
     pass

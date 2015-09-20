@@ -20,6 +20,7 @@ try:
     TYPE_FILE = file
 except NameError:
     from io import FileIO
+
     TYPE_FILE = FileIO
 
 import unittest
@@ -27,7 +28,7 @@ import unittest
 from mock import patch, MagicMock
 
 from test_utils import PyBuilderTestCase
-from pybuilder.core import Project, Author
+from pybuilder.core import Project, Author, Logger
 from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        build_dependency_links_string,
                                                        build_install_dependencies_string,
@@ -36,11 +37,14 @@ from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        render_manifest_file,
                                                        build_scripts_string,
                                                        render_setup_script,
-                                                       initialize_distutils_plugin)
+                                                       initialize_distutils_plugin,
+                                                       execute_distutils,
+                                                       upload,
+                                                       install_distribution,
+                                                       build_binary_distribution)
 
 
 class InstallDependenciesTest(unittest.TestCase):
-
     def setUp(self):
         self.project = Project(".")
 
@@ -168,7 +172,6 @@ class InstallDependenciesTest(unittest.TestCase):
 
 
 class DependencyLinksTest(unittest.TestCase):
-
     def setUp(self):
         self.project = Project(".")
 
@@ -236,7 +239,6 @@ class DependencyLinksTest(unittest.TestCase):
 
 
 class DefaultTest(unittest.TestCase):
-
     def test_should_return_empty_string_as_default_when_given_value_is_none(self):
         self.assertEqual("", default(None))
 
@@ -251,7 +253,6 @@ class DefaultTest(unittest.TestCase):
 
 
 class BuildDataFilesStringTest(unittest.TestCase):
-
     def setUp(self):
         self.project = Project(".")
 
@@ -279,7 +280,6 @@ class BuildDataFilesStringTest(unittest.TestCase):
 
 
 class BuildPackageDataStringTest(unittest.TestCase):
-
     def setUp(self):
         self.project = Project('.')
 
@@ -321,7 +321,6 @@ class BuildPackageDataStringTest(unittest.TestCase):
 
 
 class RenderSetupScriptTest(PyBuilderTestCase):
-
     def setUp(self):
         self.project = create_project()
 
@@ -405,7 +404,6 @@ if __name__ == '__main__':
 
 
 class RenderManifestFileTest(unittest.TestCase):
-
     def test_should_render_manifest_file(self):
         project = create_project()
 
@@ -415,6 +413,75 @@ class RenderManifestFileTest(unittest.TestCase):
 include file2
 include spam/eggs
 """, actual_manifest_file)
+
+
+class ExecuteDistUtilsTest(PyBuilderTestCase):
+    def setUp(self):
+        self.project = create_project()
+        self.project.set_property("dir_reports", "whatever reports")
+        self.project.set_property("dir_dist", "whatever dist")
+
+    @patch("os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("subprocess.Popen")
+    def test_should_accept_array_of_simple_commands(self, popen, *args):
+        popen().wait.return_value = 0
+
+        commands = ["a", "b", "c"]
+        execute_distutils(self.project, MagicMock(Logger), commands)
+
+        self.assertEquals(popen_distutils_args(self, 3, popen),
+                          commands)
+
+    @patch("os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("subprocess.Popen")
+    def test_should_accept_array_of_compound_commands(self, popen, *args):
+        popen().wait.return_value = 0
+
+        commands = ["a", "b", "c"]
+        execute_distutils(self.project, MagicMock(Logger), [commands])
+
+        self.assertEquals(popen_distutils_args(self, 1, popen), commands)
+
+
+class TasksTest(PyBuilderTestCase):
+    def setUp(self):
+        self.project = create_project()
+        self.project.set_property("dir_reports", "whatever reports")
+        self.project.set_property("dir_dist", "whatever dist")
+        self.project.set_property("distutils_commands", ["sdist", "bdist_dumb"])
+
+    @patch("os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("subprocess.Popen")
+    def test_upload(self, popen, *args):
+        popen().wait.return_value = 0
+
+        upload(self.project, MagicMock(Logger))
+        self.assertEquals(popen_distutils_args(self, 1, popen), ["sdist", "bdist_dumb"] + ["upload"])
+
+    @patch("os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("subprocess.Popen")
+    def test_install(self, popen, *args):
+        popen().wait.return_value = 0
+
+        install_distribution(self.project, MagicMock(Logger))
+
+    @patch("os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("subprocess.Popen")
+    def test_binary_distribution(self, popen, *args):
+        popen().wait.return_value = 0
+
+        build_binary_distribution(self.project, MagicMock(Logger))
+        self.assertEquals(popen_distutils_args(self, 2, popen), ["sdist", "bdist_dumb"])
+
+
+def popen_distutils_args(self, call_count, popen):
+    self.assertEquals(len([call_args[0] for call_args in popen.call_args_list if len(call_args[0]) > 0]), call_count)
+    return [item for call_args in popen.call_args_list if len(call_args[0]) > 0 for item in call_args[0][0][2:]]
 
 
 def create_project():
@@ -440,7 +507,7 @@ def create_project():
     project.list_modules = return_dummy_list
 
     project.set_property("distutils_classifiers", [
-                         "Development Status :: 5 - Beta", "Environment :: Console"])
+        "Development Status :: 5 - Beta", "Environment :: Console"])
     project.install_file("dir", "file1")
     project.install_file("dir", "file2")
     project.include_file("spam", "eggs")
