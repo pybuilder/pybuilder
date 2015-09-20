@@ -9,6 +9,10 @@ python:
   - "3.4"
   - "pypy"
 
+branches:
+  only:
+    - master
+    - doc/sphinxdoc
 
 before_script:
   - pip install coveralls
