@@ -115,12 +115,29 @@ class ExternalCommandExecutionTests(unittest.TestCase):
 
     @patch('pybuilder.pluginhelper.external_command.read_file')
     @patch('pybuilder.pluginhelper.external_command.execute_tool_on_source_files')
+    def test_should_execute_external_command_on_production_source_files_dirs_only(self, execution, read):
+        execution.return_value = 0, '/tmp/reports/command-name'
+        logger = Mock()
+        self.command.run_on_production_source_files(logger, include_dirs_only=True)
+
+        execution.assert_called_with(
+            include_dirs_only=True,
+            include_test_sources=False,
+            include_scripts=False,
+            project=self.project,
+            logger=logger,
+            command_and_arguments=['command-name', '--foo', '--bar'],
+            name='command-name')
+
+    @patch('pybuilder.pluginhelper.external_command.read_file')
+    @patch('pybuilder.pluginhelper.external_command.execute_tool_on_source_files')
     def test_should_execute_external_command_on_production_source_files(self, execution, read):
         execution.return_value = 0, '/tmp/reports/command-name'
         logger = Mock()
         self.command.run_on_production_source_files(logger)
 
         execution.assert_called_with(
+            include_dirs_only=False,
             include_test_sources=False,
             include_scripts=False,
             project=self.project,
@@ -136,6 +153,7 @@ class ExternalCommandExecutionTests(unittest.TestCase):
         self.command.run_on_production_and_test_source_files(logger)
 
         execution.assert_called_with(
+            include_dirs_only=False,
             include_test_sources=True,
             include_scripts=False,
             project=self.project,
