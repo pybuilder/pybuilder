@@ -19,26 +19,32 @@
 import unittest
 
 from integrationtest_support import IntegrationTestSupport
+from pybuilder.errors import RequiredTaskExclusionException
 
 
-class Test (IntegrationTestSupport):
-
+class Test(IntegrationTestSupport):
     def test(self):
         self.write_build_file("""
-from pybuilder.core import use_plugin
+from pybuilder.core import task, depends
 
-use_plugin("core")
+@task
+def task_a(project):
+    project.set_property("a", False)
+
+@task
+@depends("task_a")
+def task_b(project):
+    project.set_property("a", True)
+
+@task
+@depends("task_a", "task_b")
+def task_c(project):
+    project.set_property("c", True)
         """)
         reactor = self.prepare_reactor()
+        self.assertRaises(RequiredTaskExclusionException, reactor.execution_manager.resolve_dependencies,
+                          exclude_optional_tasks=["task_b"])
 
-        tasks = reactor.get_tasks()
-
-        self.assertEquals(9, len(tasks))
-
-        task_names = list(map(lambda task: task.name, tasks))
-
-        self.assertTrue("clean" in task_names)
-        self.assertTrue("publish" in task_names)
 
 if __name__ == "__main__":
     unittest.main()

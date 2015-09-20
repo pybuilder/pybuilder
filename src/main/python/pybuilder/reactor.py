@@ -23,13 +23,14 @@
 """
 
 import imp
+
 import os.path
 
 from pybuilder.core import (TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE,
                             DESCRIPTION_ATTRIBUTE, AFTER_ATTRIBUTE,
                             BEFORE_ATTRIBUTE, INITIALIZER_ATTRIBUTE,
-                            ACTION_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE,
-                            Project, NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE)
+                            ACTION_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, TEARDOWN_ATTRIBUTE,
+                            Project, NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE, optional)
 from pybuilder.errors import PyBuilderException, ProjectValidationFailedException
 from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
@@ -90,7 +91,9 @@ class Reactor(object):
     def prepare_build(self,
                       property_overrides=None,
                       project_directory=".",
-                      project_descriptor="build.py"):
+                      project_descriptor="build.py",
+                      exclude_optional_tasks=None,
+                      exclude_tasks=None):
         if not property_overrides:
             property_overrides = {}
         Reactor._current_instance = self
@@ -111,7 +114,7 @@ class Reactor(object):
 
         self.collect_tasks_and_actions_and_initializers(self.project_module)
 
-        self.execution_manager.resolve_dependencies()
+        self.execution_manager.resolve_dependencies(exclude_optional_tasks, exclude_tasks)
 
     def build(self, tasks=None, environments=None):
         if not tasks:
@@ -205,12 +208,21 @@ class Reactor(object):
                 candidate, DESCRIPTION_ATTRIBUTE) else ""
 
             if hasattr(candidate, TASK_ATTRIBUTE) and getattr(candidate, TASK_ATTRIBUTE):
-                dependencies = getattr(candidate, DEPENDS_ATTRIBUTE) if hasattr(
-                    candidate, DEPENDS_ATTRIBUTE) else None
-
-                self.logger.debug("Found task %s", name)
+                dependencies = getattr(candidate, DEPENDS_ATTRIBUTE) if hasattr(candidate, DEPENDS_ATTRIBUTE) else None
+                required_dependencies = []
+                optional_dependencies = []
+                if dependencies:
+                    dependencies = list(as_list(dependencies))
+                    for d in dependencies:
+                        if type(d) is optional:
+                            d = as_list(d())
+                            optional_dependencies += d
+                        else:
+                            required_dependencies.append(d)
+                self.logger.debug("Found task '%s' with required dependencies %s and optional dependencies %s", name,
+                                  required_dependencies, optional_dependencies)
                 self.execution_manager.register_task(
-                    Task(name, candidate, dependencies, description))
+                    Task(name, candidate, required_dependencies, description, optional_dependencies))
 
             elif hasattr(candidate, ACTION_ATTRIBUTE) and getattr(candidate, ACTION_ATTRIBUTE):
                 before = getattr(candidate, BEFORE_ATTRIBUTE) if hasattr(
@@ -221,10 +233,13 @@ class Reactor(object):
                 only_once = False
                 if hasattr(candidate, ONLY_ONCE_ATTRIBUTE):
                     only_once = getattr(candidate, ONLY_ONCE_ATTRIBUTE)
+                teardown = False
+                if hasattr(candidate, TEARDOWN_ATTRIBUTE):
+                    teardown = getattr(candidate, TEARDOWN_ATTRIBUTE)
 
                 self.logger.debug("Found action %s", name)
                 self.execution_manager.register_action(
-                    Action(name, candidate, before, after, description, only_once))
+                    Action(name, candidate, before, after, description, only_once, teardown))
 
             elif hasattr(candidate, INITIALIZER_ATTRIBUTE) and getattr(candidate, INITIALIZER_ATTRIBUTE):
                 environments = []
