@@ -39,6 +39,8 @@ def init_coverage_properties(project):
     project.build_depends_on("coverage")
 
     project.set_property_if_unset("coverage_threshold_warn", 70)
+    project.set_property_if_unset("coverage_branch_threshold_warn", 0)
+    project.set_property_if_unset("coverage_branch_partial_threshold_warn", 0)
     project.set_property_if_unset("coverage_break_build", True)
     project.set_property_if_unset("coverage_reload_modules", None)  # deprecated, unused
     project.set_property_if_unset("coverage_exceptions", [])
@@ -60,6 +62,13 @@ def run_coverage(project, logger, reactor, execution_prefix, execution_name, tar
     if project.get_property("%s_reload_modules" % execution_prefix) is not None:
         logger.warn(
             "%s_reload_modules is deprecated - modules are no longer reloaded", execution_prefix)
+
+    if project.get_property("%s_branch_threshold_warn" % execution_prefix) == 0:
+        logger.warn("%s_branch_threshold_warn is 0 and branch coverage will not be checked", execution_prefix)
+
+    if project.get_property("%s_branch_partial_threshold_warn" % execution_prefix) == 0:
+        logger.warn("%s_branch_partial_threshold_warn is 0 and partial branch coverage will not be checked",
+                    execution_prefix)
 
     logger.debug("Forking process to do %s analysis", execution_name)
     exit_code, _ = fork_process(target=do_coverage,
@@ -92,31 +101,41 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
     coverage = coverage_factory(cover_pylib=False, branch=True, source=[source_tree_path])
 
     try:
-        project.set_property('__running_coverage',
-                             True)  # tell other plugins that we are not really unit testing right now
-        _start_coverage(coverage)
+        _start_coverage(project, coverage)
 
         if shortest_plan:
             reactor.execute_task_shortest_plan(target_task)
         else:
             reactor.execute_task(target_task)
     finally:
-        _stop_coverage(coverage)
-        project.set_property('__running_coverage', False)
+        _stop_coverage(project, coverage)
 
-    coverage_too_low = False
-    threshold = project.get_property("%s_threshold_warn" % execution_prefix)
-    exceptions = project.get_property("%s_exceptions" % execution_prefix)
+    module_exceptions = project.get_property("%s_exceptions" % execution_prefix)
+    modules = _list_all_covered_modules(logger, module_names, module_exceptions)
 
-    report = {
-        "module_names": []
-    }
+    failure = _build_coverage_report(project, logger, execution_name, execution_prefix, coverage, modules)
+    if failure:
+        raise failure
 
-    sum_lines = 0
-    sum_lines_not_covered = 0
 
+def _start_coverage(project, coverage):
+    project.set_property('__running_coverage',
+                         True)  # tell other plugins that we are not really unit testing right now
+    coverage.erase()
+    coverage.start()
+
+
+def _stop_coverage(project, coverage):
+    coverage.stop()
+    project.set_property('__running_coverage', False)
+
+
+def _list_all_covered_modules(logger, module_names, modules_exceptions):
     modules = []
     for module_name in module_names:
+        if module_name in modules_exceptions:
+            logger.debug("Module '%s' was excluded", module_name)
+            continue
         try:
             module = sys.modules[module_name]
         except KeyError:
@@ -130,38 +149,87 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
 
         if module not in modules:
             modules.append(module)
+    return modules
 
-        module_report_data = build_module_report(coverage, module)
-        should_ignore_module = module_name in exceptions
 
-        if not should_ignore_module:
-            sum_lines += module_report_data[0]
-            sum_lines_not_covered += module_report_data[2]
+def _build_module_report(coverage, module):
+    return ModuleCoverageReport(coverage._analyze(module))
+
+
+def _build_coverage_report(project, logger, execution_name, execution_prefix, coverage, modules):
+    coverage_too_low = False
+    branch_coverage_too_low = False
+    branch_partial_coverage_too_low = False
+    threshold = project.get_property("%s_threshold_warn" % execution_prefix)
+    branch_threshold = project.get_property("%s_branch_threshold_warn" % execution_prefix)
+    branch_partial_threshold = project.get_property("%s_branch_partial_threshold_warn" % execution_prefix)
+
+    report = {
+        "module_names": []
+    }
+
+    sum_lines = 0
+    sum_lines_not_covered = 0
+    sum_branches = 0
+    sum_branches_missing = 0
+    sum_branches_partial = 0
+
+    for module in modules:
+        module_name = module.__name__
+
+        module_report_data = _build_module_report(coverage, module)
+
+        sum_lines += module_report_data.n_lines_total
+        sum_lines_not_covered += module_report_data.n_lines_missing
+        sum_branches += module_report_data.n_branches
+        sum_branches_missing += module_report_data.n_branches_missing
+        sum_branches_partial += module_report_data.n_branches_partial
 
         module_report = {
             "module": module_name,
-            "coverage": module_report_data[4],
-            "sum_lines": module_report_data[0],
-            "lines": module_report_data[1],
-            "sum_lines_not_covered": module_report_data[2],
-            "lines_not_covered": module_report_data[3],
+            "coverage": module_report_data.code_coverage,
+            "sum_lines": module_report_data.n_lines_total,
+            "lines": module_report_data.lines_total,
+            "sum_lines_not_covered": module_report_data.n_lines_missing,
+            "lines_not_covered": module_report_data.lines_missing,
+            "branches": module_report_data.n_branches,
+            "branches_partial": module_report_data.n_branches_partial,
+            "branches_missing": module_report_data.n_branches_missing
         }
 
         logger.debug("Module coverage report: %s", module_report)
         report["module_names"].append(module_report)
-        if module_report_data[4] < threshold:
-            msg = "Test coverage below %2d%% for %s: %2d%%" % (threshold, module_name, module_report_data[4])
-            if not should_ignore_module:
-                logger.warn(msg)
-                coverage_too_low = True
-            else:
-                logger.info(msg)
+        if module_report_data.code_coverage < threshold:
+            msg = "Test coverage below %2d%% for %s: %2d%%" % (threshold, module_name, module_report_data.code_coverage)
+            logger.warn(msg)
+            coverage_too_low = True
+        if module_report_data.branch_coverage < branch_threshold:
+            msg = "Branch coverage below %2d%% for %s: %2d%%" % (
+                branch_threshold, module_name, module_report_data.branch_coverage)
+            logger.warn(msg)
+            branch_coverage_too_low = True
+
+        if module_report_data.branch_partial_coverage < branch_partial_threshold:
+            msg = "Partial branch coverage below %2d%% for %s: %2d%%" % (
+                branch_partial_threshold, module_name, module_report_data.branch_partial_coverage)
+            logger.warn(msg)
+            branch_partial_coverage_too_low = True
 
     if sum_lines == 0:
-        overall_coverage = 0
+        overall_coverage = 100
     else:
         overall_coverage = (sum_lines - sum_lines_not_covered) * 100 / sum_lines
+
+    if sum_branches == 0:
+        overall_branch_coverage = 100
+        overall_branch_partial_coverage = 100
+    else:
+        overall_branch_coverage = (sum_branches - sum_branches_missing) * 100 / sum_branches
+        overall_branch_partial_coverage = (sum_branches - sum_branches_partial) * 100 / sum_branches
+
     report["overall_coverage"] = overall_coverage
+    report["overall_branch_coverage"] = overall_branch_coverage
+    report["overall_branch_partial_coverage"] = overall_branch_partial_coverage
 
     if overall_coverage < threshold:
         logger.warn("Overall %s is below %2d%%: %2d%%", execution_name, threshold, overall_coverage)
@@ -169,56 +237,49 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
     else:
         logger.info("Overall %s is %2d%%", execution_name, overall_coverage)
 
+    if overall_branch_coverage < branch_threshold:
+        logger.warn("Overall %s branch coverage is below %2d%%: %2d%%", execution_name, branch_threshold,
+                    overall_branch_coverage)
+        branch_coverage_too_low = True
+    else:
+        logger.info("Overall %s branch coverage is %2d%%", execution_name, overall_branch_coverage)
+
+    if overall_branch_partial_coverage < branch_partial_threshold:
+        logger.warn("Overall %s partial branch coverage is below %2d%%: %2d%%", execution_name,
+                    branch_partial_threshold, overall_branch_partial_coverage)
+        branch_partial_coverage_too_low = True
+    else:
+        logger.info("Overall %s partial branch coverage is %2d%%", execution_name, overall_branch_partial_coverage)
+
     project.write_report("%s.json" % execution_prefix, render_report(report))
 
     _write_summary_report(coverage, project, modules, execution_prefix, execution_name)
 
     if coverage_too_low and project.get_property("%s_break_build" % execution_prefix):
-        raise BuildFailedException("Test coverage for at least one module is below %d%%", threshold)
-
-
-def _start_coverage(coverage):
-    coverage.erase()
-    coverage.start()
-
-
-def _stop_coverage(coverage):
-    coverage.stop()
-
-
-def build_module_report(coverage, module):
-    analysis_result = coverage.analysis(module)
-
-    lines_total = len(analysis_result[1])
-    lines_not_covered = len(analysis_result[2])
-    lines_covered = lines_total - lines_not_covered
-
-    if lines_total == 0:
-        code_coverage = 100
-    elif lines_covered == 0:
-        code_coverage = 0
-    else:
-        code_coverage = lines_covered * 100 / lines_total
-
-    return (lines_total, analysis_result[1],
-            lines_not_covered, analysis_result[2],
-            code_coverage)
+        return BuildFailedException("Test coverage for at least one module is below %d%%", threshold)
+    if branch_coverage_too_low and project.get_property("%s_break_build" % execution_prefix):
+        return BuildFailedException("Test branch coverage for at least one module is below %d%%", branch_threshold)
+    if branch_partial_coverage_too_low and project.get_property("%s_break_build" % execution_prefix):
+        return BuildFailedException("Test partial branch coverage for at least one module is below %d%%",
+                                    branch_partial_threshold)
 
 
 def _write_summary_report(coverage, project, modules, execution_prefix, execution_name):
     from coverage import CoverageException
 
     summary = StringIO()
-    coverage.report(modules, file=summary)
     try:
-        coverage.xml_report(modules, outfile=project.expand_path("$dir_reports/%s.xml" % execution_prefix))
-        coverage.html_report(modules, directory=project.expand_path("$dir_reports/%s_html" % execution_prefix),
-                             title=execution_name)
-        coverage.save()
-    except CoverageException:
-        pass  # coverage raises when there is no data
-    project.write_report(execution_prefix, summary.getvalue())
-    summary.close()
+        coverage.report(modules, file=summary)
+        try:
+            coverage.xml_report(modules, outfile=project.expand_path("$dir_reports/%s.xml" % execution_prefix))
+            coverage.html_report(modules, directory=project.expand_path("$dir_reports/%s_html" % execution_prefix),
+                                 title=execution_name)
+            coverage.save()
+        except CoverageException:
+            pass  # coverage raises when there is no data
+        project.write_report(execution_prefix, summary.getvalue())
+    finally:
+        summary.close()
 
 
 def _discover_modules_to_cover(project):
@@ -306,3 +367,32 @@ def _get_system_assets():
                 break
 
     return packages, modules
+
+
+class ModuleCoverageReport(object):
+    def __init__(self, coverage_analysis):
+        self.lines_total = sorted(coverage_analysis.statements)
+        self.lines_excluded = sorted(coverage_analysis.excluded)
+        self.lines_missing = sorted(coverage_analysis.missing)
+        numbers = coverage_analysis.numbers
+        self.n_lines_total = numbers.n_statements
+        self.n_lines_excluded = numbers.n_excluded
+        self.n_lines_missing = numbers.n_missing
+        self.n_lines_covered = self.n_lines_total - self.n_lines_missing
+        self.n_branches = numbers.n_branches
+        self.n_branches_partial = numbers.n_partial_branches
+        self.n_branches_missing = numbers.n_missing_branches
+        self.n_branches_covered = self.n_branches - self.n_branches_missing
+        self.n_branches_partial_covered = self.n_branches - self.n_branches_partial
+
+        if self.n_lines_total == 0:
+            self.code_coverage = 100
+        else:
+            self.code_coverage = self.n_lines_covered * 100 / self.n_lines_total
+
+        if self.n_branches == 0:
+            self.branch_coverage = 100
+            self.branch_partial_coverage = 100
+        else:
+            self.branch_coverage = self.n_branches_covered * 100 / self.n_branches
+            self.branch_partial_coverage = self.n_branches_partial_covered * 100 / self.n_branches
