@@ -17,15 +17,16 @@
 #   limitations under the License.
 
 import unittest
+
 from mock import Mock, call, patch
 
 from pybuilder.plugins.python.python_plugin_helper import (log_report,
                                                            discover_affected_files,
+                                                           discover_affected_dirs,
                                                            execute_tool_on_source_files)
 
 
 class LogReportsTest(unittest.TestCase):
-
     def test_should_not_warn_when_report_lines_is_empty(self):
         logger = Mock()
         log_report(logger, 'name', [])
@@ -41,7 +42,6 @@ class LogReportsTest(unittest.TestCase):
 
 
 class DiscoverAffectedFilesTest(unittest.TestCase):
-
     @patch('pybuilder.plugins.python.python_plugin_helper.discover_python_files')
     def test_should_discover_source_files_when_test_sources_not_included(self, discover_python_files):
         project = Mock()
@@ -78,13 +78,15 @@ class DiscoverAffectedFilesTest(unittest.TestCase):
         discover_files_matching.assert_called_with('dir_source_main_scripts', '*')
 
     @patch('pybuilder.plugins.python.python_plugin_helper.discover_python_files')
-    def test_should_discover_source_files_when_test_sources_are_included_and_only_unittests(self, discover_python_files):
+    def test_should_discover_source_files_when_test_sources_are_included_and_only_unittests(self,
+                                                                                            discover_python_files):
         project = Mock()
 
         def get_property(property):
             if property == 'dir_source_integrationtest_python':
                 return None
             return property
+
         project.get_property.side_effect = get_property
 
         discover_affected_files(True, False, project)
@@ -94,13 +96,15 @@ class DiscoverAffectedFilesTest(unittest.TestCase):
                           call('dir_source_unittest_python')])
 
     @patch('pybuilder.plugins.python.python_plugin_helper.discover_python_files')
-    def test_should_discover_source_files_when_test_sources_are_included_and_only_integrationtests(self, discover_python_files):
+    def test_should_discover_source_files_when_test_sources_are_included_and_only_integrationtests(self,
+                                                                                                   discover_python_files):
         project = Mock()
 
         def get_property(property):
             if property == 'dir_source_unittest_python':
                 return None
             return property
+
         project.get_property.side_effect = get_property
 
         discover_affected_files(True, False, project)
@@ -117,6 +121,7 @@ class DiscoverAffectedFilesTest(unittest.TestCase):
             if property == 'dir_source_main_python':
                 return property
             return None
+
         project.get_property.side_effect = get_property
 
         discover_affected_files(True, False, project)
@@ -125,8 +130,79 @@ class DiscoverAffectedFilesTest(unittest.TestCase):
                          [call('dir_source_main_python')])
 
 
-class ExecuteToolOnSourceFilesTest(unittest.TestCase):
+class DiscoverAffectedDirsTest(unittest.TestCase):
+    def test_should_discover_source_dirs_when_test_sources_not_included(self):
+        project = Mock()
+        project.get_property.return_value = 'source_directory'
 
+        files = discover_affected_dirs(False, False, project)
+        self.assertEqual(files, ['source_directory'])
+
+    def test_should_discover_source_dirs_when_test_sources_are_included(self):
+        project = Mock()
+
+        project.get_property.side_effect = lambda _property: _property
+
+        files = discover_affected_dirs(True, False, project)
+
+        self.assertEqual(project.get_property.call_args_list,
+                         [call('dir_source_main_python'),
+                          call('dir_source_unittest_python'),
+                          call('dir_source_unittest_python'),
+                          call('dir_source_integrationtest_python'),
+                          call('dir_source_integrationtest_python')])
+        self.assertEquals(files,
+                          ['dir_source_main_python', 'dir_source_unittest_python', 'dir_source_integrationtest_python'])
+
+    def test_should_discover_source_dirs_when_test_sources_are_included_no_unittests(self):
+        project = Mock()
+
+        project.get_property.side_effect = lambda \
+            _property: _property if _property != 'dir_source_unittest_python' else None
+
+        files = discover_affected_dirs(True, False, project)
+
+        self.assertEqual(project.get_property.call_args_list,
+                         [call('dir_source_main_python'),
+                          call('dir_source_unittest_python'),
+                          call('dir_source_integrationtest_python'),
+                          call('dir_source_integrationtest_python')])
+        self.assertEquals(files,
+                          ['dir_source_main_python', 'dir_source_integrationtest_python'])
+
+    def test_should_discover_source_dirs_when_test_sources_are_included_no_integrationtests(self):
+        project = Mock()
+
+        project.get_property.side_effect = lambda \
+            _property: _property if _property != 'dir_source_integrationtest_python' else None
+
+        files = discover_affected_dirs(True, False, project)
+
+        self.assertEqual(project.get_property.call_args_list,
+                         [call('dir_source_main_python'),
+                          call('dir_source_unittest_python'),
+                          call('dir_source_unittest_python'),
+                          call('dir_source_integrationtest_python')])
+        self.assertEquals(files,
+                          ['dir_source_main_python', 'dir_source_unittest_python'])
+
+    def test_should_discover_source_dirs_when_script_sources_are_included(self):
+        project = Mock()
+
+        project.get_property.side_effect = lambda \
+            _property: _property if _property != 'dir_source_integrationtest_python' else None
+
+        files = discover_affected_dirs(False, True, project)
+
+        self.assertEqual(project.get_property.call_args_list,
+                         [call('dir_source_main_python'),
+                          call('dir_source_main_scripts'),
+                          call('dir_source_main_scripts')])
+        self.assertEquals(files,
+                          ['dir_source_main_python', 'dir_source_main_scripts'])
+
+
+class ExecuteToolOnSourceFilesTest(unittest.TestCase):
     @patch('pybuilder.plugins.python.python_plugin_helper.log_report')
     @patch('pybuilder.plugins.python.python_plugin_helper.read_file')
     @patch('pybuilder.plugins.python.python_plugin_helper.execute_command')
@@ -140,6 +216,20 @@ class ExecuteToolOnSourceFilesTest(unittest.TestCase):
         execute_tool_on_source_files(project, 'name', 'foo --bar')
 
         execute.assert_called_with(['foo --bar', 'file1', 'file2'], '/path/to/report')
+
+    @patch('pybuilder.plugins.python.python_plugin_helper.log_report')
+    @patch('pybuilder.plugins.python.python_plugin_helper.read_file')
+    @patch('pybuilder.plugins.python.python_plugin_helper.execute_command')
+    @patch('pybuilder.plugins.python.python_plugin_helper.discover_affected_dirs')
+    def test_should_execute_tool_on_source_dirs(self, affected,
+                                                execute, read, log):
+        project = Mock()
+        project.expand_path.return_value = '/path/to/report'
+        affected.return_value = ['/dir1', '/dir2']
+
+        execute_tool_on_source_files(project, 'name', 'foo --bar', include_dirs_only=True)
+
+        execute.assert_called_with(['foo --bar', '/dir1', '/dir2'], '/path/to/report')
 
     @patch('pybuilder.plugins.python.python_plugin_helper.log_report')
     @patch('pybuilder.plugins.python.python_plugin_helper.read_file')

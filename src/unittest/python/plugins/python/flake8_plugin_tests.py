@@ -19,6 +19,7 @@ class FlakePluginInitializationTests(TestCase):
         expected_properties = {
             "flake8_break_build": True,
             "flake8_max_line_length": 80,
+            "flake8_include_patterns": "*.py",
             "flake8_exclude_patterns": ".svn",
             "flake8_include_test_sources": True,
             "flake8_include_scripts": True
@@ -33,6 +34,8 @@ class FlakePluginInitializationTests(TestCase):
                 self.project.get_property("flake8_break_build"), True)
             self.assertEquals(
                 self.project.get_property("flake8_max_line_length"), 80)
+            self.assertEquals(
+                self.project.get_property("flake8_include_patterns"), "*.py")
             self.assertEquals(
                 self.project.get_property("flake8_exclude_patterns"), ".svn")
             self.assertEquals(

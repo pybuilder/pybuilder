@@ -39,6 +39,7 @@ def initialize_flake8_plugin(project):
     project.build_depends_on("flake8")
     project.set_property_if_unset("flake8_break_build", False)
     project.set_property_if_unset("flake8_max_line_length", 120)
+    project.set_property_if_unset("flake8_include_patterns", None)
     project.set_property_if_unset("flake8_exclude_patterns", None)
     project.set_property_if_unset("flake8_include_test_sources", False)
     project.set_property_if_unset("flake8_include_scripts", False)
@@ -66,6 +67,7 @@ def analyze(project, logger):
     command = ExternalCommandBuilder('flake8', project)
     command.use_argument('--ignore={0}').formatted_with_truthy_property('flake8_ignore')
     command.use_argument('--max-line-length={0}').formatted_with_property('flake8_max_line_length')
+    command.use_argument('--filename={0}').formatted_with_truthy_property('flake8_include_patterns')
     command.use_argument('--exclude={0}').formatted_with_truthy_property('flake8_exclude_patterns')
 
     include_test_sources = project.get_property("flake8_include_test_sources")
@@ -73,7 +75,8 @@ def analyze(project, logger):
 
     result = command.run_on_production_source_files(logger,
                                                     include_test_sources=include_test_sources,
-                                                    include_scripts=include_scripts)
+                                                    include_scripts=include_scripts,
+                                                    include_dirs_only=True)
 
     count_of_warnings = len(result.report_lines)
     count_of_errors = len(result.error_report_lines)

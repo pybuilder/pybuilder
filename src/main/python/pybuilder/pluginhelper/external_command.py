@@ -21,7 +21,6 @@ from pybuilder.utils import read_file, execute_command
 
 
 class ExternalCommandResult(object):
-
     def __init__(self, exit_code, report_file, report_lines, error_report_file, error_report_lines):
         self.exit_code = exit_code
         self.report_file = report_file
@@ -31,7 +30,6 @@ class ExternalCommandResult(object):
 
 
 class ExternalCommandBuilder(object):
-
     def __init__(self, command_name, project):
         self.command_name = command_name
         self.parts = [command_name]
@@ -73,13 +71,15 @@ class ExternalCommandBuilder(object):
                                      outfile_name, outfile_lines,
                                      error_file_name, error_file_lines)
 
-    def run_on_production_source_files(self, logger, include_test_sources=False, include_scripts=False):
+    def run_on_production_source_files(self, logger, include_test_sources=False, include_scripts=False,
+                                       include_dirs_only=False):
         execution_result = execute_tool_on_source_files(project=self.project,
                                                         name=self.command_name,
                                                         command_and_arguments=self.parts,
                                                         include_test_sources=include_test_sources,
                                                         include_scripts=include_scripts,
-                                                        logger=logger)
+                                                        logger=logger,
+                                                        include_dirs_only=include_dirs_only)
         exit_code, report_file = execution_result
         report_lines = read_file(report_file)
         error_report_file = '{0}.err'.format(report_file)  # TODO @mriehl not dry, execute_tool... should return this
