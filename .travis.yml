@@ -19,6 +19,7 @@ after_success:
 - coveralls --verbose
 before_deploy: "deactivate"
 deploy:
+  skip_cleanup: true
   provider: pypi
   user: pybuilder-travis
   password:
