@@ -17,13 +17,13 @@ script:
 - "./build.py -v -X analyze install"
 after_success:
 - coveralls --verbose
-before_deploy: "deactivate"
-deploy:
-  skip_cleanup: true
-  provider: pypi
-  user: pybuilder-travis
-  password:
-    secure: JAskIwGYoctaAyjNd6lzHCFIz1mC925L+JIkTqDRI6IWRlbCkR4mHpXW1NIJw2Q6A0SQbZaIhNeYpdf39hIoWsTQg2A1mRNW1NwstbMUcQRRVV55/uXtE9bBaQwVzv/6IAM0BWAqAlQnWXPgiunT2ebekGnZi2p7kwiMqsDZUzs=
-  on:
-    branch: master
-    repo: pybuilder/pybuilder
+#before_deploy: "deactivate"
+#deploy:
+#  skip_cleanup: true
+#  provider: pypi
+#  user: pybuilder-travis
+#  password:
+#    secure: ...
+#  on:
+#    branch: master
+#    repo: pybuilder/pybuilder
