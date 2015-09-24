@@ -1,25 +1,26 @@
-sudo: False
-
+sudo: false
 language: python
-
 python:
-  - "2.6"
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "pypy"
-
+- '2.6'
+- '2.7'
+- '3.3'
+- '3.4'
+- pypy
 branches:
   only:
-    - master
-    - doc/sphinxdoc
-
+  - master
+  - doc/sphinxdoc
 before_script:
-  - pip install coveralls
-  - ./build.py install_dependencies -v
-
+- pip install coveralls
+- "./build.py install_dependencies -v"
 script:
-  - ./build.py -v -X analyze install
-
+- "./build.py -v -X analyze install"
 after_success:
-  - coveralls --verbose
+- coveralls --verbose
+deploy:
+  provider: pypi
+  user: pybuilder-travis
+  password:
+    secure: JAskIwGYoctaAyjNd6lzHCFIz1mC925L+JIkTqDRI6IWRlbCkR4mHpXW1NIJw2Q6A0SQbZaIhNeYpdf39hIoWsTQg2A1mRNW1NwstbMUcQRRVV55/uXtE9bBaQwVzv/6IAM0BWAqAlQnWXPgiunT2ebekGnZi2p7kwiMqsDZUzs=
+  on:
+    repo: pybuilder/pybuilder

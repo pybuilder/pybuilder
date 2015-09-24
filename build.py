@@ -25,6 +25,7 @@ sys.path.insert(0, 'src/main/python')  # This is only necessary in PyBuilder sou
 
 from pybuilder import bootstrap
 from pybuilder.core import Author, init, use_bldsup, use_plugin
+from pybuilder.vcs import VCSRevision
 
 bootstrap()
 
@@ -73,7 +74,7 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            ]
 url = "http://pybuilder.github.io"
 license = "Apache License"
-version = "0.11.2.dev0"
+version = "0.11.2.dev" + VCSRevision().get_git_revision_count()
 
 default_task = ["analyze", "publish"]
 
