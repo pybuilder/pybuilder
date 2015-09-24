@@ -26,7 +26,7 @@ import shutil
 import sys
 from json import loads
 
-from mockito import when, verify, unstub, any
+from mockito import when, verify, unstub, any, mock
 
 import pybuilder.utils
 from pybuilder.utils import (GlobExpression,
@@ -353,7 +353,7 @@ class ForkTest(unittest.TestCase):
         def test_func():
             return "success"
 
-        val = fork_process(target=test_func)
+        val = fork_process(mock(), target=test_func)
 
         self.assertEquals(len(val), 2)
         self.assertEquals(val[0], 0)
@@ -363,12 +363,12 @@ class ForkTest(unittest.TestCase):
         def test_func(foo, bar):
             return "%s%s" % (foo, bar)
 
-        val = fork_process(target=test_func, kwargs={"foo": "foo", "bar": 10})
+        val = fork_process(mock(), target=test_func, kwargs={"foo": "foo", "bar": 10})
         self.assertEquals(len(val), 2)
         self.assertEquals(val[0], 0)
         self.assertEquals(val[1], "foo10")
 
-        val = fork_process(target=test_func, args=("foo", 20))
+        val = fork_process(mock(), target=test_func, args=("foo", 20))
         self.assertEquals(len(val), 2)
         self.assertEquals(val[0], 0)
         self.assertEquals(val[1], "foo20")
@@ -378,7 +378,7 @@ class ForkTest(unittest.TestCase):
             raise PyBuilderException("Test failure message")
 
         try:
-            val = fork_process(target=test_func)
+            val = fork_process(mock(), target=test_func)
             self.fail("should not have reached here, returned %s" % val)
         except:
             ex_type, ex, tb = sys.exc_info()
@@ -395,7 +395,7 @@ class ForkTest(unittest.TestCase):
             return FooError()
 
         try:
-            fork_process(target=test_func)
+            fork_process(mock(), target=test_func)
             self.fail("should not have reached here")
         except:
             ex_type, ex, tb = sys.exc_info()
@@ -413,7 +413,7 @@ class ForkTest(unittest.TestCase):
             raise FooError()
 
         try:
-            val = fork_process(target=test_func)
+            val = fork_process(mock(), target=test_func)
             self.fail("should not have reached here, returned %s" % val)
         except:
             ex_type, ex, tb = sys.exc_info()
@@ -436,7 +436,7 @@ class ForkTest(unittest.TestCase):
             raise FooError(Foo.bar)
 
         try:
-            val = fork_process(target=test_func)
+            val = fork_process(mock(), target=test_func)
             self.fail("should not have reached here, returned %s" % val)
         except:
             ex_type, ex, tb = sys.exc_info()

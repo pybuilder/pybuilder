@@ -27,7 +27,7 @@ import os
 from distutils import sysconfig
 
 from pybuilder.core import init, after, use_plugin
-from pybuilder.utils import discover_modules, render_report, fork_process
+from pybuilder.utils import discover_modules, render_report, fork_process, is_windows
 from pybuilder.errors import BuildFailedException
 
 use_plugin("python.core")
@@ -71,7 +71,8 @@ def run_coverage(project, logger, reactor, execution_prefix, execution_name, tar
                     execution_prefix)
 
     logger.debug("Forking process to do %s analysis", execution_name)
-    exit_code, _ = fork_process(target=do_coverage,
+    exit_code, _ = fork_process(logger,
+                                target=do_coverage,
                                 args=(
                                     project, logger, reactor, execution_prefix, execution_name,
                                     target_task, shortest_plan))
@@ -92,8 +93,9 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
     for module_name in module_names:
         logger.debug("Module '%s' coverage to be verified", module_name)
 
-    _delete_non_essential_modules()
-    __import__("pybuilder.plugins.python")  # Reimport self
+    if not is_windows():
+        _delete_non_essential_modules()
+        __import__("pybuilder.plugins.python")  # Reimport self
 
     # Starting fresh
     from coverage import coverage as coverage_factory

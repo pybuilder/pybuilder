@@ -60,7 +60,8 @@ def run_tests(project, logger, execution_prefix, execution_name):
     logger.info("Running %s", execution_name)
     if not project.get_property('__running_coverage'):
         logger.debug("Forking process to run %s", execution_name)
-        exit_code, _ = fork_process(target=do_run_tests,
+        exit_code, _ = fork_process(logger,
+                                    target=do_run_tests,
                                     args=(
                                         project, logger, execution_prefix, execution_name))
         if exit_code:
