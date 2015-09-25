@@ -96,6 +96,7 @@ def initialize(project):
     project.set_property("verbose", True)
 
     project.set_property("coverage_break_build", False)
+    project.set_property("coverage_reset_modules", True)
     project.get_property("coverage_exceptions").append("pybuilder.cli")
     project.get_property("coverage_exceptions").append("pybuilder.plugins.core_plugin")
 

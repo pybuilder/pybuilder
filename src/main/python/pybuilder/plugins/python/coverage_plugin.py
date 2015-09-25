@@ -43,6 +43,7 @@ def init_coverage_properties(project):
     project.set_property_if_unset("coverage_branch_partial_threshold_warn", 0)
     project.set_property_if_unset("coverage_break_build", True)
     project.set_property_if_unset("coverage_reload_modules", None)  # deprecated, unused
+    project.set_property_if_unset("coverage_reset_modules", False)
     project.set_property_if_unset("coverage_exceptions", [])
     project.set_property_if_unset("coverage_fork", None)  # deprecated, unused
 
@@ -88,12 +89,13 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
     It's best to simple let this method exit and the fork die rather than to try to recover.
     """
     source_tree_path = project.get_property("dir_source_main_python")
+    reset_modules = project.get_property("%s_reset_modules" % execution_prefix)
     module_names = _discover_modules_to_cover(project)
 
     for module_name in module_names:
         logger.debug("Module '%s' coverage to be verified", module_name)
 
-    if not is_windows():
+    if reset_modules and not is_windows():
         _delete_non_essential_modules()
         __import__("pybuilder.plugins.python")  # Reimport self
 
@@ -330,7 +332,7 @@ def _get_system_assets():
     @return: tuple(packages, modules) to ignore
     """
     canon_sys_path = [os.path.realpath(package_dir) for package_dir in sys.path]
-    std_lib = sysconfig.get_python_lib(standard_lib=True)
+    std_lib = os.path.realpath(sysconfig.get_python_lib(standard_lib=True))
     canon_sys_path = [package_dir for package_dir in canon_sys_path if package_dir.startswith(std_lib)]
 
     packages = []
