@@ -24,5 +24,6 @@ deploy:
   on:
     branch: master
     repo: pybuilder/pybuilder
+    python: '3.4'
   password:
     secure: QH11Nk1Mv6KVRr5L4z9dJfzDDxyUjkLJURWsJxYG0bGA8zxp7Tnfo1J5XDNRvT2bAxXSx0v5+C0y+0KE4z44z5wvE/hxHx9k+3PbETb1q1F1sVtWeA+i4cm7T7d4dh/9YfyfimcHNR/9U52qBpdSVjXqXcSzMzfgzhgFniGGJIU=
