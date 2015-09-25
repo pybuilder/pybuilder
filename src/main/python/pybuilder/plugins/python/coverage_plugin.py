@@ -307,9 +307,11 @@ def _delete_module(module_name, module):
 
 def _is_module_essential(module_name, sys_packages, sys_modules):
     if module_name in sys.builtin_module_names:
+        print("Essential (built-in) module '%s'" % module_name)
         return True
 
     if module_name in sys_modules:
+        print("Essential (sys module) module '%s'" % module_name)
         return True
 
     # Essential since we're in a fork for communicating exceptions back
@@ -318,8 +320,10 @@ def _is_module_essential(module_name, sys_packages, sys_modules):
 
     for package in sys_packages:
         if module_name == package or module_name.startswith(package + "."):
+            print("Essential (in sys_packages) module '%s'" % module_name)
             return True
 
+    print("Non-essential module '%s'" % module_name)
     return False
 
 
@@ -330,7 +334,7 @@ def _get_system_assets():
     @return: tuple(packages, modules) to ignore
     """
     canon_sys_path = [os.path.realpath(package_dir) for package_dir in sys.path]
-    std_lib = sysconfig.get_python_lib(standard_lib=True)
+    std_lib = os.path.realpath(sysconfig.get_python_lib(standard_lib=True))
     canon_sys_path = [package_dir for package_dir in canon_sys_path if package_dir.startswith(std_lib)]
 
     packages = []
