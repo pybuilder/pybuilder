@@ -334,8 +334,11 @@ def _get_system_assets():
     @return: tuple(packages, modules) to ignore
     """
     canon_sys_path = [os.path.realpath(package_dir) for package_dir in sys.path]
+    print("Original sys path: %s" % canon_sys_path)
     std_lib = os.path.realpath(sysconfig.get_python_lib(standard_lib=True))
+    print("Stdlib path: %s" % std_lib)
     canon_sys_path = [package_dir for package_dir in canon_sys_path if package_dir.startswith(std_lib)]
+    print("Stdlib sys path: %s" % canon_sys_path)
 
     packages = []
     package_dirs = []
