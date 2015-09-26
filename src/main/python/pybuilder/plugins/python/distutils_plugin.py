@@ -431,8 +431,6 @@ def build_string_from_array(arr, indent=12):
 def build_string_from_dict(d, indent=12):
     mapStrings = []
 
-    print d
-
     for k, v in d:
         mapStrings.append("'%s': '%s'" % (k, v))
 
