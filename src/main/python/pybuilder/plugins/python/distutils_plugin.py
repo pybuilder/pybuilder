@@ -48,27 +48,24 @@ from $module import setup
 
 if __name__ == '__main__':
     setup(
-          name = '$name',
-          version = '$version',
-          description = '''$summary''',
-          long_description = '''$description''',
-          author = "$author",
-          author_email = "$author_email",
-          license = '$license',
-          url = '$url',
-          scripts = $scripts,
-          packages = $packages,
-          py_modules = $modules,
-          classifiers = $classifiers,
-          entry_points={
-          'console_scripts':
-              [$console_scripts]
-          },
-          $data_files   #  data files
-          $package_data   # package data
-          $dependencies
-          $dependency_links
-          zip_safe=True
+        name = '$name',
+        version = '$version',
+        description = '''$summary''',
+        long_description = '''$description''',
+        author = "$author",
+        author_email = "$author_email",
+        license = '$license',
+        url = '$url',
+        scripts = $scripts,
+        packages = $packages,
+        py_modules = $modules,
+        classifiers = $classifiers,
+        entry_points = $console_scripts,
+        data_files = $data_files,
+        package_data = $package_data,
+        install_requires = $dependencies,
+        dependency_links = $dependency_links,
+        zip_safe=True
     )
 """)
 
@@ -107,7 +104,6 @@ def write_setup_script(project, logger):
 def render_setup_script(project):
     author = ", ".join(map(lambda a: a.name, project.authors))
     author_email = ", ".join(map(lambda a: a.email, project.authors))
-    console_scripts = project.get_property("distutils_console_scripts", [])
 
     template_values = {
         "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
@@ -120,10 +116,10 @@ def render_setup_script(project):
         "license": default(project.license),
         "url": default(project.url),
         "scripts": build_scripts_string(project),
-        "packages": str([package for package in project.list_packages()]),
-        "modules": str([module for module in project.list_modules()]),
-        "classifiers": project.get_property("distutils_classifiers"),
-        "console_scripts": ",".join(["'%s'" % mapping for mapping in console_scripts]),
+        "packages": build_packages_string(project),
+        "modules": build_modules_string(project),
+        "classifiers": build_classifiers_string(project),
+        "console_scripts": build_console_scripts_string(project),
         "data_files": build_data_files_string(project),
         "package_data": build_package_data_string(project),
         "dependencies": build_install_dependencies_string(project),
@@ -249,7 +245,7 @@ def flatten_and_quote(requirements_file):
 
 
 def format_single_dependency(dependency):
-    return '"%s%s"' % (dependency.name, build_dependency_version_string(dependency))
+    return '%s%s' % (dependency.name, build_dependency_version_string(dependency))
 
 
 def build_install_dependencies_string(project):
@@ -260,7 +256,7 @@ def build_install_dependencies_string(project):
         requirement for requirement in project.dependencies
         if isinstance(requirement, RequirementsFile)]
     if not dependencies and not requirements:
-        return ""
+        return "[]"
 
     dependencies = [format_single_dependency(dependency) for dependency in dependencies]
     requirements = [strip_comments(flatten_and_quote(requirement)) for requirement in requirements]
@@ -270,10 +266,11 @@ def build_install_dependencies_string(project):
 
     dependencies.extend(flattened_requirements_without_editables)
 
-    result = "install_requires = [ "
-    result += ", ".join(dependencies)
-    result += " ],"
-    return result
+    for i, dep in enumerate(dependencies):
+        if dep.startswith('"') and dep.endswith('"'):
+            dependencies[i] = dep[1:-1]
+
+    return build_string_from_array(dependencies)
 
 
 def build_dependency_links_string(project):
@@ -291,18 +288,19 @@ def build_dependency_links_string(project):
             [editable.replace("--editable ", "").replace("-e ", "") for editable in editables])
 
     if not dependency_links and not requirements:
-        return ""
+        return "[]"
 
     def format_single_dependency(dependency):
-        return '"%s"' % dependency.url
+        return '%s' % dependency.url
 
     all_dependency_links = [link for link in map(format_single_dependency, dependency_links)]
     all_dependency_links.extend(editable_links_from_requirements)
 
-    result = "dependency_links = [ "
-    result += ", ".join(all_dependency_links)
-    result += " ],"
-    return result
+    for i, dep in enumerate(all_dependency_links):
+        if dep.startswith('"') and dep.endswith('"'):
+            all_dependency_links[i] = dep[1:-1]
+
+    return build_string_from_array(all_dependency_links)
 
 
 def build_scripts_string(project):
@@ -312,32 +310,144 @@ def build_scripts_string(project):
     if scripts_dir:
         scripts = list(map(lambda s: os.path.join(scripts_dir, s), scripts))
 
-    return str(scripts)
+    if len(scripts) > 0:
+        return build_string_from_array(scripts)
+    else:
+        return '[]'
 
 
 def build_data_files_string(project):
+    indent = 8
+    """
+    data_files = [
+      ('bin', ['foo','bar','hhrm'])
+    ]
+    """
     data_files = project.files_to_install
-
     if not len(data_files):
-        return ""
+        return '[]'
 
-    return "data_files = %s," % str(data_files)
+    returnString = "[\n"
+
+    for dataType, dataFiles in data_files:
+        returnString += (" " * (indent+4)) + "('%s', ['" % dataType
+        returnString += "', '".join(dataFiles)
+        returnString += "']),\n"
+
+    returnString = returnString[:-2] + "\n"
+    returnString += " " * indent + "]"
+    return returnString
+    return build_string_from_array(data_files)
 
 
 def build_package_data_string(project):
+    indent = 8
+
+    sorted_keys = sorted(project.package_data.keys())
+
     package_data = project.package_data
     if package_data == {}:
-        return ""
-    package_data_string = "package_data = {"
+        return "{}"
 
-    sorted_keys = sorted(package_data.keys())
-    last_element = sorted_keys[-1]
+    returnString = "{\n"
 
-    for key in sorted_keys:
-        package_data_string += "'%s': %s" % (key, str(package_data[key]))
+    for pkgType in sorted_keys:
+        returnString += " " * (indent+4)
+        returnString += "'%s': " % pkgType
+        returnString += "['"
+        returnString += "', '".join(package_data[pkgType])
+        returnString += "'],\n"
 
-        if key is not last_element:
-            package_data_string += ", "
+    returnString = returnString[:-2] + "\n"
+    returnString += " " * indent + "}"
 
-    package_data_string += "},"
-    return package_data_string
+    return returnString
+
+    return build_string_from_dict(package_data)
+
+
+def build_packages_string(project):
+    pkgs = [pkg for pkg in project.list_packages()]
+    if len(pkgs) > 0:
+        return build_string_from_array(pkgs)
+    else:
+        return '[]'
+
+
+def build_modules_string(project):
+    mods = [mod for mod in project.list_modules()]
+    if len(mods) > 0:
+        return build_string_from_array(mods)
+    else:
+        return '[]'
+
+
+def build_console_scripts_string(project):
+    console_scripts = project.get_property('distutils_console_scripts', [])
+
+    if len(console_scripts) == 0:
+        return "{}"
+
+    indent = 12
+    string = "{'console_scripts': "
+    string += build_string_from_array(console_scripts, indent)
+    string += "}"
+
+    return string
+
+
+def build_classifiers_string(project):
+    classifiers = project.get_property('distutils_classifiers', [])
+    return build_string_from_array(classifiers, indent=12)
+
+
+def build_string_from_array(arr, indent=12):
+    returnString = ""
+
+    if len(arr) == 1:
+        if not isinstance(arr[0], (frozenset, list, set, tuple)):
+            if len(arr[0]) > 0:
+                returnString += "['%s']" % arr[0]
+        else:
+            if len(arr[0]) > 0:
+                returnString += "[" + build_string_from_array(arr[0], indent+4) + "]"
+    elif len(arr) > 1:
+        returnString = "[\n"
+
+        for item in arr:
+            if len(item) > 0:
+                if not isinstance(item, (frozenset, list, set, tuple)):
+                    returnString += (" " * indent) + "'" + item + "',\n"
+            else:
+                returnString += (" " * indent) + build_string_from_array(item, indent+4) + ",\n"
+
+        returnString = returnString[:-2] + "\n"
+        returnString += " " * (indent - 4)
+        returnString += "]"
+
+    return returnString
+
+
+def build_string_from_dict(d, indent=12):
+    mapStrings = []
+
+    print d
+
+    for k, v in d:
+        mapStrings.append("'%s': '%s'" % (k, v))
+
+    returnString = ""
+
+    if len(mapStrings) > 0:
+
+        joinString = ",\n"
+        joinString += " " * indent
+
+        returnString += "\n"
+        returnString += " " * indent
+        returnString += joinString.join(mapStrings)
+        returnString += "\n"
+        returnString += " " * (indent - 4)
+        returnString += "}"
+
+    return returnString

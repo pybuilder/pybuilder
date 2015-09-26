@@ -33,6 +33,7 @@ from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        build_dependency_links_string,
                                                        build_install_dependencies_string,
                                                        build_package_data_string,
+                                                       build_console_scripts_string,
                                                        default,
                                                        render_manifest_file,
                                                        build_scripts_string,
@@ -77,23 +78,23 @@ class InstallDependenciesTest(unittest.TestCase):
                 self.project.get_property("distutils_use_setuptools"), False)
 
     def test_should_return_empty_string_when_no_dependency_is_given(self):
-        self.assertEqual("", build_install_dependencies_string(self.project))
+        self.assertEqual("[]", build_install_dependencies_string(self.project))
 
     def test_should_return_single_dependency_string(self):
         self.project.depends_on("spam")
         self.assertEqual(
-            'install_requires = [ "spam" ],', build_install_dependencies_string(self.project))
+            "['spam']", build_install_dependencies_string(self.project))
 
     def test_should_return_single_dependency_string_with_version(self):
         self.project.depends_on("spam", "0.7")
         self.assertEqual(
-            'install_requires = [ "spam>=0.7" ],', build_install_dependencies_string(self.project))
+            "['spam>=0.7']", build_install_dependencies_string(self.project))
 
     def test_should_return_multiple_dependencies_string_with_versions(self):
         self.project.depends_on("spam", "0.7")
         self.project.depends_on("eggs")
         self.assertEqual(
-            'install_requires = [ "eggs", "spam>=0.7" ],', build_install_dependencies_string(self.project))
+            "[\n            'eggs',\n            'spam>=0.7'\n        ]", build_install_dependencies_string(self.project))
 
     def test_should_not_insert_url_dependency_into_install_requires(self):
         self.project.depends_on("spam")
@@ -101,12 +102,12 @@ class InstallDependenciesTest(unittest.TestCase):
             "pyassert", url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz")
 
         self.assertEqual(
-            'install_requires = [ "spam" ],', build_install_dependencies_string(self.project))
+            "['spam']", build_install_dependencies_string(self.project))
 
     def test_should_not_insert_default_version_operator_when_project_contains_operator_in_version(self):
         self.project.depends_on("spam", "==0.7")
         self.assertEqual(
-            'install_requires = [ "spam==0.7" ],', build_install_dependencies_string(self.project))
+            "['spam==0.7']", build_install_dependencies_string(self.project))
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     def test_should_quote_requirements(self, mock_open):
@@ -116,7 +117,7 @@ class InstallDependenciesTest(unittest.TestCase):
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
-            'install_requires = [ "foo", "bar" ],', build_install_dependencies_string(self.project))
+            "[\n            'foo',\n            'bar'\n        ]", build_install_dependencies_string(self.project))
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     def test_should_ignore_empty_requirement_lines(self, mock_open):
@@ -126,7 +127,7 @@ class InstallDependenciesTest(unittest.TestCase):
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
-            'install_requires = [ "foo", "bar" ],', build_install_dependencies_string(self.project))
+            "[\n            'foo',\n            'bar'\n        ]", build_install_dependencies_string(self.project))
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     def test_should_ignore_comments_from_requirements(self, mock_open):
@@ -136,7 +137,7 @@ class InstallDependenciesTest(unittest.TestCase):
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
-            'install_requires = [ "bar" ],', build_install_dependencies_string(self.project))
+            "['bar']", build_install_dependencies_string(self.project))
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     def test_should_ignore_comments_with_leading_space_from_requirements(self, mock_open):
@@ -146,7 +147,7 @@ class InstallDependenciesTest(unittest.TestCase):
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
-            'install_requires = [ "bar" ],', build_install_dependencies_string(self.project))
+            "['bar']", build_install_dependencies_string(self.project))
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     def test_should_ignore_editable_urls_from_requirements(self, mock_open):
@@ -157,7 +158,7 @@ class InstallDependenciesTest(unittest.TestCase):
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
-            'install_requires = [ "foo" ],', build_install_dependencies_string(self.project))
+            "['foo']", build_install_dependencies_string(self.project))
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     def test_should_ignore_expanded_editable_urls_from_requirements(self, mock_open):
@@ -168,7 +169,7 @@ class InstallDependenciesTest(unittest.TestCase):
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
-            'install_requires = [ "foo" ],', build_install_dependencies_string(self.project))
+            "['foo']", build_install_dependencies_string(self.project))
 
 
 class DependencyLinksTest(unittest.TestCase):
@@ -176,13 +177,13 @@ class DependencyLinksTest(unittest.TestCase):
         self.project = Project(".")
 
     def test_should_return_empty_string_when_no_link_dependency_is_given(self):
-        self.assertEqual("", build_dependency_links_string(self.project))
+        self.assertEqual("[]", build_dependency_links_string(self.project))
 
     def test_should_return_dependency_link(self):
         self.project.depends_on(
             "pyassert", url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz")
         self.assertEqual(
-            'dependency_links = [ "https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz" ],',
+            "['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz']",
             build_dependency_links_string(self.project))
 
     def test_should_return_dependency_links(self):
@@ -190,8 +191,9 @@ class DependencyLinksTest(unittest.TestCase):
                                 url="https://github.com/downloads/halimath/pyassert/pyassert1-0.2.2.tar.gz")
         self.project.depends_on("pyassert2",
                                 url="https://github.com/downloads/halimath/pyassert/pyassert2-0.2.2.tar.gz")
-        self.assertEqual('dependency_links = [ "https://github.com/downloads/halimath/pyassert/pyassert1-0.2.2.tar.gz",'
-                         ' "https://github.com/downloads/halimath/pyassert/pyassert2-0.2.2.tar.gz" ],',
+        self.assertEqual("[\n            'https://github.com/downloads/halimath/pyassert/pyassert1-0.2.2.tar.gz',\n"
+                         "            'https://github.com/downloads/halimath/pyassert/pyassert2-0.2.2.tar.gz'\n"
+                         "        ]",
                          build_dependency_links_string(self.project))
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -204,8 +206,9 @@ class DependencyLinksTest(unittest.TestCase):
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
-            'dependency_links = [ "git+https://github.com/someuser/someproject.git#egg=some_package",'
-            ' "svn+https://github.com/someuser/someproject#egg=some_package" ],',
+            "[\n            'git+https://github.com/someuser/someproject.git#egg=some_package',\n"
+            "            'svn+https://github.com/someuser/someproject#egg=some_package'\n"
+            "        ]",
             build_dependency_links_string(self.project))
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -218,8 +221,9 @@ class DependencyLinksTest(unittest.TestCase):
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
-            'dependency_links = [ "git+https://github.com/someuser/someproject.git#egg=some_package",'
-            ' "svn+https://github.com/someuser/someproject#egg=some_package" ],',
+            "[\n            'git+https://github.com/someuser/someproject.git#egg=some_package',\n"
+            "            'svn+https://github.com/someuser/someproject#egg=some_package'\n"
+            "        ]",
             build_dependency_links_string(self.project))
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -233,8 +237,9 @@ class DependencyLinksTest(unittest.TestCase):
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
-            'dependency_links = [ "git+https://github.com/davidhalter/jedi",'
-            ' "svn+https://github.com/someuser/someproject#egg=some_package" ],',
+            "[\n            'git+https://github.com/davidhalter/jedi',\n"
+            "            'svn+https://github.com/someuser/someproject#egg=some_package'\n"
+            "        ]",
             build_dependency_links_string(self.project))
 
 
@@ -257,7 +262,7 @@ class BuildDataFilesStringTest(unittest.TestCase):
         self.project = Project(".")
 
     def test_should_return_empty_data_files_string(self):
-        self.assertEqual("", build_data_files_string(self.project))
+        self.assertEqual("[]", build_data_files_string(self.project))
 
     def test_should_return_data_files_string_including_several_files(self):
         self.project.install_file("bin", "activate")
@@ -266,7 +271,7 @@ class BuildDataFilesStringTest(unittest.TestCase):
         self.project.install_file("bin", "ssh")
 
         self.assertEqual(
-            "data_files = [('bin', ['activate', 'command-stub', 'rsync', 'ssh'])],",
+            "[\n            ('bin', ['activate', 'command-stub', 'rsync', 'ssh'])\n        ]",
             build_data_files_string(self.project))
 
     def test_should_return_data_files_string_with_files_to_be_installed_in_several_destinations(self):
@@ -274,8 +279,10 @@ class BuildDataFilesStringTest(unittest.TestCase):
         self.project.install_file("/etc", "pyb.cfg")
         self.project.install_file("data", "pyb.dat")
         self.project.install_file("data", "howto.txt")
-        self.assertEqual("data_files = [('/usr/bin', ['pyb']), ('/etc', ['pyb.cfg']),"
-                         " ('data', ['pyb.dat', 'howto.txt'])],",
+        self.assertEqual("[\n            ('/usr/bin', ['pyb']),\n"
+                         "            ('/etc', ['pyb.cfg']),\n"
+                         "            ('data', ['pyb.dat', 'howto.txt'])\n"
+                         "        ]",
                          build_data_files_string(self.project))
 
 
@@ -284,21 +291,26 @@ class BuildPackageDataStringTest(unittest.TestCase):
         self.project = Project('.')
 
     def test_should_return_empty_package_data_string_when_no_files_to_include_given(self):
-        self.assertEqual('', build_package_data_string(self.project))
+        self.assertEqual('{}', build_package_data_string(self.project))
 
     def test_should_return_package_data_string_when_including_file(self):
         self.project.include_file("spam", "egg")
 
         self.assertEqual(
-            "package_data = {'spam': ['egg']},", build_package_data_string(self.project))
+            "{\n"
+            "            'spam': ['egg']\n"
+            "        }", build_package_data_string(self.project))
 
     def test_should_return_package_data_string_when_including_three_files(self):
         self.project.include_file("spam", "egg")
         self.project.include_file("ham", "eggs")
         self.project.include_file("monty", "python")
 
-        self.assertEqual("package_data = {'ham': ['eggs'], 'monty': ['python'], "
-                         "'spam': ['egg']},", build_package_data_string(self.project))
+        self.assertEqual("{\n"
+                         "            'ham': ['eggs'],\n"
+                         "            'monty': ['python'],\n"
+                         "            'spam': ['egg']\n"
+                         "        }", build_package_data_string(self.project))
 
     def test_should_return_package_data_string_with_keys_in_alphabetical_order(self):
         self.project.include_file("b", "beta")
@@ -314,10 +326,20 @@ class BuildPackageDataStringTest(unittest.TestCase):
         self.project.include_file("l", "lambda")
         self.project.include_file("x", "chi")
 
-        self.assertEqual("package_data = {'a': ['alpha'], 'b': ['beta'], 'd': ['delta'], "
-                         "'e': ['epsilon'], 'i': ['Iota'], 'k': ['Kappa'], 'l': ['lambda'], "
-                         "'m': ['Mu'], 'p': ['psi'], 't': ['theta'], 'x': ['chi'], "
-                         "'z': ['Zeta']},", build_package_data_string(self.project))
+        self.assertEqual("{\n"
+                         "            'a': ['alpha'],\n"
+                         "            'b': ['beta'],\n"
+                         "            'd': ['delta'],\n"
+                         "            'e': ['epsilon'],\n"
+                         "            'i': ['Iota'],\n"
+                         "            'k': ['Kappa'],\n"
+                         "            'l': ['lambda'],\n"
+                         "            'm': ['Mu'],\n"
+                         "            'p': ['psi'],\n"
+                         "            't': ['theta'],\n"
+                         "            'x': ['chi'],\n"
+                         "            'z': ['Zeta']\n"
+                         "        }", build_package_data_string(self.project))
 
 
 class RenderSetupScriptTest(PyBuilderTestCase):
@@ -344,37 +366,55 @@ class RenderSetupScriptTest(PyBuilderTestCase):
         self.project.set_property("dir_dist_scripts", 'scripts')
         actual_build_script = build_scripts_string(self.project)
         self.assertEquals(
-            "['scripts/spam', 'scripts/eggs']", actual_build_script)
+            "[\n            'scripts/spam',\n"
+            "            'scripts/eggs'\n"
+            "        ]", actual_build_script)
 
     def test_should_render_setup_file(self):
         actual_setup_script = render_setup_script(self.project)
+
+        print actual_setup_script
+
         self.assert_line_by_line_equal("""#!/usr/bin/env python
 
 from distutils.core import setup
 
 if __name__ == '__main__':
     setup(
-          name = 'Spam and Eggs',
-          version = '1.2.3',
-          description = '''This is a simple integration-test for distutils plugin.''',
-          long_description = '''As you might have guessed we have nothing to say here.''',
-          author = "Udo Juettner, Michael Gruber",
-          author_email = "udo.juettner@gmail.com, aelgru@gmail.com",
-          license = 'WTFPL',
-          url = 'http://github.com/pybuilder/pybuilder',
-          scripts = ['spam', 'eggs'],
-          packages = ['spam', 'eggs'],
-          py_modules = ['spam', 'eggs'],
-          classifiers = ['Development Status :: 5 - Beta', 'Environment :: Console'],
-          entry_points={
-          'console_scripts':
-              []
-          },
-          data_files = [('dir', ['file1', 'file2'])],   #  data files
-          package_data = {'spam': ['eggs']},   # package data
-          install_requires = [ "sometool" ],
-          dependency_links = [ "https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz" ],
-          zip_safe=True
+        name = 'Spam and Eggs',
+        version = '1.2.3',
+        description = '''This is a simple integration-test for distutils plugin.''',
+        long_description = '''As you might have guessed we have nothing to say here.''',
+        author = "Udo Juettner, Michael Gruber",
+        author_email = "udo.juettner@gmail.com, aelgru@gmail.com",
+        license = 'WTFPL',
+        url = 'http://github.com/pybuilder/pybuilder',
+        scripts = [
+            'spam',
+            'eggs'
+        ],
+        packages = [
+            'spam',
+            'eggs'
+        ],
+        py_modules = [
+            'spam',
+            'eggs'
+        ],
+        classifiers = [
+            'Development Status :: 5 - Beta',
+            'Environment :: Console'
+        ],
+        entry_points = {},
+        data_files = [
+            ('dir', ['file1', 'file2'])
+        ],
+        package_data = {
+            'spam': ['eggs']
+        },
+        install_requires = ['sometool'],
+        dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
+        zip_safe=True
     )
 """, actual_setup_script)
 
@@ -382,13 +422,13 @@ if __name__ == '__main__':
         self.project.set_property("distutils_console_scripts", ["release = zest.releaser.release:main",
                                                                 "prerelease = zest.releaser.prerelease:main"])
 
-        actual_setup_script = render_setup_script(self.project)
+#        actual_setup_script = render_setup_script(self.project)
+        actual_setup_script = build_console_scripts_string(self.project)
 
-        self.assertTrue("""
-          entry_points={
-          'console_scripts':
-              ['release = zest.releaser.release:main','prerelease = zest.releaser.prerelease:main']
-          },""" in actual_setup_script)
+        self.assertEquals("{'console_scripts': [\n"
+                          "            'release = zest.releaser.release:main',\n"
+                          "            'prerelease = zest.releaser.prerelease:main'\n"
+                          "        ]}", actual_setup_script)
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     def test_should_render_runtime_dependencies_when_requirements_file_used(self, mock_open):
@@ -397,10 +437,12 @@ if __name__ == '__main__':
         handle.readlines.return_value = ["", "foo", "bar"]
         self.project.depends_on_requirements("requirements.txt")
 
-        actual_setup_script = render_setup_script(self.project)
-
-        self.assertTrue(
-            'install_requires = [ "sometool", "foo", "bar" ],' in actual_setup_script)
+        actual_setup_script = build_install_dependencies_string(self.project)
+        self.assertEquals("[\n"
+                          "            'sometool',\n"
+                          "            'foo',\n"
+                          "            'bar'\n"
+                          "        ]", actual_setup_script)
 
 
 class RenderManifestFileTest(unittest.TestCase):
