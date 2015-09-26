@@ -373,8 +373,6 @@ class RenderSetupScriptTest(PyBuilderTestCase):
     def test_should_render_setup_file(self):
         actual_setup_script = render_setup_script(self.project)
 
-        print actual_setup_script
-
         self.assert_line_by_line_equal("""#!/usr/bin/env python
 
 from distutils.core import setup
