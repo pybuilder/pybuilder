@@ -74,27 +74,32 @@ from setuptools import setup
 
 if __name__ == '__main__':
     setup(
-          name = 'integration-test',
-          version = '1.0.dev0',
-          description = '''''',
-          long_description = '''''',
-          author = "",
-          author_email = "",
-          license = '',
-          url = '',
-          scripts = [],
-          packages = ['spam'],
-          py_modules = ['standalone_module'],
-          classifiers = ['Development Status :: 3 - Alpha', 'Programming Language :: Python'],
-          entry_points={
-          'console_scripts':
-              []
-          },
-             #  data files
-             # package data
-          install_requires = [ "eggs==0.2.3", "spam", "awesome>=1.3.37", "foo==42" ],
-          dependency_links = [ "https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz" ],
-          zip_safe=True
+        name = 'integration-test',
+        version = '1.0.dev0',
+        description = '''''',
+        long_description = '''''',
+        author = "",
+        author_email = "",
+        license = '',
+        url = '',
+        scripts = [],
+        packages = ['spam'],
+        py_modules = ['standalone_module'],
+        classifiers = [
+            'Development Status :: 3 - Alpha',
+            'Programming Language :: Python'
+        ],
+        entry_points = {},
+        data_files = [],
+        package_data = {},
+        install_requires = [
+            'eggs==0.2.3',
+            'spam',
+            'awesome>=1.3.37',
+            'foo==42'
+        ],
+        dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
+        zip_safe=True
     )
 """)
 
