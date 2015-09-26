@@ -337,7 +337,6 @@ def build_data_files_string(project):
     returnString = returnString[:-2] + "\n"
     returnString += " " * indent + "]"
     return returnString
-    return build_string_from_array(data_files)
 
 
 def build_package_data_string(project):
@@ -362,8 +361,6 @@ def build_package_data_string(project):
     returnString += " " * indent + "}"
 
     return returnString
-
-    return build_string_from_dict(package_data)
 
 
 def build_packages_string(project):
