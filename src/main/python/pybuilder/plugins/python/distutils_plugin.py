@@ -19,6 +19,7 @@
 import string
 import subprocess
 import sys
+import collections
 
 import os
 
@@ -26,6 +27,12 @@ try:
     from StringIO import StringIO
 except ImportError as e:
     from io import StringIO
+
+
+try:
+    basestring
+except NameError:
+    basestring = str
 
 from pybuilder.core import (after,
                             before,
@@ -402,21 +409,23 @@ def build_string_from_array(arr, indent=12):
     returnString = ""
 
     if len(arr) == 1:
-        if not isinstance(arr[0], (frozenset, list, set, tuple)):
-            if len(arr[0]) > 0:
-                returnString += "['%s']" % arr[0]
-        else:
-            if len(arr[0]) > 0:
+        """
+        arrays with one item contained on one line
+        """
+        if len(arr[0]) > 0:
+            if not isinstance(arr[0], basestring) and isinstance(arr[0], collections.Iterable):
                 returnString += "[" + build_string_from_array(arr[0], indent+4) + "]"
+            else:
+                returnString += "['%s']" % arr[0]
     elif len(arr) > 1:
         returnString = "[\n"
 
         for item in arr:
             if len(item) > 0:
-                if not isinstance(item, (frozenset, list, set, tuple)):
+                if not isinstance(arr[0], basestring) and isinstance(arr[0], collections.Iterable):
+                    returnString += (" " * indent) + build_string_from_array(item, indent+4) + ",\n"
+                else:
                     returnString += (" " * indent) + "'" + item + "',\n"
-            else:
-                returnString += (" " * indent) + build_string_from_array(item, indent+4) + ",\n"
 
         returnString = returnString[:-2] + "\n"
         returnString += " " * (indent - 4)
