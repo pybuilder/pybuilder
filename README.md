@@ -3,7 +3,6 @@
 
 [![Build Status](https://secure.travis-ci.org/pybuilder/pybuilder.png?branch=master)](http://travis-ci.org/pybuilder/pybuilder)
 [![PyPI version](https://badge.fury.io/py/pybuilder.png)](https://warehouse.python.org/project/pybuilder/)
-[![Python versions](https://pypip.in/py_versions/pybuilder/badge.svg)](https://warehouse.python.org/project/pybuilder/)
 [![Coverage Status](https://coveralls.io/repos/pybuilder/pybuilder/badge.png?branch=master)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
 [![Ready in backlog](https://badge.waffle.io/pybuilder/pybuilder.png?label=ready&title=Ready)](https://waffle.io/pybuilder/pybuilder)
 [![Open bugs](https://badge.waffle.io/pybuilder/pybuilder.png?label=bug&title=Open%20Bugs)](https://waffle.io/pybuilder/pybuilder)
