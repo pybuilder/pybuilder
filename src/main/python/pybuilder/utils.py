@@ -39,6 +39,11 @@ try:
 except ImportError:
     from multiprocessing.queues import SimpleQueue
 
+try:
+    basestring
+except NameError:
+    basestring = str
+
 from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
 
 if sys.version_info[0] < 3:  # if major is less than 3
