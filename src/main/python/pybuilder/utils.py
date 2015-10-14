@@ -29,10 +29,10 @@ import time
 import traceback
 from subprocess import Popen, PIPE
 from multiprocessing import Process
-
 import fnmatch
 import os
 import re
+import collections
 
 try:
     from multiprocessing import SimpleQueue
@@ -586,3 +586,8 @@ else:
     from collections import OrderedDict
 
     odict = OrderedDict
+
+
+def is_notstr_iterable(obj):
+    """Checks if obj is iterable, but not a string"""
+    return not isinstance(obj, basestring) and isinstance(obj, collections.Iterable)

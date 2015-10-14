@@ -19,7 +19,6 @@
 import string
 import subprocess
 import sys
-import collections
 
 import os
 
@@ -29,11 +28,6 @@ except ImportError as e:
     from io import StringIO
 
 
-try:
-    basestring
-except NameError:
-    basestring = str
-
 from pybuilder.core import (after,
                             before,
                             use_plugin,
@@ -42,7 +36,7 @@ from pybuilder.core import (after,
                             RequirementsFile,
                             Dependency)
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import as_list, is_string
+from pybuilder.utils import as_list, is_string, is_notstr_iterable
 
 from .setuptools_plugin_helper import build_dependency_version_string
 
@@ -413,7 +407,7 @@ def build_string_from_array(arr, indent=12):
         arrays with one item contained on one line
         """
         if len(arr[0]) > 0:
-            if not isinstance(arr[0], basestring) and isinstance(arr[0], collections.Iterable):
+            if is_notstr_iterable(arr[0]):
                 returnString += "[" + build_string_from_array(arr[0], indent+4) + "]"
             else:
                 returnString += "['%s']" % arr[0]
@@ -422,7 +416,7 @@ def build_string_from_array(arr, indent=12):
 
         for item in arr:
             if len(item) > 0:
-                if not isinstance(arr[0], basestring) and isinstance(arr[0], collections.Iterable):
+                if is_notstr_iterable(item):
                     returnString += (" " * indent) + build_string_from_array(item, indent+4) + ",\n"
                 else:
                     returnString += (" " * indent) + "'" + item + "',\n"
