@@ -140,10 +140,18 @@ class ProjectManifestTests(unittest.TestCase):
 
     def test_should_raise_exception_when_given_glob_pattern_is_none(self):
         self.assertRaises(ValueError, self.project._manifest_include, None)
+        self.assertRaises(ValueError, self.project._manifest_include_directory, None, ['*'])
 
     def test_should_raise_exception_when_given_glob_pattern_is_empty_string(self):
+        empty_string = "       \n"
         self.assertRaises(
-            ValueError, self.project._manifest_include, "       \n")
+            ValueError, self.project._manifest_include, empty_string)
+        self.assertRaises(
+            ValueError, self.project._manifest_include_directory, empty_string, ['*'])
+        self.assertRaises(
+            ValueError, self.project._manifest_include_directory, 'spam', [])
+        self.assertRaises(
+            ValueError, self.project._manifest_include_directory, 'spam', [empty_string])
 
     def test_should_add_filename_to_list_of_included_files(self):
         self.project._manifest_include("spam")
@@ -155,6 +163,22 @@ class ProjectManifestTests(unittest.TestCase):
         self.project._manifest_include("yadt")
         self.assertEquals(
             ["spam", "egg", "yadt"], self.project.manifest_included_files)
+
+    def test_should_add_directory_to_list_of_includes(self):
+        self.project._manifest_include_directory('yadt', ('egg', 'spam', ))
+        self.assertEquals([('yadt', ('egg', 'spam', )), ],
+                          self.project.manifest_included_directories)
+
+    def test_should_add_directories_in_correct_order_to_list_of_includes(self):
+        self.project._manifest_include_directory('spam', ('*', ))
+        self.project._manifest_include_directory('egg', ('*', ))
+        self.project._manifest_include_directory('yadt/spam', ('*', ))
+
+        self.assertEquals([('spam', ('*', )),
+                           ('egg', ('*', )),
+                           ('yadt/spam', ('*', )),
+                           ],
+                          self.project.manifest_included_directories)
 
 
 class ProjectPackageDataTests(unittest.TestCase):
@@ -176,6 +200,18 @@ class ProjectPackageDataTests(unittest.TestCase):
     def test_should_raise_exception_when_filename_is_empty_string(self):
         self.assertRaises(
             ValueError, self.project.include_file, "eggs", "\t    \n")
+
+    def test_should_raise_exception_when_package_path_not_given(self):
+        self.assertRaises(ValueError, self.project.include_directory, None, "spam")
+
+    def test_should_raise_exception_when_package_path_is_empty_string(self):
+        self.assertRaises(ValueError, self.project.include_directory, "\t  \n", "spam")
+
+    def test_should_raise_exception_when_patterns_list_not_given(self):
+        self.assertRaises(ValueError, self.project.include_directory, "spam", None)
+
+    def test_should_raise_exception_when_patterns_list_is_empty_list(self):
+        self.assertRaises(ValueError, self.project.include_directory, "spam", ["\t   \n"])
 
     def test_should_package_data_dictionary_is_empty(self):
         self.assertEquals({}, self.project.package_data)

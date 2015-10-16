@@ -139,7 +139,7 @@ def render_setup_script(project):
 
 @after("package")
 def write_manifest_file(project, logger):
-    if len(project.manifest_included_files) == 0:
+    if len(project.manifest_included_files) == 0 and len(project.manifest_included_directories) == 0:
         logger.debug("No data to write into MANIFEST.in")
         return
 
@@ -160,6 +160,10 @@ def render_manifest_file(project):
 
     for included_file in project.manifest_included_files:
         manifest_content.write("include %s\n" % included_file)
+
+    for directory, pattern_list in project.manifest_included_directories:
+        patterns = ' '.join(pattern_list)
+        manifest_content.write("recursive-include %s %s\n" % (directory, patterns))
 
     return manifest_content.getvalue()
 
