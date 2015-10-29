@@ -322,11 +322,15 @@ def main(*args):
         return start_project()
 
     if options.list_tasks:
-        reactor.prepare_build(property_overrides=options.property_overrides,
-                              project_directory=options.project_directory)
+        try:
+            reactor.prepare_build(property_overrides=options.property_overrides,
+                                  project_directory=options.project_directory)
 
-        print_list_of_tasks(reactor, quiet=options.very_quiet)
-        return 0
+            print_list_of_tasks(reactor, quiet=options.very_quiet)
+            return 0
+        except PyBuilderException as e:
+            print_build_status(str(e), options, successful=False)
+            return 1
 
     if not options.very_quiet:
         print_styled_text_line(
