@@ -285,6 +285,8 @@ class Project(object):
         self._manifest_included_directories = []
         self._package_data = {}
         self._files_to_install = []
+        self._preinstall_script = None
+        self._postinstall_script = None
 
     def __str__(self):
         return "[Project name=%s basedir=%s]" % (self.name, self.basedir)
@@ -350,6 +352,20 @@ class Project(object):
 
     def build_depends_on_requirements(self, file):
         self._build_dependencies.add(RequirementsFile(file))
+
+    @property
+    def setup_preinstall_script(self):
+        return self._preinstall_script
+
+    def pre_install_script(self, script):
+        self._preinstall_script = script
+
+    @property
+    def setup_postinstall_script(self):
+        return self._postinstall_script
+
+    def post_install_script(self, script):
+        self._postinstall_script = script
 
     @property
     def manifest_included_files(self):

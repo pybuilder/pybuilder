@@ -21,6 +21,7 @@ import subprocess
 import sys
 
 import os
+import re
 
 try:
     from StringIO import StringIO
@@ -39,13 +40,30 @@ from pybuilder.errors import BuildFailedException
 from pybuilder.utils import as_list, is_string, is_notstr_iterable
 
 from .setuptools_plugin_helper import build_dependency_version_string
+from textwrap import dedent
 
 use_plugin("python.core")
 
+LEADING_TAB_RE = re.compile(r'^(\t*)')
 DATA_FILES_PROPERTY = "distutils_data_files"
 SETUP_TEMPLATE = string.Template("""#!/usr/bin/env python
 $remove_hardlink_capabilities_for_shared_filesystems
 from $module import setup
+from $module.command.install import install as _install
+
+class install(_install):
+    def pre_install_script(self):
+$preinstall_script
+
+    def post_install_script(self):
+$postinstall_script
+
+    def run(self):
+        self.pre_install_script()
+
+        _install.run(self)
+
+        self.post_install_script()
 
 if __name__ == '__main__':
     setup(
@@ -66,7 +84,8 @@ if __name__ == '__main__':
         package_data = $package_data,
         install_requires = $dependencies,
         dependency_links = $dependency_links,
-        zip_safe=True
+        zip_safe=True,
+        cmdclass={'install': install},
     )
 """)
 
@@ -128,7 +147,9 @@ def render_setup_script(project):
         "remove_hardlink_capabilities_for_shared_filesystems": (
             "import os\ndel os.link"
             if project.get_property("distutils_issue8876_workaround_enabled")
-            else "")
+            else ""),
+        "preinstall_script": _normalize_setup_post_pre_script(project.setup_preinstall_script or "pass"),
+        "postinstall_script": _normalize_setup_post_pre_script(project.setup_postinstall_script or "pass"),
     }
 
     return SETUP_TEMPLATE.substitute(template_values)
@@ -453,3 +474,18 @@ def build_string_from_dict(d, indent=12):
         returnString += "}"
 
     return returnString
+
+
+def _expand_leading_tabs(s, indent=4):
+    assert isinstance(s, str)
+
+    def replace_tabs(match):
+        return " " * (len(match.groups(0)) * indent)
+
+    return "".join([LEADING_TAB_RE.sub(replace_tabs, line) for line in s.splitlines(True)])
+
+
+def _normalize_setup_post_pre_script(s, indent=8):
+    indent_str = " " * indent
+    return "".join([indent_str + line if len(str.rstrip(line)) > 0 else line for line in
+                    dedent(_expand_leading_tabs(s)).splitlines(True)])

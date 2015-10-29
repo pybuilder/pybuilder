@@ -71,6 +71,21 @@ def spam ():
         self.assert_file_content(setup_py, """#!/usr/bin/env python
 
 from setuptools import setup
+from setuptools.command.install import install as _install
+
+class install(_install):
+    def pre_install_script(self):
+        pass
+
+    def post_install_script(self):
+        pass
+
+    def run(self):
+        self.pre_install_script()
+
+        _install.run(self)
+
+        self.post_install_script()
 
 if __name__ == '__main__':
     setup(
@@ -99,7 +114,8 @@ if __name__ == '__main__':
             'foo==42'
         ],
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
-        zip_safe=True
+        zip_safe=True,
+        cmdclass={'install': install},
     )
 """)
 
