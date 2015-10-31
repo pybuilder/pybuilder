@@ -48,27 +48,26 @@ from $module import setup
 
 if __name__ == '__main__':
     setup(
-          name = '$name',
-          version = '$version',
-          description = '''$summary''',
-          long_description = '''$description''',
-          author = "$author",
-          author_email = "$author_email",
-          license = '$license',
-          url = '$url',
-          scripts = $scripts,
-          packages = $packages,
-          py_modules = $modules,
-          classifiers = $classifiers,
-          entry_points={
-          'console_scripts':
-              [$console_scripts]
-          },
-          $data_files   #  data files
-          $package_data   # package data
-          $dependencies
-          $dependency_links
-          zip_safe=True
+        name='$name',
+        version='$version',
+        description='''$summary''',
+        long_description='''$description''',
+        author="$author",
+        author_email="$author_email",
+        license='$license',
+        url='$url',
+        scripts=$scripts,
+        packages=$packages,
+        py_modules=$modules,
+        classifiers=$classifiers,
+        entry_points={
+            'console_scripts': [$console_scripts]
+        },
+        $data_files  # data files
+        $package_data  # package data
+        $dependencies
+        $dependency_links
+        zip_safe=True
     )
 """)
 
