@@ -62,33 +62,37 @@ def spam ():
 
         self.assert_file_exists(setup_py)
         self.assert_file_permissions(0o755, setup_py)
+
         self.assert_file_content(setup_py, """#!/usr/bin/env python
 
 from setuptools import setup
 
 if __name__ == '__main__':
     setup(
-          name = 'integration-test',
-          version = '1.0.dev0',
-          description = '''''',
-          long_description = '''''',
-          author = "",
-          author_email = "",
-          license = '',
-          url = '',
-          scripts = [],
-          packages = ['spam'],
-          py_modules = ['standalone_module'],
-          classifiers = ['Development Status :: 3 - Alpha', 'Programming Language :: Python'],
-          entry_points={
-          'console_scripts':
-              []
-          },
-             #  data files
-             # package data
-          install_requires = [ "eggs==0.2.3", "spam" ],
-          dependency_links = [ "https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz" ],
-          zip_safe=True
+        name = 'integration-test',
+        version = '1.0.dev0',
+        description = '''''',
+        long_description = '''''',
+        author = "",
+        author_email = "",
+        license = '',
+        url = '',
+        scripts = [],
+        packages = ['spam'],
+        py_modules = ['standalone_module'],
+        classifiers = [
+            'Development Status :: 3 - Alpha',
+            'Programming Language :: Python'
+        ],
+        entry_points = {},
+        data_files = [],
+        package_data = {},
+        install_requires = [
+            'eggs==0.2.3',
+            'spam'
+        ],
+        dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
+        zip_safe=True
     )
 """)
 

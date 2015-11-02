@@ -29,15 +29,20 @@ import time
 import traceback
 from subprocess import Popen, PIPE
 from multiprocessing import Process
-
 import fnmatch
 import os
 import re
+import collections
 
 try:
     from multiprocessing import SimpleQueue
 except ImportError:
     from multiprocessing.queues import SimpleQueue
+
+try:
+    basestring
+except NameError:
+    basestring = str
 
 from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
 
@@ -586,3 +591,8 @@ else:
     from collections import OrderedDict
 
     odict = OrderedDict
+
+
+def is_notstr_iterable(obj):
+    """Checks if obj is iterable, but not a string"""
+    return not isinstance(obj, basestring) and isinstance(obj, collections.Iterable)
