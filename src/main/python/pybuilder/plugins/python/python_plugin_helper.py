@@ -59,13 +59,17 @@ def discover_affected_files(include_test_sources, include_scripts, project):
 def discover_affected_dirs(include_test_sources, include_scripts, project):
     files = [project.get_property("dir_source_main_python")]
     if include_test_sources:
-        if project.get_property("dir_source_unittest_python"):
+        if _if_property_set_and_dir_exists(project.get_property("dir_source_unittest_python")):
             files.append(project.get_property("dir_source_unittest_python"))
-        if project.get_property("dir_source_integrationtest_python"):
+        if _if_property_set_and_dir_exists(project.get_property("dir_source_integrationtest_python")):
             files.append(project.get_property("dir_source_integrationtest_python"))
-    if include_scripts and project.get_property("dir_source_main_scripts"):
+    if include_scripts and _if_property_set_and_dir_exists(project.get_property("dir_source_main_scripts")):
         files.append(project.get_property("dir_source_main_scripts"))
     return files
+
+
+def _if_property_set_and_dir_exists(property_value):
+    return property_value and os.path.isdir(property_value)
 
 
 def execute_tool_on_source_files(project, name, command_and_arguments, logger=None,
