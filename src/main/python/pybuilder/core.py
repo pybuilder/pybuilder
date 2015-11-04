@@ -109,12 +109,21 @@ def task(callable_or_string=None, description=None):
         return set_name_and_task_attribute
     else:
         if not description:
-            setattr(callable_or_string, TASK_ATTRIBUTE, True)
-            return callable_or_string
+            if callable_or_string is not None:
+                setattr(callable_or_string, TASK_ATTRIBUTE, True)
+                setattr(callable_or_string, NAME_ATTRIBUTE, callable_or_string.func_name)
+                return callable_or_string
+            else:
+                def set_task_and_description_attribute(callable):
+                    setattr(callable, TASK_ATTRIBUTE, True)
+                    setattr(callable, NAME_ATTRIBUTE, callable.func_name)
+                    return callable
+
+                return set_task_and_description_attribute
         else:
             def set_task_and_description_attribute(callable):
                 setattr(callable, TASK_ATTRIBUTE, True)
-                setattr(callable, NAME_ATTRIBUTE, callable_or_string)
+                setattr(callable, NAME_ATTRIBUTE, callable.func_name)
                 setattr(callable, DESCRIPTION_ATTRIBUTE, description)
                 return callable
 

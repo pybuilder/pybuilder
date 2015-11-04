@@ -490,6 +490,24 @@ class InitTest(unittest.TestCase):
 
 class TaskTests(unittest.TestCase):
 
+    def test_should_name_task_when_no_description_is_used(self):
+        @task
+        def task_without_description():
+            pass
+
+        self.assertEqual(task_without_description._python_builder_task, True)
+        self.assertEqual(task_without_description._python_builder_name,
+                         "task_without_description")
+
+    def test_should_name_task_when_decorator_called_with_nothing(self):
+        @task()
+        def another_task_without_description():
+            pass
+
+        self.assertEqual(another_task_without_description._python_builder_task, True)
+        self.assertEqual(another_task_without_description._python_builder_name,
+                         "another_task_without_description")
+
     def test_should_describe_task_when_description_decorator_is_used(self):
         @task
         @description("any-description")
@@ -524,6 +542,7 @@ class TaskTests(unittest.TestCase):
             pass
 
         self.assertEqual(task_with_description._python_builder_task, True)
+        self.assertEqual(task_with_description._python_builder_name, "task_with_description")
         self.assertEqual(task_with_description._python_builder_description, "any-description")
 
 
