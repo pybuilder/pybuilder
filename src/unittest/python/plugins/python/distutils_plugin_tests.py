@@ -42,7 +42,8 @@ from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        execute_distutils,
                                                        upload,
                                                        install_distribution,
-                                                       build_binary_distribution)
+                                                       build_binary_distribution,
+                                                       _normalize_setup_post_pre_script)
 
 
 class InstallDependenciesTest(unittest.TestCase):
@@ -376,6 +377,21 @@ class RenderSetupScriptTest(PyBuilderTestCase):
         self.assert_line_by_line_equal("""#!/usr/bin/env python
 
 from distutils.core import setup
+from distutils.core.command.install import install as _install
+
+class install(_install):
+    def pre_install_script(self):
+        pass
+
+    def post_install_script(self):
+        pass
+
+    def run(self):
+        self.pre_install_script()
+
+        _install.run(self)
+
+        self.post_install_script()
 
 if __name__ == '__main__':
     setup(
@@ -412,7 +428,71 @@ if __name__ == '__main__':
         },
         install_requires = ['sometool'],
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
-        zip_safe=True
+        zip_safe=True,
+        cmdclass={'install': install},
+    )
+""", actual_setup_script)
+
+    def test_should_render_setup_file_install_script_wrappers(self):
+        self.project.pre_install_script("pre_install_test()")
+        self.project.post_install_script("post_install_test()")
+        actual_setup_script = render_setup_script(self.project)
+        self.assert_line_by_line_equal("""#!/usr/bin/env python
+
+from distutils.core import setup
+from distutils.core.command.install import install as _install
+
+class install(_install):
+    def pre_install_script(self):
+        pre_install_test()
+
+    def post_install_script(self):
+        post_install_test()
+
+    def run(self):
+        self.pre_install_script()
+
+        _install.run(self)
+
+        self.post_install_script()
+
+if __name__ == '__main__':
+    setup(
+        name = 'Spam and Eggs',
+        version = '1.2.3',
+        description = '''This is a simple integration-test for distutils plugin.''',
+        long_description = '''As you might have guessed we have nothing to say here.''',
+        author = "Udo Juettner, Michael Gruber",
+        author_email = "udo.juettner@gmail.com, aelgru@gmail.com",
+        license = 'WTFPL',
+        url = 'http://github.com/pybuilder/pybuilder',
+        scripts = [
+            'spam',
+            'eggs'
+        ],
+        packages = [
+            'spam',
+            'eggs'
+        ],
+        py_modules = [
+            'spam',
+            'eggs'
+        ],
+        classifiers = [
+            'Development Status :: 5 - Beta',
+            'Environment :: Console'
+        ],
+        entry_points = {},
+        data_files = [
+            ('dir', ['file1', 'file2'])
+        ],
+        package_data = {
+            'spam': ['eggs']
+        },
+        install_requires = ['sometool'],
+        dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
+        zip_safe=True,
+        cmdclass={'install': install},
     )
 """, actual_setup_script)
 
@@ -420,7 +500,6 @@ if __name__ == '__main__':
         self.project.set_property("distutils_console_scripts", ["release = zest.releaser.release:main",
                                                                 "prerelease = zest.releaser.prerelease:main"])
 
-#        actual_setup_script = render_setup_script(self.project)
         actual_setup_script = build_console_scripts_string(self.project)
 
         self.assertEquals("{'console_scripts': [\n"
@@ -441,6 +520,23 @@ if __name__ == '__main__':
                           "            'foo',\n"
                           "            'bar'\n"
                           "        ]", actual_setup_script)
+
+    def test_normalize_setup_post_pre_script(self):
+        test_script = '''
+a
+    b
+        c
+    d
+e
+'''
+        expected_script = '''
+        a
+            b
+                c
+            d
+        e
+'''
+        self.assert_line_by_line_equal(expected_script, _normalize_setup_post_pre_script(test_script))
 
 
 class RenderManifestFileTest(unittest.TestCase):
