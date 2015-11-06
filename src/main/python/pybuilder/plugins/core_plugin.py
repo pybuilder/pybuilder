@@ -112,6 +112,6 @@ def print_module_path(project):
     print(project.expand_path("$dir_source_main_python"))
 
 
-@task(description="Print the script path")
+@task(description="Print the script path.")
 def print_scripts_path(project):
     print(project.expand_path("$dir_source_main_scripts"))
