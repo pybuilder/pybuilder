@@ -336,10 +336,7 @@ def build_scripts_string(project):
     if scripts_dir:
         scripts = list(map(lambda s: os.path.join(scripts_dir, s), scripts))
 
-    if len(scripts) > 0:
-        return build_string_from_array(scripts)
-    else:
-        return '[]'
+    return build_string_from_array(scripts)
 
 
 def build_data_files_string(project):
@@ -390,19 +387,11 @@ def build_package_data_string(project):
 
 
 def build_packages_string(project):
-    pkgs = [pkg for pkg in project.list_packages()]
-    if len(pkgs) > 0:
-        return build_string_from_array(pkgs)
-    else:
-        return '[]'
+    return build_string_from_array([pkg for pkg in project.list_packages()])
 
 
 def build_modules_string(project):
-    mods = [mod for mod in project.list_modules()]
-    if len(mods) > 0:
-        return build_string_from_array(mods)
-    else:
-        return '[]'
+    return build_string_from_array([mod for mod in project.list_modules()])
 
 
 def build_console_scripts_string(project):
@@ -425,7 +414,7 @@ def build_classifiers_string(project):
 
 
 def build_string_from_array(arr, indent=12):
-    returnString = ""
+    result = ""
 
     if len(arr) == 1:
         """
@@ -433,24 +422,26 @@ def build_string_from_array(arr, indent=12):
         """
         if len(arr[0]) > 0:
             if is_notstr_iterable(arr[0]):
-                returnString += "[" + build_string_from_array(arr[0], indent+4) + "]"
+                result += "[" + build_string_from_array(arr[0], indent + 4) + "]"
             else:
-                returnString += "['%s']" % arr[0]
+                result += "['%s']" % arr[0]
+        else:
+            result = '[[]]'
     elif len(arr) > 1:
-        returnString = "[\n"
+        result = "[\n"
 
         for item in arr:
-            if len(item) > 0:
                 if is_notstr_iterable(item):
-                    returnString += (" " * indent) + build_string_from_array(item, indent+4) + ",\n"
+                    result += (" " * indent) + build_string_from_array(item, indent + 4) + ",\n"
                 else:
-                    returnString += (" " * indent) + "'" + item + "',\n"
+                    result += (" " * indent) + "'" + item + "',\n"
+        result = result[:-2] + "\n"
+        result += " " * (indent - 4)
+        result += "]"
+    else:
+        result = '[]'
 
-        returnString = returnString[:-2] + "\n"
-        returnString += " " * (indent - 4)
-        returnString += "]"
-
-    return returnString
+    return result
 
 
 def build_string_from_dict(d, indent=12):
