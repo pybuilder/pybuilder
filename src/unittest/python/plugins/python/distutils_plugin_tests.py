@@ -27,7 +27,6 @@ import unittest
 
 from mock import patch, MagicMock
 
-from test_utils import PyBuilderTestCase
 from pybuilder.core import Project, Author, Logger
 from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        build_dependency_links_string,
@@ -43,7 +42,10 @@ from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        upload,
                                                        install_distribution,
                                                        build_binary_distribution,
-                                                       _normalize_setup_post_pre_script)
+                                                       _normalize_setup_post_pre_script,
+                                                       build_string_from_array,
+                                                       )
+from test_utils import PyBuilderTestCase
 
 
 class InstallDependenciesTest(unittest.TestCase):
@@ -95,7 +97,8 @@ class InstallDependenciesTest(unittest.TestCase):
         self.project.depends_on("spam", "0.7")
         self.project.depends_on("eggs")
         self.assertEqual(
-            "[\n            'eggs',\n            'spam>=0.7'\n        ]", build_install_dependencies_string(self.project))
+            "[\n            'eggs',\n            'spam>=0.7'\n        ]",
+            build_install_dependencies_string(self.project))
 
     def test_should_not_insert_url_dependency_into_install_requires(self):
         self.project.depends_on("spam")
@@ -537,6 +540,44 @@ e
         e
 '''
         self.assert_line_by_line_equal(expected_script, _normalize_setup_post_pre_script(test_script))
+
+
+class UtilityMethodTest(PyBuilderTestCase):
+    def test_build_string_from_array_empty(self):
+        self.assert_line_by_line_equal('[]', build_string_from_array([]))
+
+    def test_build_string_from_array_simple(self):
+        self.assert_line_by_line_equal("['a']", build_string_from_array(['a']))
+
+    def test_build_string_from_array_of_array_of_empty(self):
+        self.assert_line_by_line_equal('''[[]]''', build_string_from_array([[]]))
+
+    def test_build_string_from_array_of_array_single_element(self):
+        self.assert_line_by_line_equal('''[['a']]''', build_string_from_array([['a']]))
+
+    def test_build_string_from_array_of_array_multiple_elements(self):
+        self.assert_line_by_line_equal('''[[
+                'a',
+                'b'
+            ]]''', build_string_from_array([['a', 'b']]))
+
+    def test_build_string_from_array_of_arrays_single_element(self):
+        self.assert_line_by_line_equal('''[
+            ['a'],
+            ['b']
+        ]''', build_string_from_array([['a'], ['b']]))
+
+    def test_build_string_from_array_of_arrays_multiple_elements(self):
+        self.assert_line_by_line_equal('''[
+            [
+                'a',
+                'b'
+            ],
+            [
+                'c',
+                'd'
+            ]
+        ]''', build_string_from_array([['a', 'b'], ['c', 'd']]))
 
 
 class RenderManifestFileTest(unittest.TestCase):
