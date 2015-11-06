@@ -105,3 +105,13 @@ def publish():
 @description("Installs the published project.")
 def install():
     pass
+
+
+@task(description="Print the module path.")
+def print_module_path(project):
+    print(project.expand_path("$dir_source_main_python"))
+
+
+@task(description="Print the script path")
+def print_scripts_path(project):
+    print(project.expand_path("$dir_source_main_scripts"))
