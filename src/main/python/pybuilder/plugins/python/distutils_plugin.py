@@ -202,7 +202,7 @@ def install_distribution(project, logger):
     execute_distutils(project, logger, as_list("install"))
 
 
-@task("upload")
+@task("upload", description="Upload a project to PyPi.")
 def upload(project, logger):
     repository = project.get_property("$distutils_upload_repository")
     repository_args = []
