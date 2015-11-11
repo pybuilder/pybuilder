@@ -22,13 +22,13 @@
     build.py project descriptor.
 """
 
-import fnmatch
 import itertools
 import string
 import sys
+from datetime import datetime
 
+import fnmatch
 import os
-
 from os.path import sep as PATH_SEPARATOR
 
 from pybuilder.errors import MissingPropertyException
@@ -273,7 +273,7 @@ class Project(object):
 
     def __init__(self, basedir, version="1.0.dev0", name=None):
         self.name = name
-        self.version = version
+        self._version = version
         self.basedir = basedir
         if not self.name:
             self.name = os.path.basename(basedir)
@@ -299,6 +299,17 @@ class Project(object):
 
     def __str__(self):
         return "[Project name=%s basedir=%s]" % (self.name, self.basedir)
+
+    @property
+    def version(self):
+        return self._version
+
+    @version.setter
+    def version(self, value):
+        assert isinstance(value, str)
+        if value.endswith('.dev'):
+            value += datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        self._version = value
 
     def validate(self):
         """
