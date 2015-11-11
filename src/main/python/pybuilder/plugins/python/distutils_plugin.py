@@ -204,7 +204,7 @@ def install_distribution(project, logger):
 
 @task("upload", description="Upload a project to PyPi.")
 def upload(project, logger):
-    repository = project.get_property("$distutils_upload_repository")
+    repository = project.get_property("distutils_upload_repository")
     repository_args = []
     if repository:
         repository_args = ["-r", repository]

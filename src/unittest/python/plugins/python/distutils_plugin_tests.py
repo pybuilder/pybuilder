@@ -629,26 +629,36 @@ class TasksTest(PyBuilderTestCase):
         self.project.set_property("dir_dist", "whatever dist")
         self.project.set_property("distutils_commands", ["sdist", "bdist_dumb"])
 
-    @patch("os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("subprocess.Popen")
+    @patch("pybuilder.plugins.python.distutils_plugin.subprocess.Popen")
     def test_upload(self, popen, *args):
         popen().wait.return_value = 0
 
         upload(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 1, popen), ["sdist", "bdist_dumb"] + ["upload"])
+        self.assertEquals(popen_distutils_args(self, 1, popen), ["sdist", "bdist_dumb", "upload"])
 
-    @patch("os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("subprocess.Popen")
+    @patch("pybuilder.plugins.python.distutils_plugin.subprocess.Popen")
+    def test_upload_with_repo(self, popen, *args):
+        popen().wait.return_value = 0
+        self.project.set_property("distutils_upload_repository", "test repo")
+
+        upload(self.project, MagicMock(Logger))
+        self.assertEquals(popen_distutils_args(self, 1, popen), ["sdist", "bdist_dumb", "upload", "-r", "test repo"])
+
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("pybuilder.plugins.python.distutils_plugin.subprocess.Popen")
     def test_install(self, popen, *args):
         popen().wait.return_value = 0
 
         install_distribution(self.project, MagicMock(Logger))
 
-    @patch("os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("subprocess.Popen")
+    @patch("pybuilder.plugins.python.distutils_plugin.subprocess.Popen")
     def test_binary_distribution(self, popen, *args):
         popen().wait.return_value = 0
 
