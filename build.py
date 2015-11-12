@@ -20,7 +20,6 @@
 #   limitations under the License.
 
 import sys
-import time
 
 sys.path.insert(0, 'src/main/python')  # This is only necessary in PyBuilder sources for bootstrap
 
@@ -74,7 +73,7 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            ]
 url = "http://pybuilder.github.io"
 license = "Apache License"
-version = "0.11.3.dev" + time.strftime("%Y%m%d%H%M%S")
+version = "0.11.3.dev"
 
 default_task = ["analyze", "publish"]
 
