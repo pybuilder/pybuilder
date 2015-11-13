@@ -1,0 +1,40 @@
+# TODO - test on all of these on Windows?
+# python:
+# - '2.6'
+# - '2.7'
+# - '3.3'
+# - '3.4'
+# - pypy
+
+environment:
+  matrix:
+  # - PYTHON_BIN_HOME: "C:\\Python27" # venv module not available here, right?
+  - PYTHON_BIN_HOME: "C:\\Python33"
+  - PYTHON_BIN_HOME: "C:\\Python34"  
+  - PYTHON_BIN_HOME: "C:\\Python35"
+
+# stop as soon as the first failing test
+matrix:
+  fast_finish: false # disabling until pybuilder is updated for compat with Windows
+
+branches:
+  only:
+  - master
+  - doc/sphinxdoc
+
+shallow_clone: true
+
+clone_depth: 1
+
+install:
+- "%PYTHON_BIN_HOME%\\python.exe -m venv venv"
+- ps: .\venv\Scripts\Activate.ps1
+- python.exe ./build.py install_dependencies -v -X
+
+build: false
+
+test_script:
+- python.exe ./build.py -v -X analyze install
+
+# on_success:
+# - coveralls --verbose
