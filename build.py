@@ -39,7 +39,7 @@ use_plugin("source_distribution")
 
 use_plugin("python.unittest")
 
-if sys.platform != 'win32':
+if 'win32' not in sys.platform:
     use_plugin("python.cram")
 
 use_plugin("python.integrationtest")
