@@ -2,6 +2,7 @@
 =========
 
 [![Build Status](https://secure.travis-ci.org/pybuilder/pybuilder.png?branch=master)](http://travis-ci.org/pybuilder/pybuilder)
+[![Windows build status](https://ci.appveyor.com/api/projects/status/e8fbgcyc7bdqbko3?svg=true)](https://ci.appveyor.com/project/mriehl/pybuilder)
 [![PyPI version](https://badge.fury.io/py/pybuilder.png)](https://warehouse.python.org/project/pybuilder/)
 [![Coverage Status](https://coveralls.io/repos/pybuilder/pybuilder/badge.png?branch=master)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
 [![Ready in backlog](https://badge.waffle.io/pybuilder/pybuilder.png?label=ready&title=Ready)](https://waffle.io/pybuilder/pybuilder)
