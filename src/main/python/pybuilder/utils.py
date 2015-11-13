@@ -596,3 +596,7 @@ else:
 def is_notstr_iterable(obj):
     """Checks if obj is iterable, but not a string"""
     return not isinstance(obj, basestring) and isinstance(obj, collections.Iterable)
+
+
+def get_dist_version_string(project, format=" (%s)"):
+    return format % project.dist_version if project.version != project.dist_version else ""

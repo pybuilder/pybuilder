@@ -273,7 +273,9 @@ class Project(object):
 
     def __init__(self, basedir, version="1.0.dev0", name=None):
         self.name = name
-        self._version = version
+        self._version = None
+        self._dist_version = None
+        self.version = version
         self.basedir = basedir
         if not self.name:
             self.name = os.path.basename(basedir)
@@ -306,10 +308,14 @@ class Project(object):
 
     @version.setter
     def version(self, value):
-        assert isinstance(value, str)
+        self._version = value
         if value.endswith('.dev'):
             value += datetime.utcnow().strftime("%Y%m%d%H%M%S")
-        self._version = value
+        self._dist_version = value
+
+    @property
+    def dist_version(self):
+        return self._dist_version
 
     def validate(self):
         """

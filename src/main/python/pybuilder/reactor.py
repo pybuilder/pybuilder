@@ -36,7 +36,7 @@ from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
                                     ThirdPartyPluginLoader,
                                     DownloadingPluginLoader)
-from pybuilder.utils import as_list
+from pybuilder.utils import as_list, get_dist_version_string
 from pybuilder.execution import Action, Initializer, Task
 
 
@@ -147,7 +147,7 @@ class Reactor(object):
             [task.name for task in execution_plan]))
 
         self.logger.info(
-            "Building %s version %s", self.project.name, self.project.version)
+            "Building %s version %s%s", self.project.name, self.project.version, get_dist_version_string(self.project))
         self.logger.info("Executing build in %s", self.project.basedir)
 
         if len(tasks) == 1:

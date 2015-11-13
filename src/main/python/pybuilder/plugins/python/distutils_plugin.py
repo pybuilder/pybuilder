@@ -37,7 +37,7 @@ from pybuilder.core import (after,
                             RequirementsFile,
                             Dependency)
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import as_list, is_string, is_notstr_iterable
+from pybuilder.utils import as_list, is_string, is_notstr_iterable, get_dist_version_string
 
 from .setuptools_plugin_helper import build_dependency_version_string
 from textwrap import dedent
@@ -128,7 +128,7 @@ def render_setup_script(project):
     template_values = {
         "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
         "name": project.name,
-        "version": project.version,
+        "version": project.dist_version,
         "summary": default(project.summary),
         "description": default(project.description),
         "author": author,
@@ -213,8 +213,9 @@ def upload(project, logger):
     upload_cmd_line.append("upload")
     upload_cmd_line.extend(repository_args)
 
-    logger.info("Uploading project %s-%s%s", project.name, project.version,
-                (" to repository '%s'" % repository) if repository else "")
+    logger.info("Uploading project %s-%s%s%s", project.name, project.version,
+                (" to repository '%s'" % repository) if repository else "",
+                get_dist_version_string(project, " as version %s"))
     execute_distutils(project, logger, [upload_cmd_line])
 
 
