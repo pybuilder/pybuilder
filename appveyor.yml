@@ -1,0 +1,29 @@
+# language: python
+# python:
+# - '2.6'
+# - '2.7'
+# - '3.3'
+# - '3.4'
+# - pypy
+
+branches:
+  only:
+  - master
+  - doc/sphinxdoc
+
+shallow_clone: true
+
+clone_depth: 1
+
+install:
+- C:\Python35\python.exe -m venv venv
+- ps: .\venv\Scripts\Activate.ps1
+- python.exe ./build.py install_dependencies -v
+
+build: false
+
+test_script:
+- python.exe ./build.py -v -X analyze install
+
+# on_success:
+# - coveralls --verbose
