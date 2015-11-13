@@ -18,7 +18,7 @@
 
 from pybuilder.errors import BuildFailedException
 
-__version__ = "${version}"
+__version__ = "${dist_version}"
 
 
 def bootstrap():

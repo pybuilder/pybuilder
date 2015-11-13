@@ -37,7 +37,7 @@ from pybuilder.scaffolding import start_project
 from pybuilder.terminal import (BOLD, BROWN, RED, GREEN, bold, styled_text,
                                 fg, italic, print_text, print_text_line,
                                 print_error, print_error_line, draw_line)
-from pybuilder.utils import format_timestamp
+from pybuilder.utils import format_timestamp, get_dist_version_string
 
 PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
 
@@ -212,7 +212,7 @@ def init_logger(options):
 def print_build_summary(options, summary):
     print_text_line("Build Summary")
     print_text_line("%20s: %s" % ("Project", summary.project.name))
-    print_text_line("%20s: %s" % ("Version", summary.project.version))
+    print_text_line("%20s: %s%s" % ("Version", summary.project.version, get_dist_version_string(summary.project)))
     print_text_line("%20s: %s" % ("Base directory", summary.project.basedir))
     print_text_line("%20s: %s" %
                     ("Environments", ", ".join(options.environments)))
