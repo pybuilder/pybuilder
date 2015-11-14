@@ -44,6 +44,7 @@ from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        build_binary_distribution,
                                                        _normalize_setup_post_pre_script,
                                                        build_string_from_array,
+                                                       _run_process_and_wait,
                                                        )
 from test_utils import PyBuilderTestCase
 
@@ -598,28 +599,33 @@ class ExecuteDistUtilsTest(PyBuilderTestCase):
         self.project.set_property("dir_reports", "whatever reports")
         self.project.set_property("dir_dist", "whatever dist")
 
-    @patch("os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("subprocess.Popen")
-    def test_should_accept_array_of_simple_commands(self, popen, *args):
-        popen().wait.return_value = 0
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_should_accept_array_of_simple_commands(self, proc_runner, *args):
+        proc_runner.return_value = 0
 
         commands = ["a", "b", "c"]
         execute_distutils(self.project, MagicMock(Logger), commands)
 
-        self.assertEquals(popen_distutils_args(self, 3, popen),
-                          commands)
+        self.assertEquals(popen_distutils_args(self, 3, proc_runner), [[cmd] for cmd in commands])
 
-    @patch("os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("subprocess.Popen")
-    def test_should_accept_array_of_compound_commands(self, popen, *args):
-        popen().wait.return_value = 0
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_should_accept_array_of_compound_commands(self, proc_runner, *args):
+        proc_runner.return_value = 0
 
         commands = ["a", "b", "c"]
         execute_distutils(self.project, MagicMock(Logger), [commands])
 
-        self.assertEquals(popen_distutils_args(self, 1, popen), commands)
+        self.assertEquals(popen_distutils_args(self, 1, proc_runner), [commands])
+
+    @patch("pybuilder.plugins.python.distutils_plugin.subprocess.Popen")
+    def test__run_process_and_wait(self, popen):
+        commands = ["a", "b", "c"]
+        _run_process_and_wait(commands, "test cwd", "test stdout", "test_stderr")
+        popen.assert_called_with(commands, cwd="test cwd", stdout="test stdout", stderr="test_stderr", shell=False)
 
 
 class TasksTest(PyBuilderTestCase):
@@ -631,44 +637,49 @@ class TasksTest(PyBuilderTestCase):
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("pybuilder.plugins.python.distutils_plugin.subprocess.Popen")
-    def test_upload(self, popen, *args):
-        popen().wait.return_value = 0
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_upload(self, proc_runner, *args):
+        proc_runner.return_value = 0
 
         upload(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 1, popen), ["sdist", "bdist_dumb", "upload"])
+        self.assertEquals(popen_distutils_args(self, 2, proc_runner),
+                          [["clean", "--all", "sdist", "upload"], ["clean", "--all", "bdist_dumb", "upload"]])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("pybuilder.plugins.python.distutils_plugin.subprocess.Popen")
-    def test_upload_with_repo(self, popen, *args):
-        popen().wait.return_value = 0
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_upload_with_repo(self, proc_runner, *args):
+        proc_runner.return_value = 0
         self.project.set_property("distutils_upload_repository", "test repo")
 
         upload(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 1, popen), ["sdist", "bdist_dumb", "upload", "-r", "test repo"])
+        self.assertEquals(popen_distutils_args(self, 2, proc_runner),
+                          [["clean", "--all", "sdist", "upload", "-r", "test repo"],
+                           ["clean", "--all", "bdist_dumb", "upload", "-r", "test repo"]])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("pybuilder.plugins.python.distutils_plugin.subprocess.Popen")
-    def test_install(self, popen, *args):
-        popen().wait.return_value = 0
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_install(self, proc_runner, *args):
+        proc_runner.return_value = 0
 
         install_distribution(self.project, MagicMock(Logger))
+        self.assertEquals(popen_distutils_args(self, 1, proc_runner), [['clean', '--all', 'install']])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("pybuilder.plugins.python.distutils_plugin.subprocess.Popen")
-    def test_binary_distribution(self, popen, *args):
-        popen().wait.return_value = 0
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_binary_distribution(self, proc_runner, *args):
+        proc_runner.return_value = 0
 
         build_binary_distribution(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 2, popen), ["sdist", "bdist_dumb"])
+        self.assertEquals(popen_distutils_args(self, 2, proc_runner),
+                          [["clean", "--all", "sdist"], ["clean", "--all", "bdist_dumb"]])
 
 
-def popen_distutils_args(self, call_count, popen):
-    self.assertEquals(len([call_args[0] for call_args in popen.call_args_list if len(call_args[0]) > 0]), call_count)
-    return [item for call_args in popen.call_args_list if len(call_args[0]) > 0 for item in call_args[0][0][2:]]
+def popen_distutils_args(self, call_count, proc_runner):
+    self.assertEquals(proc_runner.call_count, call_count)
+    return [call_args[0][0][2:] for call_args in proc_runner.call_args_list]
 
 
 def create_project():
