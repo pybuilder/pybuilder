@@ -28,7 +28,6 @@ try:
 except ImportError as e:
     from io import StringIO
 
-
 from pybuilder.core import (after,
                             before,
                             use_plugin,
@@ -38,7 +37,6 @@ from pybuilder.core import (after,
                             Dependency)
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import as_list, is_string, is_notstr_iterable, get_dist_version_string
-
 from .setuptools_plugin_helper import build_dependency_version_string
 from textwrap import dedent
 
@@ -98,7 +96,7 @@ def default(value, default=""):
 
 @init
 def initialize_distutils_plugin(project):
-    project.set_property_if_unset("distutils_commands", ["sdist", "bdist_dumb"])
+    project.set_property_if_unset("distutils_commands", ["sdist", "bdist_wheel"])
     # Workaround for http://bugs.python.org/issue8876 , unable to build a bdist
     # on a filesystem that does not support hardlinks
     project.set_property_if_unset("distutils_issue8876_workaround_enabled", False)
@@ -192,14 +190,14 @@ def build_binary_distribution(project, logger):
                 project.expand_path("$dir_dist"))
 
     commands = as_list(project.get_property("distutils_commands"))
-    execute_distutils(project, logger, commands)
+    execute_distutils(project, logger, commands, True)
 
 
 @task("install")
 def install_distribution(project, logger):
     logger.info("Installing project %s-%s", project.name, project.version)
 
-    execute_distutils(project, logger, as_list("install"))
+    execute_distutils(project, logger, as_list("install"), True)
 
 
 @task("upload", description="Upload a project to PyPi.")
@@ -208,18 +206,15 @@ def upload(project, logger):
     repository_args = []
     if repository:
         repository_args = ["-r", repository]
-    upload_cmd_line = []
-    upload_cmd_line.extend(project.get_property("distutils_commands"))
-    upload_cmd_line.append("upload")
-    upload_cmd_line.extend(repository_args)
 
     logger.info("Uploading project %s-%s%s%s", project.name, project.version,
                 (" to repository '%s'" % repository) if repository else "",
                 get_dist_version_string(project, " as version %s"))
-    execute_distutils(project, logger, [upload_cmd_line])
+    upload_cmd_line = [[cmd, "upload"] + repository_args for cmd in project.get_property("distutils_commands")]
+    execute_distutils(project, logger, upload_cmd_line, True)
 
 
-def execute_distutils(project, logger, distutils_commands):
+def execute_distutils(project, logger, distutils_commands, clean=False):
     reports_dir = project.expand_path("$dir_reports", "distutils")
     if not os.path.exists(reports_dir):
         os.mkdir(reports_dir)
@@ -236,16 +231,13 @@ def execute_distutils(project, logger, distutils_commands):
             commands = [sys.executable, setup_script]
             if project.get_property("verbose"):
                 commands.append("-v")
+            if clean:
+                commands.extend(["clean", "--all"])
             if is_string(command):
                 commands.extend(command.split())
             else:
                 commands.extend(command)
-            process = subprocess.Popen(commands,
-                                       cwd=project.expand_path("$dir_dist"),
-                                       stdout=output_file,
-                                       stderr=output_file,
-                                       shell=False)
-            return_code = process.wait()
+            return_code = _run_process_and_wait(commands, project.expand_path("$dir_dist"), output_file)
             if return_code != 0:
                 raise BuildFailedException(
                     "Error while executing setup command %s, see %s for details" % (command, output_file_path))
@@ -351,16 +343,16 @@ def build_data_files_string(project):
     if not len(data_files):
         return '[]'
 
-    returnString = "[\n"
+    result = "[\n"
 
     for dataType, dataFiles in data_files:
-        returnString += (" " * (indent+4)) + "('%s', ['" % dataType
-        returnString += "', '".join(dataFiles)
-        returnString += "']),\n"
+        result += (" " * (indent + 4)) + "('%s', ['" % dataType
+        result += "', '".join(dataFiles)
+        result += "']),\n"
 
-    returnString = returnString[:-2] + "\n"
-    returnString += " " * indent + "]"
-    return returnString
+    result = result[:-2] + "\n"
+    result += " " * indent + "]"
+    return result
 
 
 def build_package_data_string(project):
@@ -372,19 +364,19 @@ def build_package_data_string(project):
     if package_data == {}:
         return "{}"
 
-    returnString = "{\n"
+    result = "{\n"
 
     for pkgType in sorted_keys:
-        returnString += " " * (indent+4)
-        returnString += "'%s': " % pkgType
-        returnString += "['"
-        returnString += "', '".join(package_data[pkgType])
-        returnString += "'],\n"
+        result += " " * (indent + 4)
+        result += "'%s': " % pkgType
+        result += "['"
+        result += "', '".join(package_data[pkgType])
+        result += "'],\n"
 
-    returnString = returnString[:-2] + "\n"
-    returnString += " " * indent + "}"
+    result = result[:-2] + "\n"
+    result += " " * indent + "}"
 
-    return returnString
+    return result
 
 
 def build_packages_string(project):
@@ -432,10 +424,10 @@ def build_string_from_array(arr, indent=12):
         result = "[\n"
 
         for item in arr:
-                if is_notstr_iterable(item):
-                    result += (" " * indent) + build_string_from_array(item, indent + 4) + ",\n"
-                else:
-                    result += (" " * indent) + "'" + item + "',\n"
+            if is_notstr_iterable(item):
+                result += (" " * indent) + build_string_from_array(item, indent + 4) + ",\n"
+            else:
+                result += (" " * indent) + "'" + item + "',\n"
         result = result[:-2] + "\n"
         result += " " * (indent - 4)
         result += "]"
@@ -446,31 +438,27 @@ def build_string_from_array(arr, indent=12):
 
 
 def build_string_from_dict(d, indent=12):
-    mapStrings = []
+    element_separator = ",\n"
+    element_separator += " " * indent
+    map_elements = []
 
     for k, v in d:
-        mapStrings.append("'%s': '%s'" % (k, v))
+        map_elements.append("'%s': '%s'" % (k, v))
 
-    returnString = ""
+    result = ""
 
-    if len(mapStrings) > 0:
+    if len(map_elements) > 0:
+        result += "\n"
+        result += " " * indent
+        result += element_separator.join(map_elements)
+        result += "\n"
+        result += " " * (indent - 4)
+        result += "}"
 
-        joinString = ",\n"
-        joinString += " " * indent
-
-        returnString += "\n"
-        returnString += " " * indent
-        returnString += joinString.join(mapStrings)
-        returnString += "\n"
-        returnString += " " * (indent - 4)
-        returnString += "}"
-
-    return returnString
+    return result
 
 
 def _expand_leading_tabs(s, indent=4):
-    assert isinstance(s, str)
-
     def replace_tabs(match):
         return " " * (len(match.groups(0)) * indent)
 
@@ -481,3 +469,12 @@ def _normalize_setup_post_pre_script(s, indent=8):
     indent_str = " " * indent
     return "".join([indent_str + line if len(str.rstrip(line)) > 0 else line for line in
                     dedent(_expand_leading_tabs(s)).splitlines(True)])
+
+
+def _run_process_and_wait(commands, cwd, stdout, stderr=None):
+    process = subprocess.Popen(commands,
+                               cwd=cwd,
+                               stdout=stdout,
+                               stderr=stderr or stdout,
+                               shell=False)
+    return process.wait()
