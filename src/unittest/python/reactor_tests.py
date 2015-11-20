@@ -17,30 +17,31 @@
 #   limitations under the License.
 
 import imp
-import os
 import unittest
 
-from mockito import when, verify, unstub, any, times, contains
+import os
+from mockito import when, verify, unstub, any, times, contains, inorder
 from mockito.matchers import Matcher
-from test_utils import mock  # TODO @mriehl SORCERY!!!!! BURN IT WITH FIRE!!!!
 
-from pybuilder.core import (ACTION_ATTRIBUTE,
-                            AFTER_ATTRIBUTE,
-                            BEFORE_ATTRIBUTE,
-                            ENVIRONMENTS_ATTRIBUTE,
+from pybuilder.core import (ENVIRONMENTS_ATTRIBUTE,
                             INITIALIZER_ATTRIBUTE,
                             NAME_ATTRIBUTE,
-                            ONLY_ONCE_ATTRIBUTE,
                             TASK_ATTRIBUTE,
-                            Project)
+                            Project,
+                            task,
+                            depends,
+                            dependents,
+                            optional,
+                            after,
+                            before)
 from pybuilder.errors import MissingPluginException, PyBuilderException, ProjectValidationFailedException
-from pybuilder.reactor import Reactor
 from pybuilder.execution import Task, Action, Initializer, ExecutionManager
 from pybuilder.pluginloader import PluginLoader
+from pybuilder.reactor import Reactor
+from test_utils import mock  # TODO @mriehl SORCERY!!!!! BURN IT WITH FIRE!!!!
 
 
-class TaskNameMatcher (Matcher):
-
+class TaskNameMatcher(Matcher):
     def __init__(self, task_name):
         self.task_name = task_name
 
@@ -53,8 +54,7 @@ class TaskNameMatcher (Matcher):
         return "Task with name %s" % self.task_name
 
 
-class ReactorTest (unittest.TestCase):
-
+class ReactorTest(unittest.TestCase):
     def setUp(self):
         self.plugin_loader_mock = mock(PluginLoader)
         self.logger = mock()
@@ -81,6 +81,7 @@ class ReactorTest (unittest.TestCase):
     def test_should_collect_single_task(self):
         def task():
             pass
+
         setattr(task, TASK_ATTRIBUTE, True)
 
         module = mock()
@@ -93,6 +94,7 @@ class ReactorTest (unittest.TestCase):
     def test_should_collect_single_task_with_overridden_name(self):
         def task():
             pass
+
         setattr(task, TASK_ATTRIBUTE, True)
         setattr(task, NAME_ATTRIBUTE, "overridden_name")
 
@@ -107,10 +109,12 @@ class ReactorTest (unittest.TestCase):
     def test_should_collect_multiple_tasks(self):
         def task():
             pass
+
         setattr(task, TASK_ATTRIBUTE, True)
 
         def task2():
             pass
+
         setattr(task2, TASK_ATTRIBUTE, True)
 
         module = mock()
@@ -121,11 +125,61 @@ class ReactorTest (unittest.TestCase):
 
         verify(self.execution_manager, times(2)).register_task(any(Task))
 
+    def test_task_dependencies(self):
+        import pybuilder.reactor
+
+        when(pybuilder.reactor).Task().thenReturn(mock())
+
+        @task
+        def task1():
+            pass
+
+        @task
+        @depends(task1)
+        def task2():
+            pass
+
+        @task
+        def task3():
+            pass
+
+        @task
+        @depends(optional(task3))
+        @dependents("task6")
+        def task4():
+            pass
+
+        @task
+        @dependents("task6", optional(task3))
+        def task5():
+            pass
+
+        @task
+        @depends(task1, optional(task2))
+        def task6():
+            pass
+
+        module = mock()
+        module.task1 = task1
+        module.task2 = task2
+        module.task3 = task3
+        module.task4 = task4
+        module.task5 = task5
+        module.task6 = task6
+
+        self.reactor.collect_tasks_and_actions_and_initializers(module)
+
+        inorder.verify(pybuilder.reactor).Task("task1", task1, [], '', [])
+        inorder.verify(pybuilder.reactor).Task("task2", task2, [task1], '', [])
+        inorder.verify(pybuilder.reactor).Task("task3", task3, [], '', [task5])
+        inorder.verify(pybuilder.reactor).Task("task4", task4, [], '', [task3])
+        inorder.verify(pybuilder.reactor).Task("task5", task5, [], '', [])
+        inorder.verify(pybuilder.reactor).Task("task6", task6, [task4, task5, task1], '', [task2])
+
     def test_should_collect_single_before_action(self):
+        @before("spam")
         def action():
             pass
-        setattr(action, ACTION_ATTRIBUTE, True)
-        setattr(action, BEFORE_ATTRIBUTE, "spam")
 
         module = mock()
         module.task = action
@@ -135,10 +189,9 @@ class ReactorTest (unittest.TestCase):
         verify(self.execution_manager).register_action(any(Action))
 
     def test_should_collect_single_after_action(self):
+        @after("spam")
         def action():
             pass
-        setattr(action, ACTION_ATTRIBUTE, True)
-        setattr(action, AFTER_ATTRIBUTE, "spam")
 
         module = mock()
         module.task = action
@@ -148,11 +201,9 @@ class ReactorTest (unittest.TestCase):
         verify(self.execution_manager).register_action(any(Action))
 
     def test_should_collect_single_after_action_with_only_once_flag(self):
+        @after("spam", only_once=True)
         def action():
             pass
-        setattr(action, ACTION_ATTRIBUTE, True)
-        setattr(action, AFTER_ATTRIBUTE, "spam")
-        setattr(action, ONLY_ONCE_ATTRIBUTE, True)
 
         module = mock()
         module.task = action
@@ -165,9 +216,20 @@ class ReactorTest (unittest.TestCase):
 
         self.reactor.collect_tasks_and_actions_and_initializers(module)
 
+    def test_should_collect_single_after_action_with_teardown_flag(self):
+        @after("spam", teardown=True)
+        def action():
+            pass
+
+        module = mock()
+        module.task = action
+
+        self.reactor.collect_tasks_and_actions_and_initializers(module)
+
     def test_should_collect_single_initializer(self):
         def init():
             pass
+
         setattr(init, INITIALIZER_ATTRIBUTE, True)
 
         module = mock()
@@ -180,14 +242,14 @@ class ReactorTest (unittest.TestCase):
     def test_should_collect_single_initializer_with_environments(self):
         def init():
             pass
+
         setattr(init, INITIALIZER_ATTRIBUTE, True)
         setattr(init, ENVIRONMENTS_ATTRIBUTE, ["any_environment"])
 
         module = mock()
         module.task = init
 
-        class ExecutionManagerMock (object):
-
+        class ExecutionManagerMock(object):
             def register_initializer(self, initializer):
                 self.initializer = initializer
 
