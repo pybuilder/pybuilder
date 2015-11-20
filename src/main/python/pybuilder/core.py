@@ -47,6 +47,7 @@ AFTER_ATTRIBUTE = "_python_builder_after"
 
 TASK_ATTRIBUTE = "_python_builder_task"
 DEPENDS_ATTRIBUTE = "_python_builder_depends"
+DEPENDENTS_ATTRIBUTE = "_python_builder_dependents"
 
 DESCRIPTION_ATTRIBUTE = "_python_builder_description"
 
@@ -145,6 +146,15 @@ class depends(object):
 
     def __call__(self, callable):
         setattr(callable, DEPENDS_ATTRIBUTE, self._depends)
+        return callable
+
+
+class dependents(object):
+    def __init__(self, *dependents):
+        self._dependents = dependents
+
+    def __call__(self, callable):
+        setattr(callable, DEPENDENTS_ATTRIBUTE, self._dependents)
         return callable
 
 
