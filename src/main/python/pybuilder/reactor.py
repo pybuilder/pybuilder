@@ -26,18 +26,18 @@ import imp
 
 import os.path
 
-from pybuilder.core import (TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE, DEPENDENTS_ATTRIBUTE,
+from pybuilder.core import (TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE,
                             DESCRIPTION_ATTRIBUTE, AFTER_ATTRIBUTE,
                             BEFORE_ATTRIBUTE, INITIALIZER_ATTRIBUTE,
                             ACTION_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, TEARDOWN_ATTRIBUTE,
                             Project, NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE, optional)
 from pybuilder.errors import PyBuilderException, ProjectValidationFailedException
-from pybuilder.execution import Action, Initializer, Task
 from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
                                     ThirdPartyPluginLoader,
                                     DownloadingPluginLoader)
 from pybuilder.utils import as_list, get_dist_version_string
+from pybuilder.execution import Action, Initializer, Task
 
 
 class BuildSummary(object):
@@ -197,42 +197,13 @@ class Reactor(object):
         self.collect_tasks_and_actions_and_initializers(plugin_module)
 
     def collect_tasks_and_actions_and_initializers(self, project_module):
-        task_dependencies = dict()
+        for name in dir(project_module):
+            candidate = getattr(project_module, name)
 
-        def normalize_candidate_name(candidate):
             if hasattr(candidate, NAME_ATTRIBUTE):
-                return getattr(candidate, NAME_ATTRIBUTE)
+                name = getattr(candidate, NAME_ATTRIBUTE)
             elif hasattr(candidate, "__name__"):
-                return candidate.__name__
-
-        def add_task_dependency(names, depends_on, optional):
-            for name in as_list(names):
-                if not isinstance(name, basestring):
-                    name = normalize_candidate_name(name)
-                if name not in task_dependencies:
-                    task_dependencies[name] = (list(), list())
-                task_dependencies[name][1 if optional else 0].append(depends_on)
-
-        for name in dir(project_module):
-            candidate = getattr(project_module, name)
-            name = normalize_candidate_name(candidate)
-
-            if hasattr(candidate, TASK_ATTRIBUTE) and getattr(candidate, TASK_ATTRIBUTE):
-                dependents = getattr(candidate, DEPENDENTS_ATTRIBUTE) if hasattr(candidate,
-                                                                                 DEPENDENTS_ATTRIBUTE) else None
-                if dependents:
-                    dependents = list(as_list(dependents))
-                    for d in dependents:
-                        if type(d) is optional:
-                            d = d()
-                            add_task_dependency(d, candidate, True)
-                        else:
-                            add_task_dependency(d, candidate, False)
-
-        for name in dir(project_module):
-            candidate = getattr(project_module, name)
-            name = normalize_candidate_name(candidate)
-
+                name = candidate.__name__
             description = getattr(candidate, DESCRIPTION_ATTRIBUTE) if hasattr(
                 candidate, DESCRIPTION_ATTRIBUTE) else ""
 
@@ -240,13 +211,6 @@ class Reactor(object):
                 dependencies = getattr(candidate, DEPENDS_ATTRIBUTE) if hasattr(candidate, DEPENDS_ATTRIBUTE) else None
                 required_dependencies = []
                 optional_dependencies = []
-
-                # Add injected
-                if name in task_dependencies:
-                    injected_dependencies = task_dependencies[name]
-                    required_dependencies.extend(injected_dependencies[0])
-                    optional_dependencies.extend(injected_dependencies[1])
-
                 if dependencies:
                     dependencies = list(as_list(dependencies))
                     for d in dependencies:
