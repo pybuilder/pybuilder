@@ -91,6 +91,12 @@ def parse_options(args):
                       default=False,
                       help="List tasks")
 
+    parser.add_option("-T", "--list-plan-tasks",
+                      action="store_true",
+                      dest="list_plan_tasks",
+                      default=False,
+                      help="List execution plan tasks")
+
     parser.add_option("--start-project",
                       action="store_true",
                       dest="start_project",
@@ -278,21 +284,17 @@ def task_description(task):
     return " ".join(task.description) or "<no description available>"
 
 
-def print_list_of_tasks(reactor, quiet=False):
-    tasks = reactor.get_tasks()
-    sorted_tasks = sorted(tasks)
-
+def print_task_list(tasks, quiet=False):
     if quiet:
         print_text_line("\n".join([task.name + ":" + task_description(task)
-                                   for task in sorted_tasks]))
+                                   for task in tasks]))
         return
 
     column_length = length_of_longest_string(
-        list(map(lambda task: task.name, sorted_tasks)))
+        list(map(lambda task: task.name, tasks)))
     column_length += 4
 
-    print_text_line('Tasks found for project "%s":' % reactor.project.name)
-    for task in sorted_tasks:
+    for task in tasks:
         task_name = task.name.rjust(column_length)
         print_text_line("{0} - {1}".format(task_name, task_description(task)))
 
@@ -301,6 +303,21 @@ def print_list_of_tasks(reactor, quiet=False):
             depends_on_message = "depends on tasks: %s" % " ".join(
                 task.dependencies)
             print_text_line(whitespace + depends_on_message)
+
+
+def print_list_of_tasks(reactor, quiet=False):
+    tasks = reactor.get_tasks()
+    sorted_tasks = sorted(tasks)
+    if not quiet:
+        print_text_line('Tasks found for project "%s":' % reactor.project.name)
+    print_task_list(sorted_tasks, quiet)
+
+
+def print_plan_list_of_tasks(options, arguments, reactor, quiet=False):
+    execution_plan = reactor.create_execution_plan(arguments, options.environments)
+    if not quiet:
+        print_text_line('Tasks that will be executed for project "%s":' % reactor.project.name)
+    print_task_list(execution_plan, quiet)
 
 
 def main(*args):
@@ -321,12 +338,18 @@ def main(*args):
     if options.start_project:
         return start_project()
 
-    if options.list_tasks:
+    if options.list_tasks or options.list_plan_tasks:
         try:
             reactor.prepare_build(property_overrides=options.property_overrides,
-                                  project_directory=options.project_directory)
+                                  project_directory=options.project_directory,
+                                  exclude_optional_tasks=options.exclude_optional_tasks,
+                                  exclude_tasks=options.exclude_tasks
+                                  )
+            if options.list_tasks:
+                print_list_of_tasks(reactor, quiet=options.very_quiet)
 
-            print_list_of_tasks(reactor, quiet=options.very_quiet)
+            if options.list_plan_tasks:
+                print_plan_list_of_tasks(options, arguments, reactor, quiet=options.very_quiet)
             return 0
         except PyBuilderException as e:
             print_build_status(str(e), options, successful=False)
