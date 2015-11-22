@@ -307,7 +307,7 @@ def print_task_list(tasks, quiet=False):
         if task.dependencies:
             whitespace = (column_length + 3) * " "
             depends_on_message = "depends on tasks: %s" % " ".join(
-                task.dependencies)
+                [str(dependency) for dependency in task.dependencies])
             print_text_line(whitespace + depends_on_message)
 
 

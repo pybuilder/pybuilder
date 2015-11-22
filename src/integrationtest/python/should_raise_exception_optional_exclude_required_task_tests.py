@@ -42,8 +42,8 @@ def task_c(project):
     project.set_property("c", True)
         """)
         reactor = self.prepare_reactor()
-        self.assertRaises(RequiredTaskExclusionException, reactor.execution_manager.resolve_dependencies,
-                          exclude_optional_tasks=["task_b"])
+        reactor.execution_manager.resolve_dependencies(exclude_optional_tasks=["task_b"])
+        self.assertRaises(RequiredTaskExclusionException, reactor.execution_manager.build_execution_plan, "task_c")
 
 
 if __name__ == "__main__":

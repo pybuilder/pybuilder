@@ -35,7 +35,7 @@ from pybuilder.core import (ENVIRONMENTS_ATTRIBUTE,
                             after,
                             before)
 from pybuilder.errors import MissingPluginException, PyBuilderException, ProjectValidationFailedException
-from pybuilder.execution import Task, Action, Initializer, ExecutionManager
+from pybuilder.execution import Task, TaskDependency, Action, Initializer, ExecutionManager
 from pybuilder.pluginloader import PluginLoader
 from pybuilder.reactor import Reactor
 from test_utils import mock  # TODO @mriehl SORCERY!!!!! BURN IT WITH FIRE!!!!
@@ -169,12 +169,13 @@ class ReactorTest(unittest.TestCase):
 
         self.reactor.collect_tasks_and_actions_and_initializers(module)
 
-        inorder.verify(pybuilder.reactor).Task("task1", task1, [], '', [])
-        inorder.verify(pybuilder.reactor).Task("task2", task2, [task1], '', [])
-        inorder.verify(pybuilder.reactor).Task("task3", task3, [], '', [task5])
-        inorder.verify(pybuilder.reactor).Task("task4", task4, [], '', [task3])
-        inorder.verify(pybuilder.reactor).Task("task5", task5, [], '', [])
-        inorder.verify(pybuilder.reactor).Task("task6", task6, [task4, task5, task1], '', [task2])
+        inorder.verify(pybuilder.reactor).Task("task1", task1, [], '')
+        inorder.verify(pybuilder.reactor).Task("task2", task2, [TaskDependency(task1)], '')
+        inorder.verify(pybuilder.reactor).Task("task3", task3, [TaskDependency(task5, True)], '')
+        inorder.verify(pybuilder.reactor).Task("task4", task4, [TaskDependency(task3, True)], '')
+        inorder.verify(pybuilder.reactor).Task("task5", task5, [], '')
+        inorder.verify(pybuilder.reactor).Task("task6", task6, [TaskDependency(task1), TaskDependency(task2, True),
+                                                                TaskDependency(task4), TaskDependency(task5)], '')
 
     def test_should_collect_single_before_action(self):
         @before("spam")

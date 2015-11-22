@@ -23,10 +23,10 @@
     order regarding dependencies.
 """
 
-import inspect
 import copy
-import traceback
+import inspect
 import sys
+import traceback
 
 import re
 import types
@@ -35,11 +35,11 @@ from pybuilder.errors import (CircularTaskDependencyException,
                               DependenciesNotResolvedException,
                               InvalidNameException,
                               MissingTaskDependencyException,
-                              RequiredTaskExclusionException,
                               MissingActionDependencyException,
-                              NoSuchTaskException)
-from pybuilder.utils import as_list, Timer, odict
+                              NoSuchTaskException,
+                              RequiredTaskExclusionException)
 from pybuilder.graph_utils import Graph, GraphHasCycles
+from pybuilder.utils import as_list, Timer, odict
 
 if sys.version_info[0] < 3:  # if major is less than 3
     from .excp_util_2 import raise_exception
@@ -47,13 +47,19 @@ else:
     from .excp_util_3 import raise_exception
 
 
+def as_task_name(item):
+    if isinstance(item, types.FunctionType):
+        return item.__name__
+    elif hasattr(item, "name"):
+        return item.name
+    else:
+        return str(item)
+
+
 def as_task_name_list(mixed):
     result = []
     for item in as_list(mixed):
-        if isinstance(item, types.FunctionType):
-            result.append(item.__name__)
-        else:
-            result.append(str(item))
+        result.append(as_task_name(item))
     return result
 
 
@@ -100,12 +106,37 @@ class Action(Executable):
         self.teardown = teardown
 
 
+class TaskDependency(object):
+    def __init__(self, mixed, optional=False):
+        self._name = as_task_name(mixed)
+        self._task = mixed if hasattr(mixed, "name") else None
+        self._optional = optional
+
+    def __repr__(self):
+        return self._name if not self._optional else self._name + "(optional)"
+
+    def __eq__(self, other):
+        if isinstance(other, TaskDependency):
+            return self._name == other._name and self._optional == other._optional
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def task(self):
+        return self._task
+
+    @property
+    def optional(self):
+        return self._optional
+
+
 class Task(object):
-    def __init__(self, name, callable, dependencies=None, description="", optional_dependencies=None):
+    def __init__(self, name, callable, dependencies=None, description=""):
         self.name = name
         self.executables = [Executable(name, callable, description)]
-        self.dependencies = as_task_name_list(dependencies)
-        self.optional_dependencies = as_task_name_list(optional_dependencies)
+        self.dependencies = as_list(dependencies)
         self.description = [description]
 
     def __eq__(self, other):
@@ -303,11 +334,13 @@ class ExecutionManager(object):
         return summaries
 
     def get_task(self, name):
+        name = name.name if isinstance(name, TaskDependency) else name
         if not self.has_task(name):
             raise NoSuchTaskException(name)
         return self._tasks[name]
 
     def has_task(self, name):
+        name = name.name if isinstance(name, TaskDependency) else name
         return name in self._tasks
 
     def _collect_transitive_tasks(self, task, visited=None):
@@ -316,12 +349,14 @@ class ExecutionManager(object):
         if task in visited:
             return visited
         visited.add(task)
-        dependencies = [self.get_task(dependency_name) for dependency_name in task.dependencies]
+        dependencies = [dependency for dependency in self._task_dependencies[task.name]]
         for dependency in dependencies:
-            self._collect_transitive_tasks(dependency, visited)
+            self._collect_transitive_tasks(dependency.task, visited)
         return visited
 
     def collect_all_transitive_tasks(self, task_names):
+        self.assert_dependencies_resolved()
+
         all_tasks = set()
         for task_name in task_names:
             all_tasks.update(self._collect_transitive_tasks(self.get_task(task_name)))
@@ -334,14 +369,14 @@ class ExecutionManager(object):
 
         dependency_edges = {}
         for task in self.collect_all_transitive_tasks(as_list(task_names)):
-            dependency_edges[task.name] = task.dependencies
+            dependency_edges[task.name] = [dependency.name for dependency in task.dependencies]
         try:
             Graph(dependency_edges).assert_no_cycles_present()
         except GraphHasCycles as cycles:
             raise CircularTaskDependencyException(str(cycles))
 
         for task_name in as_list(task_names):
-            self.enqueue_task(execution_plan, task_name)
+            self._enqueue_task(execution_plan, task_name)
         return execution_plan
 
     def build_shortest_execution_plan(self, task_names):
@@ -365,16 +400,32 @@ class ExecutionManager(object):
                                                   (self._current_task, task_names, shortest_plan))
         return shortest_plan
 
-    def enqueue_task(self, execution_plan, task_name):
+    def _enqueue_task(self, execution_plan, task_name):
         task = self.get_task(task_name)
 
         if task in execution_plan:
             return
 
         for dependency in self._task_dependencies[task.name]:
-            self.enqueue_task(execution_plan, dependency.name)
+            if self._should_omit_dependency(task, dependency):
+                continue
+            self._enqueue_task(execution_plan, dependency.name)
 
         execution_plan.append(task)
+
+    def _should_omit_dependency(self, task, dependency):
+        if dependency.optional:
+            if self._exclude_all_optional or dependency.name in self._exclude_optional_tasks or \
+                    dependency.name in self._exclude_tasks:
+                self.logger.debug("Omitting optional dependency '%s' of task '%s'", dependency.name, task.name)
+                return True
+        else:
+            if dependency.name in self._exclude_optional_tasks:
+                raise RequiredTaskExclusionException(task.name, dependency.name)
+            if dependency.name in self._exclude_tasks:
+                self.logger.warn("Omitting required dependency '%s' of task '%s'", dependency.name, task.name)
+                return True
+        return False
 
     def resolve_dependencies(self, exclude_optional_tasks=None, exclude_tasks=None, exclude_all_optional=False):
         self._exclude_optional_tasks = as_task_name_list(exclude_optional_tasks or [])
@@ -385,24 +436,27 @@ class ExecutionManager(object):
             self._execute_before[task.name] = []
             self._execute_after[task.name] = []
             self._task_dependencies[task.name] = []
-            if self.is_task_excluded(task.name) or self.is_optional_task_excluded(task.name):
-                self.logger.debug("Skipping resolution for excluded task '%s'", task.name)
-                continue
-            for d in task.dependencies:
-                if not self.has_task(d):
-                    raise MissingTaskDependencyException(task.name, d)
-                if self.is_optional_task_excluded(d):
-                    raise RequiredTaskExclusionException(task.name, d)
-                if not self.is_task_excluded(d):
-                    self._task_dependencies[task.name].append(self.get_task(d))
-                    self.logger.debug("Adding '%s' as a required dependency of task '%s'", d, task.name)
 
-            for d in task.optional_dependencies:
+            for d in task.dependencies:
+                add_dependency = True
                 if not self.has_task(d):
                     raise MissingTaskDependencyException(task.name, d)
-                if not (self.is_task_excluded(d) or self.is_optional_task_excluded(d)):
-                    self._task_dependencies[task.name].append(self.get_task(d))
-                    self.logger.debug("Adding '%s' as an optional dependency of task '%s'", d, task.name)
+                task_dependencies = self._task_dependencies[task.name]
+                for index, existing_dependency in enumerate(task_dependencies):
+                    if existing_dependency.name == d.name:
+                        if existing_dependency.optional != d.optional:
+                            if existing_dependency.optional:
+                                task_dependencies[index] = TaskDependency(existing_dependency.name)
+                                self.logger.debug("Converting optional dependency '%s' of task '%s' into required",
+                                                  existing_dependency, task.name)
+                            else:
+                                self.logger.debug(
+                                    "Ignoring '%s' as optional dependency of task '%s' - already required",
+                                    existing_dependency, task.name)
+                        add_dependency = False
+                if add_dependency:
+                    self._task_dependencies[task.name].append(TaskDependency(self.get_task(d), d.optional))
+                    self.logger.debug("Adding '%s' as a dependency of task '%s'", d, task.name)
 
         for action in self._actions.values():
             for task in action.execute_before:
@@ -418,9 +472,3 @@ class ExecutionManager(object):
                 self.logger.debug("Adding after action '%s' for task '%s'", action.name, task)
 
         self._dependencies_resolved = True
-
-    def is_task_excluded(self, task):
-        return task in self._exclude_tasks
-
-    def is_optional_task_excluded(self, task):
-        return self._exclude_all_optional or task in self._exclude_optional_tasks

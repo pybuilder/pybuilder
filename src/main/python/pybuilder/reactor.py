@@ -32,7 +32,7 @@ from pybuilder.core import (TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE, DEPENDENTS_ATTRIB
                             ACTION_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, TEARDOWN_ATTRIBUTE,
                             Project, NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE, optional)
 from pybuilder.errors import PyBuilderException, ProjectValidationFailedException
-from pybuilder.execution import Action, Initializer, Task
+from pybuilder.execution import Action, Initializer, Task, TaskDependency
 from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
                                     ThirdPartyPluginLoader,
@@ -205,7 +205,7 @@ class Reactor(object):
         self.collect_tasks_and_actions_and_initializers(plugin_module)
 
     def collect_tasks_and_actions_and_initializers(self, project_module):
-        task_dependencies = dict()
+        injected_task_dependencies = dict()
 
         def normalize_candidate_name(candidate):
             if hasattr(candidate, NAME_ATTRIBUTE):
@@ -217,13 +217,12 @@ class Reactor(object):
             for name in as_list(names):
                 if not isinstance(name, basestring):
                     name = normalize_candidate_name(name)
-                if name not in task_dependencies:
-                    task_dependencies[name] = (list(), list())
-                task_dependencies[name][1 if optional else 0].append(depends_on)
+                if name not in injected_task_dependencies:
+                    injected_task_dependencies[name] = list()
+                injected_task_dependencies[name].append(TaskDependency(depends_on, optional))
 
         for name in dir(project_module):
             candidate = getattr(project_module, name)
-            name = normalize_candidate_name(candidate)
 
             if hasattr(candidate, TASK_ATTRIBUTE) and getattr(candidate, TASK_ATTRIBUTE):
                 dependents = getattr(candidate, DEPENDENTS_ATTRIBUTE) if hasattr(candidate,
@@ -231,7 +230,7 @@ class Reactor(object):
                 if dependents:
                     dependents = list(as_list(dependents))
                     for d in dependents:
-                        if type(d) is optional:
+                        if isinstance(d, optional):
                             d = d()
                             add_task_dependency(d, candidate, True)
                         else:
@@ -246,27 +245,24 @@ class Reactor(object):
 
             if hasattr(candidate, TASK_ATTRIBUTE) and getattr(candidate, TASK_ATTRIBUTE):
                 dependencies = getattr(candidate, DEPENDS_ATTRIBUTE) if hasattr(candidate, DEPENDS_ATTRIBUTE) else None
-                required_dependencies = []
-                optional_dependencies = []
 
-                # Add injected
-                if name in task_dependencies:
-                    injected_dependencies = task_dependencies[name]
-                    required_dependencies.extend(injected_dependencies[0])
-                    optional_dependencies.extend(injected_dependencies[1])
-
+                task_dependencies = list()
                 if dependencies:
                     dependencies = list(as_list(dependencies))
                     for d in dependencies:
-                        if type(d) is optional:
+                        if isinstance(d, optional):
                             d = as_list(d())
-                            optional_dependencies += d
+                            task_dependencies.extend([TaskDependency(item, True) for item in d])
                         else:
-                            required_dependencies.append(d)
-                self.logger.debug("Found task '%s' with required dependencies %s and optional dependencies %s", name,
-                                  required_dependencies, optional_dependencies)
+                            task_dependencies.append(TaskDependency(d))
+
+                # Add injected
+                if name in injected_task_dependencies:
+                    task_dependencies.extend(injected_task_dependencies[name])
+
+                self.logger.debug("Found task '%s' with dependencies %s", name, task_dependencies)
                 self.execution_manager.register_task(
-                    Task(name, candidate, required_dependencies, description, optional_dependencies))
+                    Task(name, candidate, task_dependencies, description))
 
             elif hasattr(candidate, ACTION_ATTRIBUTE) and getattr(candidate, ACTION_ATTRIBUTE):
                 before = getattr(candidate, BEFORE_ATTRIBUTE) if hasattr(
