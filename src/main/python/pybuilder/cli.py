@@ -137,6 +137,12 @@ def parse_options(args):
                              metavar="<task>",
                              help="Exclude optional task dependencies")
 
+    project_group.add_option("-o", "--exclude-all-optional",
+                             action="store_true",
+                             dest="exclude_all_optional",
+                             default=False,
+                             help="Exclude all optional task dependencies")
+
     project_group.add_option("--force-exclude",
                              action="append",
                              dest="exclude_tasks",
@@ -343,7 +349,8 @@ def main(*args):
             reactor.prepare_build(property_overrides=options.property_overrides,
                                   project_directory=options.project_directory,
                                   exclude_optional_tasks=options.exclude_optional_tasks,
-                                  exclude_tasks=options.exclude_tasks
+                                  exclude_tasks=options.exclude_tasks,
+                                  exclude_all_optional=options.exclude_all_optional
                                   )
             if options.list_tasks:
                 print_list_of_tasks(reactor, quiet=options.very_quiet)
@@ -367,11 +374,12 @@ def main(*args):
 
     try:
         try:
-            reactor.prepare_build(
-                property_overrides=options.property_overrides,
-                project_directory=options.project_directory,
-                exclude_optional_tasks=options.exclude_optional_tasks,
-                exclude_tasks=options.exclude_tasks)
+            reactor.prepare_build(property_overrides=options.property_overrides,
+                                  project_directory=options.project_directory,
+                                  exclude_optional_tasks=options.exclude_optional_tasks,
+                                  exclude_tasks=options.exclude_tasks,
+                                  exclude_all_optional=options.exclude_all_optional
+                                  )
 
             if options.verbose or options.debug:
                 logger.debug("Verbose output enabled.\n")

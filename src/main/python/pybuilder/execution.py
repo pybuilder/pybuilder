@@ -175,6 +175,7 @@ class ExecutionManager(object):
 
         self._exclude_optional_tasks = []
         self._exclude_tasks = []
+        self._exclude_all_optional = False
 
     @property
     def initializers(self):
@@ -375,9 +376,10 @@ class ExecutionManager(object):
 
         execution_plan.append(task)
 
-    def resolve_dependencies(self, exclude_optional_tasks=None, exclude_tasks=None):
+    def resolve_dependencies(self, exclude_optional_tasks=None, exclude_tasks=None, exclude_all_optional=False):
         self._exclude_optional_tasks = as_task_name_list(exclude_optional_tasks or [])
         self._exclude_tasks = as_task_name_list(exclude_tasks or [])
+        self._exclude_all_optional = exclude_all_optional
 
         for task in self._tasks.values():
             self._execute_before[task.name] = []
@@ -421,4 +423,4 @@ class ExecutionManager(object):
         return task in self._exclude_tasks
 
     def is_optional_task_excluded(self, task):
-        return task in self._exclude_optional_tasks
+        return self._exclude_all_optional or task in self._exclude_optional_tasks
