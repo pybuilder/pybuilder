@@ -41,6 +41,8 @@ Usage:
                           Set/ override a property value
       -x <task>, --exclude=<task>
                           Exclude optional task dependencies
+      -o, --exclude-all-optional
+                          Exclude all optional task dependencies
       --force-exclude=<task>
                           Exclude any task dependencies (dangerous, may break
                           the build in unexpected ways)

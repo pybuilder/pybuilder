@@ -93,7 +93,8 @@ class Reactor(object):
                       project_directory=".",
                       project_descriptor="build.py",
                       exclude_optional_tasks=None,
-                      exclude_tasks=None):
+                      exclude_tasks=None,
+                      exclude_all_optional=False):
         if not property_overrides:
             property_overrides = {}
         Reactor._current_instance = self
@@ -114,7 +115,7 @@ class Reactor(object):
 
         self.collect_tasks_and_actions_and_initializers(self.project_module)
 
-        self.execution_manager.resolve_dependencies(exclude_optional_tasks, exclude_tasks)
+        self.execution_manager.resolve_dependencies(exclude_optional_tasks, exclude_tasks, exclude_all_optional)
 
     def build(self, tasks=None, environments=None):
         if not tasks:
