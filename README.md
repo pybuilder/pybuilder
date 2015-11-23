@@ -81,7 +81,7 @@ In addition, a few common plugins are provided:
 External plugins:
 * [pybuilder_header_plugin](https://github.com/aelgru/pybuilder_header_plugin) - ensure all your source files have the expected file header
 * [pybuilder_release_plugin](https://github.com/aelgru/pybuilder_release_plugin) - release a new version of your project to PyPI
-* [pybuilder_aws_lambda_plugin](https://github.com/immobilienscout24/pybuilder_aws_lambda_plugin) - handle packaging and uploading Python AWS Lambda code
+* [pybuilder_aws_plugin](https://github.com/immobilienscout24/pybuilder_aws_plugin) - handle AWS functionality
 
 ## Release Notes
 
