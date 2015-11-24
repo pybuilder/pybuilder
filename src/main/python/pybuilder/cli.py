@@ -391,7 +391,7 @@ def main(*args):
         except KeyboardInterrupt:
             raise PyBuilderException("Build aborted")
 
-    except Exception as e:
+    except (Exception, SystemExit) as e:
         failure_message = str(e)
         if options.debug:
             traceback.print_exc(file=sys.stderr)
