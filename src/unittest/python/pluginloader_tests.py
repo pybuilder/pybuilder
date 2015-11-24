@@ -16,30 +16,65 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import unittest
 import sys
+import unittest
 
 try:
     import __builtin__
+
     builtin_module = __builtin__
 except ImportError as e:
     import builtins
+
     builtin_module = builtins
 
 from mockito import when, verify, unstub, never  # TODO @mriehl get rid of mockito here
 from mock import patch, Mock, ANY
 from test_utils import mock  # TODO @mriehl WTF is this sorcery?!
-
-from pybuilder.errors import MissingPluginException
+from pybuilder.errors import MissingPluginException, IncompatiblePluginException
 from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
                                     ThirdPartyPluginLoader,
                                     DownloadingPluginLoader,
-                                    _install_external_plugin)
+                                    _install_external_plugin,
+                                    _check_plugin_version)
+from pybuilder import pluginloader
+from pip._vendor.packaging.version import Version
+
+
+class PluginVersionCheckTest(unittest.TestCase):
+    def setUp(self):
+        self.old_pyb_version = pluginloader.PYB_VERSION
+
+    def tearDown(self):
+        pluginloader.PYB_VERSION = self.old_pyb_version
+
+    def test_version_exact_match(self):
+        plugin_module = mock()
+        pluginloader.PYB_VERSION = Version("1.2.3")
+        plugin_module.pyb_version = "===1.2.3"
+        _check_plugin_version(plugin_module, "test plugin")
+
+    def test_version_compatible_match(self):
+        plugin_module = mock()
+        pluginloader.PYB_VERSION = Version("1.2.3")
+        plugin_module.pyb_version = "~=1.2"
+        _check_plugin_version(plugin_module, "test plugin")
+
+    def test_version_multiple_specifier_match(self):
+        plugin_module = mock()
+        pluginloader.PYB_VERSION = Version("1.2.3")
+        plugin_module.pyb_version = ">=1.2.0,<=1.2.4"
+        _check_plugin_version(plugin_module, "test plugin")
+
+    def test_version_no_match(self):
+        plugin_module = mock()
+        pluginloader.PYB_VERSION = Version("1.2.3")
+        plugin_module.pyb_version = ">=1.2.5"
+        self.assertRaises(IncompatiblePluginException, _check_plugin_version, plugin_module, "test plugin")
 
 
 class ThirdPartyPluginLoaderTest(unittest.TestCase):
-
     def setUp(self):
         self.project = mock()
         self.loader = ThirdPartyPluginLoader(mock())
@@ -60,6 +95,7 @@ class ThirdPartyPluginLoaderTest(unittest.TestCase):
         old_module = sys.modules.get("spam")
         try:
             plugin_module = mock()
+            plugin_module.pyb_version = None
             sys.modules["spam"] = plugin_module
             when(builtin_module).__import__(
                 "spam").thenReturn(plugin_module)
@@ -76,6 +112,7 @@ class ThirdPartyPluginLoaderTest(unittest.TestCase):
         old_module = sys.modules.get("spam")
         try:
             plugin_module = mock()
+            plugin_module.pyb_version = None
             sys.modules["spam"] = plugin_module
             when(builtin_module).__import__(
                 "pypi:spam").thenReturn(plugin_module)
@@ -90,14 +127,13 @@ class ThirdPartyPluginLoaderTest(unittest.TestCase):
 
 
 class DownloadingPluginLoaderTest(unittest.TestCase):
-
     @patch("pybuilder.pluginloader.ThirdPartyPluginLoader")
     @patch("pybuilder.pluginloader._install_external_plugin")
     def test_should_download_module_from_pypi(self, install, _):
         logger = Mock()
         DownloadingPluginLoader(logger).load_plugin(Mock(), "pypi:external_plugin")
 
-        install.assert_called_with("pypi:external_plugin", logger)
+        install.assert_called_with("pypi:external_plugin", None, logger)
 
     @patch("pybuilder.pluginloader.ThirdPartyPluginLoader.load_plugin")
     @patch("pybuilder.pluginloader._install_external_plugin")
@@ -121,9 +157,8 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
 
 
 class InstallExternalPluginTests(unittest.TestCase):
-
     def test_should_raise_error_when_protocol_is_invalid(self):
-        self.assertRaises(MissingPluginException, _install_external_plugin, "some-plugin", Mock())
+        self.assertRaises(MissingPluginException, _install_external_plugin, "some-plugin", None, Mock())
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
@@ -132,9 +167,21 @@ class InstallExternalPluginTests(unittest.TestCase):
         read_file.return_value = ["no problems", "so far"]
         execute.return_value = 0
 
-        _install_external_plugin("pypi:some-plugin", Mock())
+        _install_external_plugin("pypi:some-plugin", None, Mock())
 
-        execute.assert_called_with('pip install some-plugin', ANY, shell=True, error_file_name=ANY)
+        execute.assert_called_with(['pip', 'install', 'some-plugin'], ANY, shell=True, error_file_name=ANY)
+
+    @patch("pybuilder.pluginloader.read_file")
+    @patch("pybuilder.pluginloader.tempfile")
+    @patch("pybuilder.pluginloader.execute_command")
+    def test_should_install_plugin_with_version(self, execute, _, read_file):
+        read_file.return_value = ["no problems", "so far"]
+        execute.return_value = 0
+
+        _install_external_plugin("pypi:some-plugin", "===1.2.3", Mock())
+
+        execute.assert_called_with(['pip', 'install', '--upgrade', '--pre', 'some-plugin===1.2.3'], ANY, shell=True,
+                                   error_file_name=ANY)
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
@@ -143,11 +190,10 @@ class InstallExternalPluginTests(unittest.TestCase):
         read_file.return_value = ["something", "went wrong"]
         execute.return_value = 1
 
-        self.assertRaises(MissingPluginException, _install_external_plugin, "pypi:some-plugin", Mock())
+        self.assertRaises(MissingPluginException, _install_external_plugin, "pypi:some-plugin", None, Mock())
 
 
 class BuiltinPluginLoaderTest(unittest.TestCase):
-
     def setUp(self):
         self.project = mock()
         self.loader = BuiltinPluginLoader(mock())
@@ -168,6 +214,7 @@ class BuiltinPluginLoaderTest(unittest.TestCase):
         old_module = sys.modules.get("pybuilder.plugins.spam_plugin")
         try:
             plugin_module = mock()
+            plugin_module.pyb_version = None
             sys.modules["pybuilder.plugins.spam_plugin"] = plugin_module
             when(builtin_module).__import__(
                 "pybuilder.plugins.spam_plugin").thenReturn(plugin_module)
@@ -181,8 +228,7 @@ class BuiltinPluginLoaderTest(unittest.TestCase):
                 sys.modules["pybuilder.plugins.spam_plugin"] = old_module
 
 
-class DispatchingPluginLoaderTest (unittest.TestCase):
-
+class DispatchingPluginLoaderTest(unittest.TestCase):
     def setUp(self):
         self.project = mock()
         self.fist_delegatee = mock()
