@@ -25,8 +25,9 @@ Usage:
     -t, --list-tasks      List tasks
     -T, --list-plan-tasks
                           List execution plan tasks
-    --start-project       Initialize a build descriptor and python project
-                          structure.
+    --start-project       Initialize build descriptors and python project
+                          structure
+    --update-project      Update build descriptors and python project structure
     -v, --verbose         Enable verbose output
   
     Project Options:
