@@ -91,6 +91,13 @@ class MissingPluginException(PyBuilderException):
             "Missing plugin '%s': %s", plugin, message)
 
 
+class IncompatiblePluginException(PyBuilderException):
+    def __init__(self, plugin_name, required_pyb_version, actual_pyb_version):
+        super(IncompatiblePluginException, self).__init__(
+            "Plugin '%s': required PyB version '%s' does not match current '%s'", plugin_name, required_pyb_version,
+            actual_pyb_version)
+
+
 class BuildFailedException(PyBuilderException):
     pass
 

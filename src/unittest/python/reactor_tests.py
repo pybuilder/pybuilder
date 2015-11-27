@@ -71,12 +71,12 @@ class ReactorTest(unittest.TestCase):
 
     def test_should_raise_exception_when_importing_plugin_and_plugin_not_found(self):
         when(self.plugin_loader_mock).load_plugin(
-            any(), "not_found").thenRaise(MissingPluginException("not_found"))
+            any(), "not_found", any()).thenRaise(MissingPluginException("not_found"))
 
         self.assertRaises(
             MissingPluginException, self.reactor.import_plugin, "not_found")
 
-        verify(self.plugin_loader_mock).load_plugin(any(), "not_found")
+        verify(self.plugin_loader_mock).load_plugin(any(), "not_found", None)
 
     def test_should_collect_single_task(self):
         def task():
@@ -387,14 +387,14 @@ class ReactorTest(unittest.TestCase):
     def test_should_import_plugin_only_once(self):
         plugin_module = mock()
         when(self.plugin_loader_mock).load_plugin(
-            any(), "spam").thenReturn(plugin_module)
+            any(), "spam", any()).thenReturn(plugin_module)
 
         self.reactor.require_plugin("spam")
         self.reactor.require_plugin("spam")
 
         self.assertEquals(["spam"], self.reactor.get_plugins())
 
-        verify(self.plugin_loader_mock).load_plugin(any(), "spam")
+        verify(self.plugin_loader_mock).load_plugin(any(), "spam", None)
 
     def test_ensure_project_properties_are_logged_when_calling_log_project_properties(self):
         project = Project("spam")

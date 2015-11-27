@@ -207,7 +207,7 @@ def use_bldsup(build_support_dir="bldsup"):
     sys.path.insert(0, build_support_dir)
 
 
-def use_plugin(name):
+def use_plugin(name, version=None):
     from pybuilder.reactor import Reactor
     reactor = Reactor.current_instance()
     if reactor is not None:

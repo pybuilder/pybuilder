@@ -68,11 +68,11 @@ class Reactor(object):
         self._plugins = []
         self.project = None
 
-    def require_plugin(self, plugin):
+    def require_plugin(self, plugin, version=None):
         if plugin not in self._plugins:
             try:
                 self._plugins.append(plugin)
-                self.import_plugin(plugin)
+                self.import_plugin(plugin, version)
             except:  # NOQA
                 self._plugins.remove(plugin)
                 raise
@@ -199,9 +199,9 @@ class Reactor(object):
             formatted += "\n%40s : %s" % (key, self.project.get_property(key))
         self.logger.debug("Project properties: %s", formatted)
 
-    def import_plugin(self, plugin):
-        self.logger.debug("Loading plugin '%s'", plugin)
-        plugin_module = self.plugin_loader.load_plugin(self.project, plugin)
+    def import_plugin(self, plugin, version=None):
+        self.logger.debug("Loading plugin '%s'%s", plugin, " version %s" % version if version else "")
+        plugin_module = self.plugin_loader.load_plugin(self.project, plugin, version)
         self.collect_tasks_and_actions_and_initializers(plugin_module)
 
     def collect_tasks_and_actions_and_initializers(self, project_module):

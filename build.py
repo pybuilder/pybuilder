@@ -91,6 +91,7 @@ def initialize(project):
         project.build_depends_on("importlib")  # for fluentmock
 
     project.depends_on("tblib")
+    project.depends_on("pip")
 
     project.set_property("verbose", True)
 
