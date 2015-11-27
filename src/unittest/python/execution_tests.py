@@ -865,6 +865,20 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
 
         self.assertRaises(RequiredTaskExclusionException, self.execution_manager.build_execution_plan, "three")
 
+    def test_is_task_in_current_execution_plan(self):
+        one = mock(name="one", dependencies=[])
+        two = mock(name="two", dependencies=[TaskDependency("one")])
+        three = mock(name="three", dependencies=[TaskDependency("one"), TaskDependency("two")])
+
+        self.execution_manager.register_task(one, two, three)
+        self.execution_manager.resolve_dependencies(exclude_all_optional=True)
+        self.execution_manager._current_execution_plan = self.execution_manager.build_execution_plan("three")
+
+        self.assertTrue(self.execution_manager.is_task_in_current_execution_plan("three"))
+        self.assertTrue(self.execution_manager.is_task_in_current_execution_plan("two"))
+        self.assertTrue(self.execution_manager.is_task_in_current_execution_plan("one"))
+        self.assertFalse(self.execution_manager.is_task_in_current_execution_plan("four"))
+
 
 class ExecutionManagerExecuteExecutionPlanTest(ExecutionManagerTestBase):
     def test_should_raise_exception_when_dependencies_are_not_resolved(self):

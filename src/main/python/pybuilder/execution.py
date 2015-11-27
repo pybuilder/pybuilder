@@ -203,6 +203,7 @@ class ExecutionManager(object):
         self._actions_executed = []
         self._tasks_executed = []
         self._current_task = None
+        self._current_execution_plan = None
 
         self._exclude_optional_tasks = []
         self._exclude_tasks = []
@@ -327,9 +328,12 @@ class ExecutionManager(object):
         self.assert_dependencies_resolved()
 
         summaries = []
-
-        for task in execution_plan:
-            summaries.append(self.execute_task(task, **keyword_arguments))
+        self._current_execution_plan = execution_plan
+        try:
+            for task in execution_plan:
+                summaries.append(self.execute_task(task, **keyword_arguments))
+        finally:
+            self._current_execution_plan = None
 
         return summaries
 
@@ -415,8 +419,8 @@ class ExecutionManager(object):
 
     def _should_omit_dependency(self, task, dependency):
         if dependency.optional:
-            if self._exclude_all_optional or dependency.name in self._exclude_optional_tasks or \
-                    dependency.name in self._exclude_tasks:
+            if self._exclude_all_optional or dependency.name in self._exclude_optional_tasks \
+                    or dependency.name in self._exclude_tasks:
                 self.logger.debug("Omitting optional dependency '%s' of task '%s'", dependency.name, task.name)
                 return True
         else:
@@ -472,3 +476,10 @@ class ExecutionManager(object):
                 self.logger.debug("Adding after action '%s' for task '%s'", action.name, task)
 
         self._dependencies_resolved = True
+
+    def is_task_in_current_execution_plan(self, task_name):
+        if self._current_execution_plan:
+            for task in self._current_execution_plan:
+                if task.name == task_name:
+                    return True
+        return False
