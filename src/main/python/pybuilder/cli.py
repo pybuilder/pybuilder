@@ -33,7 +33,7 @@ from pybuilder.core import Logger
 from pybuilder.errors import PyBuilderException
 from pybuilder.execution import ExecutionManager
 from pybuilder.reactor import Reactor
-from pybuilder.scaffolding import start_project
+from pybuilder.scaffolding import start_project, update_project
 from pybuilder.terminal import (BOLD, BROWN, RED, GREEN, bold, styled_text,
                                 fg, italic, print_text, print_text_line,
                                 print_error, print_error_line, draw_line)
@@ -85,23 +85,29 @@ def parse_options(args):
 
     parser.error = error
 
-    parser.add_option("-t", "--list-tasks",
-                      action="store_true",
-                      dest="list_tasks",
-                      default=False,
-                      help="List tasks")
+    list_tasks_option = parser.add_option("-t", "--list-tasks",
+                                          action="store_true",
+                                          dest="list_tasks",
+                                          default=False,
+                                          help="List tasks")
 
-    parser.add_option("-T", "--list-plan-tasks",
-                      action="store_true",
-                      dest="list_plan_tasks",
-                      default=False,
-                      help="List execution plan tasks")
+    list_plan_tasks_option = parser.add_option("-T", "--list-plan-tasks",
+                                               action="store_true",
+                                               dest="list_plan_tasks",
+                                               default=False,
+                                               help="List execution plan tasks")
 
-    parser.add_option("--start-project",
-                      action="store_true",
-                      dest="start_project",
-                      default=False,
-                      help="Initialize a build descriptor and python project structure.")
+    start_project_option = parser.add_option("--start-project",
+                                             action="store_true",
+                                             dest="start_project",
+                                             default=False,
+                                             help="Initialize build descriptors and python project structure")
+
+    update_project_option = parser.add_option("--update-project",
+                                              action="store_true",
+                                              dest="update_project",
+                                              default=False,
+                                              help="Update build descriptors and python project structure")
 
     parser.add_option("-v", "--verbose",
                       action="store_true",
@@ -180,6 +186,11 @@ def parse_options(args):
     parser.add_option_group(output_group)
 
     options, arguments = parser.parse_args(args=list(args))
+
+    if options.list_tasks and options.list_plan_tasks:
+        parser.error("%s and %s are mutually exclusive" % (list_tasks_option, list_plan_tasks_option))
+    if options.start_project and options.update_project:
+        parser.error("%s and %s are mutually exclusive" % (start_project_option, update_project_option))
 
     property_overrides = {}
     for pair in options.property_overrides:
@@ -343,6 +354,9 @@ def main(*args):
 
     if options.start_project:
         return start_project()
+
+    if options.update_project:
+        return update_project()
 
     if options.list_tasks or options.list_plan_tasks:
         try:
