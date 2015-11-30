@@ -25,15 +25,12 @@
 
 import os
 
-
 from pybuilder.core import after, task, init, use_plugin, depends, description
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import assert_can_execute, discover_files_matching, read_file
 from pybuilder.plugins.python.python_plugin_helper import execute_command
-
+from pybuilder.utils import assert_can_execute, discover_files_matching, read_file
 
 __author__ = 'Valentin Haenel'
-
 
 use_plugin("python.core")
 
@@ -41,8 +38,9 @@ use_plugin("python.core")
 @init
 def initialize_cram_plugin(project):
     project.build_depends_on("cram")
-    project.set_property_if_unset('dir_source_cmdlinetest', "src/cmdlinetest")
-    project.set_property("cram_test_file_glob", '*.t')
+    project.set_property_if_unset("dir_source_cmdlinetest", "src/cmdlinetest")
+    project.set_property_if_unset("cram_test_file_glob", "*.t")
+    project.set_property_if_unset("cram_fail_if_no_tests", True)
 
 
 @after("prepare")
@@ -83,8 +81,13 @@ def _prepend_path(env, variable, value):
 def run_cram_tests(project, logger):
     logger.info("Running Cram command line tests")
 
+    cram_tests = list(_find_files(project))
+    if not cram_tests or len(cram_tests) == 0:
+        if project.get_property("cram_fail_if_no_tests"):
+            raise BuildFailedException("No Cram tests found!")
+
     command_and_arguments = _cram_command_for(project)
-    command_and_arguments.extend(_find_files(project))
+    command_and_arguments.extend(cram_tests)
     report_file = _report_file(project)
 
     env = os.environ.copy()
