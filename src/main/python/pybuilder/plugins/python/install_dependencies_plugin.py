@@ -19,22 +19,22 @@
 from __future__ import print_function
 
 import re
-import sys
 
 from pybuilder.core import (before,
                             after,
                             task,
                             description,
                             use_plugin,
-                            init,
-                            RequirementsFile)
+                            init)
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import assert_can_execute, execute_command, mkdir
-from pybuilder.plugins.python.setuptools_plugin_helper import build_dependency_version_string
+from pybuilder.pip_utils import (PIP_EXECUTABLE,
+                                 build_pip_install_options,
+                                 as_pip_install_target,
+                                 )
 from pybuilder.terminal import print_file_content
+from pybuilder.utils import assert_can_execute, execute_command, mkdir
 
-
-__author__ = "Alexander Metzner"
+__author__ = "Alexander Metzner, Arcadiy Ivanov"
 
 use_plugin("core")
 
@@ -46,12 +46,13 @@ def initialize_install_dependencies_plugin(project):
     project.set_property_if_unset("install_dependencies_local_mapping", {})
     project.set_property_if_unset("install_dependencies_extra_index_url", None)
     project.set_property_if_unset("install_dependencies_upgrade", False)
+    project.set_property_if_unset("install_dependencies_insecure_installation", [])
 
 
 @after("prepare")
 def check_pip_available(logger):
     logger.debug("Checking if pip is available")
-    assert_can_execute("pip", "pip", "plugin python.install_dependencies")
+    assert_can_execute(PIP_EXECUTABLE, "pip", "plugin python.install_dependencies")
 
 
 @task
@@ -81,7 +82,9 @@ def install_runtime_dependencies(logger, project):
 @task
 @description("Displays all dependencies the project requires")
 def list_dependencies(project):
-    print("\n".join(map(lambda d: "{0}".format(as_pip_argument(d)), project.build_dependencies + project.dependencies)))
+    print("\n".join(
+        map(lambda d: "{0}".format(" ".join(as_pip_install_target(d))),
+            project.build_dependencies + project.dependencies)))
 
 
 @before((install_build_dependencies, install_runtime_dependencies, install_dependencies), only_once=True)
@@ -99,14 +102,28 @@ def install_dependency(logger, project, dependency):
     log_file = project.expand_path("$dir_install_logs", dependency.name)
     log_file = re.sub(r'<|>|=', '_', log_file)
 
-    if sys.platform.startswith("win"):
-        # we can't use quotes on windows
-        pip_dependency = as_pip_argument(dependency)
-    else:
-        # on linux we need quotes because version pinning (>=) would be an IO redirect
-        pip_dependency = "'{0}'".format(as_pip_argument(dependency))
-    pip_command_line = "pip install {0}{1}".format(build_pip_install_options(project, dependency.name), pip_dependency)
-    exit_code = execute_command(pip_command_line, log_file, shell=True)
+    target_dir = None
+    try:
+        target_dir = project.get_property("install_dependencies_local_mapping")[dependency.name]
+    except KeyError:
+        pass
+
+    pip_command_line = list()
+    pip_command_line.append(PIP_EXECUTABLE)
+    pip_command_line.append("install")
+    pip_command_line.extend(build_pip_install_options(project.get_property("install_dependencies_index_url"),
+                                                      project.get_property("install_dependencies_extra_index_url"),
+                                                      project.get_property("install_dependencies_upgrade"),
+                                                      project.get_property(
+                                                          "install_dependencies_insecure_installation"),
+                                                      True if url else False,
+                                                      target_dir,
+                                                      project.get_property("verbose")
+                                                      ))
+    pip_command_line.extend(as_pip_install_target(dependency))
+    logger.debug("Invoking pip: %s", pip_command_line)
+    exit_code = execute_command(pip_command_line, log_file, shell=False)
+
     if exit_code != 0:
         if project.get_property("verbose"):
             print_file_content(log_file)
@@ -115,46 +132,3 @@ def install_dependency(logger, project, dependency):
             raise BuildFailedException("Unable to install dependency '%s'. See %s for details.",
                                        getattr(dependency, "name", dependency),
                                        log_file)
-
-
-def build_pip_install_options(project, dependency):
-    options = []
-    if project.get_property("install_dependencies_index_url"):
-        options.append("--index-url " + project.get_property("install_dependencies_index_url"))
-        if project.get_property("install_dependencies_extra_index_url"):
-            options.append("--extra-index-url " + project.get_property("install_dependencies_extra_index_url"))
-
-    if project.get_property("install_dependencies_upgrade"):
-        options.append("--upgrade")
-
-    dependency_mapping = project.get_property("install_dependencies_local_mapping", {})
-
-    if dependency in dependency_mapping:
-        options.append("-t " + dependency_mapping[dependency])
-
-    if _pip_disallows_insecure_packages_by_default():
-        for insecure_dependency in project.get_property("install_dependencies_insecure_installation", []):
-            arguments_for_insecure_installation = ["--allow-unverified", insecure_dependency,
-                                                   "--allow-external", insecure_dependency]
-            options.extend(arguments_for_insecure_installation)
-
-    result = " ".join(options)
-    if result:
-        result += " "
-    return result
-
-
-def as_pip_argument(dependency):
-    if isinstance(dependency, RequirementsFile):
-        return "-r{0}".format(dependency.name)
-    if dependency.url:
-        return dependency.url
-    return "{0}{1}".format(dependency.name, build_dependency_version_string(dependency))
-
-
-def _pip_disallows_insecure_packages_by_default():
-    import pip
-    # (2014-01-01) BACKWARD INCOMPATIBLE pip no longer will scrape insecure external urls by default
-    # nor will it install externally hosted files by default
-    # Also pip v1.1 for example has no __version__
-    return hasattr(pip, "__version__") and pip.__version__ >= '1.5'
