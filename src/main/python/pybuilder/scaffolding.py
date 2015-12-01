@@ -135,13 +135,17 @@ import sys
 import glob
 import shutil
 
+from sys import version_info
+
+PIP_EXECUTABLE = "pip%s.%s" % (version_info[0], version_info[1])
+
 script_dir = os.path.dirname(os.path.realpath(__file__))
 exit_code = 0
 try:
     subprocess.check_call(["pyb", "--version"])
 except FileNotFoundError as e:
     try:
-        subprocess.check_call(["pip", "install", "pybuilder"])
+        subprocess.check_call([PIP_EXECUTABLE, "install", "pybuilder"])
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
 except subprocess.CalledProcessError as e:

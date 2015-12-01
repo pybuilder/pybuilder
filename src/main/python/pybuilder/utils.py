@@ -21,18 +21,19 @@
     Provides generic utilities that can be used by plugins.
 """
 
+import collections
 import json
-import sys
 import subprocess
+import sys
 import tempfile
 import time
 import traceback
-from subprocess import Popen, PIPE
 from multiprocessing import Process
+from subprocess import Popen, PIPE
+
 import fnmatch
 import os
 import re
-import collections
 
 try:
     from multiprocessing import SimpleQueue
@@ -48,9 +49,11 @@ from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
 
 if sys.version_info[0] < 3:  # if major is less than 3
     from .excp_util_2 import raise_exception, is_string
+
     is_string = is_string
 else:
     from .excp_util_3 import raise_exception, is_string
+
     is_string = is_string
 
 
@@ -182,17 +185,12 @@ def execute_command_and_capture_output(*command_and_arguments):
 
 
 def assert_can_execute(command_and_arguments, prerequisite, caller):
-    fd, outfile = tempfile.mkstemp()
-    f = open(outfile, "w")
-    try:
-        process = subprocess.Popen(command_and_arguments, stdout=f, stderr=f, shell=False)
-        process.wait()
-    except OSError:
-        raise MissingPrerequisiteException(prerequisite, caller)
-    finally:
-        f.close()
-        os.close(fd)
-        os.unlink(outfile)
+    with tempfile.NamedTemporaryFile() as f:
+        try:
+            process = subprocess.Popen(command_and_arguments, stdout=f, stderr=f, shell=False)
+            process.wait()
+        except OSError:
+            raise MissingPrerequisiteException(prerequisite, caller)
 
 
 def read_file(file_name):

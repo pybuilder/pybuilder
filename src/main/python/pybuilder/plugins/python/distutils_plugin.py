@@ -37,8 +37,10 @@ from pybuilder.core import (after,
                             Dependency)
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import as_list, is_string, is_notstr_iterable, get_dist_version_string
-from .setuptools_plugin_helper import build_dependency_version_string
+from pybuilder.pip_utils import build_dependency_version_string
 from textwrap import dedent
+from pybuilder.pip_utils import pip_install
+from datetime import datetime
 
 use_plugin("python.core")
 
@@ -197,7 +199,12 @@ def build_binary_distribution(project, logger):
 def install_distribution(project, logger):
     logger.info("Installing project %s-%s", project.name, project.version)
 
-    execute_distutils(project, logger, as_list("install"), True)
+    _prepare_reports_dir(project)
+    outfile_name = project.expand_path("$dir_reports", "distutils",
+                                       "pip_install_%s" % datetime.utcnow().strftime("%Y%m%d%H%M%S"))
+    pip_install(project.expand_path("$dir_dist"), force_reinstall=True, logger=logger,
+                verbose=project.get_property("verbose"), cwd=".", outfile_name=outfile_name,
+                error_file_name=outfile_name)
 
 
 @task("upload", description="Upload a project to PyPi.")
@@ -215,10 +222,7 @@ def upload(project, logger):
 
 
 def execute_distutils(project, logger, distutils_commands, clean=False):
-    reports_dir = project.expand_path("$dir_reports", "distutils")
-    if not os.path.exists(reports_dir):
-        os.mkdir(reports_dir)
-
+    reports_dir = _prepare_reports_dir(project)
     setup_script = project.expand_path("$dir_dist", "setup.py")
 
     for command in distutils_commands:
@@ -478,3 +482,10 @@ def _run_process_and_wait(commands, cwd, stdout, stderr=None):
                                stderr=stderr or stdout,
                                shell=False)
     return process.wait()
+
+
+def _prepare_reports_dir(project):
+    reports_dir = project.expand_path("$dir_reports", "distutils")
+    if not os.path.exists(reports_dir):
+        os.mkdir(reports_dir)
+    return reports_dir

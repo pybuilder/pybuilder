@@ -17,18 +17,19 @@
 #   limitations under the License.
 
 import datetime
-import os
-import re
+import shutil
+import sys
 import tempfile
 import time
 import unittest
-import shutil
-import sys
 from json import loads
 
+import os
+import re
 from mockito import when, verify, unstub, any, mock
 
 import pybuilder.utils
+from pybuilder.errors import PyBuilderException
 from pybuilder.utils import (GlobExpression,
                              Timer,
                              apply_on_files,
@@ -42,7 +43,6 @@ from pybuilder.utils import (GlobExpression,
                              render_report,
                              timedelta_in_millis,
                              fork_process)
-from pybuilder.errors import PyBuilderException
 
 
 class TimerTest(unittest.TestCase):

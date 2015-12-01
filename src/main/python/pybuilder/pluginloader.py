@@ -32,7 +32,8 @@ from pybuilder.errors import (MissingPluginException,
                               IncompatiblePluginException,
                               UnspecifiedPluginNameException,
                               )
-from pybuilder.utils import execute_command, read_file
+from pybuilder.pip_utils import pip_install
+from pybuilder.utils import read_file
 
 PYPI_PLUGIN_PROTOCOL = "pypi:"
 VCS_PLUGIN_PROTOCOL = "vcs:"
@@ -111,21 +112,26 @@ def _install_external_plugin(name, version, logger, plugin_module_name):
         message = "Only plugins starting with '{0}' are currently supported"
         raise MissingPluginException(name, message.format((PYPI_PLUGIN_PROTOCOL, VCS_PLUGIN_PROTOCOL)))
 
+    force_reinstall = False
+    upgrade = False
     if name.startswith(PYPI_PLUGIN_PROTOCOL):
         pip_package = name.replace(PYPI_PLUGIN_PROTOCOL, "")
         if version:
             pip_package += str(version)
+            upgrade = True
     elif name.startswith(VCS_PLUGIN_PROTOCOL):
         pip_package = name.replace(VCS_PLUGIN_PROTOCOL, "")
+        force_reinstall = True
 
-    with tempfile.NamedTemporaryFile(delete=False) as log_file:
+    with tempfile.NamedTemporaryFile(delete=True) as log_file:
         log_file_name = log_file.name
-        install_cmd = ['pip', 'install', '--upgrade', pip_package]
-        result = execute_command(install_cmd,
-                                 log_file_name,
-                                 error_file_name=log_file_name,
-                                 cwd=".",
-                                 shell=False)
+        result = pip_install(pip_package,
+                             upgrade=upgrade,
+                             force_reinstall=force_reinstall,
+                             logger=logger,
+                             outfile_name=log_file_name,
+                             error_file_name=log_file_name,
+                             cwd=".")
         if result != 0:
             logger.error("The following pip error was encountered:\n" + "".join(read_file(log_file_name)))
             message = "Failed to install plugin from {0}".format(pip_package)

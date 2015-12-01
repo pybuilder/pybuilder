@@ -190,55 +190,55 @@ class InstallExternalPluginTests(unittest.TestCase):
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
-    @patch("pybuilder.pluginloader.execute_command")
+    @patch("pybuilder.pip_utils.execute_command")
     def test_should_install_plugin(self, execute, _, read_file):
         read_file.return_value = ["no problems", "so far"]
         execute.return_value = 0
 
         _install_external_plugin("pypi:some-plugin", None, Mock(), None)
 
-        execute.assert_called_with(['pip', 'install', '--upgrade', 'some-plugin'], ANY, shell=False,
-                                   error_file_name=ANY, cwd=".")
+        execute.assert_called_with([ANY, 'install', 'some-plugin'], shell=False,
+                                   outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
-    @patch("pybuilder.pluginloader.execute_command")
+    @patch("pybuilder.pip_utils.execute_command")
     def test_should_install_plugin_with_version(self, execute, _, read_file):
         read_file.return_value = ["no problems", "so far"]
         execute.return_value = 0
 
         _install_external_plugin("pypi:some-plugin", "===1.2.3", Mock(), None)
 
-        execute.assert_called_with(['pip', 'install', '--upgrade', 'some-plugin===1.2.3'], ANY, shell=False,
-                                   error_file_name=ANY, cwd=".")
+        execute.assert_called_with([ANY, 'install', '--upgrade', 'some-plugin===1.2.3'], shell=False,
+                                   outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
-    @patch("pybuilder.pluginloader.execute_command")
+    @patch("pybuilder.pip_utils.execute_command")
     def test_should_install_plugin_with_vcs(self, execute, _, read_file):
         read_file.return_value = ["no problems", "so far"]
         execute.return_value = 0
 
         _install_external_plugin("vcs:some-plugin URL", None, Mock(), None)
 
-        execute.assert_called_with(['pip', 'install', '--upgrade', 'some-plugin URL'], ANY, shell=False,
-                                   error_file_name=ANY, cwd=".")
+        execute.assert_called_with([ANY, 'install', '--force-reinstall', 'some-plugin URL'], shell=False,
+                                   outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
-    @patch("pybuilder.pluginloader.execute_command")
+    @patch("pybuilder.pip_utils.execute_command")
     def test_should_install_plugin_with_vcs_and_version(self, execute, _, read_file):
         read_file.return_value = ["no problems", "so far"]
         execute.return_value = 0
 
         _install_external_plugin("vcs:some-plugin URL", "===1.2.3", Mock(), None)
 
-        execute.assert_called_with(['pip', 'install', '--upgrade', 'some-plugin URL'], ANY, shell=False,
-                                   error_file_name=ANY, cwd=".")
+        execute.assert_called_with([ANY, 'install', '--force-reinstall', 'some-plugin URL'], shell=False,
+                                   outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
-    @patch("pybuilder.pluginloader.execute_command")
+    @patch("pybuilder.pip_utils.execute_command")
     def test_should_raise_error_when_install_from_pypi_fails(self, execute, _, read_file):
         read_file.return_value = ["something", "went wrong"]
         execute.return_value = 1
@@ -247,7 +247,7 @@ class InstallExternalPluginTests(unittest.TestCase):
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
-    @patch("pybuilder.pluginloader.execute_command")
+    @patch("pybuilder.pip_utils.execute_command")
     def test_should_raise_error_when_install_from_vcs_fails(self, execute, _, read_file):
         read_file.return_value = ["something", "went wrong"]
         execute.return_value = 1
