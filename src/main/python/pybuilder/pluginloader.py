@@ -24,7 +24,6 @@
 import sys
 import tempfile
 
-from pip._vendor.packaging.specifiers import SpecifierSet
 from pip._vendor.packaging.version import Version
 
 from pybuilder import __version__ as pyb_version
@@ -32,7 +31,7 @@ from pybuilder.errors import (MissingPluginException,
                               IncompatiblePluginException,
                               UnspecifiedPluginNameException,
                               )
-from pybuilder.pip_utils import pip_install
+from pybuilder.pip_utils import pip_install, version_satisfies_spec
 from pybuilder.utils import read_file
 
 PYPI_PLUGIN_PROTOCOL = "pypi:"
@@ -151,6 +150,5 @@ def _load_plugin(plugin_module_name, plugin_name):
 
 def _check_plugin_version(plugin_module, plugin_name):
     if hasattr(plugin_module, "pyb_version") and plugin_module.pyb_version:
-        required_pyb_version = SpecifierSet(plugin_module.pyb_version, True)
-        if not required_pyb_version.contains(PYB_VERSION):
-            raise IncompatiblePluginException(plugin_name, required_pyb_version, PYB_VERSION)
+        if not version_satisfies_spec(plugin_module.pyb_version, PYB_VERSION):
+            raise IncompatiblePluginException(plugin_name, plugin_module.pyb_version, PYB_VERSION)

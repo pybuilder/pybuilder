@@ -48,7 +48,7 @@ def initialize_sphinx_plugin(project):
     default_project_name = project.name
     default_doc_author = ", ".join([author.name for author in project.authors])
 
-    project.build_depends_on("sphinx")
+    project.plugin_depends_on("sphinx")
     project.set_property_if_unset(
         "sphinx_source_dir", SCAFFOLDING.DEFAULT_DOCS_DIRECTORY)
     project.set_property_if_unset(

@@ -16,15 +16,18 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import re
 from sys import version_info
 
 from pip._vendor.packaging.specifiers import SpecifierSet, InvalidSpecifier
 from pip._vendor.packaging.version import Version, InvalidVersion
+from pip.commands.show import search_packages_info
 
 from pybuilder.core import Dependency, RequirementsFile
 from pybuilder.utils import execute_command, as_list
 
 PIP_EXECUTABLE = "pip%s.%s" % (version_info[0], version_info[1])
+__RE_PIP_PACKAGE_VERSION = re.compile(r"^Version:\s+(.+)$", re.MULTILINE)
 
 
 def build_dependency_version_string(mixed):
@@ -40,7 +43,7 @@ def build_dependency_version_string(mixed):
         return ">=%s" % Version(version)
     except InvalidVersion:
         try:
-            return str(SpecifierSet(version, True))
+            return str(SpecifierSet(version))
         except InvalidSpecifier:
             raise ValueError("'%s' must be either PEP 0440 version or a version specifier set")
 
@@ -117,3 +120,34 @@ def _pip_disallows_insecure_packages_by_default():
     # nor will it install externally hosted files by default
     # Also pip v1.1 for example has no __version__
     return hasattr(pip, "__version__") and pip.__version__ >= '1.5'
+
+
+def get_package_version(mixed, logger=None):
+    if isinstance(mixed, RequirementsFile):
+        return None
+    if isinstance(mixed, Dependency):
+        if mixed.url:
+            return None
+        package_name = mixed.name
+    else:
+        package_name = mixed
+
+    results = search_packages_info(package_name)
+    version = None
+    for result in results:
+        if version:
+            raise ValueError("ambiguous package name '%s' - more than one result received" % mixed)
+        version = result["version"]
+    return version
+
+
+def version_satisfies_spec(spec, version):
+    if not spec:
+        return True
+    if not version:
+        return False
+    if not isinstance(spec, SpecifierSet):
+        spec = SpecifierSet(spec)
+    if not isinstance(version, Version):
+        version = Version(version)
+    return spec.contains(version)

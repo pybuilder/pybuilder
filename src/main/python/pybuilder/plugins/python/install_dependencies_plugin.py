@@ -21,7 +21,6 @@ from __future__ import print_function
 import re
 
 from pybuilder.core import (before,
-                            after,
                             task,
                             description,
                             use_plugin,
@@ -32,7 +31,7 @@ from pybuilder.pip_utils import (PIP_EXECUTABLE,
                                  as_pip_install_target,
                                  )
 from pybuilder.terminal import print_file_content
-from pybuilder.utils import assert_can_execute, execute_command, mkdir
+from pybuilder.utils import execute_command, mkdir
 
 __author__ = "Alexander Metzner, Arcadiy Ivanov"
 
@@ -47,12 +46,6 @@ def initialize_install_dependencies_plugin(project):
     project.set_property_if_unset("install_dependencies_extra_index_url", None)
     project.set_property_if_unset("install_dependencies_upgrade", False)
     project.set_property_if_unset("install_dependencies_insecure_installation", [])
-
-
-@after("prepare")
-def check_pip_available(logger):
-    logger.debug("Checking if pip is available")
-    assert_can_execute(PIP_EXECUTABLE, "pip", "plugin python.install_dependencies")
 
 
 @task

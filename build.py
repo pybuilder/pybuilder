@@ -85,13 +85,13 @@ def initialize(project):
     project.build_depends_on("mockito-without-hardcoded-distribute-version")
     project.build_depends_on("pyfix")  # required test framework
     project.build_depends_on("pyassert")
-    project.build_depends_on("wheel")
     project.build_depends_on("pygments")
     if sys.version_info[0:2] == (2, 6):
         project.build_depends_on("importlib")  # for fluentmock
 
     project.depends_on("tblib")
-    project.depends_on("pip")
+    project.depends_on("pip", ">=7.0")
+    project.depends_on("wheel")
 
     project.set_property("verbose", True)
 
@@ -99,6 +99,9 @@ def initialize(project):
     project.set_property("coverage_reset_modules", True)
     project.get_property("coverage_exceptions").append("pybuilder.cli")
     project.get_property("coverage_exceptions").append("pybuilder.plugins.core_plugin")
+
+    # Issue #284
+    project.set_property("integrationtest_inherit_environment", True)
 
     project.set_property('flake8_break_build', True)
     project.set_property('flake8_include_test_sources', True)

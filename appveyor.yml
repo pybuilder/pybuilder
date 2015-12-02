@@ -18,7 +18,7 @@ clone_depth: 1
 install:
 - C:\Python35\python.exe -m venv venv
 - ps: .\venv\Scripts\Activate.ps1
-- python.exe ./build.py install_dependencies -v
+- python.exe ./build.py install_dependencies -v -X
 
 build: false
 

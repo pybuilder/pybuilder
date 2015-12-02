@@ -32,7 +32,7 @@ class InitTestSourceDirectoryTests(TestCase):
 
         init_test_source_directory(mock_project)
 
-        mock_project.build_depends_on.assert_called_with('pyfix')
+        mock_project.plugin_depends_on.assert_called_with('pyfix')
 
     @patch('pybuilder.plugins.python.pyfix_plugin_impl.execute_tests_matching')
     def test_should_set_default_properties(self, mock_execute_tests_matching):

@@ -37,7 +37,7 @@ use_plugin("python.core")
 
 @init
 def initialize_cram_plugin(project):
-    project.build_depends_on("cram")
+    project.plugin_depends_on("cram")
     project.set_property_if_unset("dir_source_cmdlinetest", "src/cmdlinetest")
     project.set_property_if_unset("cram_test_file_glob", "*.t")
     project.set_property_if_unset("cram_fail_if_no_tests", True)

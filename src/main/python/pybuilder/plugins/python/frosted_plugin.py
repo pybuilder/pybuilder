@@ -37,7 +37,8 @@ use_plugin("python.core")
 
 @init
 def initialize_frosted_plugin(project):
-    project.build_depends_on("frosted")
+    project.plugin_depends_on("frosted")
+
     project.set_property("frosted_break_build", False)
     project.set_property("frosted_include_test_sources", False)
     project.set_property("frosted_include_scripts", False)

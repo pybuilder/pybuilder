@@ -25,7 +25,7 @@ use_plugin("python.core")
 
 @init
 def init_pep8_properties(project):
-    project.build_depends_on("pep8")
+    project.plugin_depends_on("pep8")
 
 
 @after("prepare")
