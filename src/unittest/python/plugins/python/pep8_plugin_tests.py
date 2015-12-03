@@ -42,4 +42,4 @@ class CheckPep8AvailableTests(TestCase):
     def test_should_set_dependency(self):
         mock_project = Mock(Project)
         init_pep8_properties(mock_project)
-        mock_project.build_depends_on.assert_called_with('pep8')
+        mock_project.plugin_depends_on.assert_called_with('pep8')

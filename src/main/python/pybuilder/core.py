@@ -32,7 +32,7 @@ import os
 from os.path import sep as PATH_SEPARATOR
 
 from pybuilder.errors import MissingPropertyException
-from .utils import as_list
+from pybuilder.utils import as_list
 
 INITIALIZER_ATTRIBUTE = "_python_builder_initializer"
 
@@ -249,6 +249,9 @@ class Dependency(object):
             return True
         return self.name < other.name
 
+    def __repr__(self):
+        return self.name + ("," + self.version if self.version else "") + ("," + self.url if self.url else "")
+
 
 class RequirementsFile(object):
     """
@@ -302,6 +305,7 @@ class Project(object):
         self._properties = {"verbose": False}
         self._install_dependencies = set()
         self._build_dependencies = set()
+        self._plugin_dependencies = set()
         self._manifest_included_files = []
         self._manifest_included_directories = []
         self._package_data = {}
@@ -377,6 +381,10 @@ class Project(object):
     def build_dependencies(self):
         return list(sorted(self._build_dependencies))
 
+    @property
+    def plugin_dependencies(self):
+        return list(sorted(self._plugin_dependencies))
+
     def depends_on(self, name, version=None, url=None):
         self._install_dependencies.add(Dependency(name, version, url))
 
@@ -388,6 +396,9 @@ class Project(object):
 
     def build_depends_on_requirements(self, file):
         self._build_dependencies.add(RequirementsFile(file))
+
+    def plugin_depends_on(self, name, version=None, url=None):
+        self._plugin_dependencies.add(Dependency(name, version, url))
 
     @property
     def setup_preinstall_script(self):

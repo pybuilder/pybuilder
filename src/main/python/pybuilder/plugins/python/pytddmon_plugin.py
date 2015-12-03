@@ -25,7 +25,7 @@ use_plugin('python.core')
 
 @init
 def init_pytddmon_plugin(project):
-    project.build_depends_on('pytddmon', '>=1.0.2')
+    project.plugin_depends_on('pytddmon', '>=1.0.2')
 
 
 @task

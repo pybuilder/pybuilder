@@ -19,7 +19,7 @@ class CheckSnakeFoodAvailableTests(TestCase):
     def test_should_set_dependency(self):
         mock_project = Mock(Project)
         depend_on_snakefood(mock_project)
-        mock_project.build_depends_on.assert_called_with('snakefood')
+        mock_project.plugin_depends_on.assert_called_with('snakefood')
 
     @patch('pybuilder.plugins.python.snakefood_plugin.assert_can_execute')
     def test_should_check_that_snakefood_is_available(self, mock_execute_command):

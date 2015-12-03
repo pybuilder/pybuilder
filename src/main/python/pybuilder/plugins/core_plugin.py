@@ -21,6 +21,7 @@ import shutil
 import os
 
 from pybuilder.core import init, task, description, depends, optional
+from pybuilder.pip_utils import get_package_version, version_satisfies_spec, pip_install, as_pip_install_target
 
 
 @init
@@ -56,6 +57,15 @@ def prepare(project, logger):
     if not os.path.exists(reports_directory):
         logger.debug("Creating reports directory %s", reports_directory)
         os.mkdir(reports_directory)
+
+    for plugin_dependency in project.plugin_dependencies:
+        logger.debug("Processing plugin dependency %s" % plugin_dependency)
+        plugin_version = get_package_version(plugin_dependency, logger)
+        if not plugin_version or not version_satisfies_spec(plugin_dependency.version, plugin_version):
+            log_file = project.expand_path("$dir_reports", "dependency_%s_install.log" % plugin_dependency)
+            pip_install(as_pip_install_target(plugin_dependency), verbose=project.get_property("verbose"),
+                        logger=logger, force_reinstall=plugin_dependency.url is not None, outfile_name=log_file,
+                        error_file_name=log_file)
 
 
 @task

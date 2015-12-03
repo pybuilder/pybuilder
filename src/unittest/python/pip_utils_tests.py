@@ -18,6 +18,8 @@
 
 import unittest
 
+from mock import patch
+
 from pybuilder import core
 from pybuilder import pip_utils
 
@@ -30,3 +32,41 @@ class PipVersionTests(unittest.TestCase):
         self.assertEquals(pip_utils.build_dependency_version_string("1.2.3"), ">=1.2.3")
         self.assertEquals(pip_utils.build_dependency_version_string(">=1.2.3,<=2.3.4"), "<=2.3.4,>=1.2.3")
         self.assertRaises(ValueError, pip_utils.build_dependency_version_string, "bogus")
+
+    def test_version_satisfies_spec(self):
+        self.assertEquals(pip_utils.version_satisfies_spec(None, "blah"), True)
+        self.assertEquals(pip_utils.version_satisfies_spec("blah", None), False)
+        self.assertEquals(pip_utils.version_satisfies_spec(">=1.2.3", "1.2.4"), True)
+        self.assertEquals(pip_utils.version_satisfies_spec(">=1.2.3", "1.2.4.dev987"), False)
+        self.assertEquals(pip_utils.version_satisfies_spec(">=1.0", "1.1.dev1"), False)
+        self.assertEquals(pip_utils.version_satisfies_spec(">=1.0,>=0.0.dev0", "1.1.dev1"), True)
+
+    def test_get_package_version(self):
+        self.assertTrue(pip_utils.version_satisfies_spec(">=7.0", pip_utils.get_package_version(["pip"])))
+        self.assertTrue(pip_utils.get_package_version(["this package does not exist"]) is None)
+        self.assertTrue(pip_utils.get_package_version(core.RequirementsFile("blah")) is None)
+        self.assertTrue(pip_utils.get_package_version(core.Dependency("blah", url="fake url")) is None)
+
+    @patch("pybuilder.pip_utils.search_packages_info")
+    def test_get_package_version_name_ambiguous(self, search_packages_info):
+        search_packages_info.return_value = [{"name": "foo", "version": "1.2"},
+                                             {"name": "another foo", "version": "1.3"}]
+        self.assertRaises(ValueError, pip_utils.get_package_version, "foo")
+
+    def test_build_pip_install_options(self):
+        self.assertEquals(pip_utils.build_pip_install_options(), [])
+        self.assertEquals(pip_utils.build_pip_install_options(index_url="foo"), ["--index-url", "foo"])
+        self.assertEquals(pip_utils.build_pip_install_options(extra_index_url="foo"), [])
+        self.assertEquals(pip_utils.build_pip_install_options(index_url="foo", extra_index_url="bar"),
+                          ["--index-url", "foo", "--extra-index-url", "bar"])
+        self.assertEquals(pip_utils.build_pip_install_options(upgrade=True), ["--upgrade"])
+        self.assertEquals(pip_utils.build_pip_install_options(verbose=True), ["--verbose"])
+        self.assertEquals(pip_utils.build_pip_install_options(force_reinstall=True), ["--force-reinstall"])
+        self.assertEquals(pip_utils.build_pip_install_options(target_dir="target dir"), ["-t", "target dir"])
+        self.assertEquals(pip_utils.build_pip_install_options(target_dir="target dir"), ["-t", "target dir"])
+        self.assertEquals(pip_utils.build_pip_install_options(insecure_installs=["foo", "bar"]), [
+            "--allow-unverified", "foo",
+            "--allow-external", "foo",
+            "--allow-unverified", "bar",
+            "--allow-external", "bar"
+        ])

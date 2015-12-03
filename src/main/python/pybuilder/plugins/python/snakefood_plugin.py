@@ -21,7 +21,7 @@ use_plugin("python.core")
 
 @init
 def depend_on_snakefood(project):
-    project.build_depends_on("snakefood")
+    project.plugin_depends_on("snakefood")
 
 
 @before("render_snakefood_report")

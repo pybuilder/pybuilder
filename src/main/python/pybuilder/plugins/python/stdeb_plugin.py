@@ -37,7 +37,7 @@ use_plugin("core")
 @init
 def initialize_make_deb_plugin(project):
 
-    project.build_depends_on("stdeb")
+    project.plugin_depends_on("stdeb")
 
     package_name = project.name + "-" + project.version + ".tar.gz"
 

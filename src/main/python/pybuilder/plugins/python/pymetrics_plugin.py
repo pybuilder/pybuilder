@@ -18,11 +18,16 @@
 
 import os
 
-from pybuilder.core import use_plugin, after, task
+from pybuilder.core import use_plugin, after, task, init
 from pybuilder.utils import assert_can_execute, execute_command
 
 use_plugin("python.core")
 use_plugin("analysis")
+
+
+@init
+def init_pylint(project):
+    project.plugin_depends_on("pymetrics")
 
 
 @after("prepare")

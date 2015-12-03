@@ -25,7 +25,6 @@ except ImportError as e:
 
 import os
 from distutils import sysconfig
-
 from pybuilder.core import init, after, use_plugin
 from pybuilder.utils import discover_modules, render_report, fork_process, is_windows
 from pybuilder.errors import BuildFailedException
@@ -36,7 +35,7 @@ use_plugin("analysis")
 
 @init
 def init_coverage_properties(project):
-    project.build_depends_on("coverage")
+    project.plugin_depends_on("coverage")
 
     project.set_property_if_unset("coverage_threshold_warn", 70)
     project.set_property_if_unset("coverage_branch_threshold_warn", 0)

@@ -35,6 +35,8 @@ use_plugin("analysis")
 
 @init
 def init_pychecker(project):
+
+    project.plugin_depends_on("pychecker")
     project.set_property_if_unset("pychecker_break_build", True)
     project.set_property_if_unset("pychecker_break_build_threshold", 0)
 
