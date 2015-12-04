@@ -85,6 +85,8 @@ def run_cram_tests(project, logger):
     if not cram_tests or len(cram_tests) == 0:
         if project.get_property("cram_fail_if_no_tests"):
             raise BuildFailedException("No Cram tests found!")
+        else:
+            return
 
     command_and_arguments = _cram_command_for(project)
     command_and_arguments.extend(cram_tests)
