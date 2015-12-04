@@ -43,8 +43,10 @@ from pybuilder.utils import as_list, Timer, odict
 
 if sys.version_info[0] < 3:  # if major is less than 3
     from .excp_util_2 import raise_exception
+    getargspec = inspect.getargspec
 else:
     from .excp_util_3 import raise_exception
+    getargspec = inspect.getfullargspec
 
 
 def as_task_name(item):
@@ -79,7 +81,7 @@ class Executable(object):
             self.source = "n/a"
 
         if isinstance(self.callable, types.FunctionType):
-            self.parameters = inspect.getargspec(self.callable).args
+            self.parameters = getargspec(self.callable).args
         else:
             raise TypeError("Don't know how to handle callable %s" % callable)
 
