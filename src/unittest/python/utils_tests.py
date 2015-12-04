@@ -17,6 +17,8 @@
 #   limitations under the License.
 
 import datetime
+import os
+import re
 import shutil
 import sys
 import tempfile
@@ -24,8 +26,7 @@ import time
 import unittest
 from json import loads
 
-import os
-import re
+from mock import patch, Mock
 from mockito import when, verify, unstub, any, mock
 
 import pybuilder.utils
@@ -42,7 +43,8 @@ from pybuilder.utils import (GlobExpression,
                              mkdir,
                              render_report,
                              timedelta_in_millis,
-                             fork_process)
+                             fork_process,
+                             execute_command)
 
 
 class TimerTest(unittest.TestCase):
@@ -446,3 +448,15 @@ class ForkTest(unittest.TestCase):
             self.assertTrue("FooError" in str(ex))
             self.assertTrue("This error masked the send error '<function" in str(ex))
             self.assertTrue("raise FooError(Foo.bar)" in str(ex))
+
+
+class CommandExecutionTest(unittest.TestCase):
+    @patch("pybuilder.utils.open", create=True)
+    @patch("pybuilder.utils.Popen")
+    def test_execute_command(self, popen, _):
+        popen.return_value = Mock()
+        popen.return_value.wait.return_value = 0
+        self.assertEquals(execute_command(["test", "commands"]), 0)
+        self.assertEquals(execute_command(["test", "commands"], outfile_name="test.out"), 0)
+        self.assertEquals(
+            execute_command(["test", "commands"], outfile_name="test.out", error_file_name="test.out.err"), 0)
