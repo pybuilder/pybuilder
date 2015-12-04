@@ -22,7 +22,10 @@
 """
 
 import collections
+import fnmatch
 import json
+import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -30,10 +33,6 @@ import time
 import traceback
 from multiprocessing import Process
 from subprocess import Popen, PIPE
-
-import fnmatch
-import os
-import re
 
 try:
     from multiprocessing import SimpleQueue
@@ -161,19 +160,27 @@ def discover_files_matching(start_dir, file_glob):
                 yield os.path.join(root, file_name)
 
 
-def execute_command(command_and_arguments, outfile_name, env=None, cwd=None, error_file_name=None, shell=False):
-    if error_file_name is None:
+def execute_command(command_and_arguments, outfile_name=None, env=None, cwd=None, error_file_name=None, shell=False):
+    if error_file_name is None and outfile_name:
         error_file_name = outfile_name + ".err"
 
-    with open(outfile_name, "w") as out_file:
-        with open(error_file_name, "w") as error_file:
-            process = subprocess.Popen(command_and_arguments,
-                                       stdout=out_file,
-                                       stderr=error_file,
-                                       env=env,
-                                       cwd=cwd,
-                                       shell=shell)
+    out_file = open(outfile_name, "w") if outfile_name else None
+    try:
+        error_file = open(error_file_name, "w") if error_file_name else None
+        try:
+            process = Popen(command_and_arguments,
+                            stdout=out_file,
+                            stderr=error_file,
+                            env=env,
+                            cwd=cwd,
+                            shell=shell)
             return process.wait()
+        finally:
+            if error_file:
+                error_file.close()
+    finally:
+        if out_file:
+            out_file.close()
 
 
 def execute_command_and_capture_output(*command_and_arguments):
