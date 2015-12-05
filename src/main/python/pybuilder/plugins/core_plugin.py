@@ -16,9 +16,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import shutil
-
 import os
+import shutil
 
 from pybuilder.core import init, task, description, depends, optional
 from pybuilder.pip_utils import get_package_version, version_satisfies_spec, pip_install, as_pip_install_target
@@ -58,10 +57,12 @@ def prepare(project, logger):
         logger.debug("Creating reports directory %s", reports_directory)
         os.mkdir(reports_directory)
 
+    plugin_dependency_versions = get_package_version(project.plugin_dependencies, logger)
     for plugin_dependency in project.plugin_dependencies:
         logger.debug("Processing plugin dependency %s" % plugin_dependency)
-        plugin_version = get_package_version(plugin_dependency, logger)
-        if not plugin_version or not version_satisfies_spec(plugin_dependency.version, plugin_version):
+        if plugin_dependency.name.lower() not in plugin_dependency_versions or not version_satisfies_spec(
+                plugin_dependency.version, plugin_dependency_versions[plugin_dependency.name.lower()]):
+            logger.info("Installing plugin dependency %s" % plugin_dependency)
             log_file = project.expand_path("$dir_reports", "dependency_%s_install.log" % plugin_dependency)
             pip_install(as_pip_install_target(plugin_dependency), verbose=project.get_property("verbose"),
                         logger=logger, force_reinstall=plugin_dependency.url is not None, outfile_name=log_file,
