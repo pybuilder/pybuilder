@@ -123,22 +123,20 @@ def _pip_disallows_insecure_packages_by_default():
 
 
 def get_package_version(mixed, logger=None):
-    if isinstance(mixed, RequirementsFile):
-        return None
-    if isinstance(mixed, Dependency):
-        if mixed.url:
+    def normalize_dependency_package(mixed):
+        if isinstance(mixed, RequirementsFile):
             return None
-        package_name = mixed.name
-    else:
-        package_name = mixed
+        if isinstance(mixed, Dependency):
+            if mixed.url:
+                return None
+            return mixed.name
+        else:
+            return mixed
 
-    results = search_packages_info(package_name)
-    version = None
-    for result in results:
-        if version:
-            raise ValueError("ambiguous package name '%s' - more than one result received" % mixed)
-        version = result["version"]
-    return version
+    package_query = [normalized_package for normalized_package in
+                     (normalize_dependency_package(p) for p in as_list(mixed)) if normalized_package]
+    search_packages_results = search_packages_info(package_query)
+    return dict(((result['name'].lower(), result['version']) for result in search_packages_results))
 
 
 def version_satisfies_spec(spec, version):

@@ -18,8 +18,6 @@
 
 import unittest
 
-from mock import patch
-
 from pybuilder import core
 from pybuilder import pip_utils
 
@@ -42,16 +40,31 @@ class PipVersionTests(unittest.TestCase):
         self.assertEquals(pip_utils.version_satisfies_spec(">=1.0,>=0.0.dev0", "1.1.dev1"), True)
 
     def test_get_package_version(self):
-        self.assertTrue(pip_utils.version_satisfies_spec(">=7.0", pip_utils.get_package_version(["pip"])))
-        self.assertTrue(pip_utils.get_package_version(["this package does not exist"]) is None)
-        self.assertTrue(pip_utils.get_package_version(core.RequirementsFile("blah")) is None)
-        self.assertTrue(pip_utils.get_package_version(core.Dependency("blah", url="fake url")) is None)
+        # Single item
+        self.assertTrue(pip_utils.version_satisfies_spec(">=7.0", pip_utils.get_package_version("pip")["pip"]))
+        self.assertTrue(
+            "this package does not exist" not in pip_utils.get_package_version("this package does not exist"))
+        self.assertTrue("blah" not in pip_utils.get_package_version(core.RequirementsFile("blah")))
+        self.assertTrue("blah" not in pip_utils.get_package_version(core.Dependency("blah", url="fake url")))
 
-    @patch("pybuilder.pip_utils.search_packages_info")
-    def test_get_package_version_name_ambiguous(self, search_packages_info):
-        search_packages_info.return_value = [{"name": "foo", "version": "1.2"},
-                                             {"name": "another foo", "version": "1.3"}]
-        self.assertRaises(ValueError, pip_utils.get_package_version, "foo")
+        # Multiple different items
+        multiple_different_items = pip_utils.get_package_version(
+            ["pip", core.Dependency("wheel"), core.RequirementsFile("blah")])
+        self.assertTrue("pip" in multiple_different_items)
+        self.assertTrue("wheel" in multiple_different_items)
+        self.assertTrue("blah" not in multiple_different_items)
+
+        # Multiple identical items
+        multiple_identical_items = pip_utils.get_package_version(
+            ["pip", core.Dependency("pip")])
+        self.assertTrue("pip" in multiple_identical_items)
+        self.assertEquals(len(multiple_identical_items), 1)
+
+        # Validate case
+        lower_case_packages = pip_utils.get_package_version("PiP")
+        self.assertTrue("pip" in lower_case_packages)
+        self.assertTrue("pIp" not in lower_case_packages)
+        self.assertTrue("PiP" not in lower_case_packages)
 
     def test_build_pip_install_options(self):
         self.assertEquals(pip_utils.build_pip_install_options(), [])
