@@ -22,6 +22,14 @@ from sys import version_info
 from pip._vendor.packaging.specifiers import SpecifierSet, InvalidSpecifier
 from pip._vendor.packaging.version import Version, InvalidVersion
 from pip.commands.show import search_packages_info
+try:
+    # This is the path for pip 7.x
+    from pip._vendor.pkg_resources import _initialize_master_working_set
+    pip_working_set_init = _initialize_master_working_set
+except ImportError:
+    # This is the path for pip 6.x
+    from pip._vendor import pkg_resources
+    pip_working_set_init = pkg_resources
 
 from pybuilder.core import Dependency, RequirementsFile
 from pybuilder.utils import execute_command, as_list
@@ -135,6 +143,7 @@ def get_package_version(mixed, logger=None):
 
     package_query = [normalized_package for normalized_package in
                      (normalize_dependency_package(p) for p in as_list(mixed)) if normalized_package]
+    pip_working_set_init()
     search_packages_results = search_packages_info(package_query)
     return dict(((result['name'].lower(), result['version']) for result in search_packages_results))
 
