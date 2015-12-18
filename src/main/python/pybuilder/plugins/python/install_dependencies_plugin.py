@@ -19,6 +19,7 @@
 from __future__ import print_function
 
 import re
+import os
 
 from pybuilder.core import (before,
                             task,
@@ -115,7 +116,7 @@ def install_dependency(logger, project, dependency):
                                                       ))
     pip_command_line.extend(as_pip_install_target(dependency))
     logger.debug("Invoking pip: %s", pip_command_line)
-    exit_code = execute_command(pip_command_line, log_file, shell=False)
+    exit_code = execute_command(pip_command_line, log_file, env=os.environ, shell=False)
 
     if exit_code != 0:
         if project.get_property("verbose"):
