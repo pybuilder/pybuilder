@@ -16,7 +16,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import os
 import unittest
+
+from mock import patch, ANY
 
 from pybuilder import core
 from pybuilder import pip_utils
@@ -83,3 +86,18 @@ class PipVersionTests(unittest.TestCase):
             "--allow-unverified", "bar",
             "--allow-external", "bar"
         ])
+
+
+class PipUtilsTests(unittest.TestCase):
+    @patch("pybuilder.pip_utils.execute_command")
+    def test_pip_install_environ_inherited(self, execute_command):
+        pip_utils.pip_install("blah")
+        execute_command.assert_called_once_with(ANY, cwd=None, env=os.environ, error_file_name=None, outfile_name=None,
+                                                shell=False)
+
+    @patch("pybuilder.pip_utils.execute_command")
+    def test_pip_install_environ_overwritten(self, execute_command):
+        env_dict = dict()
+        pip_utils.pip_install("blah", env=env_dict)
+        execute_command.assert_called_once_with(ANY, cwd=None, env=env_dict, error_file_name=None, outfile_name=None,
+                                                shell=False)
