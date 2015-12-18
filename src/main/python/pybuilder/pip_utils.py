@@ -17,6 +17,7 @@
 #   limitations under the License.
 
 import re
+import os
 from sys import version_info
 
 from pip._vendor.packaging.specifiers import SpecifierSet, InvalidSpecifier
@@ -72,6 +73,9 @@ def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=F
                                                       ))
     for install_target in as_list(install_targets):
         pip_command_line.extend(as_pip_install_target(install_target))
+
+    if env is None:
+        env = os.environ
 
     if logger:
         logger.debug("Invoking pip: %s", pip_command_line)
