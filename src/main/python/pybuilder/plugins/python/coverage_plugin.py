@@ -150,7 +150,7 @@ def _list_all_covered_modules(logger, module_names, modules_exceptions):
                             module_name, e)
                 continue
 
-        if module not in modules:
+        if module not in modules and hasattr(module, "__file__"):
             modules.append(module)
     return modules
 

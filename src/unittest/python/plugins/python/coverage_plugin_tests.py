@@ -16,8 +16,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from unittest import TestCase
 import sys
+from unittest import TestCase
 
 from mock import patch, MagicMock, Mock
 
@@ -56,24 +56,17 @@ class CoveragePluginTests(TestCase):
             init_coverage_properties(self.project)
 
         for property_name, property_value in expected_properties.items():
-            self.assertEquals(
-                self.project.get_property("coverage_threshold_warn"), 120)
-            self.assertEquals(
-                self.project.get_property("coverage_branch_threshold_warn"), 120)
-            self.assertEquals(
-                self.project.get_property("coverage_branch_partial_threshold_warn"), 120)
-            self.assertEquals(
-                self.project.get_property("coverage_break_build"), False)
-            self.assertEquals(
-                self.project.get_property("coverage_reload_modules"), False)
-            self.assertEquals(
-                self.project.get_property("coverage_exceptions"), ["foo"])
-            self.assertEquals(
-                self.project.get_property("coverage_fork"), True)
+            self.assertEquals(self.project.get_property("coverage_threshold_warn"), 120)
+            self.assertEquals(self.project.get_property("coverage_branch_threshold_warn"), 120)
+            self.assertEquals(self.project.get_property("coverage_branch_partial_threshold_warn"), 120)
+            self.assertEquals(self.project.get_property("coverage_break_build"), False)
+            self.assertEquals(self.project.get_property("coverage_reload_modules"), False)
+            self.assertEquals(self.project.get_property("coverage_exceptions"), ["foo"])
+            self.assertEquals(self.project.get_property("coverage_fork"), True)
 
     def test_list_all_covered_modules_all_loaded(self):
-        module_a_val = MagicMock()
-        module_b_val = MagicMock()
+        module_a_val = MagicMock(__name__='module_a', __file__='module_a.py')
+        module_b_val = MagicMock(__name__='module_b', __file__='module_b.py')
         with patch.dict('sys.modules', module_a=module_a_val, module_b=module_b_val):
             with patch(import_patch) as import_func:
                 returned_modules = _list_all_covered_modules(MagicMock(), ['module_a', 'module_b'], [])
@@ -82,8 +75,8 @@ class CoveragePluginTests(TestCase):
         import_func.assert_not_called()
 
     def test_list_all_covered_modules_load(self):
-        module_a_val = MagicMock()
-        module_b_val = MagicMock()
+        module_a_val = MagicMock(__name__='module_a', __file__='module_a.py')
+        module_b_val = MagicMock(__name__='module_b', __file__='module_b.py')
         with patch.dict('sys.modules', module_a=module_a_val):
             with patch(import_patch) as import_func:
                 import_func.return_value = module_b_val
@@ -93,8 +86,8 @@ class CoveragePluginTests(TestCase):
         import_func.assert_called_once_with('module_b')
 
     def test_list_all_covered_modules_duplicate(self):
-        module_a_val = MagicMock()
-        module_b_val = MagicMock()
+        module_a_val = MagicMock(__name__='module_a', __file__='module_a.py')
+        module_b_val = MagicMock(__name__='module_b', __file__='module_b.py')
         with patch.dict('sys.modules', module_a=module_a_val, module_b=module_b_val):
             with patch(import_patch) as import_func:
                 returned_modules = _list_all_covered_modules(MagicMock(), ['module_a', 'module_b', 'module_a'], [])
@@ -103,8 +96,8 @@ class CoveragePluginTests(TestCase):
         import_func.assert_not_called()
 
     def test_list_all_covered_modules_exclusions(self):
-        module_a_val = MagicMock()
-        module_b_val = MagicMock()
+        module_a_val = MagicMock(__name__='module_a', __file__='module_a.py')
+        module_b_val = MagicMock(__name__='module_b', __file__='module_b.py')
         logger = MagicMock()
         with patch.dict('sys.modules', module_a=module_a_val, module_b=module_b_val):
             with patch(import_patch) as import_func:
@@ -182,7 +175,9 @@ class CoveragePluginTests(TestCase):
         execution_name = "mock coverage"
         execution_prefix = "mock_coverage"
         project = Mock()
-        modules = [Mock(__name__='module_a'), Mock(__name__='module_b')]
+        modules = [Mock(__name__='module_a', __file__='module_a.py'),
+                   Mock(__name__='module_b', __file__='module_b.py')
+                   ]
 
         project.get_property.side_effect = [70, 70, 70, False, False, False]
 
@@ -211,9 +206,8 @@ class CoveragePluginTests(TestCase):
         n.n_missing_branches = 3
 
         coverage._analyze.side_effect = [module_a_coverage, module_b_coverage]
-        self.assertTrue(
-            _build_coverage_report(project, MagicMock(Logger), execution_name, execution_prefix, coverage,
-                                   modules) is None)
+        self.assertTrue(_build_coverage_report(project, MagicMock(Logger), execution_name, execution_prefix, coverage,
+                                               modules) is None)
         report = render_report.call_args[0][0]
         self.assertEquals(report['overall_coverage'], 50)
         self.assertEquals(report['overall_branch_coverage'], 50)
