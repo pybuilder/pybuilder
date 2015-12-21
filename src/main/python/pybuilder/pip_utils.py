@@ -33,9 +33,9 @@ except ImportError:
     pip_working_set_init = pkg_resources
 
 from pybuilder.core import Dependency, RequirementsFile
-from pybuilder.utils import execute_command, as_list
+from pybuilder.utils import execute_command, as_list, is_windows
 
-PIP_EXECUTABLE = "pip%s.%s" % (version_info[0], version_info[1])
+PIP_EXECUTABLE = "pip%s.%s%s" % (version_info[0], version_info[1], ".exe" if is_windows() else "")
 __RE_PIP_PACKAGE_VERSION = re.compile(r"^Version:\s+(.+)$", re.MULTILINE)
 
 
