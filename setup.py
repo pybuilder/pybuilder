@@ -50,7 +50,7 @@ try:
                 os.remove(target_file_name)
         shutil.move(src_file, script_dir)
     setup_args = sys.argv[1:]
-    subprocess.check_call(["./setup.py"] + setup_args, cwd=script_dir)
+    subprocess.check_call([sys.executable, "setup.py"] + setup_args, cwd=script_dir)
 except subprocess.CalledProcessError as e:
     exit_code = e.returncode
 sys.exit(exit_code)
