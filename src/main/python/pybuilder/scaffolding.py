@@ -137,7 +137,7 @@ import shutil
 
 from sys import version_info
 
-PIP_EXECUTABLE = "pip%s.%s" % (version_info[0], version_info[1])
+PIP_EXECUTABLE = "pip%s.%s%s" % (version_info[0], version_info[1], ".exe" if "win32" in sys.platform else "")
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 exit_code = 0
@@ -163,7 +163,7 @@ try:
                 os.remove(target_file_name)
         shutil.move(src_file, script_dir)
     setup_args = sys.argv[1:]
-    subprocess.check_call(["./setup.py"] + setup_args, cwd=script_dir)
+    subprocess.check_call([sys.executable, "setup.py"] + setup_args, cwd=script_dir)
 except subprocess.CalledProcessError as e:
     exit_code = e.returncode
 sys.exit(exit_code)
