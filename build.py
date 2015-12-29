@@ -70,6 +70,7 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            Author("Udo Juettner", "udo.juettner@gmail.com"),
            Author("Marcel Wolf", "marcel.wolf@me.com"),
            Author("Arcadiy Ivanov", "arcadiy@ivanov.biz"),
+           Author("Valentin Haenel", "valentin@haenel.co"),
            ]
 url = "http://pybuilder.github.io"
 license = "Apache License"
