@@ -16,12 +16,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import os
+import re
 import string
 import subprocess
 import sys
-
-import os
-import re
 
 try:
     from StringIO import StringIO
@@ -79,7 +78,7 @@ if __name__ == '__main__':
         packages = $packages,
         py_modules = $modules,
         classifiers = $classifiers,
-        entry_points = $console_scripts,
+        entry_points = $entry_points,
         data_files = $data_files,
         package_data = $package_data,
         install_requires = $dependencies,
@@ -139,7 +138,7 @@ def render_setup_script(project):
         "packages": build_packages_string(project),
         "modules": build_modules_string(project),
         "classifiers": build_classifiers_string(project),
-        "console_scripts": build_console_scripts_string(project),
+        "entry_points": build_entry_points_string(project),
         "data_files": build_data_files_string(project),
         "package_data": build_package_data_string(project),
         "dependencies": build_install_dependencies_string(project),
@@ -391,18 +390,32 @@ def build_modules_string(project):
     return build_string_from_array([mod for mod in project.list_modules()])
 
 
-def build_console_scripts_string(project):
-    console_scripts = project.get_property('distutils_console_scripts', [])
+def build_entry_points_string(project):
+    console_scripts = project.get_property('distutils_console_scripts')
+    entry_points = project.get_property('distutils_entry_points')
+    if console_scripts is not None and entry_points is not None:
+        raise BuildFailedException("'distutils_console_scripts' cannot be combined with 'distutils_entry_points'")
 
-    if len(console_scripts) == 0:
-        return "{}"
+    if entry_points is None:
+        entry_points = dict()
 
-    indent = 12
-    string = "{'console_scripts': "
-    string += build_string_from_array(console_scripts, indent)
-    string += "}"
+    if console_scripts is not None:
+        entry_points['console_scripts'] = console_scripts
 
-    return string
+    if len(entry_points) == 0:
+        return '{}'
+
+    indent = 8
+    result = "{\n"
+
+    for k in sorted(entry_points.keys()):
+        result += " " * (indent + 4)
+        result += "'%s': %s" % (k, build_string_from_array(entry_points[k], indent + 8)) + ",\n"
+
+    result = result[:-2] + "\n"
+    result += (" " * indent) + "}"
+
+    return result
 
 
 def build_classifiers_string(project):
@@ -446,13 +459,13 @@ def build_string_from_dict(d, indent=12):
     element_separator += " " * indent
     map_elements = []
 
-    for k, v in d:
+    for k, v in d.items():
         map_elements.append("'%s': '%s'" % (k, v))
 
     result = ""
 
     if len(map_elements) > 0:
-        result += "\n"
+        result += "{\n"
         result += " " * indent
         result += element_separator.join(map_elements)
         result += "\n"

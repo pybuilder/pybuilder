@@ -28,11 +28,12 @@ import unittest
 from mock import patch, MagicMock, ANY
 
 from pybuilder.core import Project, Author, Logger
+from pybuilder.errors import BuildFailedException
 from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        build_dependency_links_string,
                                                        build_install_dependencies_string,
                                                        build_package_data_string,
-                                                       build_console_scripts_string,
+                                                       build_entry_points_string,
                                                        default,
                                                        render_manifest_file,
                                                        build_scripts_string,
@@ -504,12 +505,42 @@ if __name__ == '__main__':
         self.project.set_property("distutils_console_scripts", ["release = zest.releaser.release:main",
                                                                 "prerelease = zest.releaser.prerelease:main"])
 
-        actual_setup_script = build_console_scripts_string(self.project)
+        actual_setup_script = build_entry_points_string(self.project)
+        self.assertEquals("{\n"
+                          "            'console_scripts': [\n"
+                          "                'release = zest.releaser.release:main',\n"
+                          "                'prerelease = zest.releaser.prerelease:main'\n"
+                          "            ]\n"
+                          "        }", actual_setup_script)
 
-        self.assertEquals("{'console_scripts': [\n"
-                          "            'release = zest.releaser.release:main',\n"
-                          "            'prerelease = zest.releaser.prerelease:main'\n"
-                          "        ]}", actual_setup_script)
+    def test_should_render_console_script_when_property_is_set(self):
+        self.project.set_property("distutils_console_scripts", ["release = zest.releaser.release:main"])
+
+        actual_setup_script = build_entry_points_string(self.project)
+        self.assertEquals("{\n"
+                          "            'console_scripts': ['release = zest.releaser.release:main']\n"
+                          "        }", actual_setup_script)
+
+    def test_should_render_entry_points_when_property_is_set(self):
+        self.project.set_property("distutils_entry_points", {'foo_entry': ["release = zest.releaser.release:main",
+                                                                           "release1 = zest.releaser.release1:main"],
+                                                             'bar_entry': ["prerelease = zest.releaser.prerelease:main"]
+                                                             })
+
+        actual_setup_script = build_entry_points_string(self.project)
+        self.assertEquals("{\n"
+                          "            'bar_entry': ['prerelease = zest.releaser.prerelease:main'],\n"
+                          "            'foo_entry': [\n"
+                          "                'release = zest.releaser.release:main',\n"
+                          "                'release1 = zest.releaser.release1:main'\n"
+                          "            ]\n"
+                          "        }", actual_setup_script)
+
+    def test_should_fail_with_entry_points_and_console_scripts_set(self):
+        self.project.set_property("distutils_console_scripts", object())
+        self.project.set_property("distutils_entry_points", object())
+
+        self.assertRaises(BuildFailedException, build_entry_points_string, self.project)
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     def test_should_render_runtime_dependencies_when_requirements_file_used(self, mock_open):
