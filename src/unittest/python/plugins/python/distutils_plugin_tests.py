@@ -29,6 +29,7 @@ from mock import patch, MagicMock, ANY
 
 from pybuilder.core import Project, Author, Logger
 from pybuilder.errors import BuildFailedException
+from pybuilder.pip_utils import PIP_EXEC_STANZA
 from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        build_dependency_links_string,
                                                        build_install_dependencies_string,
@@ -693,7 +694,8 @@ class TasksTest(PyBuilderTestCase):
     @patch("pybuilder.pip_utils.execute_command")
     def test_install(self, execute_command, *args):
         install_distribution(self.project, MagicMock(Logger))
-        execute_command.assert_called_with([ANY, "install", "--force-reinstall", '/whatever dist'], cwd=".", env=ANY,
+        execute_command.assert_called_with(PIP_EXEC_STANZA + ["install", "--force-reinstall", '/whatever dist'],
+                                           cwd=".", env=ANY,
                                            outfile_name=ANY, error_file_name=ANY, shell=False)
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")

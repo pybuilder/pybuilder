@@ -26,7 +26,7 @@ from pybuilder.core import (Project,
                             Logger,
                             Dependency,
                             RequirementsFile)
-from pybuilder.pip_utils import PIP_EXECUTABLE
+from pybuilder.pip_utils import PIP_EXEC_STANZA
 from pybuilder.plugins.python.install_dependencies_plugin import (initialize_install_dependencies_plugin,
                                                                   install_runtime_dependencies,
                                                                   install_build_dependencies,
@@ -56,7 +56,7 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependency(self.logger, self.project, dependency)
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            [PIP_EXECUTABLE, "install", 'spam'], any_value(), env=any_value(), shell=False)
+            PIP_EXEC_STANZA + ["install", 'spam'], any_value(), env=any_value(), shell=False)
 
     def test_should_install_requirements_file_dependency(self):
         dependency = RequirementsFile("requirements.txt")
@@ -64,7 +64,7 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependency(self.logger, self.project, dependency)
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            [PIP_EXECUTABLE, "install", '-r', "requirements.txt"], any_value(), env=any_value(), shell=False)
+            PIP_EXEC_STANZA + ["install", '-r', "requirements.txt"], any_value(), env=any_value(), shell=False)
 
     def test_should_install_dependency_without_version_on_windows_derivate(self):
         dependency = Dependency("spam")
@@ -72,7 +72,7 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependency(self.logger, self.project, dependency)
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            [PIP_EXECUTABLE, "install", "spam"], any_value(), env=any_value(), shell=False)
+            PIP_EXEC_STANZA + ["install", "spam"], any_value(), env=any_value(), shell=False)
 
     def test_should_install_dependency_insecurely_when_property_is_set(self):
         dependency = Dependency("spam")
@@ -82,7 +82,7 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependency(self.logger, self.project, dependency)
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            [PIP_EXECUTABLE, "install", "--allow-unverified", "spam", "--allow-external", "spam", 'spam'],
+            PIP_EXEC_STANZA + ["install", "--allow-unverified", "spam", "--allow-external", "spam", 'spam'],
             any_value(), env=any_value(), shell=False)
 
     def test_should_install_dependency_securely_when_property_is_not_set_to_dependency(self):
@@ -93,8 +93,8 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependency(self.logger, self.project, dependency)
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            [PIP_EXECUTABLE, "install", "--allow-unverified", "some-other-dependency", "--allow-external",
-                "some-other-dependency", 'spam'], any_value(), env=any_value(), shell=False)
+            PIP_EXEC_STANZA + ["install", "--allow-unverified", "some-other-dependency", "--allow-external",
+                               "some-other-dependency", 'spam'], any_value(), env=any_value(), shell=False)
         #  some-other-dependency might be a dependency of 'spam'
         #  so we always have to put the insecure dependencies in the command line :-(
 
@@ -106,7 +106,7 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependency(self.logger, self.project, dependency)
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            [PIP_EXECUTABLE, "install", 'spam'], any_value(), env=any_value(), shell=False)
+            PIP_EXEC_STANZA + ["install", 'spam'], any_value(), env=any_value(), shell=False)
 
     def test_should_install_dependency_using_custom_index_url(self):
         self.project.set_property("install_dependencies_index_url", "some_index_url")
@@ -115,7 +115,7 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependency(self.logger, self.project, dependency)
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            [PIP_EXECUTABLE, "install", "--index-url", "some_index_url", 'spam'], any_value(), env=any_value(),
+            PIP_EXEC_STANZA + ["install", "--index-url", "some_index_url", 'spam'], any_value(), env=any_value(),
             shell=False)
 
     def test_should_not_use_extra_index_url_when_index_url_is_not_set(self):
@@ -125,7 +125,7 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependency(self.logger, self.project, dependency)
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            [PIP_EXECUTABLE, "install", 'spam'], any_value(), env=any_value(), shell=False)
+            PIP_EXEC_STANZA + ["install", 'spam'], any_value(), env=any_value(), shell=False)
 
     def test_should_not_use_index_and_extra_index_url_when_index_and_extra_index_url_are_set(self):
         self.project.set_property("install_dependencies_index_url", "some_index_url")
@@ -135,8 +135,8 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependency(self.logger, self.project, dependency)
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            [PIP_EXECUTABLE, "install", "--index-url", "some_index_url", "--extra-index-url",
-                "some_extra_index_url", 'spam'], any_value(), env=any_value(), shell=False)
+            PIP_EXEC_STANZA + ["install", "--index-url", "some_index_url", "--extra-index-url",
+                               "some_extra_index_url", 'spam'], any_value(), env=any_value(), shell=False)
 
     def test_should_upgrade_dependencies(self):
         self.project.set_property("install_dependencies_upgrade", True)
@@ -145,7 +145,7 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependency(self.logger, self.project, dependency)
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            [PIP_EXECUTABLE, "install", "--upgrade", 'spam'], any_value(), env=any_value(), shell=False)
+            PIP_EXEC_STANZA + ["install", "--upgrade", 'spam'], any_value(), env=any_value(), shell=False)
 
     def test_should_install_dependency_with_version(self):
         dependency = Dependency("spam", "0.1.2")
@@ -153,7 +153,7 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependency(self.logger, self.project, dependency)
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            [PIP_EXECUTABLE, "install", 'spam>=0.1.2'], any_value(), env=any_value(), shell=False)
+            PIP_EXEC_STANZA + ["install", 'spam>=0.1.2'], any_value(), env=any_value(), shell=False)
 
     def test_should_install_dependency_with_version_and_operator(self):
         dependency = Dependency("spam", "==0.1.2")
@@ -161,7 +161,7 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependency(self.logger, self.project, dependency)
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            [PIP_EXECUTABLE, "install", 'spam==0.1.2'], any_value(), env=any_value(), shell=False)
+            PIP_EXEC_STANZA + ["install", 'spam==0.1.2'], any_value(), env=any_value(), shell=False)
 
     def test_should_install_dependency_with_url(self):
         dependency = Dependency("spam", url="some_url")
@@ -169,7 +169,7 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependency(self.logger, self.project, dependency)
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            [PIP_EXECUTABLE, "install", "--force-reinstall", 'some_url'], any_value(), env=any_value(), shell=False)
+            PIP_EXEC_STANZA + ["install", "--force-reinstall", 'some_url'], any_value(), env=any_value(), shell=False)
 
     def test_should_install_dependency_with_url_even_if_version_is_given(self):
         dependency = Dependency("spam", version="0.1.2", url="some_url")
@@ -177,7 +177,7 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependency(self.logger, self.project, dependency)
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            [PIP_EXECUTABLE, "install", "--force-reinstall", 'some_url'], any_value(), env=any_value(), shell=False)
+            PIP_EXEC_STANZA + ["install", "--force-reinstall", 'some_url'], any_value(), env=any_value(), shell=False)
 
     class InstallRuntimeDependenciesTest(unittest.TestCase):
         def setUp(self):
@@ -199,11 +199,11 @@ class InstallDependencyTest(unittest.TestCase):
             install_runtime_dependencies(self.logger, self.project)
 
             verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-                [PIP_EXECUTABLE, "install", 'spam'], any_value(), shell=False)
+                PIP_EXEC_STANZA + ["install", 'spam'], any_value(), shell=False)
             verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-                [PIP_EXECUTABLE, "install", 'eggs'], any_value(), shell=False)
+                PIP_EXEC_STANZA + ["install", 'eggs'], any_value(), shell=False)
             verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-                [PIP_EXECUTABLE, "install", '-r', 'requirements.txt'], any_value(), shell=False)
+                PIP_EXEC_STANZA + ["install", '-r', 'requirements.txt'], any_value(), shell=False)
 
         def test_should_install_multiple_dependencies_locally(self):
             self.project.depends_on("spam")
@@ -217,11 +217,11 @@ class InstallDependencyTest(unittest.TestCase):
             install_runtime_dependencies(self.logger, self.project)
 
             verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-                [PIP_EXECUTABLE, "install", "-t", "any-dir", 'spam'], any_value(), shell=False)
+                PIP_EXEC_STANZA + ["install", "-t", "any-dir", 'spam'], any_value(), shell=False)
             verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-                [PIP_EXECUTABLE, "install", "-t", "any-other-dir", 'eggs'], any_value(), shell=False)
+                PIP_EXEC_STANZA + ["install", "-t", "any-other-dir", 'eggs'], any_value(), shell=False)
             verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-                [PIP_EXECUTABLE, "install", 'foo'], any_value(), shell=False)
+                PIP_EXEC_STANZA + ["install", 'foo'], any_value(), shell=False)
 
     class InstallBuildDependenciesTest(unittest.TestCase):
         def setUp(self):
@@ -245,11 +245,11 @@ class InstallDependencyTest(unittest.TestCase):
             install_build_dependencies(self.logger, self.project)
 
             verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-                [PIP_EXECUTABLE, "install", "spam"], any_value(), shell=False)
+                PIP_EXEC_STANZA + ["install", "spam"], any_value(), shell=False)
             verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-                [PIP_EXECUTABLE, "install", "eggs"], any_value(), shell=False)
+                PIP_EXEC_STANZA + ["install", "eggs"], any_value(), shell=False)
             verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-                [PIP_EXECUTABLE, "install", '-r', 'requirements-dev.txt'], any_value(), shell=False)
+                PIP_EXEC_STANZA + ["install", '-r', 'requirements-dev.txt'], any_value(), shell=False)
 
     class InstallDependenciesTest(unittest.TestCase):
         def setUp(self):
@@ -272,6 +272,6 @@ class InstallDependencyTest(unittest.TestCase):
             install_dependencies(self.logger, self.project)
 
             verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-                [PIP_EXECUTABLE, "install", 'spam'], any_value(), shell=False)
+                PIP_EXEC_STANZA + ["install", 'spam'], any_value(), shell=False)
             verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-                [PIP_EXECUTABLE, "install", 'eggs'], any_value(), shell=False)
+                PIP_EXEC_STANZA + ["install", 'eggs'], any_value(), shell=False)

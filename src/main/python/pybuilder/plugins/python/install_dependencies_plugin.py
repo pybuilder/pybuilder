@@ -18,17 +18,17 @@
 
 from __future__ import print_function
 
-import re
 import os
+import re
 
+from pybuilder.pip_utils import PIP_EXEC_STANZA
 from pybuilder.core import (before,
                             task,
                             description,
                             use_plugin,
                             init)
 from pybuilder.errors import BuildFailedException
-from pybuilder.pip_utils import (PIP_EXECUTABLE,
-                                 build_pip_install_options,
+from pybuilder.pip_utils import (build_pip_install_options,
                                  as_pip_install_target,
                                  )
 from pybuilder.terminal import print_file_content
@@ -103,7 +103,7 @@ def install_dependency(logger, project, dependency):
         pass
 
     pip_command_line = list()
-    pip_command_line.append(PIP_EXECUTABLE)
+    pip_command_line.extend(PIP_EXEC_STANZA)
     pip_command_line.append("install")
     pip_command_line.extend(build_pip_install_options(project.get_property("install_dependencies_index_url"),
                                                       project.get_property("install_dependencies_extra_index_url"),

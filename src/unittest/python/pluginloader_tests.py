@@ -31,6 +31,7 @@ except ImportError as e:
 from mockito import when, verify, unstub, never  # TODO @mriehl get rid of mockito here
 from mock import patch, Mock, ANY
 from test_utils import mock  # TODO @mriehl WTF is this sorcery?!
+from pybuilder.pip_utils import PIP_EXEC_STANZA
 from pybuilder.errors import MissingPluginException, IncompatiblePluginException, UnspecifiedPluginNameException
 from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
@@ -197,7 +198,7 @@ class InstallExternalPluginTests(unittest.TestCase):
 
         _install_external_plugin("pypi:some-plugin", None, Mock(), None)
 
-        execute.assert_called_with([ANY, 'install', 'some-plugin'], shell=False,
+        execute.assert_called_with(PIP_EXEC_STANZA + ['install', 'some-plugin'], shell=False,
                                    outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
 
     @patch("pybuilder.pluginloader.read_file")
@@ -209,7 +210,7 @@ class InstallExternalPluginTests(unittest.TestCase):
 
         _install_external_plugin("pypi:some-plugin", "===1.2.3", Mock(), None)
 
-        execute.assert_called_with([ANY, 'install', '--upgrade', 'some-plugin===1.2.3'], shell=False,
+        execute.assert_called_with(PIP_EXEC_STANZA + ['install', '--upgrade', 'some-plugin===1.2.3'], shell=False,
                                    outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
 
     @patch("pybuilder.pluginloader.read_file")
@@ -221,7 +222,7 @@ class InstallExternalPluginTests(unittest.TestCase):
 
         _install_external_plugin("vcs:some-plugin URL", None, Mock(), None)
 
-        execute.assert_called_with([ANY, 'install', '--force-reinstall', 'some-plugin URL'], shell=False,
+        execute.assert_called_with(PIP_EXEC_STANZA + ['install', '--force-reinstall', 'some-plugin URL'], shell=False,
                                    outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
 
     @patch("pybuilder.pluginloader.read_file")
@@ -233,7 +234,7 @@ class InstallExternalPluginTests(unittest.TestCase):
 
         _install_external_plugin("vcs:some-plugin URL", "===1.2.3", Mock(), None)
 
-        execute.assert_called_with([ANY, 'install', '--force-reinstall', 'some-plugin URL'], shell=False,
+        execute.assert_called_with(PIP_EXEC_STANZA + ['install', '--force-reinstall', 'some-plugin URL'], shell=False,
                                    outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
 
     @patch("pybuilder.pluginloader.read_file")
