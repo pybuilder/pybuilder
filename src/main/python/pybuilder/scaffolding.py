@@ -16,9 +16,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import string
-
 import os
+import string
 
 from pybuilder.terminal import print_text_line
 
@@ -137,15 +136,13 @@ import shutil
 
 from sys import version_info
 
-PIP_EXECUTABLE = "pip%s.%s%s" % (version_info[0], version_info[1], ".exe" if "win32" in sys.platform else "")
-
 script_dir = os.path.dirname(os.path.realpath(__file__))
 exit_code = 0
 try:
     subprocess.check_call(["pyb", "--version"])
 except FileNotFoundError as e:
     try:
-        subprocess.check_call([PIP_EXECUTABLE, "install", "pybuilder"])
+        subprocess.check_call([sys.executable, "-m", "pip.__main__", "install", "pybuilder"])
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
 except subprocess.CalledProcessError as e:

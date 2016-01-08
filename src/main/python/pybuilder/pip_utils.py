@@ -16,26 +16,29 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import re
 import os
-from sys import version_info
+import re
+import sys
 
 from pip._vendor.packaging.specifiers import SpecifierSet, InvalidSpecifier
 from pip._vendor.packaging.version import Version, InvalidVersion
 from pip.commands.show import search_packages_info
+
 try:
     # This is the path for pip 7.x
     from pip._vendor.pkg_resources import _initialize_master_working_set
+
     pip_working_set_init = _initialize_master_working_set
 except ImportError:
     # This is the path for pip 6.x
     from pip._vendor import pkg_resources
+
     pip_working_set_init = pkg_resources
 
 from pybuilder.core import Dependency, RequirementsFile
-from pybuilder.utils import execute_command, as_list, is_windows
+from pybuilder.utils import execute_command, as_list
 
-PIP_EXECUTABLE = "pip%s.%s%s" % (version_info[0], version_info[1], ".exe" if is_windows() else "")
+PIP_EXEC_STANZA = [sys.executable, "-m", "pip.__main__"]
 __RE_PIP_PACKAGE_VERSION = re.compile(r"^Version:\s+(.+)$", re.MULTILINE)
 
 
@@ -61,7 +64,7 @@ def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=F
                 force_reinstall=False, target_dir=None, verbose=False, logger=None, outfile_name=None,
                 error_file_name=None, env=None, cwd=None):
     pip_command_line = list()
-    pip_command_line.append(PIP_EXECUTABLE)
+    pip_command_line.extend(PIP_EXEC_STANZA)
     pip_command_line.append("install")
     pip_command_line.extend(build_pip_install_options(index_url,
                                                       extra_index_url,
