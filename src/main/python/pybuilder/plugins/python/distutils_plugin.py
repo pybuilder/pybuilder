@@ -201,9 +201,10 @@ def install_distribution(project, logger):
     _prepare_reports_dir(project)
     outfile_name = project.expand_path("$dir_reports", "distutils",
                                        "pip_install_%s" % datetime.utcnow().strftime("%Y%m%d%H%M%S"))
-    pip_install(project.expand_path("$dir_dist"), force_reinstall=True, logger=logger,
-                verbose=project.get_property("verbose"), cwd=".", outfile_name=outfile_name,
-                error_file_name=outfile_name)
+    pip_install(project.expand_path("$dir_dist"), index_url=project.get_property("install_dependencies_index_url"),
+                extra_index_url=project.get_property("install_dependencies_extra_index_url"),
+                force_reinstall=True, logger=logger, verbose=project.get_property("verbose"), cwd=".",
+                outfile_name=outfile_name, error_file_name=outfile_name)
 
 
 @task("upload", description="Upload a project to PyPi.")

@@ -699,6 +699,19 @@ class TasksTest(PyBuilderTestCase):
                                            outfile_name=ANY, error_file_name=ANY, shell=False)
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
+    @patch("pybuilder.pip_utils.open", create=True)
+    @patch("pybuilder.pip_utils.execute_command")
+    def test_install_with_index_url(self, execute_command, *args):
+        self.project.set_property("install_dependencies_index_url", "index_url")
+        self.project.set_property("install_dependencies_extra_index_url", "extra_index_url")
+
+        install_distribution(self.project, MagicMock(Logger))
+        execute_command.assert_called_with(
+            PIP_EXEC_STANZA + ["install", "--index-url", "index_url", "--extra-index-url", "extra_index_url",
+                               "--force-reinstall", '/whatever dist'], cwd=".", env=ANY, outfile_name=ANY,
+            error_file_name=ANY, shell=False)
+
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
     def test_binary_distribution(self, proc_runner, *args):
