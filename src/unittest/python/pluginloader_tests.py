@@ -132,9 +132,12 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
     @patch("pybuilder.pluginloader._install_external_plugin")
     def test_should_download_module_from_pypi(self, install, _):
         logger = Mock()
-        DownloadingPluginLoader(logger).load_plugin(Mock(), "pypi:external_plugin")
+        project = Mock()
+        project.get_property.side_effect = lambda x: "index_url" if x == "install_dependencies_index_url" \
+            else "extra_index_url" if x == "install_dependencies_extra_index_url" else None
+        DownloadingPluginLoader(logger).load_plugin(project, "pypi:external_plugin")
 
-        install.assert_called_with("pypi:external_plugin", None, logger, None)
+        install.assert_called_with("pypi:external_plugin", None, logger, None, "index_url", "extra_index_url")
 
     @patch("pybuilder.pluginloader.ThirdPartyPluginLoader.load_plugin")
     @patch("pybuilder.pluginloader._install_external_plugin")
