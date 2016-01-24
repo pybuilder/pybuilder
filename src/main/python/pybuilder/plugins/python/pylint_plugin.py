@@ -43,4 +43,5 @@ def check_pylint_availability(logger):
 def execute_pylint(project, logger):
     logger.info("Executing pylint on project sources")
 
-    execute_tool_on_modules(project, "pylint", "pylint", True)
+    command_and_arguments = ["pylint"] + project.get_property("pylint_options")
+    execute_tool_on_modules(project, "pylint", command_and_arguments, True)

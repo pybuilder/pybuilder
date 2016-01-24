@@ -20,10 +20,14 @@ from unittest import TestCase
 from mock import Mock, patch
 from logging import Logger
 
-from pybuilder.plugins.python.pylint_plugin import check_pylint_availability
+from pybuilder.core import Project
+from pybuilder.plugins.python.pylint_plugin import (check_pylint_availability,
+                                                    init_pylint,
+                                                    execute_pylint,
+                                                    DEFAULT_PYLINT_OPTIONS)
 
 
-class CheckPyLintAvailabilityTests(TestCase):
+class PylintPluginTests(TestCase):
 
     @patch('pybuilder.plugins.python.pylint_plugin.assert_can_execute')
     def test_should_check_that_pylint_can_be_executed(self, mock_assert_can_execute):
@@ -34,3 +38,22 @@ class CheckPyLintAvailabilityTests(TestCase):
 
         expected_command_line = ('pylint',)
         mock_assert_can_execute.assert_called_with(expected_command_line, 'pylint', 'plugin python.pylint')
+
+    @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
+    def test_should_run_pylint_with_default_options(self, execute_tool):
+        project = Project(".")
+        init_pylint(project)
+
+        execute_pylint(project, Mock(Logger))
+
+        execute_tool.assert_called_with(project, "pylint", ["pylint"] + DEFAULT_PYLINT_OPTIONS, True)
+
+    @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
+    def test_should_run_pylint_with_custom_options(self, execute_tool):
+        project = Project(".")
+        init_pylint(project)
+        project.set_property("pylint_options", ["--test", "-f", "--x=y"])
+
+        execute_pylint(project, Mock(Logger))
+
+        execute_tool.assert_called_with(project, "pylint", ["pylint", "--test", "-f", "--x=y"], True)
