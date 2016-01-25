@@ -34,14 +34,14 @@ class CramPluginTests(unittest.TestCase):
     def test_command_respects_no_verbose(self):
         project = Project('.')
         project.set_property('verbose', False)
-        expected = ['cram']
+        expected = ['cram', '-E']
         received = _cram_command_for(project)
         self.assertEquals(expected, received)
 
     def test_command_respects_verbose(self):
         project = Project('.')
         project.set_property('verbose', True)
-        expected = ['cram', '--verbose']
+        expected = ['cram', '-E', '--verbose']
         received = _cram_command_for(project)
         self.assertEquals(expected, received)
 
@@ -129,7 +129,8 @@ class CramPluginTests(unittest.TestCase):
         read_file_mock.return_value = ['test failes for file', '# results']
         execute_mock.return_value = 1
 
-        self.assertRaises(BuildFailedException, run_cram_tests, project, logger)
+        self.assertRaises(
+            BuildFailedException, run_cram_tests, project, logger)
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
             error_file_name='report_file',
@@ -171,7 +172,8 @@ class CramPluginTests(unittest.TestCase):
         read_file_mock.return_value = ['test failes for file', '# results']
         execute_mock.return_value = 1
 
-        self.assertRaises(BuildFailedException, run_cram_tests, project, logger)
+        self.assertRaises(
+            BuildFailedException, run_cram_tests, project, logger)
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
             error_file_name='report_file',
@@ -250,7 +252,8 @@ class CramPluginTests(unittest.TestCase):
         read_file_mock.return_value = ['test failes for file', '# results']
         execute_mock.return_value = 1
 
-        self.assertRaises(BuildFailedException, run_cram_tests, project, logger)
+        self.assertRaises(
+            BuildFailedException, run_cram_tests, project, logger)
 
         execute_mock.assert_not_called()
         expected_info_calls = [call('Running Cram command line tests'),

@@ -54,7 +54,7 @@ def assert_cram_is_executable(logger):
 
 
 def _cram_command_for(project):
-    command_and_arguments = ["cram"]
+    command_and_arguments = ["cram", '-E']
     if project.get_property("verbose"):
         command_and_arguments.append('--verbose')
     return command_and_arguments
