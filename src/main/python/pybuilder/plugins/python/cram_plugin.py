@@ -41,7 +41,7 @@ def initialize_cram_plugin(project):
     project.set_property_if_unset("dir_source_cmdlinetest", "src/cmdlinetest")
     project.set_property_if_unset("cram_test_file_glob", "*.t")
     project.set_property_if_unset("cram_fail_if_no_tests", True)
-    project.set_property_if_unset("cram_run_test_from_target", False)
+    project.set_property_if_unset("cram_run_test_from_target", True)
 
 
 @after("prepare")
