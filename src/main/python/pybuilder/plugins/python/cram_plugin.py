@@ -97,7 +97,7 @@ def run_cram_tests(project, logger):
     if project.get_property('cram_run_test_from_target'):
         dist_dir = project.expand_path("$dir_dist")
         _prepend_path(env, "PYTHONPATH", dist_dir)
-        script_dir_dist = project.expand_path('$dir_dist_scripts')
+        script_dir_dist = project.get_property('dir_dist_scripts')
         _prepend_path(env, "PATH", os.path.join(dist_dir, script_dir_dist))
     else:
         source_dir = project.expand_path("$dir_source_main_python")
