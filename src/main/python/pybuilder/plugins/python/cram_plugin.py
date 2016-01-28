@@ -41,6 +41,7 @@ def initialize_cram_plugin(project):
     project.set_property_if_unset("dir_source_cmdlinetest", "src/cmdlinetest")
     project.set_property_if_unset("cram_test_file_glob", "*.t")
     project.set_property_if_unset("cram_fail_if_no_tests", True)
+    project.set_property_if_unset("cram_run_test_from_target", False)
 
 
 @after("prepare")
@@ -93,10 +94,16 @@ def run_cram_tests(project, logger):
     report_file = _report_file(project)
 
     env = os.environ.copy()
-    source_dir = project.expand_path("$dir_source_main_python")
-    _prepend_path(env, "PYTHONPATH", source_dir)
-    script_dir = project.expand_path('$dir_source_main_scripts')
-    _prepend_path(env, "PATH", script_dir)
+    if project.get_property('cram_run_test_from_target'):
+        dist_dir = project.expand_path("$dir_dist")
+        _prepend_path(env, "PYTHONPATH", dist_dir)
+        script_dir_dist = project.expand_path('$dir_dist_scripts')
+        _prepend_path(env, "PATH", os.path.join(dist_dir, script_dir_dist))
+    else:
+        source_dir = project.expand_path("$dir_source_main_python")
+        _prepend_path(env, "PYTHONPATH", source_dir)
+        script_dir = project.expand_path('$dir_source_main_scripts')
+        _prepend_path(env, "PATH", script_dir)
 
     return_code = execute_command(command_and_arguments,
                                   report_file,

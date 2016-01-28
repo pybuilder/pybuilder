@@ -69,18 +69,59 @@ class CramPluginTests(unittest.TestCase):
     @patch('os.environ')
     @patch('pybuilder.plugins.python.cram_plugin.read_file')
     @patch('pybuilder.plugins.python.cram_plugin.execute_command')
-    def test_running_plugin(self,
-                            execute_mock,
-                            read_file_mock,
-                            os_mock,
-                            report_mock,
-                            find_files_mock,
-                            command_mock
-                            ):
+    def test_running_plugin_cram_from_target(self,
+                                             execute_mock,
+                                             read_file_mock,
+                                             os_mock,
+                                             report_mock,
+                                             find_files_mock,
+                                             command_mock
+                                             ):
         project = Project('.')
+        project.set_property('cram_run_test_from_target', True)
+        project.set_property('dir_dist', 'python')
+        project.set_property('dir_dist_scripts', 'scripts')
         project.set_property('verbose', False)
+        logger = Mock()
+
+        command_mock.return_value = ['cram']
+        find_files_mock.return_value = ['test1.cram', 'test2.cram']
+        report_mock.return_value = 'report_file'
+        os_mock.copy.return_value = {}
+        read_file_mock.return_value = ['test failes for file', '# results']
+        execute_mock.return_value = 0
+
+        run_cram_tests(project, logger)
+        execute_mock.assert_called_once_with(
+            ['cram', 'test1.cram', 'test2.cram'], 'report_file',
+            error_file_name='report_file',
+            env={'PYTHONPATH': './python:', 'PATH': './python/./scripts:'}
+        )
+        expected_info_calls = [call('Running Cram command line tests'),
+                               call('Cram tests were fine'),
+                               call('results'),
+                               ]
+        self.assertEquals(expected_info_calls, logger.info.call_args_list)
+
+    @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
+    @patch('pybuilder.plugins.python.cram_plugin._find_files')
+    @patch('pybuilder.plugins.python.cram_plugin._report_file')
+    @patch('os.environ')
+    @patch('pybuilder.plugins.python.cram_plugin.read_file')
+    @patch('pybuilder.plugins.python.cram_plugin.execute_command')
+    def test_running_plugin_from_scripts(self,
+                                         execute_mock,
+                                         read_file_mock,
+                                         os_mock,
+                                         report_mock,
+                                         find_files_mock,
+                                         command_mock
+                                         ):
+        project = Project('.')
+        project.set_property('cram_run_test_from_target', False)
         project.set_property('dir_source_main_python', 'python')
         project.set_property('dir_source_main_scripts', 'scripts')
+        project.set_property('verbose', False)
         logger = Mock()
 
         command_mock.return_value = ['cram']
