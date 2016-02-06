@@ -249,6 +249,12 @@ class Dependency(object):
             return True
         return self.name < other.name
 
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return str(self)
+
     def __repr__(self):
         return self.name + ("," + self.version if self.version else "") + ("," + self.url if self.url else "")
 
