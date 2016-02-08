@@ -272,7 +272,7 @@ def mkdir(directory):
 
 
 def is_windows():
-    return "win32" in sys.platform
+    return "win32" in sys.platform or "cygwin" in sys.platform
 
 
 def fake_windows_fork(group, target, name, args, kwargs):
