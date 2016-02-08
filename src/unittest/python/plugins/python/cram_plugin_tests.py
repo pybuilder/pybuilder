@@ -17,6 +17,20 @@
 #   limitations under the License.
 
 import unittest
+import sys
+
+try:
+    from unittest import skipIf
+except ImportError:
+    def skipIf(*args, **kwargs):
+        def inner(test):
+            def innermost(*args, **kwargs):
+                if sys.platform == 'win32':
+                    return
+                test(*args, **kwargs)
+            innermost.__name__ = test.__name__
+            return innermost
+        return inner
 
 from mock import patch, Mock, call
 
@@ -31,6 +45,8 @@ from pybuilder.plugins.python.cram_plugin import (
 
 
 class CramPluginTests(unittest.TestCase):
+
+    @skipIf(sys.platform == 'win32', 'because cram plugin does not work on Windows')
     def test_command_respects_no_verbose(self):
         project = Project('.')
         project.set_property('verbose', False)
@@ -38,6 +54,7 @@ class CramPluginTests(unittest.TestCase):
         received = _cram_command_for(project)
         self.assertEquals(expected, received)
 
+    @skipIf(sys.platform == 'win32', 'because cram plugin does not work on Windows')
     def test_command_respects_verbose(self):
         project = Project('.')
         project.set_property('verbose', True)
@@ -45,6 +62,7 @@ class CramPluginTests(unittest.TestCase):
         received = _cram_command_for(project)
         self.assertEquals(expected, received)
 
+    @skipIf(sys.platform == 'win32', 'because cram plugin does not work on Windows')
     @patch('pybuilder.plugins.python.cram_plugin.discover_files_matching')
     def test_find_files(self, discover_mock):
         project = Project('.')
@@ -63,6 +81,7 @@ class CramPluginTests(unittest.TestCase):
         received = _report_file(project)
         self.assertEquals(expected, received)
 
+    @skipIf(sys.platform == 'win32', 'because cram plugin does not work on Windows')
     @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
     @patch('pybuilder.plugins.python.cram_plugin._report_file')
@@ -103,6 +122,7 @@ class CramPluginTests(unittest.TestCase):
                                ]
         self.assertEquals(expected_info_calls, logger.info.call_args_list)
 
+    @skipIf(sys.platform == 'win32', 'because cram plugin does not work on Windows')
     @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
     @patch('pybuilder.plugins.python.cram_plugin._report_file')
@@ -143,6 +163,7 @@ class CramPluginTests(unittest.TestCase):
                                ]
         self.assertEquals(expected_info_calls, logger.info.call_args_list)
 
+    @skipIf(sys.platform == 'win32', 'because cram plugin does not work on Windows')
     @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
     @patch('pybuilder.plugins.python.cram_plugin._report_file')
@@ -186,6 +207,7 @@ class CramPluginTests(unittest.TestCase):
         self.assertEquals(expected_info_calls, logger.info.call_args_list)
         self.assertEquals(expected_error_calls, logger.error.call_args_list)
 
+    @skipIf(sys.platform == 'win32', 'because cram plugin does not work on Windows')
     @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
     @patch('pybuilder.plugins.python.cram_plugin._report_file')
@@ -230,6 +252,7 @@ class CramPluginTests(unittest.TestCase):
         self.assertEquals(expected_info_calls, logger.info.call_args_list)
         self.assertEquals(expected_error_calls, logger.error.call_args_list)
 
+    @skipIf(sys.platform == 'win32', 'because cram plugin does not work on Windows')
     @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
     @patch('pybuilder.plugins.python.cram_plugin._report_file')
@@ -265,6 +288,7 @@ class CramPluginTests(unittest.TestCase):
                                ]
         self.assertEquals(expected_info_calls, logger.info.call_args_list)
 
+    @skipIf(sys.platform == 'win32', 'because cram plugin does not work on Windows')
     @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
     @patch('pybuilder.plugins.python.cram_plugin._report_file')
