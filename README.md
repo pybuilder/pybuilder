@@ -79,8 +79,6 @@ In addition, a few common plugins are provided:
 * [source_distribution](http://pybuilder.github.io/documentation/plugins.html#Creatingasourcedistribution) - Bundles a source distribution for shipping.
 
 External plugins:
-* [pybuilder_header_plugin](https://github.com/aelgru/pybuilder_header_plugin) - ensure all your source files have the expected file header
-* [pybuilder_release_plugin](https://github.com/aelgru/pybuilder_release_plugin) - release a new version of your project to PyPI
 * [pybuilder_aws_plugin](https://github.com/immobilienscout24/pybuilder_aws_plugin) - handle AWS functionality
 
 ## Release Notes
