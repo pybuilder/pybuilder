@@ -173,6 +173,7 @@ sys.exit(exit_code)
         os.unlink("setup.py")
     with open('setup.py', 'w') as setup_descriptor_file:
         setup_descriptor_file.write(setup_py_file_contents)
+    print_text_line("\nCreated 'setup.py'.")
 
 
 class PythonProjectScaffolding(object):
