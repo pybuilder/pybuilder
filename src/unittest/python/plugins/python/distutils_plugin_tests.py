@@ -680,6 +680,18 @@ class TasksTest(PyBuilderTestCase):
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_upload_with_command_options(self, proc_runner, *args):
+        proc_runner.return_value = 0
+        self.project.set_property("distutils_command_options", {"bdist_dumb": '--format=xztar'})
+
+        upload(self.project, MagicMock(Logger))
+        self.assertEquals(popen_distutils_args(self, 2, proc_runner),
+                          [["clean", "--all", "sdist", "upload"], ["clean", "--all", "bdist_dumb", "--format=xztar",
+                                                                   "upload"]])
+
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
     def test_upload_with_repo(self, proc_runner, *args):
         proc_runner.return_value = 0
         self.project.set_property("distutils_upload_repository", "test repo")
@@ -720,6 +732,17 @@ class TasksTest(PyBuilderTestCase):
         build_binary_distribution(self.project, MagicMock(Logger))
         self.assertEquals(popen_distutils_args(self, 2, proc_runner),
                           [["clean", "--all", "sdist"], ["clean", "--all", "bdist_dumb"]])
+
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_binary_distribution_with_command_options(self, proc_runner, *args):
+        proc_runner.return_value = 0
+        self.project.set_property("distutils_command_options", {"sdist": ['--formats', 'bztar']})
+
+        build_binary_distribution(self.project, MagicMock(Logger))
+        self.assertEquals(popen_distutils_args(self, 2, proc_runner),
+                          [["clean", "--all", "sdist", "--formats", "bztar"], ["clean", "--all", "bdist_dumb"]])
 
 
 def popen_distutils_args(self, call_count, proc_runner):

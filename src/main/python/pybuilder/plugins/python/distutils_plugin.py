@@ -98,6 +98,8 @@ def default(value, default=""):
 @init
 def initialize_distutils_plugin(project):
     project.set_property_if_unset("distutils_commands", ["sdist", "bdist_wheel"])
+    project.set_property_if_unset("distutils_command_options", None)
+
     # Workaround for http://bugs.python.org/issue8876 , unable to build a bdist
     # on a filesystem that does not support hardlinks
     project.set_property_if_unset("distutils_issue8876_workaround_enabled", False)
@@ -190,7 +192,8 @@ def build_binary_distribution(project, logger):
     logger.info("Building binary distribution in %s",
                 project.expand_path("$dir_dist"))
 
-    commands = as_list(project.get_property("distutils_commands"))
+    commands = [build_command_with_options(cmd, project.get_property("distutils_command_options"))
+                for cmd in as_list(project.get_property("distutils_commands"))]
     execute_distutils(project, logger, commands, True)
 
 
@@ -217,8 +220,20 @@ def upload(project, logger):
     logger.info("Uploading project %s-%s%s%s", project.name, project.version,
                 (" to repository '%s'" % repository) if repository else "",
                 get_dist_version_string(project, " as version %s"))
-    upload_cmd_line = [[cmd, "upload"] + repository_args for cmd in project.get_property("distutils_commands")]
+    upload_cmd_line = [build_command_with_options(cmd, project.get_property("distutils_command_options")) + ["upload"] +
+                       repository_args for cmd in as_list(project.get_property("distutils_commands"))]
     execute_distutils(project, logger, upload_cmd_line, True)
+
+
+def build_command_with_options(command, distutils_command_options=None):
+    commands = [command]
+    if distutils_command_options:
+        try:
+            command_options = as_list(distutils_command_options[command])
+            commands.extend(command_options)
+        except KeyError:
+            pass
+    return commands
 
 
 def execute_distutils(project, logger, distutils_commands, clean=False):
