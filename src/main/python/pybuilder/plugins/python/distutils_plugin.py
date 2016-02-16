@@ -109,6 +109,8 @@ def initialize_distutils_plugin(project):
     ])
     project.set_property_if_unset("distutils_use_setuptools", True)
     project.set_property_if_unset("distutils_upload_repository", None)
+    project.set_property_if_unset("distutils_upload_sign", False)
+    project.set_property_if_unset("distutils_upload_sign_identity", None)
 
 
 @after("package")
@@ -217,11 +219,21 @@ def upload(project, logger):
     if repository:
         repository_args = ["-r", repository]
 
-    logger.info("Uploading project %s-%s%s%s", project.name, project.version,
+    upload_sign = project.get_property("distutils_upload_sign")
+    upload_sign_args = []
+    if upload_sign:
+        upload_sign_args = ["--sign"]
+        sign_identity = project.get_property("distutils_upload_sign_identity")
+        if sign_identity:
+            upload_sign_args += ["--identity", sign_identity]
+
+    logger.info("Uploading project %s-%s%s%s%s", project.name, project.version,
                 (" to repository '%s'" % repository) if repository else "",
-                get_dist_version_string(project, " as version %s"))
+                get_dist_version_string(project, " as version %s"),
+                (" signing%s" % (" with %s" % sign_identity if sign_identity else "")) if upload_sign else "")
     upload_cmd_line = [build_command_with_options(cmd, project.get_property("distutils_command_options")) + ["upload"] +
-                       repository_args for cmd in as_list(project.get_property("distutils_commands"))]
+                       repository_args + upload_sign_args
+                       for cmd in as_list(project.get_property("distutils_commands"))]
     execute_distutils(project, logger, upload_cmd_line, True)
 
 
