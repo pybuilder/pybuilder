@@ -702,6 +702,31 @@ class TasksTest(PyBuilderTestCase):
                            ["clean", "--all", "bdist_dumb", "upload", "-r", "test repo"]])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_upload_with_signature(self, proc_runner, *args):
+        proc_runner.return_value = 0
+        self.project.set_property("distutils_upload_sign", True)
+
+        upload(self.project, MagicMock(Logger))
+        self.assertEquals(popen_distutils_args(self, 2, proc_runner),
+                          [["clean", "--all", "sdist", "upload", "--sign"],
+                           ["clean", "--all", "bdist_dumb", "upload", "--sign"]])
+
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_upload_with_signature_and_identity(self, proc_runner, *args):
+        proc_runner.return_value = 0
+        self.project.set_property("distutils_upload_sign", True)
+        self.project.set_property("distutils_upload_sign_identity", "abcd")
+
+        upload(self.project, MagicMock(Logger))
+        self.assertEquals(popen_distutils_args(self, 2, proc_runner),
+                          [["clean", "--all", "sdist", "upload", "--sign", "--identity", "abcd"],
+                           ["clean", "--all", "bdist_dumb", "upload", "--sign", "--identity", "abcd"]])
+
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.pip_utils.open", create=True)
     @patch("pybuilder.pip_utils.execute_command")
     def test_install(self, execute_command, *args):
