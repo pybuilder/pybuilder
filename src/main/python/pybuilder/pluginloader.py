@@ -24,13 +24,12 @@
 import sys
 import tempfile
 
-from pip._vendor.packaging.version import Version
-
 from pybuilder import __version__ as pyb_version
 from pybuilder.errors import (MissingPluginException,
                               IncompatiblePluginException,
                               UnspecifiedPluginNameException,
                               )
+from pybuilder.pip_utils import Version, SpecifierSet
 from pybuilder.pip_utils import pip_install, version_satisfies_spec
 from pybuilder.utils import read_file
 
@@ -47,11 +46,17 @@ class PluginLoader(object):
     def __init__(self, logger):
         self.logger = logger
 
+    def can_load(self, project, name, version=None, plugin_module_name=None):
+        pass
+
     def load_plugin(self, project, name, version=None, plugin_module_name=None):
         pass
 
 
 class BuiltinPluginLoader(PluginLoader):
+    def can_load(self, project, name, version=None, plugin_module_name=None):
+        return ":" not in name
+
     def load_plugin(self, project, name, version=None, plugin_module_name=None):
         self.logger.debug("Trying to load builtin plugin '%s'", name)
         builtin_plugin_name = plugin_module_name or "pybuilder.plugins.%s_plugin" % name
@@ -61,27 +66,57 @@ class BuiltinPluginLoader(PluginLoader):
         return plugin_module
 
 
-class ThirdPartyPluginLoader(PluginLoader):
+class DownloadingPluginLoader(PluginLoader):
+    def can_load(self, project, name, version=None, plugin_module_name=None):
+        return name.startswith(PYPI_PLUGIN_PROTOCOL) or name.startswith(VCS_PLUGIN_PROTOCOL) or ":" not in name
+
     def load_plugin(self, project, name, version=None, plugin_module_name=None):
+        display_name = _plugin_display_name(name, version, plugin_module_name)
+
+        update_plugin = False
+        force_reinstall = False
+
         thirdparty_plugin = name
         # Maybe we already installed this plugin from PyPI before
         if thirdparty_plugin.startswith(PYPI_PLUGIN_PROTOCOL):
             thirdparty_plugin = thirdparty_plugin.replace(PYPI_PLUGIN_PROTOCOL, "")
+            if version:
+                version_specifier = SpecifierSet(version)
+                # We always check if even one specifier in the set is not exact
+                for spec in version_specifier._specs:
+                    if spec.operator not in ("==", "==="):
+                        update_plugin = True
+                        break
         elif thirdparty_plugin.startswith(VCS_PLUGIN_PROTOCOL):
             if not plugin_module_name:
                 raise UnspecifiedPluginNameException(name)
             thirdparty_plugin = plugin_module_name
-        self.logger.debug("Trying to load third party plugin '%s'", thirdparty_plugin)
+            force_reinstall = True
 
-        plugin_module = _load_plugin(thirdparty_plugin, name)
-        self.logger.debug("Found third party plugin '%s'", thirdparty_plugin)
-        return plugin_module
+        # This is done before we attempt to load a plugin regardless of whether it can be loaded or not
+        if update_plugin or force_reinstall:
+            self.logger.info("Downloading or updating plugin {0}".format(display_name))
+            try:
+                _install_external_plugin(name, version, self.logger, plugin_module_name,
+                                         project.get_property("install_dependencies_index_url"),
+                                         project.get_property("install_dependencies_extra_index_url"),
+                                         update_plugin,
+                                         force_reinstall)
+                self.logger.info("Installed or updated plugin {0}.".format(display_name))
+            except MissingPluginException as e:
+                self.logger.error("Could not install or upgrade plugin {0}: {1}.".format(display_name, e))
 
+        # Now let's try to load the plugin
+        try:
+            return self._load_installed_plugin(thirdparty_plugin, name)
+        except MissingPluginException:
+            if update_plugin or force_reinstall:
+                # If we already tried installing - fail fast
+                raise
+            self.logger.warn("Missing plugin {0}".format(display_name))
 
-class DownloadingPluginLoader(ThirdPartyPluginLoader):
-    def load_plugin(self, project, name, version=None, plugin_module_name=None):
-        display_name = "%s%s" % (name, " version %s" % version if version else "")
-        self.logger.info("Downloading missing plugin {0}".format(display_name))
+        # We have failed to update or to load a plugin without a previous installation
+        self.logger.info("Downloading plugin {0}".format(display_name))
         try:
             _install_external_plugin(name, version, self.logger, plugin_module_name,
                                      project.get_property("install_dependencies_index_url"),
@@ -89,32 +124,50 @@ class DownloadingPluginLoader(ThirdPartyPluginLoader):
             self.logger.info("Installed plugin {0}.".format(display_name))
         except MissingPluginException as e:
             self.logger.error("Could not install plugin {0}: {1}.".format(display_name, e))
-            return None
-        return ThirdPartyPluginLoader.load_plugin(self, project, name, version, plugin_module_name)
+            raise
+
+        # After we have failed to update or load
+        return self._load_installed_plugin(thirdparty_plugin, name)
+
+    def _load_installed_plugin(self, thirdparty_plugin, name):
+        self.logger.debug("Trying to load third party plugin '%s'", thirdparty_plugin)
+        plugin_module = _load_plugin(thirdparty_plugin, name)
+        self.logger.debug("Found third party plugin '%s'", thirdparty_plugin)
+        return plugin_module
 
 
 class DispatchingPluginLoader(PluginLoader):
-    def __init__(self, logger, *loader):
+    def __init__(self, logger, *loaders):
         super(DispatchingPluginLoader, self).__init__(logger)
-        self.loader = loader
+        self._loaders = loaders
+
+    def can_load(self, project, name, version=None, plugin_module_name=None):
+        for loader in self._loaders:
+            if loader.can_load(project, name, version, plugin_module_name):
+                return True
+        return False
 
     def load_plugin(self, project, name, version=None, plugin_module_name=None):
         last_problem = None
-        for loader in self.loader:
-            try:
-                return loader.load_plugin(project, name, version, plugin_module_name)
-            except MissingPluginException as e:
-                last_problem = e
-        raise last_problem
+        for loader in self._loaders:
+            if loader.can_load(project, name, version, plugin_module_name):
+                try:
+                    return loader.load_plugin(project, name, version, plugin_module_name)
+                except MissingPluginException as e:
+                    last_problem = e
+        if last_problem:
+            raise last_problem
+        else:
+            raise MissingPluginException(_plugin_display_name(name, version, plugin_module_name),
+                                         "no plugin loader was able to load the plugin specified")
 
 
-def _install_external_plugin(name, version, logger, plugin_module_name, index_url=None, extra_index_url=None):
+def _install_external_plugin(name, version, logger, plugin_module_name, index_url=None, extra_index_url=None,
+                             upgrade=False, force_reinstall=False):
     if not name.startswith(PYPI_PLUGIN_PROTOCOL) and not name.startswith(VCS_PLUGIN_PROTOCOL):
         message = "Only plugins starting with '{0}' are currently supported"
         raise MissingPluginException(name, message.format((PYPI_PLUGIN_PROTOCOL, VCS_PLUGIN_PROTOCOL)))
 
-    force_reinstall = False
-    upgrade = False
     if name.startswith(PYPI_PLUGIN_PROTOCOL):
         pip_package = name.replace(PYPI_PLUGIN_PROTOCOL, "")
         if version:
@@ -139,6 +192,11 @@ def _install_external_plugin(name, version, logger, plugin_module_name, index_ur
             logger.error("The following pip error was encountered:\n" + "".join(read_file(log_file_name)))
             message = "Failed to install plugin from {0}".format(pip_package)
             raise MissingPluginException(name, message)
+
+
+def _plugin_display_name(name, version, plugin_module_name):
+    return "%s%s%s" % (name, " version %s" % version if version else "",
+                       ", module name '%s'" % plugin_module_name if plugin_module_name else "")
 
 
 def _load_plugin(plugin_module_name, plugin_name):

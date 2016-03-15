@@ -23,7 +23,6 @@
 """
 
 import imp
-
 import os.path
 
 from pybuilder.core import (TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE, DEPENDENTS_ATTRIBUTE,
@@ -35,7 +34,6 @@ from pybuilder.errors import PyBuilderException, ProjectValidationFailedExceptio
 from pybuilder.execution import Action, Initializer, Task, TaskDependency
 from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
-                                    ThirdPartyPluginLoader,
                                     DownloadingPluginLoader)
 from pybuilder.utils import as_list, get_dist_version_string, basestring
 
@@ -57,12 +55,9 @@ class Reactor(object):
         self.logger = logger
         self.execution_manager = execution_manager
         if not plugin_loader:
-            builtin_plugin_loader = BuiltinPluginLoader(self.logger)
-            installed_thirdparty_plugin_loader = ThirdPartyPluginLoader(self.logger)
-            downloading_thirdparty_plugin_loader = DownloadingPluginLoader(self.logger)
-            self.plugin_loader = DispatchingPluginLoader(
-                self.logger, builtin_plugin_loader, installed_thirdparty_plugin_loader,
-                downloading_thirdparty_plugin_loader)
+            self.plugin_loader = DispatchingPluginLoader(self.logger,
+                                                         BuiltinPluginLoader(self.logger),
+                                                         DownloadingPluginLoader(self.logger))
         else:
             self.plugin_loader = plugin_loader
         self._plugins = []
