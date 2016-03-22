@@ -72,9 +72,15 @@ class PipVersionTests(unittest.TestCase):
     def test_build_pip_install_options(self):
         self.assertEquals(pip_utils.build_pip_install_options(), [])
         self.assertEquals(pip_utils.build_pip_install_options(index_url="foo"), ["--index-url", "foo"])
-        self.assertEquals(pip_utils.build_pip_install_options(extra_index_url="foo"), [])
+        self.assertEquals(pip_utils.build_pip_install_options(extra_index_url="foo"), ["--extra-index-url", "foo"])
         self.assertEquals(pip_utils.build_pip_install_options(index_url="foo", extra_index_url="bar"),
                           ["--index-url", "foo", "--extra-index-url", "bar"])
+        self.assertEquals(pip_utils.build_pip_install_options(extra_index_url=("foo", "bar")),
+                          ["--extra-index-url", "foo", "--extra-index-url", "bar"])
+        self.assertEquals(pip_utils.build_pip_install_options(trusted_host="foo"),
+                          ["--trusted-host", "foo"])
+        self.assertEquals(pip_utils.build_pip_install_options(trusted_host=("foo", "bar")),
+                          ["--trusted-host", "foo", "--trusted-host", "bar"])
         self.assertEquals(pip_utils.build_pip_install_options(upgrade=True), ["--upgrade"])
         self.assertEquals(pip_utils.build_pip_install_options(verbose=True), ["--verbose"])
         self.assertEquals(pip_utils.build_pip_install_options(force_reinstall=True), ["--force-reinstall"])

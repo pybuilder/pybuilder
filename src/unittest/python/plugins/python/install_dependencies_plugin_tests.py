@@ -118,16 +118,17 @@ class InstallDependencyTest(unittest.TestCase):
             PIP_EXEC_STANZA + ["install", "--index-url", "some_index_url", 'spam'], any_value(), env=any_value(),
             shell=False)
 
-    def test_should_not_use_extra_index_url_when_index_url_is_not_set(self):
-        self.project.set_property("install_dependencies_extra_index_url", "some_index_url")
+    def test_should_use_extra_index_url_when_index_url_is_not_set(self):
+        self.project.set_property("install_dependencies_extra_index_url", "some_extra_index_url")
         dependency = Dependency("spam")
 
         install_dependency(self.logger, self.project, dependency)
 
         verify(pybuilder.plugins.python.install_dependencies_plugin).execute_command(
-            PIP_EXEC_STANZA + ["install", 'spam'], any_value(), env=any_value(), shell=False)
+            PIP_EXEC_STANZA + ["install", "--extra-index-url", "some_extra_index_url", 'spam'], any_value(),
+            env=any_value(), shell=False)
 
-    def test_should_not_use_index_and_extra_index_url_when_index_and_extra_index_url_are_set(self):
+    def test_should_use_index_and_extra_index_url_when_index_and_extra_index_url_are_set(self):
         self.project.set_property("install_dependencies_index_url", "some_index_url")
         self.project.set_property("install_dependencies_extra_index_url", "some_extra_index_url")
         dependency = Dependency("spam")

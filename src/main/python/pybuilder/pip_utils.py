@@ -60,9 +60,9 @@ def build_dependency_version_string(mixed):
             raise ValueError("'%s' must be either PEP 0440 version or a version specifier set")
 
 
-def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=False, insecure_installs=None,
-                force_reinstall=False, target_dir=None, verbose=False, logger=None, outfile_name=None,
-                error_file_name=None, env=None, cwd=None):
+def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=False,
+                insecure_installs=None, force_reinstall=False, target_dir=None, verbose=False, logger=None,
+                outfile_name=None, error_file_name=None, env=None, cwd=None, trusted_host=None):
     pip_command_line = list()
     pip_command_line.extend(PIP_EXEC_STANZA)
     pip_command_line.append("install")
@@ -72,7 +72,8 @@ def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=F
                                                       insecure_installs,
                                                       force_reinstall,
                                                       target_dir,
-                                                      verbose
+                                                      verbose,
+                                                      trusted_host
                                                       ))
     for install_target in as_list(install_targets):
         pip_command_line.extend(as_pip_install_target(install_target))
@@ -87,14 +88,23 @@ def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=F
 
 
 def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=False, insecure_installs=None,
-                              force_reinstall=False, target_dir=None, verbose=False):
+                              force_reinstall=False, target_dir=None, verbose=False, trusted_host=None):
     options = []
     if index_url:
         options.append("--index-url")
         options.append(index_url)
-        if extra_index_url:
+
+    if extra_index_url:
+        extra_index_urls = as_list(extra_index_url)
+        for url in extra_index_urls:
             options.append("--extra-index-url")
-            options.append(extra_index_url)
+            options.append(url)
+
+    if trusted_host:
+        trusted_hosts = as_list(trusted_host)
+        for host in trusted_hosts:
+            options.append("--trusted-host")
+            options.append(host)
 
     if upgrade:
         options.append("--upgrade")
