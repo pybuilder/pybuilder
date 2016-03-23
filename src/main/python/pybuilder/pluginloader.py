@@ -97,10 +97,7 @@ class DownloadingPluginLoader(PluginLoader):
         if update_plugin or force_reinstall:
             self.logger.info("Downloading or updating plugin {0}".format(display_name))
             try:
-                _install_external_plugin(name, version, self.logger, plugin_module_name,
-                                         project.get_property("install_dependencies_index_url"),
-                                         project.get_property("install_dependencies_extra_index_url"),
-                                         update_plugin,
+                _install_external_plugin(project, name, version, self.logger, plugin_module_name, update_plugin,
                                          force_reinstall)
                 self.logger.info("Installed or updated plugin {0}.".format(display_name))
             except MissingPluginException as e:
@@ -118,9 +115,7 @@ class DownloadingPluginLoader(PluginLoader):
         # We have failed to update or to load a plugin without a previous installation
         self.logger.info("Downloading plugin {0}".format(display_name))
         try:
-            _install_external_plugin(name, version, self.logger, plugin_module_name,
-                                     project.get_property("install_dependencies_index_url"),
-                                     project.get_property("install_dependencies_extra_index_url"))
+            _install_external_plugin(project, name, version, self.logger, plugin_module_name)
             self.logger.info("Installed plugin {0}.".format(display_name))
         except MissingPluginException as e:
             self.logger.error("Could not install plugin {0}: {1}.".format(display_name, e))
@@ -162,8 +157,7 @@ class DispatchingPluginLoader(PluginLoader):
                                          "no plugin loader was able to load the plugin specified")
 
 
-def _install_external_plugin(name, version, logger, plugin_module_name, index_url=None, extra_index_url=None,
-                             upgrade=False, force_reinstall=False):
+def _install_external_plugin(project, name, version, logger, plugin_module_name, upgrade=False, force_reinstall=False):
     if not name.startswith(PYPI_PLUGIN_PROTOCOL) and not name.startswith(VCS_PLUGIN_PROTOCOL):
         message = "Only plugins starting with '{0}' are currently supported"
         raise MissingPluginException(name, message.format((PYPI_PLUGIN_PROTOCOL, VCS_PLUGIN_PROTOCOL)))
@@ -180,8 +174,9 @@ def _install_external_plugin(name, version, logger, plugin_module_name, index_ur
     with tempfile.NamedTemporaryFile(delete=True) as log_file:
         log_file_name = log_file.name
         result = pip_install(pip_package,
-                             index_url=index_url,
-                             extra_index_url=extra_index_url,
+                             index_url=project.get_property("install_dependencies_index_url"),
+                             extra_index_url=project.get_property("install_dependencies_extra_index_url"),
+                             trusted_host=project.get_property("install_dependencies_trusted_host"),
                              upgrade=upgrade,
                              force_reinstall=force_reinstall,
                              logger=logger,

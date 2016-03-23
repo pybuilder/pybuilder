@@ -82,7 +82,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         load.side_effect = (MissingPluginException("external_plugin"), Mock())
         DownloadingPluginLoader(logger).load_plugin(project, "pypi:external_plugin")
 
-        install.assert_called_with("pypi:external_plugin", None, logger, None, "index_url", "extra_index_url")
+        install.assert_called_with(project, "pypi:external_plugin", None, logger, None)
 
     @patch("pybuilder.pluginloader._load_plugin")
     @patch("pybuilder.pluginloader._install_external_plugin")
@@ -171,7 +171,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
 
         self.assertEquals(load.return_value, downloader.load_plugin(project, "vcs:spam", plugin_module_name="spam"))
 
-        install.assert_called_with("vcs:spam", None, downloader.logger, "spam", ANY, ANY, False, True)
+        install.assert_called_with(project, "vcs:spam", None, downloader.logger, "spam", False, True)
         self.assertEquals(install.call_count, 1)
 
     @patch("pybuilder.pluginloader._load_plugin")
@@ -183,7 +183,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
 
         self.assertEquals(load.return_value, downloader.load_plugin(project, "pypi:spam", ">1.2"))
 
-        install.assert_called_with("pypi:spam", ">1.2", downloader.logger, None, ANY, ANY, True, False)
+        install.assert_called_with(project, "pypi:spam", ">1.2", downloader.logger, None, True, False)
         self.assertEquals(install.call_count, 1)
 
     @patch("pybuilder.pluginloader._load_plugin")
@@ -196,7 +196,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
 
         self.assertEquals(load.return_value, downloader.load_plugin(project, "pypi:spam", ">1.2,==1.4"))
 
-        install.assert_called_with("pypi:spam", ">1.2,==1.4", downloader.logger, None, ANY, ANY, True, False)
+        install.assert_called_with(project, "pypi:spam", ">1.2,==1.4", downloader.logger, None, True, False)
         self.assertEquals(install.call_count, 1)
 
     @patch("pybuilder.pluginloader._load_plugin")
@@ -209,13 +209,13 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
 
         self.assertEquals(plugin, downloader.load_plugin(project, "pypi:spam", "===1.4"))
 
-        install.assert_called_with("pypi:spam", "===1.4", downloader.logger, None, ANY, ANY)
+        install.assert_called_with(project, "pypi:spam", "===1.4", downloader.logger, None)
         self.assertEquals(install.call_count, 1)
 
 
 class InstallExternalPluginTests(unittest.TestCase):
     def test_should_raise_error_when_protocol_is_invalid(self):
-        self.assertRaises(MissingPluginException, _install_external_plugin, "some-plugin", None, Mock(), None)
+        self.assertRaises(MissingPluginException, _install_external_plugin, Mock(), "some-plugin", None, Mock(), None)
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
@@ -224,10 +224,11 @@ class InstallExternalPluginTests(unittest.TestCase):
         read_file.return_value = ["no problems", "so far"]
         execute.return_value = 0
 
-        _install_external_plugin("pypi:some-plugin", None, Mock(), None)
+        _install_external_plugin(Mock(), "pypi:some-plugin", None, Mock(), None)
 
-        execute.assert_called_with(PIP_EXEC_STANZA + ['install', 'some-plugin'], shell=False,
-                                   outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
+        execute.assert_called_with(
+            PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
+                               'some-plugin'], shell=False, outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
@@ -236,10 +237,12 @@ class InstallExternalPluginTests(unittest.TestCase):
         read_file.return_value = ["no problems", "so far"]
         execute.return_value = 0
 
-        _install_external_plugin("pypi:some-plugin", "===1.2.3", Mock(), None)
+        _install_external_plugin(Mock(), "pypi:some-plugin", "===1.2.3", Mock(), None)
 
-        execute.assert_called_with(PIP_EXEC_STANZA + ['install', '--upgrade', 'some-plugin===1.2.3'], shell=False,
-                                   outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
+        execute.assert_called_with(
+            PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
+                               '--upgrade', 'some-plugin===1.2.3'], shell=False, outfile_name=ANY, error_file_name=ANY,
+            cwd=".", env=ANY)
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
@@ -248,10 +251,12 @@ class InstallExternalPluginTests(unittest.TestCase):
         read_file.return_value = ["no problems", "so far"]
         execute.return_value = 0
 
-        _install_external_plugin("vcs:some-plugin URL", None, Mock(), None)
+        _install_external_plugin(Mock(), "vcs:some-plugin URL", None, Mock(), None)
 
-        execute.assert_called_with(PIP_EXEC_STANZA + ['install', '--force-reinstall', 'some-plugin URL'], shell=False,
-                                   outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
+        execute.assert_called_with(
+            PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
+                               '--force-reinstall', 'some-plugin URL'], shell=False, outfile_name=ANY,
+            error_file_name=ANY, cwd=".", env=ANY)
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
@@ -260,10 +265,12 @@ class InstallExternalPluginTests(unittest.TestCase):
         read_file.return_value = ["no problems", "so far"]
         execute.return_value = 0
 
-        _install_external_plugin("vcs:some-plugin URL", "===1.2.3", Mock(), None)
+        _install_external_plugin(Mock(), "vcs:some-plugin URL", "===1.2.3", Mock(), None)
 
-        execute.assert_called_with(PIP_EXEC_STANZA + ['install', '--force-reinstall', 'some-plugin URL'], shell=False,
-                                   outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
+        execute.assert_called_with(
+            PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
+                               '--force-reinstall', 'some-plugin URL'], shell=False, outfile_name=ANY,
+            error_file_name=ANY, cwd=".", env=ANY)
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
@@ -272,7 +279,7 @@ class InstallExternalPluginTests(unittest.TestCase):
         read_file.return_value = ["something", "went wrong"]
         execute.return_value = 1
 
-        self.assertRaises(MissingPluginException, _install_external_plugin, "pypi:some-plugin", None, Mock(), None)
+        self.assertRaises(MissingPluginException, _install_external_plugin, Mock(), "pypi:some-plugin", None, Mock(), None)
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
@@ -281,7 +288,7 @@ class InstallExternalPluginTests(unittest.TestCase):
         read_file.return_value = ["something", "went wrong"]
         execute.return_value = 1
 
-        self.assertRaises(MissingPluginException, _install_external_plugin, "vcs:some VCS URL", None, Mock(), None)
+        self.assertRaises(MissingPluginException, _install_external_plugin, Mock(), "vcs:some VCS URL", None, Mock(), None)
 
 
 class BuiltinPluginLoaderTest(unittest.TestCase):

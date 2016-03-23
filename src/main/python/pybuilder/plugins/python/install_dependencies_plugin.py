@@ -45,6 +45,7 @@ def initialize_install_dependencies_plugin(project):
     project.set_property_if_unset("install_dependencies_index_url", None)
     project.set_property_if_unset("install_dependencies_local_mapping", {})
     project.set_property_if_unset("install_dependencies_extra_index_url", None)
+    project.set_property_if_unset("install_dependencies_trusted_host", None)
     project.set_property_if_unset("install_dependencies_upgrade", False)
     project.set_property_if_unset("install_dependencies_insecure_installation", [])
 
@@ -112,7 +113,8 @@ def install_dependency(logger, project, dependency):
                                                           "install_dependencies_insecure_installation"),
                                                       True if url else False,
                                                       target_dir,
-                                                      project.get_property("verbose")
+                                                      project.get_property("verbose"),
+                                                      project.get_property("install_dependencies_trusted_host")
                                                       ))
     pip_command_line.extend(as_pip_install_target(dependency))
     logger.debug("Invoking pip: %s", pip_command_line)
