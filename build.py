@@ -77,7 +77,7 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            ]
 url = "http://pybuilder.github.io"
 license = "Apache License"
-version = "0.11.8.dev"
+version = "0.11.8"
 
 default_task = ["analyze", "publish"]
 
