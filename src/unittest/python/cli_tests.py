@@ -91,8 +91,8 @@ class TaskListTests(UnitTests):
         print_list_of_tasks(self.mock_reactor, quiet=False)
 
         verify(pybuilder.cli).print_text_line('Tasks found for project "any-project-name":')
-        verify(pybuilder.cli).print_text_line('    task-1 - any description for task 1')
-        verify(pybuilder.cli).print_text_line('    task-2 - any description for task 2')
+        verify(pybuilder.cli).print_text_line('    task-1 - anydescriptionfortask1')
+        verify(pybuilder.cli).print_text_line('    task-2 - anydescriptionfortask2')
 
 
 class StdOutLoggerTest(unittest.TestCase):
