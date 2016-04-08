@@ -51,6 +51,10 @@ class Reactor(object):
     def current_instance():
         return Reactor._current_instance
 
+    @staticmethod
+    def _set_current_instance(reactor):
+        Reactor._current_instance = reactor
+
     def __init__(self, logger, execution_manager, plugin_loader=None):
         self.logger = logger
         self.execution_manager = execution_manager
@@ -92,7 +96,7 @@ class Reactor(object):
                       exclude_all_optional=False):
         if not property_overrides:
             property_overrides = {}
-        Reactor._current_instance = self
+        Reactor._set_current_instance(self)
 
         project_directory, project_descriptor = self.verify_project_directory(
             project_directory, project_descriptor)
@@ -124,7 +128,7 @@ class Reactor(object):
         self.build_execution_plan(tasks, execution_plan)
 
     def create_execution_plan(self, tasks, environments):
-        Reactor._current_instance = self
+        Reactor._set_current_instance(self)
 
         if environments:
             self.logger.info(

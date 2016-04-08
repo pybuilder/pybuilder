@@ -23,7 +23,7 @@ except NameError:
 
 
 import unittest
-from mock import patch, Mock, MagicMock, call
+from test_utils import patch, Mock, MagicMock, call
 
 from pybuilder.core import Project
 from pybuilder.plugins.python.pydev_plugin import (

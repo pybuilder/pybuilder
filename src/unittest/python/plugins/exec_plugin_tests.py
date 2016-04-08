@@ -18,7 +18,7 @@
 
 from unittest import TestCase
 from logging import Logger
-from mock import Mock, patch
+from test_utils import Mock, patch
 
 from pybuilder.core import Project
 from pybuilder.plugins.exec_plugin import run_unit_tests, run_integration_tests, analyze, package, publish

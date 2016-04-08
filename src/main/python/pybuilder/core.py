@@ -22,16 +22,16 @@
     build.py project descriptor.
 """
 
+import fnmatch
 import itertools
+import os
 import string
 import sys
 from datetime import datetime
-
-import fnmatch
-import os
 from os.path import sep as PATH_SEPARATOR
 
 from pybuilder.errors import MissingPropertyException
+from pybuilder.pip_common import Version, InvalidVersion, SpecifierSet, InvalidSpecifier
 from pybuilder.utils import as_list
 
 INITIALIZER_ATTRIBUTE = "_python_builder_initializer"
@@ -230,6 +230,17 @@ class Dependency(object):
 
     def __init__(self, name, version=None, url=None):
         self.name = name
+
+        if version:
+            try:
+                version = ">=" + str(Version(version))
+                self.version_not_a_spec = True
+            except InvalidVersion:
+                try:
+                    version = str(SpecifierSet(version))
+                except InvalidSpecifier:
+                    raise ValueError("'%s' must be either PEP 0440 version or a version specifier set")
+
         self.version = version
         self.url = url
 
@@ -266,6 +277,7 @@ class RequirementsFile(object):
 
     def __init__(self, filename):
         self.name = filename
+        self.version = None
 
     def __eq__(self, other):
         if not isinstance(other, RequirementsFile):

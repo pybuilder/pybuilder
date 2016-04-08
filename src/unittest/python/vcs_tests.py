@@ -18,7 +18,7 @@
 
 import unittest
 
-from mock import patch
+from test_utils import patch
 
 from pybuilder.errors import PyBuilderException
 from pybuilder.vcs import VCSRevision

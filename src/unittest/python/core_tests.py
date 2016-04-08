@@ -21,29 +21,24 @@ import types
 import unittest
 
 from pyassert import assert_that
-from mockito import when, verify, unstub
 
 from pybuilder.core import (Project, Logger, init, INITIALIZER_ATTRIBUTE,
                             ENVIRONMENTS_ATTRIBUTE, task, description,
                             Dependency, RequirementsFile)
 from pybuilder.errors import MissingPropertyException
+from test_utils import patch
 
 
-class ProjectTest (unittest.TestCase):
-
+class ProjectTest(unittest.TestCase):
     def setUp(self):
         self.project = Project(basedir="/imaginary", name="Unittest")
 
-    def test_should_pick_directory_name_for_project_name_when_name_is_not_given(self):
-        try:
-            when(os.path).basename("/imaginary").thenReturn("imaginary")
+    @patch("pybuilder.core.os.path.basename", return_value="imaginary")
+    def test_should_pick_directory_name_for_project_name_when_name_is_not_given(self, os_path_basename):
+        project = Project(basedir="/imaginary")
 
-            project = Project(basedir="/imaginary")
-
-            self.assertEquals("imaginary", project.name)
-            verify(os.path).basename("/imaginary")
-        finally:
-            unstub()
+        self.assertEquals("imaginary", project.name)
+        os_path_basename.assert_called_with("/imaginary")
 
     def test_get_property_should_return_default_value_when_property_is_not_set(self):
         self.assertEquals("spam", self.project.get_property("spam", "spam"))
@@ -87,7 +82,8 @@ class ProjectTest (unittest.TestCase):
         self.project.set_property("eggs", "$spam")
         self.assertEquals("spam", self.project.expand("$eggs"))
 
-    def test_expand_should_raise_exception_when_first_expansion_leads_to_property_reference_and_property_is_undefined(self):
+    def test_expand_should_raise_exception_when_first_expansion_leads_to_property_reference_and_property_is_undefined(
+            self):
         self.project.set_property("eggs", "$spam")
         self.assertRaises(
             MissingPropertyException, self.project.expand, "$eggs")
@@ -123,18 +119,17 @@ class ProjectTest (unittest.TestCase):
         self.project.depends_on("spam", "0.7")
         self.assertEquals(1, len(self.project.dependencies))
         self.assertEquals("spam", self.project.dependencies[0].name)
-        self.assertEquals("0.7", self.project.dependencies[0].version)
+        self.assertEquals(">=0.7", self.project.dependencies[0].version)
 
     def test_should_add_dependency_with_name_and_version_only_once(self):
         self.project.depends_on("spam", "0.7")
         self.project.depends_on("spam", "0.7")
         self.assertEquals(1, len(self.project.dependencies))
         self.assertEquals("spam", self.project.dependencies[0].name)
-        self.assertEquals("0.7", self.project.dependencies[0].version)
+        self.assertEquals(">=0.7", self.project.dependencies[0].version)
 
 
 class ProjectManifestTests(unittest.TestCase):
-
     def setUp(self):
         self.project = Project(basedir="/imaginary", name="Unittest")
 
@@ -165,24 +160,23 @@ class ProjectManifestTests(unittest.TestCase):
             ["spam", "egg", "yadt"], self.project.manifest_included_files)
 
     def test_should_add_directory_to_list_of_includes(self):
-        self.project._manifest_include_directory('yadt', ('egg', 'spam', ))
-        self.assertEquals([('yadt', ('egg', 'spam', )), ],
+        self.project._manifest_include_directory('yadt', ('egg', 'spam',))
+        self.assertEquals([('yadt', ('egg', 'spam',)), ],
                           self.project.manifest_included_directories)
 
     def test_should_add_directories_in_correct_order_to_list_of_includes(self):
-        self.project._manifest_include_directory('spam', ('*', ))
-        self.project._manifest_include_directory('egg', ('*', ))
-        self.project._manifest_include_directory('yadt/spam', ('*', ))
+        self.project._manifest_include_directory('spam', ('*',))
+        self.project._manifest_include_directory('egg', ('*',))
+        self.project._manifest_include_directory('yadt/spam', ('*',))
 
-        self.assertEquals([('spam', ('*', )),
-                           ('egg', ('*', )),
-                           ('yadt/spam', ('*', )),
+        self.assertEquals([('spam', ('*',)),
+                           ('egg', ('*',)),
+                           ('yadt/spam', ('*',)),
                            ],
                           self.project.manifest_included_directories)
 
 
 class ProjectPackageDataTests(unittest.TestCase):
-
     def setUp(self):
         self.project = Project(basedir="/imaginary", name="Unittest")
 
@@ -245,7 +239,6 @@ class ProjectPackageDataTests(unittest.TestCase):
 
 
 class ProjectDataFilesTests(unittest.TestCase):
-
     def setUp(self):
         self.project = Project(basedir="/imaginary", name="Unittest")
 
@@ -294,11 +287,11 @@ class ProjectDataFilesTests(unittest.TestCase):
             [("destination_a", ["somepackage1/filename1", "somepackage2/filename2"]),
              ("destination_b", ["somepackage3/filename3"])], self.project.files_to_install)
         self.assertEquals(
-            ["somepackage1/filename1", "somepackage2/filename2", "somepackage3/filename3"], self.project.manifest_included_files)
+            ["somepackage1/filename1", "somepackage2/filename2", "somepackage3/filename3"],
+            self.project.manifest_included_files)
 
 
 class ProjectValidationTest(unittest.TestCase):
-
     def setUp(self):
         self.project = Project(basedir="/imaginary", name="Unittest")
 
@@ -393,7 +386,6 @@ class ProjectValidationTest(unittest.TestCase):
 
 
 class LoggerTest(unittest.TestCase):
-
     class LoggerMock(Logger):
 
         def __init__(self, threshold):
@@ -459,7 +451,6 @@ def is_callable(function_or_object):
 
 
 class InitTest(unittest.TestCase):
-
     def test_ensure_that_init_can_be_used_without_invocation_parenthesis(self):
         @init
         def fun():
@@ -489,7 +480,6 @@ class InitTest(unittest.TestCase):
 
 
 class TaskTests(unittest.TestCase):
-
     def test_should_name_task_when_no_description_is_used(self):
         @task
         def task_without_description():
@@ -547,7 +537,6 @@ class TaskTests(unittest.TestCase):
 
 
 class RequirementsFileTests(unittest.TestCase):
-
     def test_requirements_file_should_be_equal_to_itself(self):
         requirements_file = RequirementsFile("requirements.txt")
         self.assertTrue(requirements_file == requirements_file)
@@ -573,7 +562,6 @@ class RequirementsFileTests(unittest.TestCase):
 
 
 class DependencyTests(unittest.TestCase):
-
     def test_requirements_file_should_be_equal_to_itself(self):
         dependency = Dependency("foo")
         self.assertTrue(dependency == dependency)
@@ -599,7 +587,6 @@ class DependencyTests(unittest.TestCase):
 
 
 class DependencyAndRequirementsFileTests(unittest.TestCase):
-
     def test_requirements_file_should_not_be_equal_to_dependency(self):
         dependency = Dependency("foo")
         requirements = RequirementsFile("requirements.txt")

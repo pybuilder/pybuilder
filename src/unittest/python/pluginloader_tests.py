@@ -27,7 +27,7 @@ except ImportError as e:
 
     builtin_module = builtins
 
-from mock import patch, Mock, ANY
+from test_utils import patch, Mock, ANY
 from pybuilder.pip_utils import PIP_EXEC_STANZA
 from pybuilder.errors import MissingPluginException, IncompatiblePluginException, UnspecifiedPluginNameException
 from pybuilder.pluginloader import (BuiltinPluginLoader,
@@ -220,9 +220,10 @@ class InstallExternalPluginTests(unittest.TestCase):
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
     @patch("pybuilder.pip_utils.execute_command")
-    def test_should_install_plugin(self, execute, _, read_file):
+    def test_should_install_plugin(self, execute, tempfile, read_file):
         read_file.return_value = ["no problems", "so far"]
         execute.return_value = 0
+        tempfile.NamedTemporaryFile().__enter__().name.__eq__.return_value = True
 
         _install_external_plugin(Mock(), "pypi:some-plugin", None, Mock(), None)
 
@@ -233,9 +234,10 @@ class InstallExternalPluginTests(unittest.TestCase):
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
     @patch("pybuilder.pip_utils.execute_command")
-    def test_should_install_plugin_with_version(self, execute, _, read_file):
+    def test_should_install_plugin_with_version(self, execute, tempfile, read_file):
         read_file.return_value = ["no problems", "so far"]
         execute.return_value = 0
+        tempfile.NamedTemporaryFile().__enter__().name.__eq__.return_value = True
 
         _install_external_plugin(Mock(), "pypi:some-plugin", "===1.2.3", Mock(), None)
 
@@ -247,9 +249,10 @@ class InstallExternalPluginTests(unittest.TestCase):
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
     @patch("pybuilder.pip_utils.execute_command")
-    def test_should_install_plugin_with_vcs(self, execute, _, read_file):
+    def test_should_install_plugin_with_vcs(self, execute, tempfile, read_file):
         read_file.return_value = ["no problems", "so far"]
         execute.return_value = 0
+        tempfile.NamedTemporaryFile().__enter__().name.__eq__.return_value = True
 
         _install_external_plugin(Mock(), "vcs:some-plugin URL", None, Mock(), None)
 
@@ -261,9 +264,10 @@ class InstallExternalPluginTests(unittest.TestCase):
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
     @patch("pybuilder.pip_utils.execute_command")
-    def test_should_install_plugin_with_vcs_and_version(self, execute, _, read_file):
+    def test_should_install_plugin_with_vcs_and_version(self, execute, tempfile, read_file):
         read_file.return_value = ["no problems", "so far"]
         execute.return_value = 0
+        tempfile.NamedTemporaryFile().__enter__().name.__eq__.return_value = True
 
         _install_external_plugin(Mock(), "vcs:some-plugin URL", "===1.2.3", Mock(), None)
 
@@ -275,18 +279,20 @@ class InstallExternalPluginTests(unittest.TestCase):
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
     @patch("pybuilder.pip_utils.execute_command")
-    def test_should_raise_error_when_install_from_pypi_fails(self, execute, _, read_file):
+    def test_should_raise_error_when_install_from_pypi_fails(self, execute, tempfile, read_file):
         read_file.return_value = ["something", "went wrong"]
         execute.return_value = 1
+        tempfile.NamedTemporaryFile().__enter__().name.__eq__.return_value = True
 
         self.assertRaises(MissingPluginException, _install_external_plugin, Mock(), "pypi:some-plugin", None, Mock(), None)
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
     @patch("pybuilder.pip_utils.execute_command")
-    def test_should_raise_error_when_install_from_vcs_fails(self, execute, _, read_file):
+    def test_should_raise_error_when_install_from_vcs_fails(self, execute, tempfile, read_file):
         read_file.return_value = ["something", "went wrong"]
         execute.return_value = 1
+        tempfile.NamedTemporaryFile().__enter__().name.__eq__.return_value = True
 
         self.assertRaises(MissingPluginException, _install_external_plugin, Mock(), "vcs:some VCS URL", None, Mock(), None)
 

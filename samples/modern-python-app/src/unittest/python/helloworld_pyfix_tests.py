@@ -15,16 +15,16 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-from mockito import mock, verify
-from pyfix import test
 
 from helloworld import helloworld
+from test_utils import Mock
+from pyfix import test
 
 
 @test
 def should_issue_hello_world_message():
-    out = mock()
+    out = Mock()
 
     helloworld(out)
 
-    verify(out).write("Hello world of Python\n")
+    out.write.assert_called_with("Hello world of Python\n")

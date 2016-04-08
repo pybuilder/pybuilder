@@ -19,8 +19,6 @@
 from logging import Logger
 from unittest import TestCase
 
-from mock import Mock, patch
-
 from pybuilder.core import Project, Author
 from pybuilder.plugins.python.sphinx_plugin import (
     assert_sphinx_is_available,
@@ -29,6 +27,7 @@ from pybuilder.plugins.python.sphinx_plugin import (
     get_sphinx_quickstart_command,
     initialize_sphinx_plugin,
     run_sphinx_build)
+from test_utils import Mock, patch
 
 
 class CheckSphinxAvailableTests(TestCase):

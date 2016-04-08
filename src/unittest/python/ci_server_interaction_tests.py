@@ -17,7 +17,7 @@
 #   limitations under the License.
 
 import unittest
-from mock import patch, call
+from test_utils import patch, call
 
 from pybuilder.core import Project
 from pybuilder.ci_server_interaction import (test_proxy_for,

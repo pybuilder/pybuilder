@@ -25,7 +25,7 @@ except NameError:
 
 import unittest
 
-from mock import patch, MagicMock, ANY
+from test_utils import patch, MagicMock, ANY
 
 from pybuilder.core import Project, Author, Logger
 from pybuilder.errors import BuildFailedException

@@ -18,14 +18,12 @@
 
 import unittest
 
-from mockito import verify, unstub, any, times, when
-
 from pybuilder.core import Logger
 from pybuilder.errors import MissingTaskDependencyException, CircularTaskDependencyException, NoSuchTaskException, \
     MissingActionDependencyException, InvalidNameException, RequiredTaskExclusionException
 from pybuilder.execution import as_task_name_list, Action, Executable, ExecutionManager, Task, \
     DependenciesNotResolvedException, Initializer, TaskDependency
-from test_utils import mock
+from test_utils import Mock, ANY, call
 
 
 class AsTaskNameList(unittest.TestCase):
@@ -135,7 +133,7 @@ class TaskTest(unittest.TestCase):
 
         callable.called = False
 
-        Task("callable", callable).execute(mock(), {})
+        Task("callable", callable).execute(Mock(), {})
 
         self.assertTrue(callable.called)
 
@@ -146,7 +144,7 @@ class TaskTest(unittest.TestCase):
 
         callable.called = False
 
-        Task("callable", callable).execute(mock(), {"spam": "spam"})
+        Task("callable", callable).execute(Mock(), {"spam": "spam"})
 
         self.assertTrue(callable.called)
         self.assertEquals("spam", callable.spam)
@@ -156,7 +154,7 @@ class TaskTest(unittest.TestCase):
             pass
 
         executable = Task("callable", callable)
-        self.assertRaises(ValueError, executable.execute, mock(), {})
+        self.assertRaises(ValueError, executable.execute, Mock(), {})
 
 
 class TaskExtensionTest(unittest.TestCase):
@@ -194,7 +192,7 @@ class TaskExtensionTest(unittest.TestCase):
         task_two = Task("task", callable_two)
         task_one.extend(task_two)
 
-        task_one.execute(mock(), {"param": "spam"})
+        task_one.execute(Mock(), {"param": "spam"})
 
         self.assertTrue(callable_one.called)
         self.assertTrue(callable_two.called)
@@ -251,78 +249,75 @@ class InitializerTest(unittest.TestCase):
 
 class ExecutionManagerTestBase(unittest.TestCase):
     def setUp(self):
-        self.execution_manager = ExecutionManager(mock(Logger))
-
-    def tearDown(self):
-        unstub()
+        self.execution_manager = ExecutionManager(Mock(Logger))
 
 
 class ExecutionManagerInitializerTest(ExecutionManagerTestBase):
     def test_ensure_that_initializer_is_added_when_calling_register_initializer(self):
-        initializer = mock()
+        initializer = Mock()
         self.execution_manager.register_initializer(initializer)
         self.assertEquals([initializer], self.execution_manager.initializers)
 
     def test_ensure_that_registered_initializers_are_executed_when_calling_execute_initializers(self):
-        initializer_1 = mock()
-        when(initializer_1).is_applicable(any()).thenReturn(True)
+        initializer_1 = Mock()
+        initializer_1.is_applicable.return_value = True
         self.execution_manager.register_initializer(initializer_1)
 
-        initializer_2 = mock()
-        when(initializer_2).is_applicable(any()).thenReturn(True)
+        initializer_2 = Mock()
+        initializer_2.is_applicable.return_value = True
         self.execution_manager.register_initializer(initializer_2)
 
         self.execution_manager.execute_initializers(a=1)
 
-        verify(initializer_1).execute({"a": 1})
-        verify(initializer_2).execute({"a": 1})
+        initializer_1.execute.assert_called_with({"a": 1})
+        initializer_2.execute.assert_called_with({"a": 1})
 
     def test_ensure_that_registered_initializers_are_not_executed_when_environments_do_not_match(self):
-        initializer = mock()
-        when(initializer).is_applicable(any()).thenReturn(False)
+        initializer = Mock()
+        initializer.is_applicable.return_value = False
 
         self.execution_manager.register_initializer(initializer)
 
         environments = []
         self.execution_manager.execute_initializers(environments, a=1)
 
-        verify(initializer).is_applicable(environments)
-        verify(initializer, 0).execute(any())
+        initializer.is_applicable.assert_called_with(environments)
+        initializer.execute.assert_not_called()
 
 
 class ExecutionManagerTaskTest(ExecutionManagerTestBase):
     def test_ensure_task_is_added_when_calling_register_task(self):
-        task = mock()
+        task = Mock()
         self.execution_manager.register_task(task)
         self.assertEquals([task], self.execution_manager.tasks)
 
     def test_ensure_task_is_replaced_when_registering_two_tasks_with_same_name(self):
-        original = mock(name="spam")
-        replacement = mock(name="spam")
+        original = Mock(name="spam")
+        replacement = Mock(name="spam")
 
         self.execution_manager.register_task(original)
         self.execution_manager.register_task(replacement)
 
-        verify(original).extend(replacement)
+        original.extend.assert_called_with(replacement)
 
     def test_should_raise_exception_when_calling_execute_task_before_resolve_dependencies(self):
         self.assertRaises(DependenciesNotResolvedException,
                           self.execution_manager.execute_task,
-                          mock())
+                          Mock())
 
     def test_ensure_task_is_executed_when_calling_execute_task(self):
-        task = mock(name="spam", dependencies=[])
+        task = Mock(name="spam", dependencies=[])
 
         self.execution_manager.register_task(task)
         self.execution_manager.resolve_dependencies()
 
         self.execution_manager.execute_task(task, a=1)
 
-        verify(task).execute(any(), {"a": 1})
+        task.execute.assert_called_with(ANY, {"a": 1})
 
     def test_ensure_before_action_is_executed_when_task_is_executed(self):
-        task = mock(name="task", dependencies=[])
-        action = mock(name="action", execute_before=["task"], execute_after=[])
+        task = Mock(name="task", dependencies=[])
+        action = Mock(name="action", execute_before=["task"], execute_after=[])
 
         self.execution_manager.register_action(action)
         self.execution_manager.register_task(task)
@@ -330,12 +325,12 @@ class ExecutionManagerTaskTest(ExecutionManagerTestBase):
 
         self.execution_manager.execute_task(task)
 
-        verify(action).execute({})
-        verify(task).execute(any(), {})
+        action.execute.assert_called_with({})
+        task.execute.assert_called_with(ANY, {})
 
     def test_ensure_after_action_is_executed_when_task_is_executed(self):
-        task = mock(name="task", dependencies=[])
-        action = mock(name="action", execute_before=[], execute_after=["task"])
+        task = Mock(name="task", dependencies=[])
+        action = Mock(name="action", execute_before=[], execute_after=["task"])
 
         self.execution_manager.register_action(action)
         self.execution_manager.register_task(task)
@@ -343,13 +338,13 @@ class ExecutionManagerTaskTest(ExecutionManagerTestBase):
 
         self.execution_manager.execute_task(task)
 
-        verify(action).execute({})
-        verify(task).execute(any(), {})
+        action.execute.assert_called_with({})
+        task.execute.assert_called_with(ANY, {})
 
     def test_ensure_after_action_teardown_is_executed_when_task_fails(self):
-        task = mock(name="task", dependencies=[])
-        when(task).execute(any(), {}).thenRaise(ValueError("simulated task error"))
-        action = mock(name="action", execute_before=[], execute_after=["task"], teardown=True)
+        task = Mock(name="task", dependencies=[])
+        task.execute.side_effect = ValueError("simulated task error")
+        action = Mock(name="action", execute_before=[], execute_after=["task"], teardown=True)
 
         self.execution_manager.register_action(action)
         self.execution_manager.register_task(task)
@@ -362,15 +357,16 @@ class ExecutionManagerTaskTest(ExecutionManagerTestBase):
             self.assertEquals(type(e), ValueError)
             self.assertEquals(str(e), "simulated task error")
 
-        verify(action).execute({})
-        verify(task).execute(any(), {})
+        action.execute.assert_called_with({})
+        task.execute.assert_called_with(ANY, {})
 
     def test_ensure_after_action_teardown_is_executed_when_action_fails(self):
-        task = mock(name="task", dependencies=[])
-        action_regular = mock(name="action_regular", execute_before=[], execute_after=["task"], teardown=False)
-        when(action_regular).execute({}).thenRaise(ValueError("simulated action error"))
-        action_teardown = mock(name="action_teardown", execute_before=[], execute_after=["task"], teardown=True)
-        action_after_teardown = mock(name="action_after_teardown", execute_before=[], execute_after=["task"],
+        task = Mock(name="task", dependencies=[])
+        action_regular = Mock(name="action_regular", execute_before=[], execute_after=["task"], teardown=False)
+        action_regular.name = "action_regular"
+        action_regular.execute.side_effect = ValueError("simulated action error")
+        action_teardown = Mock(name="action_teardown", execute_before=[], execute_after=["task"], teardown=True)
+        action_after_teardown = Mock(name="action_after_teardown", execute_before=[], execute_after=["task"],
                                      teardown=False)
 
         self.execution_manager.register_action(action_regular)
@@ -386,17 +382,18 @@ class ExecutionManagerTaskTest(ExecutionManagerTestBase):
             self.assertEquals(type(e), ValueError)
             self.assertEquals(str(e), "simulated action error")
 
-        verify(task).execute(any(), {})
-        verify(action_regular).execute({})
-        verify(action_teardown).execute({})
-        verify(action_after_teardown, times(0)).execute({})
+        task.execute.assert_called_with(ANY, {})
+        action_regular.execute.assert_called_with({})
+        action_teardown.execute.assert_called_with({})
+        action_after_teardown.execute.assert_not_called()
 
     def test_ensure_after_action_teardown_suppression_works_when_action_fails(self):
-        task = mock(name="task", dependencies=[])
-        action_regular = mock(name="action_regular", execute_before=[], execute_after=["task"], teardown=False)
-        when(action_regular).execute({}).thenRaise(ValueError("simulated action error"))
-        action_teardown = mock(name="action_teardown", execute_before=[], execute_after=["task"], teardown=True)
-        action_after_teardown = mock(name="action_after_teardown", execute_before=[], execute_after=["task"],
+        task = Mock(name="task", dependencies=[])
+        action_regular = Mock(name="action_regular", execute_before=[], execute_after=["task"], teardown=False)
+        action_regular.name = "action_regular"
+        action_regular.execute.side_effect = ValueError("simulated action error")
+        action_teardown = Mock(name="action_teardown", execute_before=[], execute_after=["task"], teardown=True)
+        action_after_teardown = Mock(name="action_after_teardown", execute_before=[], execute_after=["task"],
                                      teardown=False)
 
         self.execution_manager.register_action(action_regular)
@@ -412,18 +409,18 @@ class ExecutionManagerTaskTest(ExecutionManagerTestBase):
             self.assertEquals(type(e), ValueError)
             self.assertEquals(str(e), "simulated action error")
 
-        verify(task).execute(any(), {})
-        verify(action_regular).execute({})
-        verify(action_teardown).execute({})
-        verify(action_after_teardown, times(0)).execute({})
+        task.execute.assert_called_with(ANY, {})
+        action_regular.execute.assert_called_with({})
+        action_teardown.execute.assert_called_with({})
+        action_after_teardown.execute.assert_not_called()
 
     def test_ensure_after_action_teardown_is_executed_and_suppresses(self):
-        task = mock(name="task", dependencies=[])
-        when(task).execute(any(), {}).thenRaise(ValueError("simulated task error"))
-        action_teardown1 = mock(name="action_teardown1", execute_before=[], execute_after=["task"], teardown=True,
+        task = Mock(name="task", dependencies=[])
+        task.execute.side_effect = ValueError("simulated task error")
+        action_teardown1 = Mock(name="action_teardown1", execute_before=[], execute_after=["task"], teardown=True,
                                 source="task")
-        when(action_teardown1).execute({}).thenRaise(ValueError("simulated action error teardown1"))
-        action_teardown2 = mock(name="action_teardown2", execute_before=[], execute_after=["task"], teardown=True,
+        action_teardown1.execute.side_effect = ValueError("simulated action error teardown1")
+        action_teardown2 = Mock(name="action_teardown2", execute_before=[], execute_after=["task"], teardown=True,
                                 source="task")
 
         self.execution_manager.register_action(action_teardown1)
@@ -438,35 +435,35 @@ class ExecutionManagerTaskTest(ExecutionManagerTestBase):
             self.assertEquals(type(e), ValueError)
             self.assertEquals(str(e), "simulated task error")
 
-        verify(task).execute(any(), {})
-        verify(action_teardown1).execute({})
-        verify(action_teardown2).execute({})
-        verify(self.execution_manager.logger).error(
+        task.execute.assert_called_with(ANY, {})
+        action_teardown1.execute.assert_called_with({})
+        action_teardown2.execute.assert_called_with({})
+        self.execution_manager.logger.error.assert_called_with(
             "Executing action '%s' from '%s' resulted in an error that was suppressed:\n%s", "action_teardown1",
-            "task", any())
+            "task", ANY)
 
     def test_should_return_single_task_name(self):
-        self.execution_manager.register_task(mock(name="spam"))
+        self.execution_manager.register_task(Mock(name="spam"))
         self.assertEquals(["spam"], self.execution_manager.task_names)
 
     def test_should_return_all_task_names(self):
         self.execution_manager.register_task(
-            mock(name="spam"), mock(name="eggs"))
+            Mock(name="spam"), Mock(name="eggs"))
         self.assertEquals(["eggs", "spam"], self.execution_manager.task_names)
 
 
 class ExecutionManagerActionTest(ExecutionManagerTestBase):
     def test_ensure_action_is_registered(self):
-        action = mock(name="action")
+        action = Mock(name="action")
         self.execution_manager.register_action(action)
         self.assertEquals({"action": action}, self.execution_manager._actions)
 
     def test_ensure_action_registered_for_two_tasks_is_executed_two_times(self):
-        spam = mock(name="spam", dependencies=[])
-        eggs = mock(name="eggs", dependencies=[])
+        spam = Mock(name="spam", dependencies=[])
+        eggs = Mock(name="eggs", dependencies=[])
         self.execution_manager.register_task(spam, eggs)
 
-        action = mock(name="action",
+        action = Mock(name="action",
                       execute_before=[],
                       execute_after=["spam", "eggs"],
                       only_once=False)
@@ -476,14 +473,14 @@ class ExecutionManagerActionTest(ExecutionManagerTestBase):
 
         self.execution_manager.execute_execution_plan([spam, eggs])
 
-        verify(action, times(2)).execute(any())
+        action.execute.assert_has_calls([call(ANY), call(ANY)])
 
     def test_ensure_action_registered_for_two_tasks_is_executed_only_once_if_single_attribute_is_present(self):
-        spam = mock(name="spam", dependencies=[])
-        eggs = mock(name="eggs", dependencies=[])
+        spam = Mock(name="spam", dependencies=[])
+        eggs = Mock(name="eggs", dependencies=[])
         self.execution_manager.register_task(spam, eggs)
 
-        action = mock(name="action",
+        action = Mock(name="action",
                       execute_before=[],
                       execute_after=["spam", "eggs"],
                       only_once=True)
@@ -493,7 +490,7 @@ class ExecutionManagerActionTest(ExecutionManagerTestBase):
 
         self.execution_manager.execute_execution_plan([spam, eggs])
 
-        verify(action, times(1)).execute(any())
+        action.execute.assert_called_with(ANY)
 
 
 class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
@@ -502,7 +499,7 @@ class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
         self.assertTrue(self.execution_manager._dependencies_resolved)
 
     def test_ensure_that_dependencies_are_resolved_when_single_task_is_given(self):
-        task = mock(dependencies=[])
+        task = Mock(dependencies=[])
 
         self.execution_manager.register_task(task)
 
@@ -510,7 +507,7 @@ class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
         self.assertTrue(self.execution_manager._dependencies_resolved)
 
     def test_should_raise_exception_when_task_depends_on_task_not_found(self):
-        task = mock(dependencies=[TaskDependency("not_found")])
+        task = Mock(dependencies=[TaskDependency("not_found")])
 
         self.execution_manager.register_task(task)
 
@@ -518,7 +515,7 @@ class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
                           self.execution_manager.resolve_dependencies)
 
     def test_should_raise_exception_when_before_action_depends_on_task_not_found(self):
-        action = mock(execute_before=["not_found"], execute_after=[])
+        action = Mock(execute_before=["not_found"], execute_after=[])
 
         self.execution_manager.register_action(action)
 
@@ -526,7 +523,7 @@ class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
                           self.execution_manager.resolve_dependencies)
 
     def test_should_raise_exception_when_after_action_depends_on_task_not_found(self):
-        action = mock(execute_before=[], execute_after=["not_found"])
+        action = Mock(execute_before=[], execute_after=["not_found"])
 
         self.execution_manager.register_action(action)
 
@@ -534,8 +531,8 @@ class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
                           self.execution_manager.resolve_dependencies)
 
     def test_ensure_that_dependencies_are_resolved_when_simple_dependency_is_found(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
 
         self.execution_manager.register_task(one, two)
         self.execution_manager.resolve_dependencies()
@@ -544,9 +541,9 @@ class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
         self.assertEquals([TaskDependency(one)], self.execution_manager._task_dependencies.get("two"))
 
     def test_ensure_that_dependencies_are_resolved_when_task_depends_on_multiple_tasks(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
-        three = mock(name="three", dependencies=[TaskDependency("one"), TaskDependency("two")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
+        three = Mock(name="three", dependencies=[TaskDependency("one"), TaskDependency("two")])
 
         self.execution_manager.register_task(one, two, three)
         self.execution_manager.resolve_dependencies()
@@ -557,8 +554,8 @@ class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
             [TaskDependency(one), TaskDependency(two)], self.execution_manager._task_dependencies.get("three"))
 
     def test_override_optional_dependency_with_required(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one", True), TaskDependency("one")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one", True), TaskDependency("one")])
 
         self.execution_manager.register_task(one, two)
         self.execution_manager.resolve_dependencies()
@@ -567,8 +564,8 @@ class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
         self.assertEquals([TaskDependency(one)], self.execution_manager._task_dependencies.get("two"))
 
     def test_ignore_required_override_with_optional_dependency(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one"), TaskDependency("one", True)])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one"), TaskDependency("one", True)])
 
         self.execution_manager.register_task(one, two)
         self.execution_manager.resolve_dependencies()
@@ -577,8 +574,8 @@ class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
         self.assertEquals([TaskDependency(one)], self.execution_manager._task_dependencies.get("two"))
 
     def test_ignore_second_optional_dependency(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one", True), TaskDependency("one", True)])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one", True), TaskDependency("one", True)])
 
         self.execution_manager.register_task(one, two)
         self.execution_manager.resolve_dependencies()
@@ -587,8 +584,8 @@ class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
         self.assertEquals([TaskDependency(one, True)], self.execution_manager._task_dependencies.get("two"))
 
     def test_ignore_second_required_dependency(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one"), TaskDependency("one")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one"), TaskDependency("one")])
 
         self.execution_manager.register_task(one, two)
         self.execution_manager.resolve_dependencies()
@@ -599,42 +596,42 @@ class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
 
 class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
     def test_should_collect_all_tasks_when_there_are_no_dependencies(self):
-        one = mock(name="one", dependencies=[])
+        one = Mock(name="one", dependencies=[])
         self.execution_manager.register_task(one)
         self.execution_manager.resolve_dependencies()
 
         self.assertEqual(self.execution_manager.collect_all_transitive_tasks(["one"]), set([one]))
 
     def test_should_collect_all_tasks_when_there_is_a_simple_dependency(self):
-        one = mock(name="one", dependencies=[TaskDependency("two")])
-        two = mock(name="two", dependencies=[])
+        one = Mock(name="one", dependencies=[TaskDependency("two")])
+        two = Mock(name="two", dependencies=[])
         self.execution_manager.register_task(one, two)
         self.execution_manager.resolve_dependencies()
 
         self.assertEqual(self.execution_manager.collect_all_transitive_tasks(["one"]), set([one, two]))
 
     def test_should_collect_all_tasks_when_there_is_a_transitive_dependency(self):
-        one = mock(name="one", dependencies=[TaskDependency("two")])
-        two = mock(name="two", dependencies=[TaskDependency("three")])
-        three = mock(name="three", dependencies=[])
+        one = Mock(name="one", dependencies=[TaskDependency("two")])
+        two = Mock(name="two", dependencies=[TaskDependency("three")])
+        three = Mock(name="three", dependencies=[])
         self.execution_manager.register_task(one, two, three)
         self.execution_manager.resolve_dependencies()
 
         self.assertEqual(self.execution_manager.collect_all_transitive_tasks(["one"]), set([one, two, three]))
 
     def test_should_collect_all_tasks_when_several_tasks_given(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("three")])
-        three = mock(name="three", dependencies=[])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("three")])
+        three = Mock(name="three", dependencies=[])
         self.execution_manager.register_task(one, two, three)
         self.execution_manager.resolve_dependencies()
 
         self.assertEqual(self.execution_manager.collect_all_transitive_tasks(["one", "two"]), set([one, two, three]))
 
     def test_should_only_collect_required_tasks(self):
-        one = mock(name="one", dependencies=[TaskDependency("three")])
-        two = mock(name="two", dependencies=[])
-        three = mock(name="three", dependencies=[])
+        one = Mock(name="one", dependencies=[TaskDependency("three")])
+        two = Mock(name="two", dependencies=[])
+        three = Mock(name="three", dependencies=[])
         self.execution_manager.register_task(one, two, three)
         self.execution_manager.resolve_dependencies()
 
@@ -650,7 +647,7 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
             NoSuchTaskException, self.execution_manager.build_execution_plan, ("boom",))
 
     def test_should_return_execution_plan_with_single_task_when_single_task_is_to_be_executed(self):
-        one = mock(name="one", dependencies=[])
+        one = Mock(name="one", dependencies=[])
 
         self.execution_manager.register_task(one)
         self.execution_manager.resolve_dependencies()
@@ -659,8 +656,8 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
             [one], self.execution_manager.build_execution_plan(["one"]))
 
     def test_should_return_execution_plan_with_two_tasks_when_two_tasks_are_to_be_executed(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[])
 
         self.execution_manager.register_task(one, two)
         self.execution_manager.resolve_dependencies()
@@ -669,8 +666,8 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
             [one, two], self.execution_manager.build_execution_plan(["one", "two"]))
 
     def test_ensure_that_dependencies_are_executed_before_root_task(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
 
         self.execution_manager.register_task(one, two)
         self.execution_manager.resolve_dependencies()
@@ -679,7 +676,7 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
             [one, two], self.execution_manager.build_execution_plan(["two"]))
 
     def test_ensure_that_tasks_are_not_executed_multiple_times(self):
-        one = mock(name="one", dependencies=[], )
+        one = Mock(name="one", dependencies=[], )
 
         self.execution_manager.register_task(one)
         self.execution_manager.resolve_dependencies()
@@ -688,8 +685,8 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
             [one], self.execution_manager.build_execution_plan(["one", "one"]))
 
     def test_ensure_that_tasks_are_not_executed_multiple_times_when_being_dependencies(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
 
         self.execution_manager.register_task(one, two)
         self.execution_manager.resolve_dependencies()
@@ -698,7 +695,7 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
             [one, two], self.execution_manager.build_execution_plan(["one", "two"]))
 
     def test_should_raise_exception_when_circular_reference_is_detected_on_single_task(self):
-        one = mock(name="one", dependencies=[TaskDependency("one")])
+        one = Mock(name="one", dependencies=[TaskDependency("one")])
 
         self.execution_manager.register_task(one)
         self.execution_manager.resolve_dependencies()
@@ -707,8 +704,8 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
                           self.execution_manager.build_execution_plan, ["one"])
 
     def test_should_raise_exception_when_circular_reference_is_detected_on_two_tasks(self):
-        one = mock(name="one", dependencies=[TaskDependency("two")])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
+        one = Mock(name="one", dependencies=[TaskDependency("two")])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
 
         self.execution_manager.register_task(one, two)
         self.execution_manager.resolve_dependencies()
@@ -717,9 +714,9 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
                           self.execution_manager.build_execution_plan, ["one"])
 
     def test_should_raise_exception_when_circular_reference_is_detected_on_three_tasks(self):
-        one = mock(name="one", dependencies=[TaskDependency("three")])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
-        three = mock(name="three", dependencies=[TaskDependency("one"), TaskDependency("two")])
+        one = Mock(name="one", dependencies=[TaskDependency("three")])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
+        three = Mock(name="three", dependencies=[TaskDependency("one"), TaskDependency("two")])
 
         self.execution_manager.register_task(one, two, three)
 
@@ -729,9 +726,9 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
                           self.execution_manager.build_execution_plan, ["one"])
 
     def test_should_raise_exception_when_circular_reference_is_detected_on_indirect_required_tasks(self):
-        one = mock(name="one", dependencies=[TaskDependency("two")])
-        two = mock(name="two", dependencies=[TaskDependency("three")])
-        three = mock(name="three", dependencies=[TaskDependency("two")])
+        one = Mock(name="one", dependencies=[TaskDependency("two")])
+        two = Mock(name="two", dependencies=[TaskDependency("three")])
+        three = Mock(name="three", dependencies=[TaskDependency("two")])
 
         self.execution_manager.register_task(one, two, three)
 
@@ -741,9 +738,9 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
                           self.execution_manager.build_execution_plan, ["one"])
 
     def test_shortest_execution_plan_is_shortest(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
-        three = mock(name="three", dependencies=[TaskDependency("two")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
+        three = Mock(name="three", dependencies=[TaskDependency("two")])
 
         self.execution_manager.register_task(one, two, three)
         self.execution_manager.resolve_dependencies()
@@ -756,9 +753,9 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
         self.assertEquals([three], self.execution_manager.build_shortest_execution_plan("three"))
 
     def test_shortest_execution_plan_always_executes_target(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
-        three = mock(name="three", dependencies=[TaskDependency("two")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
+        three = Mock(name="three", dependencies=[TaskDependency("two")])
 
         self.execution_manager.register_task(one, two, three)
         self.execution_manager.resolve_dependencies()
@@ -772,9 +769,9 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
         self.assertEquals([three], self.execution_manager.build_shortest_execution_plan("three"))
 
     def test_shortest_execution_plan_checks_circularity(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
-        three = mock(name="three", dependencies=[TaskDependency("two")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
+        three = Mock(name="three", dependencies=[TaskDependency("two")])
 
         self.execution_manager.register_task(one, two, three)
         self.execution_manager.resolve_dependencies()
@@ -786,9 +783,9 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
                           ["three"])
 
     def test_shortest_execution_plan_reruns_on_demand(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
-        three = mock(name="three", dependencies=[TaskDependency("two")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
+        three = Mock(name="three", dependencies=[TaskDependency("two")])
 
         self.execution_manager.register_task(one, two, three)
         self.execution_manager.resolve_dependencies()
@@ -801,8 +798,8 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
         self.assertEquals([one, two, three], self.execution_manager.build_shortest_execution_plan(("three", "one")))
 
     def test_ensure_that_optional_tasks_are_excluded(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one", True)])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one", True)])
 
         self.execution_manager.register_task(one, two)
         self.execution_manager.resolve_dependencies(exclude_optional_tasks=["one"])
@@ -812,9 +809,9 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
         self.assertEquals([two], execution_plan)
 
     def test_ensure_that_optional_branch_is_excluded(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
-        three = mock(name="three", dependencies=[TaskDependency("two", True)])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
+        three = Mock(name="three", dependencies=[TaskDependency("two", True)])
 
         self.execution_manager.register_task(one, two, three)
         self.execution_manager.resolve_dependencies(exclude_optional_tasks=["two"])
@@ -824,8 +821,8 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
         self.assertEquals([three], execution_plan)
 
     def test_ensure_that_required_tasks_are_force_excluded(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
 
         self.execution_manager.register_task(one, two)
         self.execution_manager.resolve_dependencies(exclude_tasks=["one"])
@@ -835,9 +832,9 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
         self.assertEquals([two], execution_plan)
 
     def test_ensure_that_required_branch_is_force_excluded(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
-        three = mock(name="three", dependencies=[TaskDependency("two")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
+        three = Mock(name="three", dependencies=[TaskDependency("two")])
 
         self.execution_manager.register_task(one, two, three)
         self.execution_manager.resolve_dependencies(exclude_tasks=["two"])
@@ -847,8 +844,8 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
         self.assertEquals([three], execution_plan)
 
     def test_ensure_that_required_tasks_are_not_optionally_excluded(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
 
         self.execution_manager.register_task(one, two)
         self.execution_manager.resolve_dependencies(exclude_optional_tasks=["one"])
@@ -856,9 +853,9 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
         self.assertRaises(RequiredTaskExclusionException, self.execution_manager.build_execution_plan, "two")
 
     def test_ensure_that_required_tasks_branch_not_optionally_excluded(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
-        three = mock(name="three", dependencies=[TaskDependency("two")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
+        three = Mock(name="three", dependencies=[TaskDependency("two")])
 
         self.execution_manager.register_task(one, two, three)
         self.execution_manager.resolve_dependencies(exclude_optional_tasks=["one"])
@@ -866,9 +863,9 @@ class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):
         self.assertRaises(RequiredTaskExclusionException, self.execution_manager.build_execution_plan, "three")
 
     def test_is_task_in_current_execution_plan(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
-        three = mock(name="three", dependencies=[TaskDependency("one"), TaskDependency("two")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
+        three = Mock(name="three", dependencies=[TaskDependency("one"), TaskDependency("two")])
 
         self.execution_manager.register_task(one, two, three)
         self.execution_manager.resolve_dependencies(exclude_all_optional=True)
@@ -886,36 +883,36 @@ class ExecutionManagerExecuteExecutionPlanTest(ExecutionManagerTestBase):
                           self.execution_manager.execute_execution_plan, ["boom"])
 
     def test_ensure_tasks_are_executed(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[])
 
         self.execution_manager.register_task(one, two)
         self.execution_manager.resolve_dependencies()
 
         self.execution_manager.execute_execution_plan([one, two])
 
-        verify(one).execute(any(), {})
-        verify(two).execute(any(), {})
+        one.execute.assert_called_with(ANY, {})
+        two.execute.assert_called_with(ANY, {})
 
     def test_shortest_execution_plan_executed(self):
-        one = mock(name="one", dependencies=[])
-        two = mock(name="two", dependencies=[TaskDependency("one")])
-        three = mock(name="three", dependencies=[TaskDependency("two")])
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
+        three = Mock(name="three", dependencies=[TaskDependency("two")])
 
         self.execution_manager.register_task(one, two, three)
         self.execution_manager.resolve_dependencies()
 
         self.execution_manager.execute_execution_plan(self.execution_manager.build_execution_plan("two"))
-        verify(one, times=1).execute(any(), {})
-        verify(two, times=1).execute(any(), {})
-        verify(three, times=0).execute(any(), {})
+        one.execute.assert_has_calls([call(ANY, {})])
+        two.execute.assert_has_calls([call(ANY, {})])
+        three.execute.assert_not_called()
 
         self.execution_manager.execute_execution_plan(self.execution_manager.build_shortest_execution_plan("three"))
-        verify(one, times=1).execute(any(), {})
-        verify(two, times=1).execute(any(), {})
-        verify(three, times=1).execute(any(), {})
+        one.execute.assert_has_calls([call(ANY, {})])
+        two.execute.assert_has_calls([call(ANY, {})])
+        three.execute.assert_has_calls([call(ANY, {})])
 
         self.execution_manager.execute_execution_plan(self.execution_manager.build_shortest_execution_plan("three"))
-        verify(one, times=1).execute(any(), {})
-        verify(two, times=1).execute(any(), {})
-        verify(three, times=2).execute(any(), {})
+        one.execute.assert_has_calls([call(ANY, {})])
+        two.execute.assert_has_calls([call(ANY, {})])
+        three.execute.assert_has_calls([call(ANY, {}), call(ANY, {})])

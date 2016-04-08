@@ -17,7 +17,7 @@
 #   limitations under the License.
 
 import unittest
-from mock import Mock, patch, ANY
+from test_utils import Mock, patch, ANY
 
 from pybuilder.core import Project
 from pybuilder.plugins.python import pytddmon_plugin

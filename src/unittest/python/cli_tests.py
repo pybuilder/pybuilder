@@ -18,7 +18,6 @@
 
 import unittest
 
-import pybuilder
 from pybuilder.cli import (parse_options,
                            ColoredStdOutLogger,
                            CommandLineUsageException,
@@ -26,13 +25,12 @@ from pybuilder.cli import (parse_options,
                            length_of_longest_string,
                            print_list_of_tasks)
 from pybuilder.core import Logger
+from test_utils import Mock, patch, call
 
-from fluentmock import when, verify, Mock, ANY_STRING, UnitTests
 
-
-class TaskListTests(UnitTests):
-
-    def set_up(self):
+@patch("pybuilder.cli.print_text_line", return_value=None)
+class TaskListTests(unittest.TestCase):
+    def setUp(self):
         def __eq__(self, other):
             return False
 
@@ -58,45 +56,42 @@ class TaskListTests(UnitTests):
         self.task_2.name = "task-2"
         self.task_2.description = ""
         self.task_2.dependencies = []
-        when(self.mock_reactor).get_tasks().then_return([self.task_1,
-                                                         self.task_2])
-        when(pybuilder.cli).print_text_line(ANY_STRING).then_return(None)
+        self.mock_reactor.get_tasks.return_value = [self.task_1, self.task_2]
 
-    def test_should_render_minimal_task_list_when_in_quiet_mode(self):
+    def test_should_render_minimal_task_list_when_in_quiet_mode(self, print_text_line):
         print_list_of_tasks(self.mock_reactor, quiet=True)
 
-        verify(pybuilder.cli).print_text_line('task-1:<no description available>\ntask-2:<no description available>')
+        print_text_line.assert_called_with('task-1:<no description available>\ntask-2:<no description available>')
 
-    def test_should_render_verbose_task_list_without_descriptions_and_dependencies(self):
+    def test_should_render_verbose_task_list_without_descriptions_and_dependencies(self, print_text_line):
         print_list_of_tasks(self.mock_reactor, quiet=False)
 
-        verify(pybuilder.cli).print_text_line('Tasks found for project "any-project-name":')
-        verify(pybuilder.cli).print_text_line('    task-1 - <no description available>')
-        verify(pybuilder.cli).print_text_line('    task-2 - <no description available>')
+        print_text_line.assert_has_calls([call('Tasks found for project "any-project-name":'),
+                                          call('    task-1 - <no description available>'),
+                                          call('    task-2 - <no description available>')])
 
-    def test_should_render_verbose_task_list_with_dependencies(self):
+    def test_should_render_verbose_task_list_with_dependencies(self, print_text_line):
         self.task_1.dependencies = ["any-dependency", "any-other-dependency"]
 
         print_list_of_tasks(self.mock_reactor, quiet=False)
 
-        verify(pybuilder.cli).print_text_line('Tasks found for project "any-project-name":')
-        verify(pybuilder.cli).print_text_line('    task-1 - <no description available>')
-        verify(pybuilder.cli).print_text_line('             depends on tasks: any-dependency any-other-dependency')
-        verify(pybuilder.cli).print_text_line('    task-2 - <no description available>')
+        print_text_line.assert_has_calls([call('Tasks found for project "any-project-name":'),
+                                          call('    task-1 - <no description available>'),
+                                          call('             depends on tasks: any-dependency any-other-dependency'),
+                                          call('    task-2 - <no description available>')])
 
-    def test_should_render_verbose_task_list_with_descriptions(self):
+    def test_should_render_verbose_task_list_with_descriptions(self, print_text_line):
         self.task_1.description = ["any", "description", "for", "task", "1"]
         self.task_2.description = ["any", "description", "for", "task", "2"]
 
         print_list_of_tasks(self.mock_reactor, quiet=False)
 
-        verify(pybuilder.cli).print_text_line('Tasks found for project "any-project-name":')
-        verify(pybuilder.cli).print_text_line('    task-1 - any description for task 1')
-        verify(pybuilder.cli).print_text_line('    task-2 - any description for task 2')
+        print_text_line.assert_has_calls([call('Tasks found for project "any-project-name":'),
+                                          call('    task-1 - any description for task 1'),
+                                          call('    task-2 - any description for task 2')])
 
 
 class StdOutLoggerTest(unittest.TestCase):
-
     def setUp(self):
         self.stdout_logger = StdOutLogger(Logger)
 
@@ -118,7 +113,6 @@ class StdOutLoggerTest(unittest.TestCase):
 
 
 class ColoredStdOutLoggerTest(unittest.TestCase):
-
     def setUp(self):
         self.colored_stdout_logger = ColoredStdOutLogger(Logger)
 
@@ -140,7 +134,6 @@ class ColoredStdOutLoggerTest(unittest.TestCase):
 
 
 class ParseOptionsTest(unittest.TestCase):
-
     def assert_options(self, options, **overrides):
         self.assertEquals(options.project_directory,
                           overrides.get("project_directory", "."))
@@ -225,7 +218,6 @@ class ParseOptionsTest(unittest.TestCase):
 
 
 class LengthOfLongestStringTests(unittest.TestCase):
-
     def test_should_return_zero_when_list_is_empty(self):
         self.assertEqual(0, length_of_longest_string([]))
 

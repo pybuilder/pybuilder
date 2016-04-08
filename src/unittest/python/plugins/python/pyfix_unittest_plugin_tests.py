@@ -17,7 +17,7 @@
 #   limitations under the License.
 
 from unittest import TestCase
-from mock import Mock, call, patch
+from test_utils import Mock, call, patch
 
 from pybuilder.core import Project
 from pybuilder.plugins.python.pyfix_unittest_plugin import init_test_source_directory

@@ -18,7 +18,7 @@
 
 import unittest
 
-from mock import Mock, patch, call
+from test_utils import Mock, patch, call
 
 from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
 from pybuilder.core import Project

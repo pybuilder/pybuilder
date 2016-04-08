@@ -18,7 +18,7 @@
 
 from unittest import TestCase
 from pybuilder.core import Project
-from mock import Mock, patch
+from test_utils import Mock, patch
 from logging import Logger
 from pybuilder.plugins.ronn_manpage_plugin import (
     build_generate_manpages_command,
