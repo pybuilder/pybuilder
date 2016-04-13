@@ -89,11 +89,13 @@ def run_sphinx_build(build_command, task_name, logger, project):
     logger.info("Running %s" % task_name)
     log_file = project.expand_path(
         "$dir_target/reports/{0}".format(task_name))
+
     if project.get_property("verbose"):
         logger.info(build_command)
-        exit_code = execute_command(build_command, log_file, shell=True)
-        if exit_code != 0:
-            raise BuildFailedException("Sphinx build command failed. See %s for details.", log_file)
+
+    exit_code = execute_command(build_command, log_file, shell=True)
+    if exit_code != 0:
+        raise BuildFailedException("Sphinx build command failed. See %s for details.", log_file)
 
 
 @task("sphinx_generate_documentation", "Generates documentation with sphinx")
