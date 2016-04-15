@@ -25,10 +25,9 @@
 
 import copy
 import inspect
+import re
 import sys
 import traceback
-
-import re
 import types
 
 from pybuilder.errors import (CircularTaskDependencyException,
@@ -43,9 +42,11 @@ from pybuilder.utils import as_list, Timer, odict
 
 if sys.version_info[0] < 3:  # if major is less than 3
     from .excp_util_2 import raise_exception
+
     getargspec = inspect.getargspec
 else:
     from .excp_util_3 import raise_exception
+
     getargspec = inspect.getfullargspec
 
 
@@ -194,6 +195,7 @@ class ExecutionManager(object):
 
         self._tasks = odict()
         self._task_dependencies = odict()
+        self._dependencies_pending_tasks = {}
 
         self._actions = odict()
         self._execute_before = odict()
@@ -238,6 +240,19 @@ class ExecutionManager(object):
                 self._tasks[task.name].extend(task)
             else:
                 self._tasks[task.name] = task
+
+    def register_late_task_dependencies(self, dependencies):
+        for name in dependencies:
+            self.logger.debug("Registering late dependency of task '%s' on %s", name, dependencies[name])
+            if name not in self._dependencies_pending_tasks:
+                self._dependencies_pending_tasks[name] = []
+            self._dependencies_pending_tasks[name].extend(dependencies[name])
+
+        for name in list(self._dependencies_pending_tasks.keys()):
+            if self.has_task(name):
+                self.logger.debug("Resolved late dependency of task '%s' on %s", name, dependencies[name])
+                self.get_task(name).dependencies.extend(self._dependencies_pending_tasks[name])
+                del self._dependencies_pending_tasks[name]
 
     def execute_initializers(self, environments=None, **keyword_arguments):
         for initializer in self._initializers:
@@ -421,8 +436,9 @@ class ExecutionManager(object):
 
     def _should_omit_dependency(self, task, dependency):
         if dependency.optional:
-            if self._exclude_all_optional or dependency.name in self._exclude_optional_tasks \
-                    or dependency.name in self._exclude_tasks:
+            if self._exclude_all_optional or \
+                    dependency.name in self._exclude_optional_tasks or \
+                    dependency.name in self._exclude_tasks:
                 self.logger.debug("Omitting optional dependency '%s' of task '%s'", dependency.name, task.name)
                 return True
         else:
@@ -437,6 +453,11 @@ class ExecutionManager(object):
         self._exclude_optional_tasks = as_task_name_list(exclude_optional_tasks or [])
         self._exclude_tasks = as_task_name_list(exclude_tasks or [])
         self._exclude_all_optional = exclude_all_optional
+
+        self.register_late_task_dependencies({})  # This tries to flush out all remaining pending dependencies
+        for name in self._dependencies_pending_tasks:
+            self.get_task(name)
+        self._dependencies_pending_tasks.clear()
 
         for task in self._tasks.values():
             self._execute_before[task.name] = []

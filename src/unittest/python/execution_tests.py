@@ -215,21 +215,18 @@ class InitializerTest(unittest.TestCase):
         initializer = Initializer("initialzer", self.callable)
         self.assertTrue(initializer.is_applicable("any_environment"))
 
-    def test_should_return_true_when_invoking_is_applicable_with_environment_and_initializer_defines_environment(
-            self):
+    def test_should_return_true_when_invoking_is_applicable_with_environment_and_initializer_defines_environment(self):
         initializer = Initializer(
             "initialzer", self.callable, "any_environment")
         self.assertTrue(initializer.is_applicable("any_environment"))
 
-    def test_should_return_true_when_invoking_is_applicable_with_environments_and_initializer_defines_environment(
-            self):
+    def test_should_return_true_when_invoking_is_applicable_with_environments_and_initializer_defines_environment(self):
         initializer = Initializer(
             "initialzer", self.callable, "any_environment")
         self.assertTrue(initializer.is_applicable(
             ["any_environment", "any_other_environment"]))
 
-    def test_should_return_false_when_invoking_is_applicable_with_environment_and_initializer_defines_environment(
-            self):
+    def test_should_return_false_when_invoking_is_applicable_with_environment_and_initializer_defines_environment(self):
         initializer = Initializer(
             "initialzer", self.callable, "any_environment")
         self.assertFalse(initializer.is_applicable("any_other_environment"))
@@ -592,6 +589,50 @@ class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
 
         self.assertEquals([], self.execution_manager._task_dependencies.get("one"))
         self.assertEquals([TaskDependency(one)], self.execution_manager._task_dependencies.get("two"))
+
+    def test_verify_late_dependency(self):
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
+        three = Mock(name="three", dependencies=[TaskDependency("one")])
+
+        self.execution_manager.register_task(one, two)
+        self.execution_manager.register_task(three)
+        self.execution_manager.register_late_task_dependencies({"two": [TaskDependency("three")]})
+        self.execution_manager.resolve_dependencies()
+
+        self.assertEquals([], self.execution_manager._task_dependencies.get("one"))
+        self.assertEquals([TaskDependency(one), TaskDependency(three)],
+                          self.execution_manager._task_dependencies.get("two"))
+        self.assertEquals([TaskDependency(one)],
+                          self.execution_manager._task_dependencies.get("three"))
+
+    def test_verify_duplicate_late_dependency_removed(self):
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
+        three = Mock(name="three", dependencies=[TaskDependency("one"), TaskDependency("one")])
+
+        self.execution_manager.register_task(one, two)
+        self.execution_manager.register_task(three)
+        self.execution_manager.register_late_task_dependencies(
+            {"two": [TaskDependency("three"), TaskDependency("three")]})
+        self.execution_manager.resolve_dependencies()
+
+        self.assertEquals([], self.execution_manager._task_dependencies.get("one"))
+        self.assertEquals([TaskDependency(one), TaskDependency(three)],
+                          self.execution_manager._task_dependencies.get("two"))
+        self.assertEquals([TaskDependency(one)],
+                          self.execution_manager._task_dependencies.get("three"))
+
+    def test_verify_error_unresolved_late_dependency(self):
+        one = Mock(name="one", dependencies=[])
+        two = Mock(name="two", dependencies=[TaskDependency("one")])
+        three = Mock(name="three", dependencies=[TaskDependency("one")])
+
+        self.execution_manager.register_task(one, two)
+        self.execution_manager.register_task(three)
+        self.execution_manager.register_late_task_dependencies(
+            {"four": [TaskDependency("three")]})
+        self.assertRaises(NoSuchTaskException, self.execution_manager.resolve_dependencies)
 
 
 class ExecutionManagerBuildExecutionPlanTest(ExecutionManagerTestBase):

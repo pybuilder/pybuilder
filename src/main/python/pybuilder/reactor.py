@@ -204,13 +204,10 @@ class Reactor(object):
         self.collect_tasks_and_actions_and_initializers(plugin_module)
 
     def collect_tasks_and_actions_and_initializers(self, project_module):
-        injected_task_dependencies = dict()
+        injected_task_dependencies = {}
 
         def normalize_candidate_name(candidate):
-            if hasattr(candidate, NAME_ATTRIBUTE):
-                return getattr(candidate, NAME_ATTRIBUTE)
-            elif hasattr(candidate, "__name__"):
-                return candidate.__name__
+            return getattr(candidate, NAME_ATTRIBUTE, candidate.__name__ if hasattr(candidate, "__name__") else None)
 
         def add_task_dependency(names, depends_on, optional):
             for name in as_list(names):
@@ -223,9 +220,9 @@ class Reactor(object):
         for name in dir(project_module):
             candidate = getattr(project_module, name)
 
-            if hasattr(candidate, TASK_ATTRIBUTE) and getattr(candidate, TASK_ATTRIBUTE):
-                dependents = getattr(candidate, DEPENDENTS_ATTRIBUTE) if hasattr(candidate,
-                                                                                 DEPENDENTS_ATTRIBUTE) else None
+            if getattr(candidate, TASK_ATTRIBUTE, None):
+                dependents = getattr(candidate, DEPENDENTS_ATTRIBUTE, None)
+
                 if dependents:
                     dependents = list(as_list(dependents))
                     for d in dependents:
@@ -239,11 +236,10 @@ class Reactor(object):
             candidate = getattr(project_module, name)
             name = normalize_candidate_name(candidate)
 
-            description = getattr(candidate, DESCRIPTION_ATTRIBUTE) if hasattr(
-                candidate, DESCRIPTION_ATTRIBUTE) else ""
+            description = getattr(candidate, DESCRIPTION_ATTRIBUTE, "")
 
-            if hasattr(candidate, TASK_ATTRIBUTE) and getattr(candidate, TASK_ATTRIBUTE):
-                dependencies = getattr(candidate, DEPENDS_ATTRIBUTE) if hasattr(candidate, DEPENDS_ATTRIBUTE) else None
+            if getattr(candidate, TASK_ATTRIBUTE, None):
+                dependencies = getattr(candidate, DEPENDS_ATTRIBUTE, None)
 
                 task_dependencies = list()
                 if dependencies:
@@ -258,35 +254,30 @@ class Reactor(object):
                 # Add injected
                 if name in injected_task_dependencies:
                     task_dependencies.extend(injected_task_dependencies[name])
+                    del injected_task_dependencies[name]
 
                 self.logger.debug("Found task '%s' with dependencies %s", name, task_dependencies)
                 self.execution_manager.register_task(
                     Task(name, candidate, task_dependencies, description))
 
-            elif hasattr(candidate, ACTION_ATTRIBUTE) and getattr(candidate, ACTION_ATTRIBUTE):
-                before = getattr(candidate, BEFORE_ATTRIBUTE) if hasattr(
-                    candidate, BEFORE_ATTRIBUTE) else None
-                after = getattr(candidate, AFTER_ATTRIBUTE) if hasattr(
-                    candidate, AFTER_ATTRIBUTE) else None
+            elif getattr(candidate, ACTION_ATTRIBUTE, None):
+                before = getattr(candidate, BEFORE_ATTRIBUTE, None)
+                after = getattr(candidate, AFTER_ATTRIBUTE, None)
 
-                only_once = False
-                if hasattr(candidate, ONLY_ONCE_ATTRIBUTE):
-                    only_once = getattr(candidate, ONLY_ONCE_ATTRIBUTE)
-                teardown = False
-                if hasattr(candidate, TEARDOWN_ATTRIBUTE):
-                    teardown = getattr(candidate, TEARDOWN_ATTRIBUTE)
+                only_once = getattr(candidate, ONLY_ONCE_ATTRIBUTE, False)
+                teardown = getattr(candidate, TEARDOWN_ATTRIBUTE, False)
 
                 self.logger.debug("Found action %s", name)
                 self.execution_manager.register_action(
                     Action(name, candidate, before, after, description, only_once, teardown))
 
-            elif hasattr(candidate, INITIALIZER_ATTRIBUTE) and getattr(candidate, INITIALIZER_ATTRIBUTE):
-                environments = []
-                if hasattr(candidate, ENVIRONMENTS_ATTRIBUTE):
-                    environments = getattr(candidate, ENVIRONMENTS_ATTRIBUTE)
+            elif getattr(candidate, INITIALIZER_ATTRIBUTE, None):
+                environments = getattr(candidate, ENVIRONMENTS_ATTRIBUTE, [])
 
                 self.execution_manager.register_initializer(
                     Initializer(name, candidate, environments, description))
+
+        self.execution_manager.register_late_task_dependencies(injected_task_dependencies)
 
     def apply_project_attributes(self):
         self.propagate_property("name")
