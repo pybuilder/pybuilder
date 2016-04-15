@@ -202,6 +202,41 @@ class ReactorTest(unittest.TestCase):
             self.execution_manager.register_late_task_dependencies.assert_has_calls(
                 [call({}), call({"task2": [TaskDependency(task3)]})])
 
+    def test_task_dependencies_with_post_definition_injections_custom_names(self):
+        import pybuilder.reactor
+
+        with patch("pybuilder.reactor.Task"):
+            @task
+            def task1():
+                pass
+
+            @task
+            @depends(task1)
+            def task2():
+                pass
+
+            @task("task_3")
+            @depends(task1)
+            @dependents(task2)
+            def task3():
+                pass
+
+            module1 = ModuleType("mock_module_one")
+            module1.task1 = task1
+            module1.task2 = task2
+
+            module2 = ModuleType("mock_module_two")
+            module2.task3 = task3
+
+            self.reactor.collect_tasks_and_actions_and_initializers(module1)
+            pybuilder.reactor.Task.assert_has_calls([call("task1", task1, [], ''),
+                                                     call("task2", task2, [TaskDependency(task1)], '')])
+
+            self.reactor.collect_tasks_and_actions_and_initializers(module2)
+            pybuilder.reactor.Task.assert_has_calls([call("task_3", task3, [TaskDependency(task1)], '')])
+            self.execution_manager.register_late_task_dependencies.assert_has_calls(
+                [call({}), call({"task2": [TaskDependency("task_3")]})])
+
     def test_should_collect_single_before_action(self):
         @before("spam")
         def action():
