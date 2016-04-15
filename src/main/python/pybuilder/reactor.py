@@ -219,6 +219,7 @@ class Reactor(object):
 
         for name in dir(project_module):
             candidate = getattr(project_module, name)
+            name = normalize_candidate_name(candidate)
 
             if getattr(candidate, TASK_ATTRIBUTE, None):
                 dependents = getattr(candidate, DEPENDENTS_ATTRIBUTE, None)
@@ -228,9 +229,9 @@ class Reactor(object):
                     for d in dependents:
                         if isinstance(d, optional):
                             d = d()
-                            add_task_dependency(d, candidate, True)
+                            add_task_dependency(d, name, True)
                         else:
-                            add_task_dependency(d, candidate, False)
+                            add_task_dependency(d, name, False)
 
         for name in dir(project_module):
             candidate = getattr(project_module, name)
