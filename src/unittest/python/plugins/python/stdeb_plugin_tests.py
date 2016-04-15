@@ -17,7 +17,7 @@
 #   limitations under the License.
 
 from unittest import TestCase
-from mock import Mock, patch
+from test_utils import Mock, patch
 from pybuilder.core import Project
 from logging import Logger
 from pybuilder.plugins.python.stdeb_plugin import (

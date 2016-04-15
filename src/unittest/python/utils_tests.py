@@ -26,10 +26,6 @@ import time
 import unittest
 from json import loads
 
-from mock import patch, Mock
-from mockito import when, verify, unstub, any, mock
-
-import pybuilder.utils
 from pybuilder.errors import PyBuilderException
 from pybuilder.utils import (GlobExpression,
                              Timer,
@@ -45,6 +41,7 @@ from pybuilder.utils import (GlobExpression,
                              timedelta_in_millis,
                              fork_process,
                              execute_command)
+from test_utils import patch, Mock
 
 
 class TimerTest(unittest.TestCase):
@@ -165,67 +162,59 @@ class TimedeltaInMillisTest(unittest.TestCase):
 class DiscoverFilesTest(unittest.TestCase):
     fake_dir_contents = ["README.md", ".gitignore", "spam.py", "eggs.py", "eggs.py~"]
 
-    def tearDown(self):
-        unstub()
-
-    def test_should_only_return_py_suffix(self):
-        when(os).walk("spam").thenReturn([("spam", [], self.fake_dir_contents)])
+    @patch("pybuilder.utils.os.walk", return_value=[("spam", [], fake_dir_contents)])
+    def test_should_only_return_py_suffix(self, walk):
         expected_result = ["spam/spam.py", "spam/eggs.py"]
         actual_result = set(discover_files("spam", ".py"))
         self.assertEquals(set(expected_result), actual_result)
-        verify(os).walk("spam")
+        walk.assert_called_with("spam")
 
-    def test_should_only_return_py_glob(self):
-        when(os).walk("spam").thenReturn([("spam", [], self.fake_dir_contents)])
+    @patch("pybuilder.utils.os.walk", return_value=[("spam", [], fake_dir_contents)])
+    def test_should_only_return_py_glob(self, walk):
         expected_result = ["spam/README.md"]
         actual_result = set(discover_files_matching("spam", "README.?d"))
         self.assertEquals(set(expected_result), actual_result)
-        verify(os).walk("spam")
+        walk.assert_called_with("spam")
 
 
 class DiscoverModulesTest(unittest.TestCase):
-    def tearDown(self):
-        unstub()
-
-    def test_should_return_empty_list_when_directory_contains_single_file_not_matching_suffix(self):
-        when(os).walk("spam").thenReturn([("spam", [], ["eggs.pi"])])
+    @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["eggs.pi"])])
+    def test_should_return_empty_list_when_directory_contains_single_file_not_matching_suffix(self, walk):
         self.assertEquals([], discover_modules("spam", ".py"))
-        verify(os).walk("spam")
+        walk.assert_called_with("spam")
 
-    def test_should_return_list_with_single_module_when_directory_contains_single_file(self):
-        when(os).walk("spam").thenReturn([("spam", [], ["eggs.py"])])
+    @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["eggs.py"])])
+    def test_should_return_list_with_single_module_when_directory_contains_single_file(self, walk):
         self.assertEquals(["eggs"], discover_modules("spam", ".py"))
-        verify(os).walk("spam")
+        walk.assert_called_with("spam")
 
-    def test_should_only_match_py_files_regardless_of_glob(self):
-        when(os).walk("pet_shop").thenReturn([("pet_shop", [],
-                                               ["parrot.txt", "parrot.py", "parrot.pyc", "parrot.py~", "slug.py"])])
+    @patch("pybuilder.utils.os.walk", return_value=[("pet_shop", [],
+                                                     ["parrot.txt", "parrot.py", "parrot.pyc", "parrot.py~",
+                                                      "slug.py"])])
+    def test_should_only_match_py_files_regardless_of_glob(self, walk):
         expected_result = ["parrot"]
         actual_result = discover_modules_matching("pet_shop", "*parrot*")
         self.assertEquals(set(expected_result), set(actual_result))
-        verify(os).walk("pet_shop")
+        walk.assert_called_with("pet_shop")
 
-    def test_glob_should_return_list_with_single_module_when_directory_contains_single_file(self):
-        when(os).walk("spam").thenReturn([("spam", [], ["eggs.py"])])
+    @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["eggs.py"])])
+    def test_glob_should_return_list_with_single_module_when_directory_contains_single_file(self, walk):
         self.assertEquals(["eggs"], discover_modules_matching("spam", "*"))
-        verify(os).walk("spam")
+        walk.assert_called_with("spam")
 
-    def test_glob_should_return_list_with_single_module_when_directory_contains_package(self):
-        when(os).walk("spam").thenReturn([("spam", ["eggs"], []),
-                                          ("spam/eggs", [], ["__init__.py"])])
-
+    @patch("pybuilder.utils.os.walk", return_value=[("spam", ["eggs"], []),
+                                                    ("spam/eggs", [], ["__init__.py"])])
+    def test_glob_should_return_list_with_single_module_when_directory_contains_package(self, walk):
         self.assertEquals(["eggs"], discover_modules_matching("spam", "*"))
 
-        verify(os).walk("spam")
+        walk.assert_called_with("spam")
 
-    def test_should_not_eat_first_character_of_modules_when_source_path_ends_with_slash(self):
-        when(pybuilder.utils).discover_files_matching(any(), any()).thenReturn(['/path/to/tests/reactor_tests.py'])
-
+    @patch("pybuilder.utils.discover_files_matching", return_value=['/path/to/tests/reactor_tests.py'])
+    def test_should_not_eat_first_character_of_modules_when_source_path_ends_with_slash(self, _):
         self.assertEquals(["reactor_tests"], discover_modules_matching("/path/to/tests/", "*"))
 
-    def test_should_honor_suffix_without_stripping_it_from_module_names(self):
-        when(pybuilder.utils).discover_files_matching(any(), any()).thenReturn(['/path/to/tests/reactor_tests.py'])
-
+    @patch("pybuilder.utils.discover_files_matching", return_value=['/path/to/tests/reactor_tests.py'])
+    def test_should_honor_suffix_without_stripping_it_from_module_names(self, _):
         self.assertEquals(["reactor_tests"], discover_modules_matching("/path/to/tests/", "*_tests"))
 
 
@@ -254,21 +243,8 @@ class GlobExpressionTest(unittest.TestCase):
 
 
 class ApplyOnFilesTest(unittest.TestCase):
-    def setUp(self):
-        self.old_os_path_join = os.path.join
-
-        def join(*elements):
-            return "/".join(elements)
-
-        os.path.join = join
-
-    def tearDown(self):
-        os.path.join = self.old_os_path_join
-        unstub()
-
-    def test_should_apply_callback_to_all_files_when_expression_matches_all_files(self):
-        when(os).walk("spam").thenReturn([("spam", [], ["a", "b", "c"])])
-
+    @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["a", "b", "c"])])
+    def test_should_apply_callback_to_all_files_when_expression_matches_all_files(self, walk):
         absolute_file_names = []
         relative_file_names = []
 
@@ -280,11 +256,10 @@ class ApplyOnFilesTest(unittest.TestCase):
         self.assertEquals(["spam/a", "spam/b", "spam/c"], absolute_file_names)
         self.assertEquals(["a", "b", "c"], relative_file_names)
 
-        verify(os).walk("spam")
+        walk.assert_called_with("spam")
 
-    def test_should_apply_callback_to_one_file_when_expression_matches_one_file(self):
-        when(os).walk("spam").thenReturn([("spam", [], ["a", "b", "c"])])
-
+    @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["a", "b", "c"])])
+    def test_should_apply_callback_to_one_file_when_expression_matches_one_file(self, walk):
         called_on_file = []
 
         def callback(absolute_file_name, relative_file_name):
@@ -293,11 +268,10 @@ class ApplyOnFilesTest(unittest.TestCase):
         apply_on_files("spam", callback, "a")
         self.assertEquals(["spam/a"], called_on_file)
 
-        verify(os).walk("spam")
+        walk.assert_called_with("spam")
 
-    def test_should_pass_additional_arguments_to_closure(self):
-        when(os).walk("spam").thenReturn([("spam", [], ["a"])])
-
+    @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["a"])])
+    def test_should_pass_additional_arguments_to_closure(self, walk):
         called_on_file = []
 
         def callback(absolute_file_name, relative_file_name, additional_argument):
@@ -307,7 +281,7 @@ class ApplyOnFilesTest(unittest.TestCase):
         apply_on_files("spam", callback, "a", "additional argument")
         self.assertEquals(["spam/a"], called_on_file)
 
-        verify(os).walk("spam")
+        walk.assert_called_with("spam")
 
 
 class MkdirTest(unittest.TestCase):
@@ -355,7 +329,7 @@ class ForkTest(unittest.TestCase):
         def test_func():
             return "success"
 
-        val = fork_process(mock(), target=test_func)
+        val = fork_process(Mock(), target=test_func)
 
         self.assertEquals(len(val), 2)
         self.assertEquals(val[0], 0)
@@ -365,12 +339,12 @@ class ForkTest(unittest.TestCase):
         def test_func(foo, bar):
             return "%s%s" % (foo, bar)
 
-        val = fork_process(mock(), target=test_func, kwargs={"foo": "foo", "bar": 10})
+        val = fork_process(Mock(), target=test_func, kwargs={"foo": "foo", "bar": 10})
         self.assertEquals(len(val), 2)
         self.assertEquals(val[0], 0)
         self.assertEquals(val[1], "foo10")
 
-        val = fork_process(mock(), target=test_func, args=("foo", 20))
+        val = fork_process(Mock(), target=test_func, args=("foo", 20))
         self.assertEquals(len(val), 2)
         self.assertEquals(val[0], 0)
         self.assertEquals(val[1], "foo20")
@@ -380,7 +354,8 @@ class ForkTest(unittest.TestCase):
             raise PyBuilderException("Test failure message")
 
         try:
-            val = fork_process(mock(), target=test_func)
+            val = fork_process(Mock(), target=test_func)
+            val = fork_process(Mock(), target=test_func)
             self.fail("should not have reached here, returned %s" % val)
         except:
             ex_type, ex, tb = sys.exc_info()
@@ -397,7 +372,7 @@ class ForkTest(unittest.TestCase):
             return FooError()
 
         try:
-            fork_process(mock(), target=test_func)
+            fork_process(Mock(), target=test_func)
             self.fail("should not have reached here")
         except:
             ex_type, ex, tb = sys.exc_info()
@@ -415,7 +390,7 @@ class ForkTest(unittest.TestCase):
             raise FooError()
 
         try:
-            val = fork_process(mock(), target=test_func)
+            val = fork_process(Mock(), target=test_func)
             self.fail("should not have reached here, returned %s" % val)
         except:
             ex_type, ex, tb = sys.exc_info()
@@ -438,7 +413,7 @@ class ForkTest(unittest.TestCase):
             raise FooError(Foo.bar)
 
         try:
-            val = fork_process(mock(), target=test_func)
+            val = fork_process(Mock(), target=test_func)
             self.fail("should not have reached here, returned %s" % val)
         except:
             ex_type, ex, tb = sys.exc_info()

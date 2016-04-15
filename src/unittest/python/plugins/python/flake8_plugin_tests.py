@@ -1,6 +1,6 @@
 from unittest import TestCase
 from pybuilder.core import Project
-from mock import Mock
+from test_utils import Mock
 from pybuilder.plugins.python.flake8_plugin import initialize_flake8_plugin
 
 

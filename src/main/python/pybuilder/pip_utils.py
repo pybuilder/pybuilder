@@ -20,22 +20,12 @@ import os
 import re
 import sys
 
-from pip._vendor.packaging.specifiers import SpecifierSet, InvalidSpecifier
-from pip._vendor.packaging.version import Version, InvalidVersion
-from pip.commands.show import search_packages_info
-
-try:
-    # This is the path for pip 7.x
-    from pip._vendor.pkg_resources import _initialize_master_working_set
-
-    pip_working_set_init = _initialize_master_working_set
-except ImportError:
-    # This is the path for pip 6.x
-    from pip._vendor import pkg_resources
-
-    pip_working_set_init = pkg_resources
-
 from pybuilder.core import Dependency, RequirementsFile
+from pybuilder.pip_common import (Version,
+                                  SpecifierSet,
+                                  search_packages_info,
+                                  pip_working_set_init,
+                                  _pip_disallows_insecure_packages_by_default)
 from pybuilder.utils import execute_command, as_list
 
 PIP_EXEC_STANZA = [sys.executable, "-m", "pip.__main__"]
@@ -51,13 +41,7 @@ def build_dependency_version_string(mixed):
     if not version:
         return ""
 
-    try:
-        return ">=%s" % Version(version)
-    except InvalidVersion:
-        try:
-            return str(SpecifierSet(version))
-        except InvalidSpecifier:
-            raise ValueError("'%s' must be either PEP 0440 version or a version specifier set")
+    return version
 
 
 def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=False,
@@ -129,22 +113,21 @@ def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=Fals
 
 
 def as_pip_install_target(mixed):
-    if isinstance(mixed, RequirementsFile):
-        return ["-r", mixed.name]
-    if isinstance(mixed, Dependency):
-        if mixed.url:
-            return [mixed.url]
+    arguments = []
+    targets = as_list(mixed)
+
+    for target in targets:
+        if isinstance(target, RequirementsFile):
+            arguments.extend(("-r", target.name))
+        elif isinstance(target, Dependency):
+            if target.url:
+                arguments.append(target.url)
+            else:
+                arguments.append("{0}{1}".format(target.name, build_dependency_version_string(target)))
         else:
-            return ["{0}{1}".format(mixed.name, build_dependency_version_string(mixed))]
-    return [str(mixed)]
+            arguments.append(str(target))
 
-
-def _pip_disallows_insecure_packages_by_default():
-    import pip
-    # (2014-01-01) BACKWARD INCOMPATIBLE pip no longer will scrape insecure external urls by default
-    # nor will it install externally hosted files by default
-    # Also pip v1.1 for example has no __version__
-    return hasattr(pip, "__version__") and pip.__version__ >= '1.5'
+    return arguments
 
 
 def get_package_version(mixed, logger=None):
@@ -175,3 +158,25 @@ def version_satisfies_spec(spec, version):
     if not isinstance(version, Version):
         version = Version(version)
     return spec.contains(version)
+
+
+def should_update_package(version):
+    """
+        True if the version is specified and isn't exact
+        False otherwise
+    """
+    if version:
+        if not isinstance(version, SpecifierSet):
+            version_specifier = SpecifierSet(version)
+        else:
+            version_specifier = version
+        # We always check if even one specifier in the set is not exact
+        for spec in version_specifier._specs:
+            if hasattr(spec, "operator"):
+                if spec.operator not in ("==", "==="):
+                    return True
+            else:
+                if spec._spec[0] not in ("==", "==="):
+                    return True
+
+    return False

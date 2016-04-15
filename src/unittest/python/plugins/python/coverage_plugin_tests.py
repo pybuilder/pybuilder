@@ -19,7 +19,7 @@
 import sys
 from unittest import TestCase
 
-from mock import patch, MagicMock, Mock
+from test_utils import patch, MagicMock, Mock
 
 from pybuilder.core import Project, Logger
 from pybuilder.plugins.python.coverage_plugin import (init_coverage_properties,

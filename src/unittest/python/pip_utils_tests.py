@@ -19,7 +19,7 @@
 import os
 import unittest
 
-from mock import patch, ANY
+from test_utils import patch, ANY
 
 from pybuilder import core
 from pybuilder import pip_utils
@@ -30,9 +30,8 @@ class PipVersionTests(unittest.TestCase):
         self.assertEquals(pip_utils.build_dependency_version_string(core.Dependency("test", "1.2.3")), ">=1.2.3")
         self.assertEquals(pip_utils.build_dependency_version_string(core.Dependency("test", ">=1.2.3,<=2.3.4")),
                           "<=2.3.4,>=1.2.3")
-        self.assertEquals(pip_utils.build_dependency_version_string("1.2.3"), ">=1.2.3")
-        self.assertEquals(pip_utils.build_dependency_version_string(">=1.2.3,<=2.3.4"), "<=2.3.4,>=1.2.3")
-        self.assertRaises(ValueError, pip_utils.build_dependency_version_string, "bogus")
+        self.assertEquals(pip_utils.build_dependency_version_string("1.2.3"), "1.2.3")
+        self.assertEquals(pip_utils.build_dependency_version_string(None), "")
 
     def test_version_satisfies_spec(self):
         self.assertEquals(pip_utils.version_satisfies_spec(None, "blah"), True)

@@ -18,16 +18,14 @@
 
 import unittest
 
-from mockito import mock, when
-
 from pybuilder.plugins.python.pychecker_plugin import (PycheckerModuleReport,
                                                        PycheckerWarning,
                                                        PycheckerReport,
                                                        parse_pychecker_output)
+from test_utils import Mock
 
 
-class PycheckerWarningTest (unittest.TestCase):
-
+class PycheckerWarningTest(unittest.TestCase):
     def test_to_json_dict(self):
         expected = {
             "message": "any message",
@@ -37,8 +35,7 @@ class PycheckerWarningTest (unittest.TestCase):
             expected, PycheckerWarning("any message", 17).to_json_dict())
 
 
-class PycheckerModuleReportTest (unittest.TestCase):
-
+class PycheckerModuleReportTest(unittest.TestCase):
     def test_to_json_dict(self):
         report = PycheckerModuleReport("any.module")
         report.add_warning(PycheckerWarning("warning 1", 1))
@@ -52,10 +49,8 @@ class PycheckerModuleReportTest (unittest.TestCase):
         self.assertEquals(expected, report.to_json_dict())
 
 
-class PycheckerReportTest (unittest.TestCase):
-
+class PycheckerReportTest(unittest.TestCase):
     def test_to_json_dict(self):
-
         module_report_one = PycheckerModuleReport("any.module")
         module_report_one.add_warning(PycheckerWarning("warning 1", 1))
         module_report_one.add_warning(PycheckerWarning("warning 2", 2))
@@ -86,12 +81,10 @@ class PycheckerReportTest (unittest.TestCase):
         self.assertEquals(expected, report.to_json_dict())
 
 
-class ParsePycheckerOutputTest (unittest.TestCase):
-
+class ParsePycheckerOutputTest(unittest.TestCase):
     def test_should_parse_report(self):
-        project = mock()
-        when(project).expand_path(
-            "$dir_source_main_python").thenReturn("/path/to")
+        project = Mock()
+        project.expand_path.return_value = "/path/to"
 
         warnings = [
             "/path/to/package/module_one:2: Sample warning",

@@ -22,7 +22,7 @@ try:
 except ImportError:
     from Queue import Empty
 
-from mock import patch
+from test_utils import patch
 
 from pybuilder.core import Project
 from pybuilder.plugins.python.integrationtest_plugin import (

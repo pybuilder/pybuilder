@@ -18,7 +18,7 @@
 
 from unittest import TestCase
 
-from mock import Mock, patch
+from test_utils import Mock, patch
 
 from pybuilder.core import Project
 from pybuilder.errors import BuildFailedException

@@ -17,15 +17,14 @@
 #   limitations under the License.
 import unittest
 
-from mockito import mock, verify
-
 from helloworld import helloworld
+from test_utils import Mock
 
 
 class HelloWorldTest(unittest.TestCase):
     def test_should_issue_hello_world_message(self):
-        out = mock()
+        out = Mock()
 
         helloworld(out)
 
-        verify(out).write("Hello world of Python\n")
+        out.write.assert_called_with("Hello world of Python\n")

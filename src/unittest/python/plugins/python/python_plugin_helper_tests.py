@@ -18,7 +18,7 @@
 
 import unittest
 
-from mock import Mock, call, patch
+from test_utils import Mock, call, patch
 
 from pybuilder.plugins.python.python_plugin_helper import (log_report,
                                                            discover_affected_files,

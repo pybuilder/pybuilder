@@ -1,5 +1,5 @@
 from unittest import TestCase
-from mock import Mock, patch
+from test_utils import Mock, patch
 from logging import Logger
 from pybuilder.core import Project
 from pybuilder.plugins.python.snakefood_plugin import (

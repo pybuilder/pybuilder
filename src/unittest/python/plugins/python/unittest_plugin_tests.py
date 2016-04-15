@@ -20,7 +20,7 @@ from __future__ import unicode_literals
 
 from unittest import TestCase, TextTestRunner
 
-from mock import Mock, patch
+from test_utils import Mock, patch
 
 from pybuilder.core import Project
 from pybuilder.plugins.python.unittest_plugin import (execute_tests, execute_tests_matching,

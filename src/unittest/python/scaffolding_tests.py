@@ -16,7 +16,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from mock import patch, call
+from test_utils import patch, call
 from unittest import TestCase
 
 from pybuilder.scaffolding import (PythonProjectScaffolding,

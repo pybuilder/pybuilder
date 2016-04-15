@@ -13,9 +13,8 @@ branches:
   - doc/sphinxdoc
 before_script:
 - pip install coveralls
-- "./build.py install_dependencies -v -X"
 script:
-- "./build.py -v -X analyze install"
+- "./build.py -v -X install_dependencies analyze install"
 after_success:
 - coveralls --verbose
 deploy:

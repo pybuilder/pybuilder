@@ -19,7 +19,7 @@
 import unittest
 from os.path import join
 
-from mock import patch
+from test_utils import patch
 
 from pybuilder.plugins.python.core_plugin import init_python_directories
 from pybuilder.plugins.python.core_plugin import (DISTRIBUTION_PROPERTY,

@@ -29,8 +29,7 @@ from pybuilder.errors import (MissingPluginException,
                               IncompatiblePluginException,
                               UnspecifiedPluginNameException,
                               )
-from pybuilder.pip_utils import Version, SpecifierSet
-from pybuilder.pip_utils import pip_install, version_satisfies_spec
+from pybuilder.pip_utils import (Version, pip_install, version_satisfies_spec, should_update_package)
 from pybuilder.utils import read_file
 
 PYPI_PLUGIN_PROTOCOL = "pypi:"
@@ -80,13 +79,7 @@ class DownloadingPluginLoader(PluginLoader):
         # Maybe we already installed this plugin from PyPI before
         if thirdparty_plugin.startswith(PYPI_PLUGIN_PROTOCOL):
             thirdparty_plugin = thirdparty_plugin.replace(PYPI_PLUGIN_PROTOCOL, "")
-            if version:
-                version_specifier = SpecifierSet(version)
-                # We always check if even one specifier in the set is not exact
-                for spec in version_specifier._specs:
-                    if spec.operator not in ("==", "==="):
-                        update_plugin = True
-                        break
+            update_plugin = should_update_package(version)
         elif thirdparty_plugin.startswith(VCS_PLUGIN_PROTOCOL):
             if not plugin_module_name:
                 raise UnspecifiedPluginNameException(name)
