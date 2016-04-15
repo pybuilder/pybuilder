@@ -45,7 +45,6 @@ if sys.platform != 'win32':
 use_plugin("python.integrationtest")
 use_plugin("python.coverage")
 use_plugin("python.flake8")
-use_plugin("python.sphinx")
 use_plugin('filter_resources')
 
 if not sys.version_info[0] == 3:
@@ -55,8 +54,8 @@ use_plugin("python.pydev")
 use_plugin("python.pycharm")
 use_plugin("python.pytddmon")
 
-use_bldsup()
-use_plugin("pdoc")
+use_plugin("python.sphinx")
+use_plugin("python.pdoc")
 
 name = "PyBuilder"
 summary = "An extensible, easy to use continuous build tool for Python"
@@ -123,6 +122,8 @@ def initialize(project):
     project.set_property("sphinx_doc_builder", "html")
     project.set_property("sphinx_project_name", project.name)
     project.set_property("sphinx_project_version", project.version)
+
+    project.set_property("pdoc_module_name", "pybuilder")
 
     project.get_property("source_dist_ignore_patterns").append(".project")
     project.get_property("source_dist_ignore_patterns").append(".pydevproject")
