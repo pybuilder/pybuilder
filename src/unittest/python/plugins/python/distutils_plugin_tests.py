@@ -25,8 +25,6 @@ except NameError:
 
 import unittest
 
-from test_utils import patch, MagicMock, ANY
-
 from pybuilder.core import Project, Author, Logger
 from pybuilder.errors import BuildFailedException
 from pybuilder.pip_utils import PIP_EXEC_STANZA
@@ -48,7 +46,11 @@ from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        build_string_from_array,
                                                        _run_process_and_wait,
                                                        )
-from test_utils import PyBuilderTestCase
+from test_utils import (PyBuilderTestCase,
+                        patch,
+                        MagicMock,
+                        ANY
+                        )
 
 
 class InstallDependenciesTest(unittest.TestCase):
@@ -535,6 +537,14 @@ if __name__ == '__main__':
                           "                'release = zest.releaser.release:main',\n"
                           "                'release1 = zest.releaser.release1:main'\n"
                           "            ]\n"
+                          "        }", actual_setup_script)
+
+    def test_should_render_single_entry_pointproperty_is_set(self):
+        self.project.set_property("distutils_entry_points", {'foo_entry': "release = zest.releaser.release:main"})
+
+        actual_setup_script = build_entry_points_string(self.project)
+        self.assertEquals("{\n"
+                          "            'foo_entry': ['release = zest.releaser.release:main']\n"
                           "        }", actual_setup_script)
 
     def test_should_fail_with_entry_points_and_console_scripts_set(self):
