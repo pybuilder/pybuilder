@@ -438,7 +438,7 @@ def build_entry_points_string(project):
 
     for k in sorted(entry_points.keys()):
         result += " " * (indent + 4)
-        result += "'%s': %s" % (k, build_string_from_array(entry_points[k], indent + 8)) + ",\n"
+        result += "'%s': %s" % (k, build_string_from_array(as_list(entry_points[k]), indent + 8)) + ",\n"
 
     result = result[:-2] + "\n"
     result += (" " * indent) + "}"
