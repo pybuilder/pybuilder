@@ -125,7 +125,7 @@ class Reactor(object):
             environments = []
 
         execution_plan = self.create_execution_plan(tasks, environments)
-        self.build_execution_plan(tasks, execution_plan)
+        return self.build_execution_plan(tasks, execution_plan)
 
     def create_execution_plan(self, tasks, environments):
         Reactor._set_current_instance(self)
