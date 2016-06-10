@@ -44,6 +44,18 @@ class VCSRevision(object):
         raise PyBuilderException(
             "Cannot determine VCS revision: project is neither a git nor a svn repo.")
 
+    def get_git_hash(self, abbreviate=7):
+        if self.is_a_git_repo():
+            exit_code, stdout, stderr = execute_command_and_capture_output(
+                "git", "rev-parse", "--short={0}".format(abbreviate), "HEAD")
+            if exit_code != 0:
+                raise PyBuilderException("Cannot determine git hash: git rev-parse HEAD failed:\n{0}".
+                                         format(stderr))
+            else:
+                return stdout.strip()
+        else:
+            raise PyBuilderException("Cannot determine git hash: project is not a git repo.")
+
     def get_git_revision_count(self):
         # NOTE: git rev-list HEAD --count does not work on RHEL6, hence we count ourselves.
         exit_code, stdout, stderr = execute_command_and_capture_output(
