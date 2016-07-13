@@ -18,6 +18,7 @@
 
 import os
 import shutil
+from os.path import join
 
 from pybuilder.core import init, task, description, depends, optional
 from pybuilder.pip_utils import get_package_version, version_satisfies_spec, pip_install, as_pip_install_target
@@ -26,8 +27,8 @@ from pybuilder.pip_utils import get_package_version, version_satisfies_spec, pip
 @init
 def init(project):
     project.set_property("dir_target", "target")
-    project.set_property("dir_reports", "$dir_target/reports")
-    project.set_property("dir_logs", "$dir_target/logs")
+    project.set_property("dir_reports", join("$dir_target", "reports"))
+    project.set_property("dir_logs", join("$dir_target", "logs"))
 
     def write_report(file, *content):
         with open(project.expand_path("$dir_reports", file), "w") as report_file:
