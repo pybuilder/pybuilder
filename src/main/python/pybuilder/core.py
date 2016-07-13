@@ -477,7 +477,7 @@ class Project(object):
             return
         self._package_data[package_name].append(filename)
 
-    def include_directory(self, package_path, patterns_list):
+    def include_directory(self, package_path, patterns_list, package_root=""):
         if not package_path or package_path.strip() == "":
             raise ValueError("Missing argument package_path.")
 
@@ -487,12 +487,14 @@ class Project(object):
         package_name = package_path.replace(PATH_SEPARATOR, '.')
         self._manifest_include_directory(package_path, patterns_list)
 
-        for root, dirnames, filenames in os.walk(package_path):
+        package_full_path = os.path.join(package_root, package_path)
+
+        for root, dirnames, filenames in os.walk(package_full_path):
             filenames = list(fnmatch.filter(filenames, pattern) for pattern in patterns_list)
 
             for filename in itertools.chain.from_iterable(filenames):
                 full_path = os.path.join(root, filename)
-                relative_path = full_path.replace(package_path, '', 1).lstrip(PATH_SEPARATOR)
+                relative_path = full_path.replace(package_full_path, '', 1).lstrip(PATH_SEPARATOR)
                 self._package_data.setdefault(package_name, []).append(relative_path)
 
     @property
