@@ -17,15 +17,16 @@
 #   limitations under the License.
 #
 
-from pybuilder.utils import assert_can_execute
-from pybuilder.utils import execute_command
-from pybuilder.errors import BuildFailedException
 from pybuilder.core import NAME_ATTRIBUTE
 from pybuilder.core import (after,
                             task,
                             init,
                             use_plugin,
                             depends)
+from pybuilder.errors import BuildFailedException
+from pybuilder.utils import (assert_can_execute,
+                             execute_command
+                             )
 
 __author__ = 'Marcel Wolf'
 
@@ -36,14 +37,12 @@ use_plugin("core")
 
 @init
 def initialize_make_deb_plugin(project):
-
     project.plugin_depends_on("stdeb")
 
     package_name = project.name + "-" + project.version + ".tar.gz"
 
-    PATH_TO_SOURCE_TARBALL = project.expand_path(
-        "$dir_dist/dist/" + package_name)
-    PATH_FINAL_BUILD = project.expand_path("$dir_dist/dist/")
+    PATH_TO_SOURCE_TARBALL = project.expand_path("$dir_dist", "dist", package_name)
+    PATH_FINAL_BUILD = project.expand_path("$dir_dist", "dist")
 
     project.set_property_if_unset(
         "deb_package_maintainer", DEB_PACKAGE_MAINTAINER)
@@ -97,8 +96,7 @@ def get_py2dsc_deb_command(project):
 
 def run_py2dsc_deb_build(build_command, task_name, logger, project):
     logger.info("Running %s" % task_name)
-    log_file = project.expand_path(
-        "$dir_target/reports/{0}".format(task_name))
+    log_file = project.expand_path("$dir_target", "reports", task_name)
     if project.get_property("verbose"):
         logger.info(build_command)
         exit_code = execute_command(build_command, log_file, shell=True)

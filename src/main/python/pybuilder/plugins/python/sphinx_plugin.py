@@ -19,31 +19,30 @@
 """Sphinx-plugin for PyBuildern to run a sphinx quickstart and generate the documentation once set up.
 """
 
+from os.path import join
+
+from pybuilder import scaffolding as SCAFFOLDING
+from pybuilder.core import NAME_ATTRIBUTE
 from pybuilder.core import after
 from pybuilder.core import depends
 from pybuilder.core import init
 from pybuilder.core import task
 from pybuilder.core import use_plugin
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import assert_can_execute
-from pybuilder.utils import execute_command
-from pybuilder import scaffolding as SCAFFOLDING
-from pybuilder.core import NAME_ATTRIBUTE
+from pybuilder.utils import (execute_command,
+                             assert_can_execute)
 
 __author__ = 'Thomas Prebble', 'Marcel Wolf'
 
-
 use_plugin("core")
 
-
-DEFAULT_SPHINX_OUTPUT_DIR = SCAFFOLDING.DEFAULT_DOCS_DIRECTORY + "/_build/"
+DEFAULT_SPHINX_OUTPUT_DIR = join(SCAFFOLDING.DEFAULT_DOCS_DIRECTORY, "_build", "")
 
 SPHINX_DOC_BUILDER = "html"
 
 
 @init
 def initialize_sphinx_plugin(project):
-
     default_project_version = project.version
     default_project_name = project.name
     default_doc_author = ", ".join([author.name for author in project.authors])
@@ -87,8 +86,7 @@ def assert_sphinx_quickstart_is_available(logger):
 
 def run_sphinx_build(build_command, task_name, logger, project):
     logger.info("Running %s" % task_name)
-    log_file = project.expand_path(
-        "$dir_target/reports/{0}".format(task_name))
+    log_file = project.expand_path("$dir_target", "reports", task_name)
 
     if project.get_property("verbose"):
         logger.info(build_command)
