@@ -22,6 +22,7 @@ from os.path import join
 
 from pybuilder.core import init, task, description, depends, optional
 from pybuilder.pip_utils import get_package_version, version_satisfies_spec, pip_install, as_pip_install_target
+from pybuilder.utils import safe_log_file_name
 
 
 @init
@@ -62,10 +63,11 @@ def prepare(project, logger):
     for plugin_dependency in project.plugin_dependencies:
         logger.debug("Processing plugin dependency %s" % plugin_dependency)
         if plugin_dependency.name.lower() not in plugin_dependency_versions or not \
-            version_satisfies_spec(plugin_dependency.version,
-                                   plugin_dependency_versions[plugin_dependency.name.lower()]):
+                version_satisfies_spec(plugin_dependency.version,
+                                       plugin_dependency_versions[plugin_dependency.name.lower()]):
             logger.info("Installing plugin dependency %s" % plugin_dependency)
-            log_file = project.expand_path("$dir_reports", "dependency_%s_install.log" % plugin_dependency)
+            log_file = project.expand_path("$dir_reports",
+                                           safe_log_file_name("dependency_%s_install.log" % plugin_dependency))
             pip_install(as_pip_install_target(plugin_dependency),
                         index_url=project.get_property("install_dependencies_index_url"),
                         extra_index_url=project.get_property("install_dependencies_extra_index_url"),

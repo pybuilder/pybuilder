@@ -348,6 +348,7 @@ if sys.version_info[0] == 2 and sys.version_info[1] == 6:  # if Python is 2.6
 
     class OrderedDict(dict):
         'Dictionary that remembers insertion order'
+
         # An inherited dict maps keys to values.
         # The inherited dict provides __getitem__, __len__, __contains__, and get.
         # The remaining methods are order-aware.
@@ -605,3 +606,7 @@ def is_notstr_iterable(obj):
 
 def get_dist_version_string(project, format=" (%s)"):
     return format % project.dist_version if project.version != project.dist_version else ""
+
+
+def safe_log_file_name(file_name):
+    return re.sub(r'\<|\>|=|\:|\*|\?|\|\"', '_', file_name)

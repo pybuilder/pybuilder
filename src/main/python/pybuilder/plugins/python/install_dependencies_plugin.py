@@ -21,7 +21,6 @@ from __future__ import print_function
 import collections
 import imp
 import os
-import re
 import sys
 
 from pybuilder.core import (before,
@@ -39,7 +38,7 @@ from pybuilder.pip_utils import (PIP_EXEC_STANZA,
                                  should_update_package,
                                  version_satisfies_spec)
 from pybuilder.terminal import print_file_content
-from pybuilder.utils import execute_command, mkdir, as_list
+from pybuilder.utils import execute_command, mkdir, as_list, safe_log_file_name
 
 __author__ = "Alexander Metzner, Arcadiy Ivanov"
 
@@ -118,8 +117,7 @@ def install_dependency(logger, project, dependencies):
 
     for standalone_dependency in standalone_dependencies:
         url = getattr(standalone_dependency, "url", None)
-        log_file = project.expand_path("$dir_install_logs", dependency.name)
-        log_file = re.sub(r'<|>|=', '_', log_file)
+        log_file = project.expand_path("$dir_install_logs", safe_log_file_name(dependency.name))
         _do_install_dependency(logger, project, standalone_dependency,
                                True,
                                url,
