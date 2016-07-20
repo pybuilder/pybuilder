@@ -21,6 +21,7 @@
     Provides version control system utilities.
 """
 
+import os
 from pybuilder.utils import execute_command_and_capture_output
 from pybuilder.errors import PyBuilderException
 
@@ -85,3 +86,9 @@ class VCSRevision(object):
             return False
 
         return True
+
+
+def count_travis():
+    """ Version number dervived from commit count and travis build number. """
+    return '{0}.{1}'.format(VCSRevision().count,
+                            os.environ.get('TRAVIS_BUILD_NUMBER', 0))
