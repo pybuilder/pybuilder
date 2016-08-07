@@ -41,6 +41,7 @@ def init_coverage_properties(project):
     project.set_property_if_unset("coverage_branch_threshold_warn", 0)
     project.set_property_if_unset("coverage_branch_partial_threshold_warn", 0)
     project.set_property_if_unset("coverage_break_build", True)
+    project.set_property_if_unset("coverage_allow_non_imported_modules", True)
     project.set_property_if_unset("coverage_reload_modules", None)  # deprecated, unused
     project.set_property_if_unset("coverage_reset_modules", False)
     project.set_property_if_unset("coverage_exceptions", [])
@@ -89,6 +90,7 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
     """
     source_tree_path = project.get_property("dir_source_main_python")
     reset_modules = project.get_property("%s_reset_modules" % execution_prefix)
+    allow_non_imported_modules = project.get_property("%s_allow_non_imported_modules" % execution_prefix)
     module_names = _discover_modules_to_cover(project)
 
     for module_name in module_names:
@@ -114,9 +116,14 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
         _stop_coverage(project, coverage)
 
     module_exceptions = project.get_property("%s_exceptions" % execution_prefix)
-    modules = _list_all_covered_modules(logger, module_names, module_exceptions)
+    modules, non_imported_modules = _list_all_covered_modules(logger, module_names, module_exceptions,
+                                                              allow_non_imported_modules)
 
     failure = _build_coverage_report(project, logger, execution_name, execution_prefix, coverage, modules)
+
+    if non_imported_modules and not allow_non_imported_modules:
+        raise BuildFailedException("Some modules have not been imported and have no coverage")
+
     if failure:
         raise failure
 
@@ -133,8 +140,9 @@ def _stop_coverage(project, coverage):
     project.set_property('__running_coverage', False)
 
 
-def _list_all_covered_modules(logger, module_names, modules_exceptions):
+def _list_all_covered_modules(logger, module_names, modules_exceptions, allow_non_imported_modules):
     modules = []
+    non_imported_modules = []
     for module_name in module_names:
         if module_name in modules_exceptions:
             logger.debug("Module '%s' was excluded", module_name)
@@ -142,7 +150,13 @@ def _list_all_covered_modules(logger, module_names, modules_exceptions):
         try:
             module = sys.modules[module_name]
         except KeyError:
-            logger.warn("Module '%s' was not imported by the covered tests", module_name)
+            non_imported_modules.append(module_name)
+            if allow_non_imported_modules:
+                logger_func = logger.warn
+            else:
+                logger_func = logger.error
+
+            logger_func("Module '%s' was not imported by the covered tests", module_name)
             try:
                 module = __import__(module_name)
             except SyntaxError as e:
@@ -152,7 +166,7 @@ def _list_all_covered_modules(logger, module_names, modules_exceptions):
 
         if module not in modules and hasattr(module, "__file__"):
             modules.append(module)
-    return modules
+    return modules, non_imported_modules
 
 
 def _build_module_report(coverage, module):
