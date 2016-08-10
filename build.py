@@ -25,6 +25,7 @@ sys.path.insert(0, 'src/main/python')  # This is only necessary in PyBuilder sou
 
 from pybuilder import bootstrap
 from pybuilder.core import Author, init, use_bldsup, use_plugin
+from pybuilder.vcs import count_travis
 
 bootstrap()
 
@@ -76,7 +77,7 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            ]
 url = "http://pybuilder.github.io"
 license = "Apache License"
-version = "0.11.10.dev"
+version = count_travis()
 
 default_task = ["install_dependencies", "analyze", "publish"]
 
