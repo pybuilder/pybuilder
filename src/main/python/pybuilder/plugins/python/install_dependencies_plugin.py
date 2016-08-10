@@ -36,7 +36,8 @@ from pybuilder.pip_utils import (PIP_EXEC_STANZA,
                                  as_pip_install_target,
                                  get_package_version,
                                  should_update_package,
-                                 version_satisfies_spec)
+                                 version_satisfies_spec,
+                                 create_constraint_file)
 from pybuilder.terminal import print_file_content
 from pybuilder.utils import execute_command, mkdir, as_list, safe_log_file_name
 
@@ -95,10 +96,15 @@ def create_install_log_directory(logger, project):
 
 
 def install_dependency(logger, project, dependencies):
-    dependencies_to_install, orig_installed_pkgs = _filter_dependencies(logger, project, dependencies)
+    dependencies_to_install, orig_installed_pkgs, dependency_constraints = _filter_dependencies(logger, project,
+                                                                                                dependencies)
     batch_dependencies = []
     standalone_dependencies = []
     local_mapping = project.get_property("install_dependencies_local_mapping")
+
+    constraints_file = project.expand_path("$dir_target", "install_dependencies_constraints")
+    create_constraint_file(constraints_file, dependency_constraints)
+
     for dependency in dependencies_to_install:
         url = getattr(dependency, "url", None)
 
@@ -119,14 +125,20 @@ def install_dependency(logger, project, dependencies):
         url = getattr(standalone_dependency, "url", None)
         log_file = project.expand_path("$dir_install_logs", safe_log_file_name(dependency.name))
         _do_install_dependency(logger, project, standalone_dependency,
-                               True,
-                               url,
+                               True,  # upgrade
+                               url,  # force reinstall
+                               constraints_file,
                                local_mapping.get(dependency.name),
                                log_file)
 
     if len(batch_dependencies):
         log_file = project.expand_path("$dir_install_logs", "install_batch")
-        _do_install_dependency(logger, project, batch_dependencies, True, False, None, log_file)
+        _do_install_dependency(logger, project, batch_dependencies,
+                               True,  # upgrade
+                               False,  # force reinstall
+                               constraints_file,
+                               None,
+                               log_file)
 
     __reload_pip_if_updated(logger, dependencies_to_install)
 
@@ -135,6 +147,7 @@ def _filter_dependencies(logger, project, dependencies):
     dependencies = as_list(dependencies)
     installed_packages = get_package_version(dependencies)
     dependencies_to_install = []
+    dependency_constraints = []
 
     for dependency in dependencies:
         logger.debug("Inspecting dependency '%s'" % dependency)
@@ -144,6 +157,11 @@ def _filter_dependencies(logger, project, dependencies):
             dependencies_to_install.append(dependency)
             continue
         elif isinstance(dependency, Dependency):
+            if dependency.version:
+                dependency_constraints.append(dependency)
+                logger.debug(
+                    "Dependency '%s' is added to the list of installation constraints" % dependency)
+
             if dependency.url:
                 # Always add dependency that is url-based
                 logger.debug("Dependency '%s' is URL-based and will be included" % dependency)
@@ -171,10 +189,11 @@ def _filter_dependencies(logger, project, dependencies):
 
         logger.debug("Dependency '%s' is already up-to-date and will be skipped" % dependency)
 
-    return dependencies_to_install, installed_packages
+    return dependencies_to_install, installed_packages, dependency_constraints
 
 
-def _do_install_dependency(logger, project, dependency, upgrade, force_reinstall, target_dir, log_file):
+def _do_install_dependency(logger, project, dependency, upgrade, force_reinstall, constraint_file, target_dir,
+                           log_file):
     batch = isinstance(dependency, collections.Iterable)
 
     pip_command_line = list()
@@ -188,7 +207,8 @@ def _do_install_dependency(logger, project, dependency, upgrade, force_reinstall
                                                       force_reinstall,
                                                       target_dir,
                                                       project.get_property("verbose"),
-                                                      project.get_property("install_dependencies_trusted_host")
+                                                      project.get_property("install_dependencies_trusted_host"),
+                                                      constraint_file
                                                       ))
     pip_command_line.extend(as_pip_install_target(dependency))
     logger.debug("Invoking pip: %s", pip_command_line)

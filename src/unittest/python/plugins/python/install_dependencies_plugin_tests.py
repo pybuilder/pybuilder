@@ -38,21 +38,27 @@ class InstallDependencyTest(unittest.TestCase):
     def setUp(self):
         self.project = Project("unittest", ".")
         self.project.set_property("dir_install_logs", "any_directory")
+        self.project.set_property("dir_target", "/any_target_directory")
         self.logger = Mock(Logger)
         initialize_install_dependencies_plugin(self.project)
 
+    @patch("pybuilder.plugins.python.install_dependencies_plugin.create_constraint_file")
     @patch("pybuilder.plugins.python.install_dependencies_plugin.get_package_version", return_value={})
     @patch("pybuilder.plugins.python.install_dependencies_plugin.execute_command", return_value=0)
-    def test_should_install_dependency_without_version(self, exec_command, get_package_version):
+    def test_should_install_dependency_without_version(self, exec_command, get_package_version, constraint_file):
         dependency = Dependency("spam")
 
         install_dependency(self.logger, self.project, dependency)
 
-        exec_command.assert_called_with(PIP_EXEC_STANZA + ["install", '--upgrade', 'spam'], ANY, env=ANY, shell=False)
+        exec_command.assert_called_with(PIP_EXEC_STANZA +
+                                        ["install", '--upgrade', '-c',
+                                         'unittest/any_target_directory/install_dependencies_constraints', 'spam'],
+                                        ANY, env=ANY, shell=False)
 
+    @patch("pybuilder.plugins.python.install_dependencies_plugin.create_constraint_file")
     @patch("pybuilder.plugins.python.install_dependencies_plugin.get_package_version", return_value={})
     @patch("pybuilder.plugins.python.install_dependencies_plugin.execute_command", return_value=0)
-    def test_should_install_requirements_file_dependency(self, exec_command, get_package_version):
+    def test_should_install_requirements_file_dependency(self, exec_command, get_package_version, constraint_file):
         dependency = RequirementsFile("requirements.txt")
 
         install_dependency(self.logger, self.project, dependency)
@@ -60,9 +66,11 @@ class InstallDependencyTest(unittest.TestCase):
         exec_command(
             PIP_EXEC_STANZA + ["install", '-r', "requirements.txt"], ANY, env=ANY, shell=False)
 
+    @patch("pybuilder.plugins.python.install_dependencies_plugin.create_constraint_file")
     @patch("pybuilder.plugins.python.install_dependencies_plugin.get_package_version", return_value={})
     @patch("pybuilder.plugins.python.install_dependencies_plugin.execute_command", return_value=0)
-    def test_should_install_dependency_without_version_on_windows_derivate(self, exec_command, get_package_version):
+    def test_should_install_dependency_without_version_on_windows_derivate(self, exec_command, get_package_version,
+                                                                           constraint_file):
         dependency = Dependency("spam")
 
         install_dependency(self.logger, self.project, dependency)
@@ -70,10 +78,12 @@ class InstallDependencyTest(unittest.TestCase):
         exec_command(
             PIP_EXEC_STANZA + ["install", "spam"], ANY, env=ANY, shell=False)
 
+    @patch("pybuilder.plugins.python.install_dependencies_plugin.create_constraint_file")
     @patch("pybuilder.plugins.python.install_dependencies_plugin.get_package_version", return_value={})
     @patch("pybuilder.pip_utils._pip_disallows_insecure_packages_by_default", return_value=True)
     @patch("pybuilder.plugins.python.install_dependencies_plugin.execute_command", return_value=0)
-    def test_should_install_dependency_insecurely_when_property_is_set(self, exec_command, _, get_package_version):
+    def test_should_install_dependency_insecurely_when_property_is_set(self, exec_command, _, get_package_version,
+                                                                       constraint_file):
         dependency = Dependency("spam")
         self.project.set_property("install_dependencies_insecure_installation", ["spam"])
 
@@ -83,11 +93,13 @@ class InstallDependencyTest(unittest.TestCase):
             PIP_EXEC_STANZA + ["install", "--allow-unverified", "spam", "--allow-external", "spam", 'spam'],
             ANY, env=ANY, shell=False)
 
+    @patch("pybuilder.plugins.python.install_dependencies_plugin.create_constraint_file")
     @patch("pybuilder.plugins.python.install_dependencies_plugin.get_package_version", return_value={})
     @patch("pybuilder.pip_utils._pip_disallows_insecure_packages_by_default", return_value=True)
     @patch("pybuilder.plugins.python.install_dependencies_plugin.execute_command", return_value=0)
     def test_should_install_dependency_securely_when_property_is_not_set_to_dependency(self, exec_command, _,
-                                                                                       get_package_version):
+                                                                                       get_package_version,
+                                                                                       constraint_file):
         dependency = Dependency("spam")
         self.project.set_property("install_dependencies_insecure_installation", ["some-other-dependency"])
 
@@ -99,10 +111,12 @@ class InstallDependencyTest(unittest.TestCase):
         #  some-other-dependency might be a dependency of 'spam'
         #  so we always have to put the insecure dependencies in the command line :-(
 
+    @patch("pybuilder.plugins.python.install_dependencies_plugin.create_constraint_file")
     @patch("pybuilder.plugins.python.install_dependencies_plugin.get_package_version", return_value={})
     @patch("pybuilder.pip_utils._pip_disallows_insecure_packages_by_default", return_value=False)
     @patch("pybuilder.plugins.python.install_dependencies_plugin.execute_command", return_value=0)
-    def test_should_not_use_insecure_flags_when_pip_version_is_too_low(self, exec_command, _, get_package_version):
+    def test_should_not_use_insecure_flags_when_pip_version_is_too_low(self, exec_command, _, get_package_version,
+                                                                       constraint_file):
         dependency = Dependency("spam")
         self.project.set_property("install_dependencies_insecure_installation", ["spam"])
 
@@ -111,9 +125,11 @@ class InstallDependencyTest(unittest.TestCase):
         exec_command(
             PIP_EXEC_STANZA + ["install", 'spam'], ANY, env=ANY, shell=False)
 
+    @patch("pybuilder.plugins.python.install_dependencies_plugin.create_constraint_file")
     @patch("pybuilder.plugins.python.install_dependencies_plugin.get_package_version", return_value={})
     @patch("pybuilder.plugins.python.install_dependencies_plugin.execute_command", return_value=0)
-    def test_should_install_dependency_using_custom_index_url(self, exec_command, get_package_version):
+    def test_should_install_dependency_using_custom_index_url(self, exec_command, get_package_version,
+                                                              constraint_file):
         self.project.set_property("install_dependencies_index_url", "some_index_url")
         dependency = Dependency("spam")
 
@@ -123,9 +139,11 @@ class InstallDependencyTest(unittest.TestCase):
             PIP_EXEC_STANZA + ["install", "--index-url", "some_index_url", 'spam'], ANY, env=ANY,
             shell=False)
 
+    @patch("pybuilder.plugins.python.install_dependencies_plugin.create_constraint_file")
     @patch("pybuilder.plugins.python.install_dependencies_plugin.get_package_version", return_value={})
     @patch("pybuilder.plugins.python.install_dependencies_plugin.execute_command", return_value=0)
-    def test_should_use_extra_index_url_when_index_url_is_not_set(self, exec_command, get_package_version):
+    def test_should_use_extra_index_url_when_index_url_is_not_set(self, exec_command, get_package_version,
+                                                                  constraint_file):
         self.project.set_property("install_dependencies_extra_index_url", "some_extra_index_url")
         dependency = Dependency("spam")
 
@@ -135,10 +153,12 @@ class InstallDependencyTest(unittest.TestCase):
             PIP_EXEC_STANZA + ["install", "--extra-index-url", "some_extra_index_url", 'spam'], ANY,
             env=ANY, shell=False)
 
+    @patch("pybuilder.plugins.python.install_dependencies_plugin.create_constraint_file")
     @patch("pybuilder.plugins.python.install_dependencies_plugin.get_package_version", return_value={})
     @patch("pybuilder.plugins.python.install_dependencies_plugin.execute_command", return_value=0)
     def test_should_use_index_and_extra_index_url_when_index_and_extra_index_url_are_set(self, exec_command,
-                                                                                         get_package_version):
+                                                                                         get_package_version,
+                                                                                         constraint_file):
         self.project.set_property("install_dependencies_index_url", "some_index_url")
         self.project.set_property("install_dependencies_extra_index_url", "some_extra_index_url")
         dependency = Dependency("spam")
@@ -149,9 +169,10 @@ class InstallDependencyTest(unittest.TestCase):
             PIP_EXEC_STANZA + ["install", "--index-url", "some_index_url", "--extra-index-url",
                                "some_extra_index_url", 'spam'], ANY, env=ANY, shell=False)
 
+    @patch("pybuilder.plugins.python.install_dependencies_plugin.create_constraint_file")
     @patch("pybuilder.plugins.python.install_dependencies_plugin.get_package_version", return_value={})
     @patch("pybuilder.plugins.python.install_dependencies_plugin.execute_command", return_value=0)
-    def test_should_upgrade_dependencies(self, exec_command, get_package_version):
+    def test_should_upgrade_dependencies(self, exec_command, get_package_version, constraint_file):
         self.project.set_property("install_dependencies_upgrade", True)
         dependency = Dependency("spam")
 
@@ -160,9 +181,10 @@ class InstallDependencyTest(unittest.TestCase):
         exec_command(
             PIP_EXEC_STANZA + ["install", "--upgrade", 'spam'], ANY, env=ANY, shell=False)
 
+    @patch("pybuilder.plugins.python.install_dependencies_plugin.create_constraint_file")
     @patch("pybuilder.plugins.python.install_dependencies_plugin.get_package_version", return_value={})
     @patch("pybuilder.plugins.python.install_dependencies_plugin.execute_command", return_value=0)
-    def test_should_install_dependency_with_version(self, exec_command, get_package_version):
+    def test_should_install_dependency_with_version(self, exec_command, get_package_version, constraint_file):
         dependency = Dependency("spam", "0.1.2")
 
         install_dependency(self.logger, self.project, dependency)
@@ -170,9 +192,11 @@ class InstallDependencyTest(unittest.TestCase):
         exec_command(
             PIP_EXEC_STANZA + ["install", 'spam>=0.1.2'], ANY, env=ANY, shell=False)
 
+    @patch("pybuilder.plugins.python.install_dependencies_plugin.create_constraint_file")
     @patch("pybuilder.plugins.python.install_dependencies_plugin.get_package_version", return_value={})
     @patch("pybuilder.plugins.python.install_dependencies_plugin.execute_command", return_value=0)
-    def test_should_install_dependency_with_version_and_operator(self, exec_command, get_package_version):
+    def test_should_install_dependency_with_version_and_operator(self, exec_command, get_package_version,
+                                                                 constraint_file):
         dependency = Dependency("spam", "==0.1.2")
 
         install_dependency(self.logger, self.project, dependency)
@@ -180,9 +204,10 @@ class InstallDependencyTest(unittest.TestCase):
         exec_command(
             PIP_EXEC_STANZA + ["install", 'spam==0.1.2'], ANY, env=ANY, shell=False)
 
+    @patch("pybuilder.plugins.python.install_dependencies_plugin.create_constraint_file")
     @patch("pybuilder.plugins.python.install_dependencies_plugin.get_package_version", return_value={})
     @patch("pybuilder.plugins.python.install_dependencies_plugin.execute_command", return_value=0)
-    def test_should_install_dependency_with_url(self, exec_command, get_package_version):
+    def test_should_install_dependency_with_url(self, exec_command, get_package_version, constraint_file):
         dependency = Dependency("spam", url="some_url")
 
         install_dependency(self.logger, self.project, dependency)
@@ -190,9 +215,11 @@ class InstallDependencyTest(unittest.TestCase):
         exec_command(
             PIP_EXEC_STANZA + ["install", "--force-reinstall", 'some_url'], ANY, env=ANY, shell=False)
 
+    @patch("pybuilder.plugins.python.install_dependencies_plugin.create_constraint_file")
     @patch("pybuilder.plugins.python.install_dependencies_plugin.get_package_version", return_value={})
     @patch("pybuilder.plugins.python.install_dependencies_plugin.execute_command", return_value=0)
-    def test_should_install_dependency_with_url_even_if_version_is_given(self, exec_command, get_package_version):
+    def test_should_install_dependency_with_url_even_if_version_is_given(self, exec_command, get_package_version,
+                                                                         constraint_file):
         dependency = Dependency("spam", version="0.1.2", url="some_url")
 
         install_dependency(self.logger, self.project, dependency)

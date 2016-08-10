@@ -18,15 +18,6 @@
 
 import unittest
 
-try:
-    import __builtin__
-
-    builtin_module = __builtin__
-except ImportError as e:
-    import builtins
-
-    builtin_module = builtins
-
 from test_utils import patch, Mock, ANY
 from pybuilder.pip_utils import PIP_EXEC_STANZA
 from pybuilder.errors import MissingPluginException, IncompatiblePluginException, UnspecifiedPluginNameException

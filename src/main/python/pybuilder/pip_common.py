@@ -46,3 +46,8 @@ def _pip_disallows_insecure_packages_by_default():
     # nor will it install externally hosted files by default
     # Also pip v1.1 for example has no __version__
     return hasattr(pip, "__version__") and pip.__version__ >= '1.5'
+
+
+def _pip_supports_constraints():
+    import pip
+    return hasattr(pip, "__version__") and pip.__version__ >= '7.1'

@@ -19,10 +19,9 @@
 import os
 import unittest
 
-from test_utils import patch, ANY
-
 from pybuilder import core
 from pybuilder import pip_utils
+from test_utils import patch, ANY
 
 
 class PipVersionTests(unittest.TestCase):
@@ -85,6 +84,8 @@ class PipVersionTests(unittest.TestCase):
         self.assertEquals(pip_utils.build_pip_install_options(force_reinstall=True), ["--force-reinstall"])
         self.assertEquals(pip_utils.build_pip_install_options(target_dir="target dir"), ["-t", "target dir"])
         self.assertEquals(pip_utils.build_pip_install_options(target_dir="target dir"), ["-t", "target dir"])
+        self.assertEquals(pip_utils.build_pip_install_options(constraint_file="constraint file"),
+                          ["-c", "constraint file"])
         self.assertEquals(pip_utils.build_pip_install_options(insecure_installs=["foo", "bar"]), [
             "--allow-unverified", "foo",
             "--allow-external", "foo",

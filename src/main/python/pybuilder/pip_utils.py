@@ -25,7 +25,8 @@ from pybuilder.pip_common import (Version,
                                   SpecifierSet,
                                   search_packages_info,
                                   pip_working_set_init,
-                                  _pip_disallows_insecure_packages_by_default)
+                                  _pip_disallows_insecure_packages_by_default,
+                                  _pip_supports_constraints)
 from pybuilder.utils import execute_command, as_list
 
 PIP_EXEC_STANZA = [sys.executable, "-m", "pip.__main__"]
@@ -72,7 +73,8 @@ def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=F
 
 
 def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=False, insecure_installs=None,
-                              force_reinstall=False, target_dir=None, verbose=False, trusted_host=None):
+                              force_reinstall=False, target_dir=None, verbose=False, trusted_host=None,
+                              constraint_file=None):
     options = []
     if index_url:
         options.append("--index-url")
@@ -103,6 +105,10 @@ def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=Fals
         options.append("-t")
         options.append(target_dir)
 
+    if constraint_file and _pip_supports_constraints():
+        options.append("-c")
+        options.append(constraint_file)
+
     if _pip_disallows_insecure_packages_by_default() and insecure_installs:
         for insecure_install in insecure_installs:
             arguments_for_insecure_installation = ["--allow-unverified", insecure_install,
@@ -110,6 +116,12 @@ def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=Fals
             options.extend(arguments_for_insecure_installation)
 
     return options
+
+
+def create_constraint_file(file_name, constraints):
+    with open(file_name, "wt") as fout:
+        for constraint in as_pip_install_target(constraints):
+            fout.write("%s\n" % constraint)
 
 
 def as_pip_install_target(mixed):
