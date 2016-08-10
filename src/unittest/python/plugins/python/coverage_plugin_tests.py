@@ -19,14 +19,13 @@
 import sys
 from unittest import TestCase
 
-from test_utils import patch, MagicMock, Mock
-
 from pybuilder.core import Project, Logger
 from pybuilder.plugins.python.coverage_plugin import (init_coverage_properties,
                                                       _list_all_covered_modules,
                                                       _build_module_report,
                                                       _build_coverage_report,
                                                       )
+from test_utils import patch, MagicMock, Mock
 
 if sys.version_info[0] < 3:  # if major is less than 3
     import_patch = '__builtin__.__import__'
@@ -69,10 +68,24 @@ class CoveragePluginTests(TestCase):
         module_b_val = MagicMock(__name__='module_b', __file__='module_b.py')
         with patch.dict('sys.modules', module_a=module_a_val, module_b=module_b_val):
             with patch(import_patch) as import_func:
-                returned_modules = _list_all_covered_modules(MagicMock(), ['module_a', 'module_b'], [])
+                returned_modules, non_imported_modules = _list_all_covered_modules(MagicMock(),
+                                                                                   ['module_a', 'module_b'], [], True)
 
         self.assertEquals([module_a_val, module_b_val], returned_modules)
         import_func.assert_not_called()
+
+    def test_list_all_covered_modules_not_imported(self):
+        module_a_val = MagicMock(__name__='module_a', __file__='module_a.py')
+        module_b_val = MagicMock(__name__='module_b', __file__='module_b.py')
+        with patch.dict('sys.modules', module_a=module_a_val):
+            with patch(import_patch) as import_func:
+                import_func.return_value = module_b_val
+                returned_modules, non_imported_modules = _list_all_covered_modules(MagicMock(),
+                                                                                   ['module_a', 'module_b'], [], False)
+
+        self.assertEquals([module_a_val, module_b_val], returned_modules)
+        self.assertEquals([module_b_val.__name__], non_imported_modules)
+        import_func.assert_called_once_with('module_b')
 
     def test_list_all_covered_modules_load(self):
         module_a_val = MagicMock(__name__='module_a', __file__='module_a.py')
@@ -80,7 +93,8 @@ class CoveragePluginTests(TestCase):
         with patch.dict('sys.modules', module_a=module_a_val):
             with patch(import_patch) as import_func:
                 import_func.return_value = module_b_val
-                returned_modules = _list_all_covered_modules(MagicMock(), ['module_a', 'module_b'], [])
+                returned_modules, non_imported_modules = _list_all_covered_modules(MagicMock(),
+                                                                                   ['module_a', 'module_b'], [], True)
 
         self.assertEquals([module_a_val, module_b_val], returned_modules)
         import_func.assert_called_once_with('module_b')
@@ -90,7 +104,9 @@ class CoveragePluginTests(TestCase):
         module_b_val = MagicMock(__name__='module_b', __file__='module_b.py')
         with patch.dict('sys.modules', module_a=module_a_val, module_b=module_b_val):
             with patch(import_patch) as import_func:
-                returned_modules = _list_all_covered_modules(MagicMock(), ['module_a', 'module_b', 'module_a'], [])
+                returned_modules, non_imported_modules = _list_all_covered_modules(MagicMock(),
+                                                                                   ['module_a', 'module_b', 'module_a'],
+                                                                                   [], True)
 
         self.assertEquals([module_a_val, module_b_val], returned_modules)
         import_func.assert_not_called()
@@ -101,8 +117,9 @@ class CoveragePluginTests(TestCase):
         logger = MagicMock()
         with patch.dict('sys.modules', module_a=module_a_val, module_b=module_b_val):
             with patch(import_patch) as import_func:
-                returned_modules = _list_all_covered_modules(logger, ['module_a', 'module_b', 'module_c'],
-                                                             ['module_c'])
+                returned_modules, non_imported_modules = _list_all_covered_modules(logger,
+                                                                                   ['module_a', 'module_b', 'module_c'],
+                                                                                   ['module_c'], True)
 
         self.assertEquals([module_a_val, module_b_val], returned_modules)
         import_func.assert_not_called()
