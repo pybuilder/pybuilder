@@ -82,6 +82,7 @@ patch.object = partial(mock.patch.object, new_callable=PyBuilderMagicMock)
 patch.dict = mock.patch.dict
 patch.multiple = partial(mock.patch.multiple, new_callable=PyBuilderMagicMock)
 patch.stopall = mock.patch.stopall
+mock_open = mock.mock_open
 patch.TEST_PREFIX = 'test'
 DEFAULT = mock.DEFAULT
 call = mock.call

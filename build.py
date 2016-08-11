@@ -93,7 +93,7 @@ def initialize(project):
         project.build_depends_on("importlib")  # for fluentmock
 
     project.depends_on("tblib")
-    project.depends_on("pip", ">=7.0")
+    project.depends_on("pip", ">=7.1")
     project.depends_on("wheel")
 
     project.set_property("verbose", True)
