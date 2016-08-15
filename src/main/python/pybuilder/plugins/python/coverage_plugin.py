@@ -27,6 +27,7 @@ import os
 from distutils import sysconfig
 from pybuilder.core import init, after, use_plugin
 from pybuilder.utils import discover_modules, render_report, fork_process, is_windows
+from pybuilder.coverage_utils import patch_multiprocessing, reverse_patch_multiprocessing
 from pybuilder.errors import BuildFailedException
 
 use_plugin("python.core")
@@ -35,7 +36,7 @@ use_plugin("analysis")
 
 @init
 def init_coverage_properties(project):
-    project.plugin_depends_on("coverage")
+    project.plugin_depends_on("coverage", "~=4.2")
 
     project.set_property_if_unset("coverage_threshold_warn", 70)
     project.set_property_if_unset("coverage_branch_threshold_warn", 0)
@@ -74,9 +75,9 @@ def run_coverage(project, logger, reactor, execution_prefix, execution_name, tar
     logger.debug("Forking process to do %s analysis", execution_name)
     exit_code, _ = fork_process(logger,
                                 target=do_coverage,
-                                args=(
-                                    project, logger, reactor, execution_prefix, execution_name,
-                                    target_task, shortest_plan))
+                                args=(project, logger, reactor, execution_prefix, execution_name, target_task,
+                                      shortest_plan))
+
     if exit_code and project.get_property("%s_break_build" % execution_prefix):
         raise BuildFailedException(
             "Forked %s process indicated failure with error code %d" % (execution_name, exit_code))
@@ -105,15 +106,19 @@ def do_coverage(project, logger, reactor, execution_prefix, execution_name, targ
 
     coverage = coverage_factory(cover_pylib=False, branch=True, source=[source_tree_path])
 
+    patch_multiprocessing(coverage.config)
     try:
-        _start_coverage(project, coverage)
+        try:
+            _start_coverage(project, coverage)
 
-        if shortest_plan:
-            reactor.execute_task_shortest_plan(target_task)
-        else:
-            reactor.execute_task(target_task)
+            if shortest_plan:
+                reactor.execute_task_shortest_plan(target_task)
+            else:
+                reactor.execute_task(target_task)
+        finally:
+            _stop_coverage(project, coverage)
     finally:
-        _stop_coverage(project, coverage)
+        reverse_patch_multiprocessing()
 
     module_exceptions = project.get_property("%s_exceptions" % execution_prefix)
     modules, non_imported_modules = _list_all_covered_modules(logger, module_names, module_exceptions,
@@ -138,6 +143,7 @@ def _start_coverage(project, coverage):
 def _stop_coverage(project, coverage):
     coverage.stop()
     project.set_property('__running_coverage', False)
+    coverage.combine()
 
 
 def _list_all_covered_modules(logger, module_names, modules_exceptions, allow_non_imported_modules):
