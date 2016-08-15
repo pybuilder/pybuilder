@@ -99,6 +99,7 @@ if __name__ == '__main__':
         url = '',
         scripts = [],
         packages = ['spam'],
+        namespace_packages = [],
         py_modules = ['standalone_module'],
         classifiers = [
             'Development Status :: 3 - Alpha',

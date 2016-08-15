@@ -19,8 +19,7 @@ import unittest
 from integrationtest_support import IntegrationTestSupport
 
 
-class Test (IntegrationTestSupport):
-
+class Test(IntegrationTestSupport):
     def test(self):
         self.write_build_file("""
 from pybuilder.core import use_plugin, init
@@ -31,6 +30,8 @@ use_plugin("python.distutils")
 name = "integration-test"
 default_task = "publish"
 
+explicit_namespaces = ["spam"]
+
 @init
 def init (project):
     project.depends_on("spam")
@@ -39,8 +40,11 @@ def init (project):
     project.build_depends_on("eggy")
 """)
         self.create_directory("src/main/python/spam")
+        self.write_file("requirements.txt", """
+awesome>=1.3.37
+foo==42""")
         self.write_file("src/main/python/standalone_module.py")
-        self.write_file("src/main/python/spam/__init__.py", "")
+        self.write_file("src/main/python/spam/__init__.py", "__import__('pkg_resources').declare_namespace(__name__)")
         self.write_file("src/main/python/spam/eggs.py", """
 def spam ():
     pass
@@ -52,7 +56,8 @@ def spam ():
         self.assert_directory_exists("target/dist/integration-test-1.0.dev0")
         self.assert_directory_exists("target/dist/integration-test-1.0.dev0/spam")
         self.assert_file_exists("target/dist/integration-test-1.0.dev0/standalone_module.py")
-        self.assert_file_empty("target/dist/integration-test-1.0.dev0/spam/__init__.py")
+        self.assert_file_content("target/dist/integration-test-1.0.dev0/spam/__init__.py",
+                                 "__import__('pkg_resources').declare_namespace(__name__)")
         self.assert_file_content("target/dist/integration-test-1.0.dev0/spam/eggs.py", """
 def spam ():
     pass
@@ -62,7 +67,6 @@ def spam ():
 
         self.assert_file_exists(setup_py)
         self.assert_file_permissions(0o755, setup_py)
-
         self.assert_file_content(setup_py, """#!/usr/bin/env python
 
 from setuptools import setup
@@ -94,7 +98,7 @@ if __name__ == '__main__':
         url = '',
         scripts = [],
         packages = ['spam'],
-        namespace_packages = [],
+        namespace_packages = ['spam'],
         py_modules = ['standalone_module'],
         classifiers = [
             'Development Status :: 3 - Alpha',

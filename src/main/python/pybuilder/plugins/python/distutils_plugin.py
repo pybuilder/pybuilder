@@ -76,6 +76,7 @@ if __name__ == '__main__':
         url = '$url',
         scripts = $scripts,
         packages = $packages,
+        namespace_packages = $namespace_packages,
         py_modules = $modules,
         classifiers = $classifiers,
         entry_points = $entry_points,
@@ -140,6 +141,7 @@ def render_setup_script(project):
         "url": default(project.url),
         "scripts": build_scripts_string(project),
         "packages": build_packages_string(project),
+        "namespace_packages": build_namespace_packages_string(project),
         "modules": build_modules_string(project),
         "classifiers": build_classifiers_string(project),
         "entry_points": build_entry_points_string(project),
@@ -408,6 +410,10 @@ def build_package_data_string(project):
     result += " " * indent + "}"
 
     return result
+
+
+def build_namespace_packages_string(project):
+    return build_string_from_array([pkg for pkg in project.explicit_namespaces])
 
 
 def build_packages_string(project):
