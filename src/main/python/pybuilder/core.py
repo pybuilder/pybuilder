@@ -320,6 +320,7 @@ class Project(object):
         self.authors = []
         self.license = ""
         self.url = ""
+        self._explicit_namespaces = []
         self._properties = {"verbose": False}
         self._install_dependencies = set()
         self._build_dependencies = set()
@@ -344,6 +345,14 @@ class Project(object):
         if value.endswith('.dev'):
             value += datetime.utcnow().strftime("%Y%m%d%H%M%S")
         self._dist_version = value
+
+    @property
+    def explicit_namespaces(self):
+        return self._explicit_namespaces
+
+    @explicit_namespaces.setter
+    def explicit_namespaces(self, value):
+        self._explicit_namespaces = as_list(value)
 
     @property
     def dist_version(self):

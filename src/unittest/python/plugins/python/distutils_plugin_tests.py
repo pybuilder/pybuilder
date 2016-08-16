@@ -33,6 +33,7 @@ from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        build_install_dependencies_string,
                                                        build_package_data_string,
                                                        build_entry_points_string,
+                                                       build_namespace_packages_string,
                                                        default,
                                                        render_manifest_file,
                                                        build_scripts_string,
@@ -419,6 +420,10 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
+        namespace_packages = [
+            'foo.bar',
+            'quick.brown.fox'
+        ],
         py_modules = [
             'spam',
             'eggs'
@@ -481,6 +486,10 @@ if __name__ == '__main__':
         packages = [
             'spam',
             'eggs'
+        ],
+        namespace_packages = [
+            'foo.bar',
+            'quick.brown.fox'
         ],
         py_modules = [
             'spam',
@@ -552,6 +561,13 @@ if __name__ == '__main__':
         self.project.set_property("distutils_entry_points", object())
 
         self.assertRaises(BuildFailedException, build_entry_points_string, self.project)
+
+    def test_should_render_explicit_namespaces(self):
+        actual_setup_script = build_namespace_packages_string(self.project)
+        self.assertEquals("""[
+            'foo.bar',
+            'quick.brown.fox'
+        ]""", actual_setup_script)
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     def test_should_render_runtime_dependencies_when_requirements_file_used(self, mock_open):
@@ -799,6 +815,7 @@ def create_project():
         Author("Udo Juettner", "udo.juettner@gmail.com"), Author("Michael Gruber", "aelgru@gmail.com")]
     project.license = "WTFPL"
     project.url = "http://github.com/pybuilder/pybuilder"
+    project.explicit_namespaces = ["foo.bar", "quick.brown.fox"]
 
     def return_dummy_list():
         return ["spam", "eggs"]

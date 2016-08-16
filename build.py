@@ -24,7 +24,7 @@ import sys
 sys.path.insert(0, 'src/main/python')  # This is only necessary in PyBuilder sources for bootstrap
 
 from pybuilder import bootstrap
-from pybuilder.core import Author, init, use_bldsup, use_plugin
+from pybuilder.core import Author, init, use_plugin
 
 bootstrap()
 
@@ -133,19 +133,19 @@ def initialize(project):
     # project.set_property("distutils_issue8876_workaround_enabled", True)
     project.set_property("distutils_console_scripts", ["pyb_ = pybuilder.cli:main"])
     project.set_property("distutils_classifiers", [
-                         'Programming Language :: Python',
-                         'Programming Language :: Python :: Implementation :: CPython',
-                         'Programming Language :: Python :: Implementation :: PyPy',
-                         'Programming Language :: Python :: 2.6',
-                         'Programming Language :: Python :: 2.7',
-                         'Programming Language :: Python :: 3',
-                         'Programming Language :: Python :: 3.3',
-                         'Programming Language :: Python :: 3.4',
-                         'Programming Language :: Python :: 3.5',
-                         'Development Status :: 4 - Beta',
-                         'Environment :: Console',
-                         'Intended Audience :: Developers',
-                         'License :: OSI Approved :: Apache Software License',
-                         'Topic :: Software Development :: Build Tools',
-                         'Topic :: Software Development :: Quality Assurance',
-                         'Topic :: Software Development :: Testing'])
+        'Programming Language :: Python',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Programming Language :: Python :: Implementation :: PyPy',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Development Status :: 4 - Beta',
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: Apache Software License',
+        'Topic :: Software Development :: Build Tools',
+        'Topic :: Software Development :: Quality Assurance',
+        'Topic :: Software Development :: Testing'])

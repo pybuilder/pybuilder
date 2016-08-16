@@ -290,6 +290,7 @@ class Reactor(object):
         self.propagate_property("authors")
         self.propagate_property("license")
         self.propagate_property("url")
+        self.propagate_property("explicit_namespaces")
 
     def propagate_property(self, property):
         if hasattr(self.project_module, property):
