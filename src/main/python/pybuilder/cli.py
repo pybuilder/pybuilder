@@ -23,10 +23,9 @@
 
 import datetime
 import optparse
+import re
 import sys
 import traceback
-
-import re
 
 from pybuilder import __version__
 from pybuilder.core import Logger
@@ -177,6 +176,11 @@ def parse_options(args):
                             dest="very_quiet",
                             default=False,
                             help="Very quiet mode; print only errors")
+    output_group.add_option("-c", "--color",
+                            action="store_true",
+                            dest="force_color",
+                            default=False,
+                            help="Force colored output")
     output_group.add_option("-C", "--no-color",
                             action="store_true",
                             dest="no_color",
@@ -214,7 +218,7 @@ def init_reactor(logger):
 
 
 def should_colorize(options):
-    return sys.stdout.isatty() and not options.no_color
+    return options.force_color or (sys.stdout.isatty() and not options.no_color)
 
 
 def init_logger(options):
@@ -249,7 +253,13 @@ def print_build_summary(options, summary):
 
 def print_styled_text(text, options, *style_attributes):
     if should_colorize(options):
+        add_trailing_nl = False
+        if text[-1] == '\n':
+            text = text[:-1]
+            add_trailing_nl = True
         text = styled_text(text, *style_attributes)
+        if add_trailing_nl:
+            text += '\n'
     print_text(text)
 
 
