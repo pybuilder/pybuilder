@@ -35,7 +35,7 @@ from pybuilder.core import (after,
                             RequirementsFile,
                             Dependency)
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import as_list, is_string, is_notstr_iterable, get_dist_version_string
+from pybuilder.utils import as_list, is_string, is_notstr_iterable, get_dist_version_string, safe_log_file_name
 from pybuilder.pip_utils import build_dependency_version_string
 from textwrap import dedent
 from pybuilder.pip_utils import pip_install
@@ -257,9 +257,9 @@ def execute_distutils(project, logger, distutils_commands, clean=False):
     for command in distutils_commands:
         logger.debug("Executing distutils command %s", command)
         if is_string(command):
-            output_file_path = os.path.join(reports_dir, command.replace("/", ""))
+            output_file_path = os.path.join(reports_dir, safe_log_file_name(command))
         else:
-            output_file_path = os.path.join(reports_dir, "__".join(command).replace("/", ""))
+            output_file_path = os.path.join(reports_dir, safe_log_file_name("__".join(command)))
         with open(output_file_path, "w") as output_file:
             commands = [sys.executable, setup_script]
             if project.get_property("verbose"):
