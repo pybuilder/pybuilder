@@ -548,7 +548,7 @@ class Project(object):
         elements = [self.basedir]
         elements += self.expand(format_string).split(PATH_SEPARATOR)
         elements += list(additional_path_elements)
-        return os.path.join(*elements)
+        return os.path.normcase(os.path.join(*elements))
 
     def get_property(self, key, default_value=None):
         return self.properties.get(key, default_value)

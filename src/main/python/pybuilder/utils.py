@@ -609,4 +609,6 @@ def get_dist_version_string(project, format=" (%s)"):
 
 
 def safe_log_file_name(file_name):
-    return re.sub(r'\<|\>|=|\:|\*|\?|\|\"', '_', file_name)
+    # per https://support.microsoft.com/en-us/kb/177506
+    # per https://msdn.microsoft.com/en-us/library/aa365247
+    return re.sub(r'\\|/|:|\*|\?|\"|<|>|\|', '_', file_name)
