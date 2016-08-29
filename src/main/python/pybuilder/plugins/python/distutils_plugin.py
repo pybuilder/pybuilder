@@ -270,7 +270,7 @@ def execute_distutils(project, logger, distutils_commands, clean=False):
                 commands.extend(command.split())
             else:
                 commands.extend(command)
-            return_code = _run_process_and_wait(commands, project.expand_path("$dir_dist"), output_file)
+            return_code = _run_process_and_wait(commands, project.expand_path("$dir_dist"), output_file, logger=logger)
             if return_code != 0:
                 raise BuildFailedException(
                     "Error while executing setup command %s, see %s for details" % (command, output_file_path))
@@ -522,7 +522,9 @@ def _normalize_setup_post_pre_script(s, indent=8):
                     dedent(_expand_leading_tabs(s)).splitlines(True)])
 
 
-def _run_process_and_wait(commands, cwd, stdout, stderr=None):
+def _run_process_and_wait(commands, cwd, stdout, stderr=None, logger=None):
+    if logger:
+        logger.debug("Executing %s, cwd=%s, stdout=%s, stderr=%s", commands, cwd, stdout, stderr)
     process = subprocess.Popen(commands,
                                cwd=cwd,
                                stdout=stdout,
