@@ -54,4 +54,5 @@ Usage:
       -X, --debug         Print debug messages
       -q, --quiet         Quiet mode; print only warnings and errors
       -Q, --very-quiet    Very quiet mode; print only errors
+      -c, --color         Force colored output
       -C, --no-color      Disable colored output

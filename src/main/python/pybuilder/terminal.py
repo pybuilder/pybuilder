@@ -75,7 +75,7 @@ def styled_text(text, *style_attributes):
     return "%s%s%s" % (
         _ESCAPE_SEQUENCE_PATTERN % (_ESCAPE_SEQUENCE_SEPARATOR.join(style_attributes)),
         text,
-        _ESCAPE_SEQUENCE_PATTERN % "0;0")
+        _ESCAPE_SEQUENCE_PATTERN % "0")
 
 
 def bold(text):
