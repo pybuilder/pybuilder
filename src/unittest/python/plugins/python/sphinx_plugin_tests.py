@@ -341,13 +341,13 @@ from sphinx_pyb_conf import *
                  if sys.version_info[:2] < (3, 3) else
                  [sys.executable, '-m', 'sphinx.apidoc', '-H', 'project_name', '--implicit-namespaces', '-o',
                   'basedir/dir_target/sphinx_pyb/apidoc', 'basedir/dir_source'],
-                 'basedir/dir_target/reports/sphinx_apidoc', shell=False),
+                 'basedir/dir_target/reports/sphinx-apidoc', shell=False),
             call([sys.executable, '-m', 'sphinx', '-b', 'JSONx', 'basedir/sphinx_config_path',
                   'basedir/sphinx_output_dir/JSONx'],
-                 'basedir/dir_target/reports/sphinx_generate_documentation_JSONx', shell=False),
+                 'basedir/dir_target/reports/sphinx_JSONx', shell=False),
             call([sys.executable, '-m', 'sphinx', '-b', 'pdf', 'basedir/sphinx_config_path',
                   'basedir/sphinx_output_dir/pdf'],
-                 'basedir/dir_target/reports/sphinx_generate_documentation_pdf', shell=False)])
+                 'basedir/dir_target/reports/sphinx_pdf', shell=False)])
 
     @patch("pybuilder.plugins.python.sphinx_plugin.open", create=True)
     @patch("pybuilder.plugins.python.sphinx_plugin.rmtree")

@@ -26,7 +26,7 @@ from os.path import join, dirname, relpath, exists
 from shutil import rmtree
 
 from pybuilder import scaffolding as SCAFFOLDING
-from pybuilder.core import NAME_ATTRIBUTE, after, depends, init, task, use_plugin
+from pybuilder.core import after, depends, init, task, use_plugin
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import (execute_command,
                              assert_can_execute,
@@ -160,11 +160,11 @@ def assert_sphinx_quickstart_is_available(logger):
 
 def run_sphinx_build(build_command, task_name, logger, project, builder=None):
     logger.info("Running %s" % task_name)
-    log_file = project.expand_path("$dir_target", "reports", task_name + ("_" + builder if builder else ""))
+    log_file = project.expand_path("$dir_target", "reports", task_name)
 
     build_command = [sys.executable, "-m"] + build_command
     if project.get_property("verbose"):
-        logger.info(build_command)
+        logger.debug(build_command)
 
     exit_code = execute_command(build_command, log_file, shell=False)
     if exit_code != 0:
@@ -176,8 +176,6 @@ def run_sphinx_build(build_command, task_name, logger, project, builder=None):
 def sphinx_generate(project, logger):
     """Runs sphinx-build against rst sources for the given project.
     """
-    task_name = getattr(sphinx_generate, NAME_ATTRIBUTE)
-
     sphinx_pyb_dir = project.expand_path(*SPHINX_PYB_RUNTIME_DIR)
     if exists(sphinx_pyb_dir):
         logger.debug("Removing %s", sphinx_pyb_dir)
@@ -192,7 +190,7 @@ def sphinx_generate(project, logger):
     builders = as_list(project.get_property("sphinx_doc_builder"))
     for builder in builders:
         build_command = get_sphinx_build_command(project, logger, builder)
-        run_sphinx_build(build_command, task_name, logger, project, builder=builder)
+        run_sphinx_build(build_command, "sphinx_%s" % builder, logger, project, builder=builder)
 
 
 @task("sphinx_quickstart", "starts a new sphinx project")
@@ -200,9 +198,8 @@ def sphinx_generate(project, logger):
 def sphinx_quickstart_generate(project, logger):
     """Runs sphinx-build against rst sources for the given project.
     """
-    task_name = getattr(sphinx_quickstart_generate, NAME_ATTRIBUTE)
     build_command = get_sphinx_quickstart_command(project)
-    run_sphinx_build(build_command, task_name, logger, project)
+    run_sphinx_build(build_command, "sphinx-quickstart", logger, project)
 
 
 @task("sphinx_pyb_quickstart", "starts a new PyB-specific Sphinx project")
@@ -344,4 +341,4 @@ def generate_sphinx_apidocs(project, logger):
 
     build_command = get_sphinx_apidoc_command(project)
     logger.debug("Generating Sphinx API Doc")
-    run_sphinx_build(build_command, "sphinx_apidoc", logger, project)
+    run_sphinx_build(build_command, "sphinx-apidoc", logger, project)
