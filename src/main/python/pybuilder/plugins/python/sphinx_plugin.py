@@ -225,7 +225,7 @@ sphinx_pyb_dir = path.abspath(path.join(path.dirname(__file__) if __file__ else 
 sphinx_pyb_module = "%(sphinx_pyb_module_name)s"
 sphinx_pyb_module_file = path.abspath(path.join(sphinx_pyb_dir, sphinx_pyb_module + ".py"))
 
-sys.path.append(sphinx_pyb_dir)
+sys.path.insert(0, sphinx_pyb_dir)
 
 if not path.exists(sphinx_pyb_module_file):
     raise RuntimeError("No PyB-based Sphinx configuration found in " + sphinx_pyb_module_file)
@@ -325,6 +325,7 @@ def generate_sphinx_pyb_runtime_config(project, logger):
     with open(sphinx_pyb_conf_path, "wt") as sphinx_pyb_conf:
         for k, v in project.get_property("sphinx_project_conf").items():
             sphinx_pyb_conf.write("%s = %r\n" % (k, v))
+        sphinx_pyb_conf.write("\nimport sys\nsys.path.insert(0, %r)\n" % project.expand_path("$dir_source_main_python"))
 
 
 def generate_sphinx_apidocs(project, logger):

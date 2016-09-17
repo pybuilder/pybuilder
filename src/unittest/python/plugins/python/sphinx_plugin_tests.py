@@ -283,7 +283,7 @@ sphinx_pyb_dir = path.abspath(path.join(path.dirname(__file__) if __file__ else 
 sphinx_pyb_module = "sphinx_pyb_conf"
 sphinx_pyb_module_file = path.abspath(path.join(sphinx_pyb_dir, sphinx_pyb_module + ".py"))
 
-sys.path.append(sphinx_pyb_dir)
+sys.path.insert(0, sphinx_pyb_dir)
 
 if not path.exists(sphinx_pyb_module_file):
     raise RuntimeError("No PyB-based Sphinx configuration found in " + sphinx_pyb_module_file)
@@ -334,7 +334,8 @@ from sphinx_pyb_conf import *
         exists.assert_called_with("basedir/dir_target/sphinx_pyb/apidoc")
         rmtree.assert_called_with("basedir/dir_target/sphinx_pyb/apidoc")
         mkdir.assert_called_with("basedir/dir_target/sphinx_pyb/apidoc")
-        open().__enter__().write.assert_has_calls([call('a = 1\n'), call('b = \'foo\'\n')], any_order=True)
+        open().__enter__().write.assert_has_calls([call("a = 1\n"), call("b = 'foo'\n"), call(
+            "\nimport sys\nsys.path.insert(0, 'basedir/dir_source')\n")], any_order=True)
         execute_command.assert_has_calls([
             call([sys.executable, '-m', 'sphinx.apidoc', '-H', 'project_name', '-o',
                   'basedir/dir_target/sphinx_pyb/apidoc', 'basedir/dir_source']
