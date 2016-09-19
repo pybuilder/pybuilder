@@ -239,7 +239,7 @@ class Dependency(object):
                 try:
                     version = str(SpecifierSet(version))
                 except InvalidSpecifier:
-                    raise ValueError("'%s' must be either PEP 0440 version or a version specifier set")
+                    raise ValueError("'%s' must be either PEP 0440 version or a version specifier set" % version)
 
         self.version = version
         self.url = url

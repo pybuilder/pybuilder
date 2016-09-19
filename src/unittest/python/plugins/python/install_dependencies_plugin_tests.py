@@ -204,6 +204,9 @@ class InstallDependencyTest(unittest.TestCase):
         exec_command(
             PIP_EXEC_STANZA + ["install", 'spam==0.1.2'], ANY, env=ANY, shell=False)
 
+    def test_should_install_dependency_with_wrong_version_and_operator(self):
+        self.assertRaises(ValueError, Dependency, "spam", "~=1")
+
     @patch("pybuilder.plugins.python.install_dependencies_plugin.create_constraint_file")
     @patch("pybuilder.plugins.python.install_dependencies_plugin.get_package_version", return_value={})
     @patch("pybuilder.plugins.python.install_dependencies_plugin.execute_command", return_value=0)
