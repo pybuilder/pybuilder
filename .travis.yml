@@ -7,6 +7,8 @@ python:
 - '3.4'
 - '3.5'
 - pypy
+addons:
+    apt_packages: [ pandoc ]
 branches:
   only:
   - master
