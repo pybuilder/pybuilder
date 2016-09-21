@@ -34,8 +34,13 @@ from pybuilder.core import (after,
                             task,
                             RequirementsFile,
                             Dependency)
-from pybuilder.errors import BuildFailedException
-from pybuilder.utils import as_list, is_string, is_notstr_iterable, get_dist_version_string, safe_log_file_name
+from pybuilder.errors import BuildFailedException, MissingPrerequisiteException
+from pybuilder.utils import (as_list,
+                             is_string,
+                             is_notstr_iterable,
+                             get_dist_version_string,
+                             safe_log_file_name,
+                             assert_can_execute)
 from pybuilder.pip_utils import build_dependency_version_string
 from textwrap import dedent
 from pybuilder.pip_utils import pip_install
@@ -98,6 +103,8 @@ def default(value, default=""):
 
 @init
 def initialize_distutils_plugin(project):
+    project.plugin_depends_on("pypandoc", "~=1.2.0")
+
     project.set_property_if_unset("distutils_commands", ["sdist", "bdist_wheel"])
     project.set_property_if_unset("distutils_command_options", None)
 
@@ -112,6 +119,20 @@ def initialize_distutils_plugin(project):
     project.set_property_if_unset("distutils_upload_repository", None)
     project.set_property_if_unset("distutils_upload_sign", False)
     project.set_property_if_unset("distutils_upload_sign_identity", None)
+
+    project.set_property_if_unset("distutils_readme_description", False)
+    project.set_property_if_unset("distutils_readme_file", "README.md")
+    project.set_property_if_unset("distutils_description_overwrite", False)
+
+
+@after("prepare")
+def set_description(project, logger):
+    if project.get_property("distutils_readme_description"):
+        try:
+            assert_can_execute(["pandoc", "--version"], "pandoc", "distutils")
+            doc_convert(project, logger)
+        except MissingPrerequisiteException:
+            logger.warn("Was unable to find pandoc and did not convert the documentation")
 
 
 @after("package")
@@ -507,6 +528,20 @@ def build_string_from_dict(d, indent=12):
         result += "}"
 
     return result
+
+
+def doc_convert(project, logger):
+    import pypandoc
+    readme_file = project.expand_path("$distutils_readme_file")
+    logger.debug("Converting %s into RST format for PyPi documentation...", readme_file)
+    description = pypandoc.convert_file(readme_file, "rst")
+    if not hasattr(project, "description") or project.description is None or project.get_property(
+            "distutils_description_overwrite"):
+        setattr(project, "description", description)
+
+    if not hasattr(project, "summary") or project.summary is None or project.get_property(
+            "distutils_description_overwrite"):
+        setattr(project, "summary", description.splitlines()[0].strip())
 
 
 def _expand_leading_tabs(s, indent=4):
