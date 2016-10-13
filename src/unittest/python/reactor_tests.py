@@ -492,3 +492,23 @@ class ReactorTest(unittest.TestCase):
         self.reactor.project.validate.return_value = ["spam"]
 
         self.assertRaises(ProjectValidationFailedException, self.reactor.build)
+
+    def test_prepare_tasks(self):
+        self.reactor.project = Project("spam")
+
+        self.reactor.project.default_task = ["a", "b"]
+
+        self.assertEquals(self.reactor._prepare_tasks(["c"]), ["c"])
+        self.assertEquals(self.reactor._prepare_tasks(["+c"]), ["a", "b", "c"])
+        self.assertEquals(self.reactor._prepare_tasks(["+c", "d"]), ["d", "c"])
+        self.assertEquals(self.reactor._prepare_tasks(["+c", "+"]), ["+", "c"])
+        self.assertEquals(self.reactor._prepare_tasks([]), ["a", "b"])
+
+        self.reactor.project.default_task = []
+
+        self.assertEquals(self.reactor._prepare_tasks(["c"]), ["c"])
+        self.assertEquals(self.reactor._prepare_tasks(["+c"]), ["c"])
+        self.assertEquals(self.reactor._prepare_tasks(["+c", "d"]), ["d", "c"])
+        self.assertEquals(self.reactor._prepare_tasks(["+c", "+"]), ["+", "c"])
+
+        self.assertRaises(PyBuilderException, self.reactor._prepare_tasks, [])

@@ -141,11 +141,7 @@ class Reactor(object):
 
         self.validate_project()
 
-        if not len(tasks):
-            if self.project.default_task:
-                tasks += as_list(self.project.default_task)
-            else:
-                raise PyBuilderException("No default task given.")
+        tasks = self._prepare_tasks(tasks)
 
         return self.execution_manager.build_execution_plan(tasks)
 
@@ -296,6 +292,28 @@ class Reactor(object):
         if hasattr(self.project_module, property):
             value = getattr(self.project_module, property)
             setattr(self.project, property, value)
+
+    def _prepare_tasks(self, tasks):
+        if not len(tasks):
+            if self.project.default_task:
+                tasks += as_list(self.project.default_task)
+            else:
+                raise PyBuilderException("No default task given.")
+        else:
+            new_tasks = [task for task in tasks if task[0] != '+' or task == "+"]
+            append_tasks = [task[1:] for task in tasks if task[0] == '+' and task != "+"]
+
+            if len(new_tasks):
+                del tasks[:]
+                tasks.extend(new_tasks)
+                tasks.extend(append_tasks)
+            else:
+                del tasks[:]
+                if self.project.default_task:
+                    tasks += as_list(self.project.default_task)
+                tasks += append_tasks
+
+        return tasks
 
     @staticmethod
     def load_project_module(project_descriptor):
