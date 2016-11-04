@@ -126,6 +126,7 @@ def install_dependency(logger, project, dependencies):
         log_file = project.expand_path("$dir_install_logs", safe_log_file_name(dependency.name))
         _do_install_dependency(logger, project, standalone_dependency,
                                True,  # upgrade
+                               False,  # eager
                                url,  # force reinstall
                                constraints_file,
                                local_mapping.get(dependency.name),
@@ -135,6 +136,7 @@ def install_dependency(logger, project, dependencies):
         log_file = project.expand_path("$dir_install_logs", "install_batch")
         _do_install_dependency(logger, project, batch_dependencies,
                                True,  # upgrade
+                               False,  # eager
                                False,  # force reinstall
                                constraints_file,
                                None,
@@ -192,8 +194,8 @@ def _filter_dependencies(logger, project, dependencies):
     return dependencies_to_install, installed_packages, dependency_constraints
 
 
-def _do_install_dependency(logger, project, dependency, upgrade, force_reinstall, constraint_file, target_dir,
-                           log_file):
+def _do_install_dependency(logger, project, dependency, upgrade, eager_upgrade,
+                           force_reinstall, constraint_file, target_dir, log_file):
     batch = isinstance(dependency, collections.Iterable)
 
     pip_command_line = list()
@@ -208,7 +210,8 @@ def _do_install_dependency(logger, project, dependency, upgrade, force_reinstall
                                                       target_dir,
                                                       project.get_property("verbose"),
                                                       project.get_property("install_dependencies_trusted_host"),
-                                                      constraint_file
+                                                      constraint_file,
+                                                      eager_upgrade,
                                                       ))
     pip_command_line.extend(as_pip_install_target(dependency))
     logger.debug("Invoking pip: %s", pip_command_line)

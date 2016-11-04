@@ -18,16 +18,18 @@
 
 import unittest
 
-from test_utils import patch, Mock, ANY
-from pybuilder.pip_utils import PIP_EXEC_STANZA
+from pip._vendor.packaging.version import Version
+
+from pybuilder import pip_utils
+from pybuilder import pluginloader
 from pybuilder.errors import MissingPluginException, IncompatiblePluginException, UnspecifiedPluginNameException
+from pybuilder.pip_utils import PIP_EXEC_STANZA
 from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
                                     DownloadingPluginLoader,
                                     _install_external_plugin,
                                     _check_plugin_version)
-from pybuilder import pluginloader
-from pip._vendor.packaging.version import Version
+from test_utils import patch, Mock, ANY
 
 
 class PluginVersionCheckTest(unittest.TestCase):
@@ -233,9 +235,9 @@ class InstallExternalPluginTests(unittest.TestCase):
         _install_external_plugin(Mock(), "pypi:some-plugin", "===1.2.3", Mock(), None)
 
         execute.assert_called_with(
-            PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
-                               '--upgrade', 'some-plugin===1.2.3'], shell=False, outfile_name=ANY, error_file_name=ANY,
-            cwd=".", env=ANY)
+            PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY] +
+            (["--upgrade"] if pip_utils.pip_version < "9.0" else ["--upgrade", "--upgrade-strategy", "only-if-needed"])
+            + ['some-plugin===1.2.3'], shell=False, outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
@@ -275,7 +277,8 @@ class InstallExternalPluginTests(unittest.TestCase):
         execute.return_value = 1
         tempfile.NamedTemporaryFile().__enter__().name.__eq__.return_value = True
 
-        self.assertRaises(MissingPluginException, _install_external_plugin, Mock(), "pypi:some-plugin", None, Mock(), None)
+        self.assertRaises(MissingPluginException, _install_external_plugin, Mock(), "pypi:some-plugin", None, Mock(),
+                          None)
 
     @patch("pybuilder.pluginloader.read_file")
     @patch("pybuilder.pluginloader.tempfile")
@@ -285,7 +288,8 @@ class InstallExternalPluginTests(unittest.TestCase):
         execute.return_value = 1
         tempfile.NamedTemporaryFile().__enter__().name.__eq__.return_value = True
 
-        self.assertRaises(MissingPluginException, _install_external_plugin, Mock(), "vcs:some VCS URL", None, Mock(), None)
+        self.assertRaises(MissingPluginException, _install_external_plugin, Mock(), "vcs:some VCS URL", None, Mock(),
+                          None)
 
 
 class BuiltinPluginLoaderTest(unittest.TestCase):

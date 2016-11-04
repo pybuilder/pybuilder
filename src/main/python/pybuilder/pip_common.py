@@ -21,7 +21,7 @@ from pip._vendor.packaging.version import Version, InvalidVersion
 from pip.commands.show import search_packages_info
 
 try:
-    # This is the path for pip 7.x
+    # This is the path for pip 7.x and beyond
     from pip._vendor.pkg_resources import _initialize_master_working_set
 
     pip_working_set_init = _initialize_master_working_set
@@ -51,3 +51,11 @@ def _pip_disallows_insecure_packages_by_default():
 def _pip_supports_constraints():
     import pip
     return hasattr(pip, "__version__") and pip.__version__ >= '7.1'
+
+
+def _pip_version():
+    import pip
+    return getattr(pip, "__version__", None)
+
+
+pip_version = _pip_version()
