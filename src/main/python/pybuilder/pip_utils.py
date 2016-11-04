@@ -26,7 +26,8 @@ from pybuilder.pip_common import (Version,
                                   search_packages_info,
                                   pip_working_set_init,
                                   _pip_disallows_insecure_packages_by_default,
-                                  _pip_supports_constraints)
+                                  _pip_supports_constraints,
+                                  pip_version)
 from pybuilder.utils import execute_command, as_list
 
 PIP_EXEC_STANZA = [sys.executable, "-m", "pip.__main__"]
@@ -47,7 +48,7 @@ def build_dependency_version_string(mixed):
 
 def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=False,
                 insecure_installs=None, force_reinstall=False, target_dir=None, verbose=False, logger=None,
-                outfile_name=None, error_file_name=None, env=None, cwd=None, trusted_host=None):
+                outfile_name=None, error_file_name=None, env=None, cwd=None, trusted_host=None, eager_upgrade=False):
     pip_command_line = list()
     pip_command_line.extend(PIP_EXEC_STANZA)
     pip_command_line.append("install")
@@ -58,7 +59,8 @@ def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=F
                                                       force_reinstall,
                                                       target_dir,
                                                       verbose,
-                                                      trusted_host
+                                                      trusted_host,
+                                                      eager_upgrade
                                                       ))
     for install_target in as_list(install_targets):
         pip_command_line.extend(as_pip_install_target(install_target))
@@ -74,7 +76,7 @@ def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=F
 
 def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=False, insecure_installs=None,
                               force_reinstall=False, target_dir=None, verbose=False, trusted_host=None,
-                              constraint_file=None):
+                              constraint_file=None, eager_upgrade=False):
     options = []
     if index_url:
         options.append("--index-url")
@@ -94,6 +96,12 @@ def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=Fals
 
     if upgrade:
         options.append("--upgrade")
+        if pip_version >= "9.0":
+            options.append("--upgrade-strategy")
+            if eager_upgrade:
+                options.append("eager")
+            else:
+                options.append("only-if-needed")
 
     if verbose:
         options.append("--verbose")
