@@ -80,6 +80,5 @@ def pycharm_generate(project, logger):
     })
 
     project_file_path = os.path.join(pycharm_directory, project_file_name)
-    print (project_metadata)
     with open(project_file_path, "w") as project_file:
         project_file.write(project_metadata)
