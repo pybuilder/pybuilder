@@ -75,7 +75,7 @@ class PycharmPluginTests(unittest.TestCase):
       <sourceFolder url="file://$MODULE_DIR$/src/unittest/python" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/integrationtest/python" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
-
+      
       <excludeFolder url="file://$MODULE_DIR$/build />
     </content>
     <orderEntry type="inheritedJdk" />
