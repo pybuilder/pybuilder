@@ -40,8 +40,7 @@ PROJECT_TEMPLATE = string.Template("""<?xml version="1.0" encoding="UTF-8"?>
     <option name="projectConfiguration" value="Unittests" />
     <option name="PROJECT_TEST_RUNNER" value="Unittests" />
   </component>
-</module>
-""")
+</module>""")
 
 
 def _ensure_directory_present(directory):
@@ -69,16 +68,15 @@ def pycharm_generate(project, logger):
     if project.get_property("dir_source_integrationtest_python"):
         integration_tests = """\n      <sourceFolder url="file://$MODULE_DIR$/""" + project.get_property(
             "dir_source_integrationtest_python") + """" isTestSource="true" />"""
-    if not project.get_property("dir_target") == "target":
-        output_directory = """<excludeFolder url="file://$MODULE_DIR$/""" + project.get_property(
-            "dir_target") + """" />"""
+    if project.get_property("dir_target"):
+        output_directory = """<excludeFolder url="file://$MODULE_DIR$/%s" />""" % project.get_property(
+            "dir_target")
     project_metadata = PROJECT_TEMPLATE.substitute({
         "source_dir": project.get_property("dir_source_main_python"),
         "unit_tests": unit_tests,
         "integration_tests": integration_tests,
         "output_directory": output_directory
     })
-
     project_file_path = os.path.join(pycharm_directory, project_file_name)
     with open(project_file_path, "w") as project_file:
         project_file.write(project_metadata)
