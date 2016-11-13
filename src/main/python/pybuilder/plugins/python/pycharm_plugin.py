@@ -28,7 +28,7 @@ PROJECT_TEMPLATE = string.Template("""<?xml version="1.0" encoding="UTF-8"?>
   <component name="NewModuleRootManager">
     <content url="file://$$MODULE_DIR$$">
       <sourceFolder url="file://$$MODULE_DIR$$/${source_dir}" isTestSource="false" />${unit_tests}${integration_tests}
-      <excludeFolder url="file://$$MODULE_DIR$$/target" />${output_directory}
+      ${output_directory}
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -61,15 +61,13 @@ def pycharm_generate(project, logger):
     _ensure_directory_present(pycharm_directory)
     unit_tests = ""
     integration_tests = ""
-    output_directory = ""
     if project.get_property("dir_source_unittest_python"):
         unit_tests = """\n      <sourceFolder url="file://$MODULE_DIR$/""" + project.get_property(
             "dir_source_unittest_python") + """" isTestSource="true" />"""
     if project.get_property("dir_source_integrationtest_python"):
         integration_tests = """\n      <sourceFolder url="file://$MODULE_DIR$/""" + project.get_property(
             "dir_source_integrationtest_python") + """" isTestSource="true" />"""
-    if project.get_property("dir_target"):
-        output_directory = """<excludeFolder url="file://$MODULE_DIR$/%s" />""" % project.get_property(
+    output_directory = """<excludeFolder url="file://$MODULE_DIR$/%s" />""" % project.get_property(
             "dir_target")
     project_metadata = PROJECT_TEMPLATE.substitute({
         "source_dir": project.get_property("dir_source_main_python"),
