@@ -57,6 +57,7 @@ class PycharmPluginTests(unittest.TestCase):
         project.set_property('dir_source_main_python', 'src/main/python')
         project.set_property('dir_source_unittest_python', 'src/unittest/python')
         project.set_property('dir_source_integrationtest_python', 'src/integrationtest/python')
+        project.set_property('dir_target', 'build')
         mock_open.return_value = MagicMock(spec=TYPE_FILE)
         os.path.join.side_effect = lambda first, second: first + '/' + second
 
@@ -73,7 +74,7 @@ class PycharmPluginTests(unittest.TestCase):
       <sourceFolder url="file://$MODULE_DIR$/src/main/python" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/unittest/python" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/integrationtest/python" isTestSource="true" />
-      <excludeFolder url="file://$MODULE_DIR$/target" />
+      <excludeFolder url="file://$MODULE_DIR$/build" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -85,5 +86,4 @@ class PycharmPluginTests(unittest.TestCase):
     <option name="projectConfiguration" value="Unittests" />
     <option name="PROJECT_TEST_RUNNER" value="Unittests" />
   </component>
-</module>
-""")
+</module>""")
