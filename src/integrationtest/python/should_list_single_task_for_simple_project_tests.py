@@ -21,8 +21,7 @@ import unittest
 from integrationtest_support import IntegrationTestSupport
 
 
-class Test (IntegrationTestSupport):
-
+class Test(IntegrationTestSupport):
     def test(self):
         self.write_build_file("""
 from pybuilder.core import task
@@ -35,6 +34,7 @@ def my_task (): pass
         tasks = reactor.get_tasks()
         self.assertEquals(1, len(tasks))
         self.assertEquals("my_task", tasks[0].name)
+
 
 if __name__ == "__main__":
     unittest.main()

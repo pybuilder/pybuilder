@@ -21,8 +21,7 @@ import unittest
 from integrationtest_support import IntegrationTestSupport
 
 
-class Test (IntegrationTestSupport):
-
+class Test(IntegrationTestSupport):
     def test(self):
         self.write_build_file("""
 from pybuilder.core import init, task
@@ -43,6 +42,7 @@ def any_task (project):
 
         reactor = self.prepare_reactor()
         reactor.build(environments=["test_environment"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -50,5 +50,6 @@ def task_c(project):
         self.assertFalse(project.get_property("a"))
         self.assertTrue(project.get_property("c"))
 
+
 if __name__ == "__main__":
     unittest.main()

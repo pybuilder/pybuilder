@@ -21,8 +21,7 @@ import unittest
 from integrationtest_support import IntegrationTestSupport
 
 
-class Test (IntegrationTestSupport):
-
+class Test(IntegrationTestSupport):
     def test(self):
         self.write_build_file("""
 from pybuilder.core import task
@@ -43,6 +42,7 @@ def my_task (): pass
 
         self.assertEqual(
             ["a_task_with_overridden_name", "another_task", "my_task"], sorted(actual_task_names))
+
 
 if __name__ == "__main__":
     unittest.main()

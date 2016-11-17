@@ -20,8 +20,7 @@ from os.path import join
 from integrationtest_support import IntegrationTestSupport
 
 
-class Test (IntegrationTestSupport):
-
+class Test(IntegrationTestSupport):
     def test(self):
         requirements = join(self.tmp_directory, "requirements.txt")
         self.write_build_file("""
