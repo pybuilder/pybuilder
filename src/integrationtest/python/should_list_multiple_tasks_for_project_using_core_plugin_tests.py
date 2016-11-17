@@ -21,8 +21,7 @@ import unittest
 from integrationtest_support import IntegrationTestSupport
 
 
-class Test (IntegrationTestSupport):
-
+class Test(IntegrationTestSupport):
     def test(self):
         self.write_build_file("""
 from pybuilder.core import use_plugin
@@ -39,6 +38,7 @@ use_plugin("core")
 
         self.assertTrue("clean" in task_names)
         self.assertTrue("publish" in task_names)
+
 
 if __name__ == "__main__":
     unittest.main()

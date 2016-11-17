@@ -48,5 +48,6 @@ def teardown_foo(project):
         self.assertTrue(project.get_property("non_teardown_foo ran") is None)
         self.assertTrue(project.get_property("teardown_foo completed"))
 
+
 if __name__ == "__main__":
     unittest.main()

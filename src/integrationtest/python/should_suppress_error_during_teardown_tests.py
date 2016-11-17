@@ -47,5 +47,6 @@ def teardown2_foo(project):
         self.assertRaises(ValueError, reactor.build, "foo")
         self.assertTrue(project.get_property("teardown2_foo completed"))
 
+
 if __name__ == "__main__":
     unittest.main()

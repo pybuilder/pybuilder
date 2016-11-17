@@ -21,8 +21,7 @@ import unittest
 from integrationtest_support import IntegrationTestSupport
 
 
-class Test (IntegrationTestSupport):
-
+class Test(IntegrationTestSupport):
     def test(self):
         self.write_build_file("""
 from pybuilder.core import use_plugin, init
@@ -66,6 +65,7 @@ def init (project):
 include more_spam
 include more_eggs
 """)
+
 
 if __name__ == "__main__":
     unittest.main()

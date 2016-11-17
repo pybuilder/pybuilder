@@ -19,12 +19,10 @@
 import unittest
 
 from integrationtest_support import IntegrationTestSupport
-
 from pybuilder.errors import PyBuilderException
 
 
-class Test (IntegrationTestSupport):
-
+class Test(IntegrationTestSupport):
     def test(self):
         self.write_build_file("""
 from pybuilder.core import task
@@ -35,6 +33,7 @@ def spam (): pass
         reactor = self.prepare_reactor()
 
         self.assertRaises(PyBuilderException, reactor.build)
+
 
 if __name__ == "__main__":
     unittest.main()

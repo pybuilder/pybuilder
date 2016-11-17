@@ -21,8 +21,7 @@ import unittest
 from integrationtest_support import IntegrationTestSupport
 
 
-class Test (IntegrationTestSupport):
-
+class Test(IntegrationTestSupport):
     def test(self):
         self.write_build_file("""
 from pybuilder.core import use_plugin
@@ -52,6 +51,7 @@ def spam ():
 def spam ():
     pass
 """)
+
 
 if __name__ == "__main__":
     unittest.main()

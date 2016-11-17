@@ -21,8 +21,7 @@ import unittest
 from integrationtest_support import IntegrationTestSupport
 
 
-class Test (IntegrationTestSupport):
-
+class Test(IntegrationTestSupport):
     def test(self):
         self.write_build_file("""
 from pybuilder.core import use_plugin, init
@@ -42,6 +41,7 @@ def init (project):
         reactor.build("package")
 
         self.assert_file_content("target/spam", "1.0.dev0 ${any_undefined_key}")
+
 
 if __name__ == "__main__":
     unittest.main()
