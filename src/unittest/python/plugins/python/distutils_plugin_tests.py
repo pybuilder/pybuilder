@@ -46,6 +46,7 @@ from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        _normalize_setup_post_pre_script,
                                                        build_string_from_array,
                                                        _run_process_and_wait,
+                                                       build_setup_keywords,
                                                        )
 from test_utils import (PyBuilderTestCase,
                         patch,
@@ -443,6 +444,7 @@ if __name__ == '__main__':
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe=True,
         cmdclass={'install': install},
+        keywords='',
     )
 """, actual_setup_script)
 
@@ -510,6 +512,7 @@ if __name__ == '__main__':
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe=True,
         cmdclass={'install': install},
+        keywords='',
     )
 """, actual_setup_script)
 
@@ -547,6 +550,19 @@ if __name__ == '__main__':
                           "                'release1 = zest.releaser.release1:main'\n"
                           "            ]\n"
                           "        }", actual_setup_script)
+
+    def test_should_render_setup_keywords_when_property_is_set(self):
+        self.project.set_property("distutils_setup_keywords", "a b c")
+        actual_setup_script = build_setup_keywords(self.project)
+        self.assertEquals("'a b c'", actual_setup_script)
+
+        self.project.set_property("distutils_setup_keywords", ["a"])
+        actual_setup_script = build_setup_keywords(self.project)
+        self.assertEquals("'a'", actual_setup_script)
+
+        self.project.set_property("distutils_setup_keywords", ("a b"))
+        actual_setup_script = build_setup_keywords(self.project)
+        self.assertEquals("'a b'", actual_setup_script)
 
     def test_should_render_single_entry_pointproperty_is_set(self):
         self.project.set_property("distutils_entry_points", {'foo_entry': "release = zest.releaser.release:main"})
