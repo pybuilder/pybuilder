@@ -91,6 +91,7 @@ if __name__ == '__main__':
         dependency_links = $dependency_links,
         zip_safe=True,
         cmdclass={'install': install},
+        keywords=$setup_keywords,
     )
 """)
 
@@ -123,6 +124,10 @@ def initialize_distutils_plugin(project):
     project.set_property_if_unset("distutils_readme_description", False)
     project.set_property_if_unset("distutils_readme_file", "README.md")
     project.set_property_if_unset("distutils_description_overwrite", False)
+
+    project.set_property_if_unset("distutils_console_scripts", None)
+    project.set_property_if_unset("distutils_entry_points", None)
+    project.set_property_if_unset("distutils_setup_keywords", None)
 
 
 @after("prepare")
@@ -176,6 +181,7 @@ def render_setup_script(project):
             else ""),
         "preinstall_script": _normalize_setup_post_pre_script(project.setup_preinstall_script or "pass"),
         "postinstall_script": _normalize_setup_post_pre_script(project.setup_postinstall_script or "pass"),
+        "setup_keywords": build_setup_keywords(project)
     }
 
     return SETUP_TEMPLATE.substitute(template_values)
@@ -471,6 +477,17 @@ def build_entry_points_string(project):
     result += (" " * indent) + "}"
 
     return result
+
+
+def build_setup_keywords(project):
+    setup_keywords = project.get_property("distutils_setup_keywords")
+    if not setup_keywords or not len(setup_keywords):
+        return repr("")
+
+    if isinstance(setup_keywords, (list, tuple)):
+        return repr(" ".join(setup_keywords))
+
+    return repr(setup_keywords)
 
 
 def build_classifiers_string(project):
