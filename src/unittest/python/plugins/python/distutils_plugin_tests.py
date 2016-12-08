@@ -716,8 +716,10 @@ class TasksTest(PyBuilderTestCase):
         proc_runner.return_value = 0
 
         upload(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 2, proc_runner),
-                          [["clean", "--all", "sdist", "upload"], ["clean", "--all", "bdist_dumb", "upload"]])
+        self.assertEquals(popen_distutils_args(self, 3, proc_runner),
+                          [["register"],
+                           ["clean", "--all", "sdist", "upload"],
+                           ["clean", "--all", "bdist_dumb", "upload"]])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -727,9 +729,10 @@ class TasksTest(PyBuilderTestCase):
         self.project.set_property("distutils_command_options", {"bdist_dumb": '--format=xztar'})
 
         upload(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 2, proc_runner),
-                          [["clean", "--all", "sdist", "upload"], ["clean", "--all", "bdist_dumb", "--format=xztar",
-                                                                   "upload"]])
+        self.assertEquals(popen_distutils_args(self, 3, proc_runner),
+                          [["register"],
+                           ["clean", "--all", "sdist", "upload"],
+                           ["clean", "--all", "bdist_dumb", "--format=xztar", "upload"]])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -739,8 +742,9 @@ class TasksTest(PyBuilderTestCase):
         self.project.set_property("distutils_upload_repository", "test repo")
 
         upload(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 2, proc_runner),
-                          [["clean", "--all", "sdist", "upload", "-r", "test repo"],
+        self.assertEquals(popen_distutils_args(self, 3, proc_runner),
+                          [["register", "-r", "test repo"],
+                           ["clean", "--all", "sdist", "upload", "-r", "test repo"],
                            ["clean", "--all", "bdist_dumb", "upload", "-r", "test repo"]])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
@@ -751,8 +755,9 @@ class TasksTest(PyBuilderTestCase):
         self.project.set_property("distutils_upload_sign", True)
 
         upload(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 2, proc_runner),
-                          [["clean", "--all", "sdist", "upload", "--sign"],
+        self.assertEquals(popen_distutils_args(self, 3, proc_runner),
+                          [["register"],
+                           ["clean", "--all", "sdist", "upload", "--sign"],
                            ["clean", "--all", "bdist_dumb", "upload", "--sign"]])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
@@ -764,8 +769,9 @@ class TasksTest(PyBuilderTestCase):
         self.project.set_property("distutils_upload_sign_identity", "abcd")
 
         upload(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 2, proc_runner),
-                          [["clean", "--all", "sdist", "upload", "--sign", "--identity", "abcd"],
+        self.assertEquals(popen_distutils_args(self, 3, proc_runner),
+                          [["register"],
+                           ["clean", "--all", "sdist", "upload", "--sign", "--identity", "abcd"],
                            ["clean", "--all", "bdist_dumb", "upload", "--sign", "--identity", "abcd"]])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")

@@ -256,6 +256,13 @@ def upload(project, logger):
         if sign_identity:
             upload_sign_args += ["--identity", sign_identity]
 
+    # Unfortunately, distutils/setuptools doesn't throw error if register fails
+    # but upload command will fail if project will not be registered
+    logger.info("Registering project %s-%s%s", project.name, project.version,
+                (" into repository '%s'" % repository) if repository else "")
+    register_cmd_line = [["register"] + repository_args]
+    execute_distutils(project, logger, register_cmd_line, False)
+
     logger.info("Uploading project %s-%s%s%s%s", project.name, project.version,
                 (" to repository '%s'" % repository) if repository else "",
                 get_dist_version_string(project, " as version %s"),
