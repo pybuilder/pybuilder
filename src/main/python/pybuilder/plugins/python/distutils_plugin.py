@@ -104,7 +104,7 @@ def default(value, default=""):
 
 @init
 def initialize_distutils_plugin(project):
-    project.plugin_depends_on("pypandoc", "~=1.2.0")
+    project.plugin_depends_on("pypandoc", "~=1.3.0")
 
     project.set_property_if_unset("distutils_commands", ["sdist", "bdist_wheel"])
     project.set_property_if_unset("distutils_command_options", None)
