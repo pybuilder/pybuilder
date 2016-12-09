@@ -1,5 +1,7 @@
-[PyBuilder](http://pybuilder.github.io)
+PyBuilder
 =========
+
+[PyBuilder](http://pybuilder.github.io)
 
 [![Build Status](https://secure.travis-ci.org/pybuilder/pybuilder.png?branch=master)](http://travis-ci.org/pybuilder/pybuilder)
 [![Windows build status](https://ci.appveyor.com/api/projects/status/e8fbgcyc7bdqbko3?svg=true)](https://ci.appveyor.com/project/mriehl/pybuilder)
@@ -25,6 +27,10 @@ See the [Travis Build](https://travis-ci.org/pybuilder/pybuilder) for version sp
 PyBuilder is available using pip:
 
     $ pip install pybuilder
+
+For development builds use:
+    
+    $ pip install --pre pybuilder 
 
 See the [Cheeseshop page](https://warehouse.python.org/project/pybuilder/) for more
 information.
