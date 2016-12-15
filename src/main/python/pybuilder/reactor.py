@@ -300,18 +300,29 @@ class Reactor(object):
             else:
                 raise PyBuilderException("No default task given.")
         else:
-            new_tasks = [task for task in tasks if task[0] != '+' or task == "+"]
-            append_tasks = [task[1:] for task in tasks if task[0] == '+' and task != "+"]
+            new_tasks = [task for task in tasks if task[0] not in ("+", "^") or task in ("+", "^")]
+            append_tasks = [task[1:] for task in tasks if task[0] == "+" and task != "+"]
+            remove_tasks = [task[1:] for task in tasks if task[0] == "^" and task != "^"]
 
             if len(new_tasks):
                 del tasks[:]
                 tasks.extend(new_tasks)
                 tasks.extend(append_tasks)
+                for task in remove_tasks:
+                    try:
+                        tasks.remove(task)
+                    except ValueError:
+                        pass
             else:
                 del tasks[:]
                 if self.project.default_task:
                     tasks += as_list(self.project.default_task)
                 tasks += append_tasks
+                for task in remove_tasks:
+                    try:
+                        tasks.remove(task)
+                    except ValueError:
+                        pass
 
         return tasks
 

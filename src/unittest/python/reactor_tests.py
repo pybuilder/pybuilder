@@ -500,14 +500,23 @@ class ReactorTest(unittest.TestCase):
 
         self.assertEquals(self.reactor._prepare_tasks(["c"]), ["c"])
         self.assertEquals(self.reactor._prepare_tasks(["+c"]), ["a", "b", "c"])
+        self.assertEquals(self.reactor._prepare_tasks(["+c", '^c']), ["a", "b"])
+        self.assertEquals(self.reactor._prepare_tasks(["^b"]), ["a"])
+        self.assertEquals(self.reactor._prepare_tasks(["^a"]), ["b"])
+        self.assertEquals(self.reactor._prepare_tasks(["^d"]), ["a", "b"])
         self.assertEquals(self.reactor._prepare_tasks(["+c", "d"]), ["d", "c"])
-        self.assertEquals(self.reactor._prepare_tasks(["+c", "+"]), ["+", "c"])
+        self.assertEquals(self.reactor._prepare_tasks(["+c", "d", "^b"]), ["d", "c"])
+        self.assertEquals(self.reactor._prepare_tasks(["+c", "+", "^"]), ["+", "^", "c"])
         self.assertEquals(self.reactor._prepare_tasks([]), ["a", "b"])
 
         self.reactor.project.default_task = []
 
         self.assertEquals(self.reactor._prepare_tasks(["c"]), ["c"])
         self.assertEquals(self.reactor._prepare_tasks(["+c"]), ["c"])
+        self.assertEquals(self.reactor._prepare_tasks(["+c", "^d"]), ["c"])
+        self.assertEquals(self.reactor._prepare_tasks(["+c", "d", "^d"]), ["c"])
+        self.assertEquals(self.reactor._prepare_tasks(["^c", "c"]), [])
+        self.assertEquals(self.reactor._prepare_tasks(["+c", "^c"]), [])
         self.assertEquals(self.reactor._prepare_tasks(["+c", "d"]), ["d", "c"])
         self.assertEquals(self.reactor._prepare_tasks(["+c", "+"]), ["+", "c"])
 
