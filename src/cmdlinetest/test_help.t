@@ -17,7 +17,7 @@
 Usage:
 
   $ pyb -h
-  Usage: pyb [options] [+]task1 [[[+]task2] ...]
+  Usage: pyb [options] [+|^]task1 [[[+|^]task2] ...]
   
   Options:
     --version             show program's version number and exit
