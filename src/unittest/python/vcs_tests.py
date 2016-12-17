@@ -110,19 +110,16 @@ class VCSRevisionTest(unittest.TestCase):
     def test_should_raise_when_not_git_or_svn(self):
         self.execute_command.side_effect = [(1, "", ""),  # not git
                                             (1, "", "")]  # is svn
-        with self.assertRaises(PyBuilderException):
-            VCSRevision().count
+        self.assertRaises(PyBuilderException, getattr, VCSRevision(), "count")
 
     def test_should_raise_when_revparse_fails_in_get_git_hash(self):
         self.execute_command.side_effect = [(0, "", ""),  # is git
                                             (1, "", "")]
-        with self.assertRaises(PyBuilderException):
-            VCSRevision().get_git_hash()
+        self.assertRaises(PyBuilderException, VCSRevision().get_git_hash)
 
     def test_should_raise_when_not_git_in_get_git_hash(self):
         self.execute_command.return_value = 1, "", ""  # not git
-        with self.assertRaises(PyBuilderException):
-            VCSRevision().get_git_hash()
+        self.assertRaises(PyBuilderException, VCSRevision().get_git_hash)
 
     def test_should_return_revision_when_get_git_hash_succeeds(self):
         self.execute_command.side_effect = [(0, "", ""),  # is git
@@ -136,5 +133,6 @@ class VCSRevisionTest(unittest.TestCase):
                                             (0, "", ""),  # is svn
                                             (0, "123", "any-stderr")]
         travis = count_travis()
-        self.assertIn("123", travis)
-        self.assertIn("456", travis)
+
+        if "123" not in travis or "456" not in travis:
+            self.assertEquals(False, True)
