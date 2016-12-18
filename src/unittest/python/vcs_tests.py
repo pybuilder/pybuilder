@@ -21,7 +21,7 @@ import unittest
 from test_utils import patch
 
 from pybuilder.errors import PyBuilderException
-from pybuilder.vcs import VCSRevision
+from pybuilder.vcs import VCSRevision, count_travis
 
 
 class VCSRevisionTest(unittest.TestCase):
@@ -95,3 +95,44 @@ class VCSRevisionTest(unittest.TestCase):
     def test_should_not_detect_git_when_status_fails(self):
         self.execute_command.return_value = 1, "", ""
         self.assertFalse(VCSRevision().is_a_git_repo())
+
+    def test_should_return_revision_when_git_from_count_succeeds(self):
+        self.execute_command.side_effect = [(0, "", ""),  # is git
+                                            (0, "1\n2\n3", "any-stderr")]
+        self.assertEquals("3", VCSRevision().count)
+
+    def test_should_return_revision_when_svn_from_count_succeeds(self):
+        self.execute_command.side_effect = [(1, "", ""),  # not git
+                                            (0, "", ""),  # is svn
+                                            (0, "451", "any-stderr")]
+        self.assertEquals("451", VCSRevision().count)
+
+    def test_should_raise_when_not_git_or_svn(self):
+        self.execute_command.side_effect = [(1, "", ""),  # not git
+                                            (1, "", "")]  # is svn
+        self.assertRaises(PyBuilderException, getattr, VCSRevision(), "count")
+
+    def test_should_raise_when_revparse_fails_in_get_git_hash(self):
+        self.execute_command.side_effect = [(0, "", ""),  # is git
+                                            (1, "", "")]
+        self.assertRaises(PyBuilderException, VCSRevision().get_git_hash)
+
+    def test_should_raise_when_not_git_in_get_git_hash(self):
+        self.execute_command.return_value = 1, "", ""  # not git
+        self.assertRaises(PyBuilderException, VCSRevision().get_git_hash)
+
+    def test_should_return_revision_when_get_git_hash_succeeds(self):
+        self.execute_command.side_effect = [(0, "", ""),  # is git
+                                            (0, "451", "any-stderr")]
+        self.assertEquals("451", VCSRevision().get_git_hash())
+
+    def test_should_return_rev_and_travis_info_when_count_travis(self):
+        environ_get = patch("pybuilder.vcs.os.environ.get").start()
+        environ_get.return_value = "456"
+        self.execute_command.side_effect = [(1, "", ""),  # not git
+                                            (0, "", ""),  # is svn
+                                            (0, "123", "any-stderr")]
+        travis = count_travis()
+
+        if "123" not in travis or "456" not in travis:
+            self.assertEquals(False, True)
