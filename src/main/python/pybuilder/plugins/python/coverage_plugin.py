@@ -166,8 +166,10 @@ def _list_all_covered_modules(logger, module_names, modules_exceptions, allow_no
             try:
                 module = __import__(module_name)
             except SyntaxError as e:
-                logger.warn("Coverage for module '%s' cannot be established - syntax error: %s",
-                            module_name, e)
+                logger.warn("Coverage for module '%s' cannot be established - syntax error: %s", module_name, e)
+                continue
+            except Exception as e:
+                logger.warn("Coverage for module '%s' cannot be established - module failed: %s", module_name, e)
                 continue
 
         if module not in modules and hasattr(module, "__file__"):
