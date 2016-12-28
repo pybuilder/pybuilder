@@ -24,6 +24,7 @@ deploy:
   provider: pypi
   user: pybuilder-travis
   distributions: "sdist"
+  server: https://upload.pypi.org/legacy/
   on:
     branch: master
     repo: pybuilder/pybuilder

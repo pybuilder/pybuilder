@@ -407,10 +407,10 @@ if __name__ == '__main__':
     setup(
         name = 'Spam and Eggs',
         version = '1.2.3',
-        description = '''This is a simple integration-test for distutils plugin.''',
-        long_description = '''As you might have guessed we have nothing to say here.''',
-        author = "Udo Juettner, Michael Gruber",
-        author_email = "udo.juettner@gmail.com, aelgru@gmail.com",
+        description = 'This is a simple integration-test for distutils plugin.',
+        long_description = 'As you might have guessed we have nothing to say here.',
+        author = 'Udo Juettner, Michael Gruber',
+        author_email = 'udo.juettner@gmail.com, aelgru@gmail.com',
         license = 'WTFPL',
         url = 'http://github.com/pybuilder/pybuilder',
         scripts = [
@@ -442,9 +442,11 @@ if __name__ == '__main__':
         },
         install_requires = ['sometool'],
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
-        zip_safe=True,
-        cmdclass={'install': install},
-        keywords='',
+        zip_safe = True,
+        cmdclass = {'install': install},
+        keywords = '',
+        python_requires = '',
+        obsoletes = [],
     )
 """, actual_setup_script)
 
@@ -475,10 +477,10 @@ if __name__ == '__main__':
     setup(
         name = 'Spam and Eggs',
         version = '1.2.3',
-        description = '''This is a simple integration-test for distutils plugin.''',
-        long_description = '''As you might have guessed we have nothing to say here.''',
-        author = "Udo Juettner, Michael Gruber",
-        author_email = "udo.juettner@gmail.com, aelgru@gmail.com",
+        description = 'This is a simple integration-test for distutils plugin.',
+        long_description = 'As you might have guessed we have nothing to say here.',
+        author = 'Udo Juettner, Michael Gruber',
+        author_email = 'udo.juettner@gmail.com, aelgru@gmail.com',
         license = 'WTFPL',
         url = 'http://github.com/pybuilder/pybuilder',
         scripts = [
@@ -510,9 +512,11 @@ if __name__ == '__main__':
         },
         install_requires = ['sometool'],
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
-        zip_safe=True,
-        cmdclass={'install': install},
-        keywords='',
+        zip_safe = True,
+        cmdclass = {'install': install},
+        keywords = '',
+        python_requires = '',
+        obsoletes = [],
     )
 """, actual_setup_script)
 

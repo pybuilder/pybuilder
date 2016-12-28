@@ -29,16 +29,17 @@ from pybuilder.errors import (MissingPluginException,
                               IncompatiblePluginException,
                               UnspecifiedPluginNameException,
                               )
-from pybuilder.pip_utils import (Version, pip_install, version_satisfies_spec, should_update_package)
 from pybuilder.utils import read_file
+# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
+from pybuilder import pip_utils, pip_common
 
 PYPI_PLUGIN_PROTOCOL = "pypi:"
 VCS_PLUGIN_PROTOCOL = "vcs:"
 
 if pyb_version == "${dist_version}":  # This is the case of PyB bootstrap
-    PYB_VERSION = Version('0.0.1.dev0')
+    PYB_VERSION = pip_common.Version('0.0.1.dev0')
 else:
-    PYB_VERSION = Version(pyb_version)
+    PYB_VERSION = pip_common.Version(pyb_version)
 
 
 class PluginLoader(object):
@@ -79,7 +80,7 @@ class DownloadingPluginLoader(PluginLoader):
         # Maybe we already installed this plugin from PyPI before
         if thirdparty_plugin.startswith(PYPI_PLUGIN_PROTOCOL):
             thirdparty_plugin = thirdparty_plugin.replace(PYPI_PLUGIN_PROTOCOL, "")
-            update_plugin = should_update_package(version)
+            update_plugin = pip_utils.should_update_package(version)
         elif thirdparty_plugin.startswith(VCS_PLUGIN_PROTOCOL):
             if not plugin_module_name:
                 raise UnspecifiedPluginNameException(name)
@@ -166,16 +167,17 @@ def _install_external_plugin(project, name, version, logger, plugin_module_name,
 
     with tempfile.NamedTemporaryFile(delete=True) as log_file:
         log_file_name = log_file.name
-        result = pip_install(pip_package,
-                             index_url=project.get_property("install_dependencies_index_url"),
-                             extra_index_url=project.get_property("install_dependencies_extra_index_url"),
-                             trusted_host=project.get_property("install_dependencies_trusted_host"),
-                             upgrade=upgrade,
-                             force_reinstall=force_reinstall,
-                             logger=logger,
-                             outfile_name=log_file_name,
-                             error_file_name=log_file_name,
-                             cwd=".")
+        result = pip_utils.pip_install(
+            install_targets=pip_package,
+            index_url=project.get_property("install_dependencies_index_url"),
+            extra_index_url=project.get_property("install_dependencies_extra_index_url"),
+            trusted_host=project.get_property("install_dependencies_trusted_host"),
+            upgrade=upgrade,
+            force_reinstall=force_reinstall,
+            logger=logger,
+            outfile_name=log_file_name,
+            error_file_name=log_file_name,
+            cwd=".")
         if result != 0:
             logger.error("The following pip error was encountered:\n" + "".join(read_file(log_file_name)))
             message = "Failed to install plugin from {0}".format(pip_package)
@@ -200,5 +202,5 @@ def _load_plugin(plugin_module_name, plugin_name):
 
 def _check_plugin_version(plugin_module, plugin_name):
     if hasattr(plugin_module, "pyb_version") and plugin_module.pyb_version:
-        if not version_satisfies_spec(plugin_module.pyb_version, PYB_VERSION):
+        if not pip_utils.version_satisfies_spec(plugin_module.pyb_version, PYB_VERSION):
             raise IncompatiblePluginException(plugin_name, plugin_module.pyb_version, PYB_VERSION)

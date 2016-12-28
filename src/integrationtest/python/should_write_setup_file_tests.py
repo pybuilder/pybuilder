@@ -85,10 +85,10 @@ if __name__ == '__main__':
     setup(
         name = 'integration-test',
         version = '1.0.dev0',
-        description = '''''',
-        long_description = '''''',
-        author = "",
-        author_email = "",
+        description = '',
+        long_description = '',
+        author = '',
+        author_email = '',
         license = '',
         url = '',
         scripts = [],
@@ -107,9 +107,11 @@ if __name__ == '__main__':
             'spam'
         ],
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
-        zip_safe=True,
-        cmdclass={'install': install},
-        keywords='',
+        zip_safe = True,
+        cmdclass = {'install': install},
+        keywords = '',
+        python_requires = '',
+        obsoletes = [],
     )
 """)
 

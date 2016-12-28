@@ -21,6 +21,8 @@ import re
 import string
 import subprocess
 import sys
+from datetime import datetime
+from textwrap import dedent
 
 try:
     from StringIO import StringIO
@@ -41,10 +43,9 @@ from pybuilder.utils import (as_list,
                              get_dist_version_string,
                              safe_log_file_name,
                              assert_can_execute)
-from pybuilder.pip_utils import build_dependency_version_string
-from textwrap import dedent
-from pybuilder.pip_utils import pip_install
-from datetime import datetime
+# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
+from pybuilder import pip_utils
+
 
 use_plugin("python.core")
 
@@ -71,14 +72,14 @@ $postinstall_script
 
 if __name__ == '__main__':
     setup(
-        name = '$name',
-        version = '$version',
-        description = '''$summary''',
-        long_description = '''$description''',
-        author = "$author",
-        author_email = "$author_email",
-        license = '$license',
-        url = '$url',
+        name = $name,
+        version = $version,
+        description = $summary,
+        long_description = $description,
+        author = $author,
+        author_email = $author_email,
+        license = $license,
+        url = $url,
         scripts = $scripts,
         packages = $packages,
         namespace_packages = $namespace_packages,
@@ -89,9 +90,11 @@ if __name__ == '__main__':
         package_data = $package_data,
         install_requires = $dependencies,
         dependency_links = $dependency_links,
-        zip_safe=True,
-        cmdclass={'install': install},
-        keywords=$setup_keywords,
+        zip_safe = True,
+        cmdclass = {'install': install},
+        keywords = $setup_keywords,
+        python_requires = $python_requires,
+        obsoletes = $obsoletes,
     )
 """)
 
@@ -100,6 +103,10 @@ def default(value, default=""):
     if value is None:
         return default
     return value
+
+
+def as_str(value):
+    return repr(str(value))
 
 
 @init
@@ -157,14 +164,14 @@ def render_setup_script(project):
 
     template_values = {
         "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
-        "name": project.name,
-        "version": project.dist_version,
-        "summary": default(project.summary),
-        "description": default(project.description),
-        "author": author,
-        "author_email": author_email,
-        "license": default(project.license),
-        "url": default(project.url),
+        "name": as_str(project.name),
+        "version": as_str(project.dist_version),
+        "summary": as_str(default(project.summary)),
+        "description": as_str(default(project.description)),
+        "author": as_str(author),
+        "author_email": as_str(author_email),
+        "license": as_str(default(project.license)),
+        "url": as_str(default(project.url)),
         "scripts": build_scripts_string(project),
         "packages": build_packages_string(project),
         "namespace_packages": build_namespace_packages_string(project),
@@ -181,7 +188,9 @@ def render_setup_script(project):
             else ""),
         "preinstall_script": _normalize_setup_post_pre_script(project.setup_preinstall_script or "pass"),
         "postinstall_script": _normalize_setup_post_pre_script(project.setup_postinstall_script or "pass"),
-        "setup_keywords": build_setup_keywords(project)
+        "setup_keywords": build_setup_keywords(project),
+        "python_requires": as_str(default(project.requires_python)),
+        "obsoletes": build_string_from_array(project.obsoletes)
     }
 
     return SETUP_TEMPLATE.substitute(template_values)
@@ -235,10 +244,16 @@ def install_distribution(project, logger):
     _prepare_reports_dir(project)
     outfile_name = project.expand_path("$dir_reports", "distutils",
                                        "pip_install_%s" % datetime.utcnow().strftime("%Y%m%d%H%M%S"))
-    pip_install(project.expand_path("$dir_dist"), index_url=project.get_property("install_dependencies_index_url"),
-                extra_index_url=project.get_property("install_dependencies_extra_index_url"),
-                force_reinstall=True, logger=logger, verbose=project.get_property("verbose"), cwd=".",
-                outfile_name=outfile_name, error_file_name=outfile_name)
+    pip_utils.pip_install(
+        install_targets=project.expand_path("$dir_dist"),
+        index_url=project.get_property("install_dependencies_index_url"),
+        extra_index_url=project.get_property("install_dependencies_extra_index_url"),
+        force_reinstall=True,
+        logger=logger,
+        verbose=project.get_property("verbose"),
+        cwd=".",
+        outfile_name=outfile_name,
+        error_file_name=outfile_name)
 
 
 @task("upload", description="Upload a project to PyPi.")
@@ -331,7 +346,7 @@ def flatten_and_quote(requirements_file):
 
 
 def format_single_dependency(dependency):
-    return '%s%s' % (dependency.name, build_dependency_version_string(dependency))
+    return '%s%s' % (dependency.name, pip_utils.build_dependency_version_string(dependency))
 
 
 def build_install_dependencies_string(project):

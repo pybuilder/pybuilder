@@ -20,9 +20,9 @@ import unittest
 
 from pip._vendor.packaging.version import Version
 
-from pybuilder import pip_utils
 from pybuilder import pluginloader
 from pybuilder.errors import MissingPluginException, IncompatiblePluginException, UnspecifiedPluginNameException
+from pybuilder.pip_common import pip_version
 from pybuilder.pip_utils import PIP_EXEC_STANZA
 from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
@@ -236,7 +236,7 @@ class InstallExternalPluginTests(unittest.TestCase):
 
         execute.assert_called_with(
             PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY] +
-            (["--upgrade"] if pip_utils.pip_version < "9.0" else ["--upgrade", "--upgrade-strategy", "only-if-needed"])
+            (["--upgrade"] if pip_version < "9.0" else ["--upgrade", "--upgrade-strategy", "only-if-needed"])
             + ['some-plugin===1.2.3'], shell=False, outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
 
     @patch("pybuilder.pluginloader.read_file")

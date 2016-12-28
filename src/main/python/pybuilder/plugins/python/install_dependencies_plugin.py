@@ -20,7 +20,6 @@ from __future__ import print_function
 
 import collections
 import imp
-import os
 import sys
 
 from pybuilder.core import (before,
@@ -31,15 +30,10 @@ from pybuilder.core import (before,
                             Dependency,
                             RequirementsFile)
 from pybuilder.errors import BuildFailedException
-from pybuilder.pip_utils import (PIP_EXEC_STANZA,
-                                 build_pip_install_options,
-                                 as_pip_install_target,
-                                 get_package_version,
-                                 should_update_package,
-                                 version_satisfies_spec,
-                                 create_constraint_file)
 from pybuilder.terminal import print_file_content
-from pybuilder.utils import execute_command, mkdir, as_list, safe_log_file_name
+from pybuilder.utils import mkdir, as_list, safe_log_file_name
+# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
+from pybuilder import pip_utils
 
 __author__ = "Alexander Metzner, Arcadiy Ivanov"
 
@@ -83,7 +77,7 @@ def install_runtime_dependencies(logger, project):
 @description("Displays all dependencies the project requires")
 def list_dependencies(project):
     print("\n".join(
-        map(lambda d: "{0}".format(" ".join(as_pip_install_target(d))),
+        map(lambda d: "{0}".format(" ".join(pip_utils.as_pip_install_target(d))),
             project.build_dependencies + project.dependencies)))
 
 
@@ -103,7 +97,7 @@ def install_dependency(logger, project, dependencies):
     local_mapping = project.get_property("install_dependencies_local_mapping")
 
     constraints_file = project.expand_path("$dir_target", "install_dependencies_constraints")
-    create_constraint_file(constraints_file, dependency_constraints)
+    pip_utils.create_constraint_file(constraints_file, dependency_constraints)
 
     for dependency in dependencies_to_install:
         url = getattr(dependency, "url", None)
@@ -124,30 +118,34 @@ def install_dependency(logger, project, dependencies):
     for standalone_dependency in standalone_dependencies:
         url = getattr(standalone_dependency, "url", None)
         log_file = project.expand_path("$dir_install_logs", safe_log_file_name(dependency.name))
-        _do_install_dependency(logger, project, standalone_dependency,
-                               True,  # upgrade
-                               False,  # eager
-                               url,  # force reinstall
-                               constraints_file,
-                               local_mapping.get(dependency.name),
-                               log_file)
+        _do_install_dependency(logger=logger,
+                               project=project,
+                               dependency=standalone_dependency,
+                               upgrade=True,
+                               eager_upgrade=False,
+                               force_reinstall=url,
+                               constraint_file=constraints_file,
+                               target_dir=local_mapping.get(dependency.name),
+                               log_file=log_file)
 
     if len(batch_dependencies):
         log_file = project.expand_path("$dir_install_logs", "install_batch")
-        _do_install_dependency(logger, project, batch_dependencies,
-                               True,  # upgrade
-                               False,  # eager
-                               False,  # force reinstall
-                               constraints_file,
-                               None,
-                               log_file)
+        _do_install_dependency(logger=logger,
+                               project=project,
+                               dependency=batch_dependencies,
+                               upgrade=True,
+                               eager_upgrade=False,
+                               force_reinstall=False,
+                               constraint_file=constraints_file,
+                               target_dir=None,
+                               log_file=log_file)
 
     __reload_pip_if_updated(logger, dependencies_to_install)
 
 
 def _filter_dependencies(logger, project, dependencies):
     dependencies = as_list(dependencies)
-    installed_packages = get_package_version(dependencies)
+    installed_packages = pip_utils.get_package_version(dependencies)
     dependencies_to_install = []
     dependency_constraints = []
 
@@ -169,7 +167,8 @@ def _filter_dependencies(logger, project, dependencies):
                 logger.debug("Dependency '%s' is URL-based and will be included" % dependency)
                 dependencies_to_install.append(dependency)
                 continue
-            if should_update_package(dependency.version) and not getattr(dependency, "version_not_a_spec", False):
+            if pip_utils.should_update_package(dependency.version) \
+                    and not getattr(dependency, "version_not_a_spec", False):
                 # Always add dependency that has a version specifier indicating desire to always update
                 logger.debug("Dependency '%s' has a non-exact version specifier and will be included" % dependency)
                 dependencies_to_install.append(dependency)
@@ -182,7 +181,8 @@ def _filter_dependencies(logger, project, dependencies):
             dependencies_to_install.append(dependency)
             continue
 
-        if dependency.version and not version_satisfies_spec(dependency.version, installed_packages[dependency_name]):
+        if dependency.version \
+                and not pip_utils.version_satisfies_spec(dependency.version, installed_packages[dependency_name]):
             # If version is specified and version constraint is not satisfied
             logger.debug("Dependency '%s' is not satisfied by installed dependency version '%s' and will be included" %
                          (dependency, installed_packages[dependency_name]))
@@ -198,24 +198,20 @@ def _do_install_dependency(logger, project, dependency, upgrade, eager_upgrade,
                            force_reinstall, constraint_file, target_dir, log_file):
     batch = isinstance(dependency, collections.Iterable)
 
-    pip_command_line = list()
-    pip_command_line.extend(PIP_EXEC_STANZA)
-    pip_command_line.append("install")
-    pip_command_line.extend(build_pip_install_options(project.get_property("install_dependencies_index_url"),
-                                                      project.get_property("install_dependencies_extra_index_url"),
-                                                      upgrade,
-                                                      project.get_property(
-                                                          "install_dependencies_insecure_installation"),
-                                                      force_reinstall,
-                                                      target_dir,
-                                                      project.get_property("verbose"),
-                                                      project.get_property("install_dependencies_trusted_host"),
-                                                      constraint_file,
-                                                      eager_upgrade,
-                                                      ))
-    pip_command_line.extend(as_pip_install_target(dependency))
-    logger.debug("Invoking pip: %s", pip_command_line)
-    exit_code = execute_command(pip_command_line, log_file, env=os.environ, shell=False)
+    exit_code = pip_utils.pip_install(
+        install_targets=dependency,
+        index_url=project.get_property("install_dependencies_index_url"),
+        extra_index_url=project.get_property("install_dependencies_extra_index_url"),
+        upgrade=upgrade,
+        insecure_installs=project.get_property("install_dependencies_insecure_installation"),
+        force_reinstall=force_reinstall,
+        target_dir=target_dir,
+        verbose=project.get_property("verbose"),
+        trusted_host=project.get_property("install_dependencies_trusted_host"),
+        constraint_file=constraint_file,
+        eager_upgrade=eager_upgrade,
+        logger=logger,
+        outfile_name=log_file)
 
     if exit_code != 0:
         if batch:
@@ -254,5 +250,7 @@ def __reload_pip(logger):
         del sys.modules[module_name]
 
     from pybuilder import pip_utils, pip_common
+    # Pay attention that reload doesn't affect "from ... import ..." objects
+    # Carefully add modules to reload
     imp.reload(pip_common)
     imp.reload(pip_utils)

@@ -287,6 +287,8 @@ class Reactor(object):
         self.propagate_property("license")
         self.propagate_property("url")
         self.propagate_property("explicit_namespaces")
+        self.propagate_property("requires_python")
+        self.propagate_property("obsoletes")
 
     def propagate_property(self, property):
         if hasattr(self.project_module, property):

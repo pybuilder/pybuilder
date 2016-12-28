@@ -78,6 +78,8 @@ url = "http://pybuilder.github.io"
 license = "Apache License"
 version = "0.11.10.dev"
 
+requires_python = ">=2.6,!=3.0,!=3.1,!=3.2,<3.7"
+
 default_task = ["install_dependencies", "analyze", "publish"]
 
 
@@ -94,6 +96,7 @@ def initialize(project):
 
     project.depends_on("tblib")
     project.depends_on("pip", ">=7.1")
+    project.depends_on("setuptools", "~=32.0")
     project.depends_on("wheel")
 
     project.set_property("verbose", True)

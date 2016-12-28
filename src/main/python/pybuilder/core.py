@@ -31,8 +31,9 @@ from datetime import datetime
 from os.path import sep as PATH_SEPARATOR
 
 from pybuilder.errors import MissingPropertyException
-from pybuilder.pip_common import Version, InvalidVersion, SpecifierSet, InvalidSpecifier
 from pybuilder.utils import as_list
+# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
+from pybuilder import pip_common
 
 INITIALIZER_ATTRIBUTE = "_python_builder_initializer"
 
@@ -233,12 +234,12 @@ class Dependency(object):
 
         if version:
             try:
-                version = ">=" + str(Version(version))
+                version = ">=" + str(pip_common.Version(version))
                 self.version_not_a_spec = True
-            except InvalidVersion:
+            except pip_common.InvalidVersion:
                 try:
-                    version = str(SpecifierSet(version))
-                except InvalidSpecifier:
+                    version = str(pip_common.SpecifierSet(version))
+                except pip_common.InvalidSpecifier:
                     raise ValueError("'%s' must be either PEP 0440 version or a version specifier set" % version)
 
         self.version = version
@@ -320,6 +321,8 @@ class Project(object):
         self.authors = []
         self.license = ""
         self.url = ""
+        self._requires_python = ""
+        self._obsoletes = []
         self._explicit_namespaces = []
         self._properties = {"verbose": False}
         self._install_dependencies = set()
@@ -345,6 +348,23 @@ class Project(object):
         if value.endswith('.dev'):
             value += datetime.utcnow().strftime("%Y%m%d%H%M%S")
         self._dist_version = value
+
+    @property
+    def requires_python(self):
+        return self._requires_python
+
+    @requires_python.setter
+    def requires_python(self, value):
+        spec_set = pip_common.SpecifierSet(value)
+        self._requires_python = str(spec_set)
+
+    @property
+    def obsoletes(self):
+        return self._obsoletes
+
+    @obsoletes.setter
+    def obsoletes(self, value):
+        self._obsoletes = as_list(value)
 
     @property
     def explicit_namespaces(self):
