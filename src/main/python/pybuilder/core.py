@@ -320,6 +320,7 @@ class Project(object):
         self.authors = []
         self.license = ""
         self.url = ""
+        self._requires_python = ""
         self._explicit_namespaces = []
         self._properties = {"verbose": False}
         self._install_dependencies = set()
@@ -345,6 +346,15 @@ class Project(object):
         if value.endswith('.dev'):
             value += datetime.utcnow().strftime("%Y%m%d%H%M%S")
         self._dist_version = value
+
+    @property
+    def requires_python(self):
+        return self._requires_python
+
+    @requires_python.setter
+    def requires_python(self, value):
+        spec_set = SpecifierSet(value)
+        self._requires_python = str(spec_set)
 
     @property
     def explicit_namespaces(self):
