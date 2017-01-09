@@ -78,6 +78,8 @@ url = "http://pybuilder.github.io"
 license = "Apache License"
 version = "0.11.10.dev"
 
+requires_python = ">=2.6,!=3.0,!=3.1,!=3.2,<3.7"
+
 default_task = ["install_dependencies", "analyze", "publish"]
 
 

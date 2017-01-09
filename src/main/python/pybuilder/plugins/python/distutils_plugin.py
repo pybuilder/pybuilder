@@ -71,14 +71,14 @@ $postinstall_script
 
 if __name__ == '__main__':
     setup(
-        name = '$name',
-        version = '$version',
-        description = '''$summary''',
-        long_description = '''$description''',
-        author = "$author",
-        author_email = "$author_email",
-        license = '$license',
-        url = '$url',
+        name = $name,
+        version = $version,
+        description = $summary,
+        long_description = $description,
+        author = $author,
+        author_email = $author_email,
+        license = $license,
+        url = $url,
         scripts = $scripts,
         packages = $packages,
         namespace_packages = $namespace_packages,
@@ -89,9 +89,10 @@ if __name__ == '__main__':
         package_data = $package_data,
         install_requires = $dependencies,
         dependency_links = $dependency_links,
-        zip_safe=True,
-        cmdclass={'install': install},
-        keywords=$setup_keywords,
+        zip_safe = True,
+        cmdclass = {'install': install},
+        keywords = $setup_keywords,
+        python_requires = $python_requires,
     )
 """)
 
@@ -100,6 +101,10 @@ def default(value, default=""):
     if value is None:
         return default
     return value
+
+
+def as_str(value):
+    return repr(str(value))
 
 
 @init
@@ -157,14 +162,14 @@ def render_setup_script(project):
 
     template_values = {
         "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
-        "name": project.name,
-        "version": project.dist_version,
-        "summary": default(project.summary),
-        "description": default(project.description),
-        "author": author,
-        "author_email": author_email,
-        "license": default(project.license),
-        "url": default(project.url),
+        "name": as_str(project.name),
+        "version": as_str(project.dist_version),
+        "summary": as_str(default(project.summary)),
+        "description": as_str(default(project.description)),
+        "author": as_str(author),
+        "author_email": as_str(author_email),
+        "license": as_str(default(project.license)),
+        "url": as_str(default(project.url)),
         "scripts": build_scripts_string(project),
         "packages": build_packages_string(project),
         "namespace_packages": build_namespace_packages_string(project),
@@ -181,7 +186,8 @@ def render_setup_script(project):
             else ""),
         "preinstall_script": _normalize_setup_post_pre_script(project.setup_preinstall_script or "pass"),
         "postinstall_script": _normalize_setup_post_pre_script(project.setup_postinstall_script or "pass"),
-        "setup_keywords": build_setup_keywords(project)
+        "setup_keywords": build_setup_keywords(project),
+        "python_requires": as_str(default(project.requires_python)),
     }
 
     return SETUP_TEMPLATE.substitute(template_values)
