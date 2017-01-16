@@ -21,8 +21,9 @@ import shutil
 from os.path import join
 
 from pybuilder.core import init, task, description, depends, optional
-from pybuilder.pip_utils import get_package_version, version_satisfies_spec, pip_install, as_pip_install_target
 from pybuilder.utils import safe_log_file_name
+# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
+from pybuilder import pip_utils
 
 
 @init
@@ -59,21 +60,24 @@ def prepare(project, logger):
         logger.debug("Creating reports directory %s", reports_directory)
         os.mkdir(reports_directory)
 
-    plugin_dependency_versions = get_package_version(project.plugin_dependencies, logger)
+    plugin_dependency_versions = pip_utils.get_package_version(project.plugin_dependencies, logger)
     for plugin_dependency in project.plugin_dependencies:
         logger.debug("Processing plugin dependency %s" % plugin_dependency)
-        if plugin_dependency.name.lower() not in plugin_dependency_versions or not \
-                version_satisfies_spec(plugin_dependency.version,
-                                       plugin_dependency_versions[plugin_dependency.name.lower()]):
+        if plugin_dependency.name.lower() not in plugin_dependency_versions \
+                or not pip_utils.version_satisfies_spec(plugin_dependency.version,
+                                                        plugin_dependency_versions[plugin_dependency.name.lower()]):
             logger.info("Installing plugin dependency %s" % plugin_dependency)
             log_file = project.expand_path("$dir_reports",
                                            safe_log_file_name("dependency_%s_install.log" % plugin_dependency))
-            pip_install(as_pip_install_target(plugin_dependency),
-                        index_url=project.get_property("install_dependencies_index_url"),
-                        extra_index_url=project.get_property("install_dependencies_extra_index_url"),
-                        verbose=project.get_property("verbose"), logger=logger,
-                        force_reinstall=plugin_dependency.url is not None, outfile_name=log_file,
-                        error_file_name=log_file)
+            pip_utils.pip_install(
+                install_targets=pip_utils.as_pip_install_target(plugin_dependency),
+                index_url=project.get_property("install_dependencies_index_url"),
+                extra_index_url=project.get_property("install_dependencies_extra_index_url"),
+                verbose=project.get_property("verbose"),
+                logger=logger,
+                force_reinstall=plugin_dependency.url is not None,
+                outfile_name=log_file,
+                error_file_name=log_file)
 
 
 @task

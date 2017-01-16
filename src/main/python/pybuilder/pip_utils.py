@@ -21,14 +21,9 @@ import re
 import sys
 
 from pybuilder.core import Dependency, RequirementsFile
-from pybuilder.pip_common import (Version,
-                                  SpecifierSet,
-                                  search_packages_info,
-                                  pip_working_set_init,
-                                  _pip_disallows_insecure_packages_by_default,
-                                  _pip_supports_constraints,
-                                  pip_version)
 from pybuilder.utils import execute_command, as_list
+# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
+from pybuilder import pip_common
 
 PIP_EXEC_STANZA = [sys.executable, "-m", "pip.__main__"]
 __RE_PIP_PACKAGE_VERSION = re.compile(r"^Version:\s+(.+)$", re.MULTILINE)
@@ -46,21 +41,23 @@ def build_dependency_version_string(mixed):
     return version
 
 
-def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=False,
-                insecure_installs=None, force_reinstall=False, target_dir=None, verbose=False, logger=None,
-                outfile_name=None, error_file_name=None, env=None, cwd=None, trusted_host=None, eager_upgrade=False):
+def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=False, insecure_installs=None,
+                force_reinstall=False, target_dir=None, verbose=False, trusted_host=None, constraint_file=None,
+                eager_upgrade=False,
+                logger=None, outfile_name=None, error_file_name=None, env=None, cwd=None):
     pip_command_line = list()
     pip_command_line.extend(PIP_EXEC_STANZA)
     pip_command_line.append("install")
-    pip_command_line.extend(build_pip_install_options(index_url,
-                                                      extra_index_url,
-                                                      upgrade,
-                                                      insecure_installs,
-                                                      force_reinstall,
-                                                      target_dir,
-                                                      verbose,
-                                                      trusted_host,
-                                                      eager_upgrade
+    pip_command_line.extend(build_pip_install_options(index_url=index_url,
+                                                      extra_index_url=extra_index_url,
+                                                      upgrade=upgrade,
+                                                      insecure_installs=insecure_installs,
+                                                      force_reinstall=force_reinstall,
+                                                      target_dir=target_dir,
+                                                      verbose=verbose,
+                                                      trusted_host=trusted_host,
+                                                      constraint_file=constraint_file,
+                                                      eager_upgrade=eager_upgrade
                                                       ))
     for install_target in as_list(install_targets):
         pip_command_line.extend(as_pip_install_target(install_target))
@@ -96,7 +93,7 @@ def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=Fals
 
     if upgrade:
         options.append("--upgrade")
-        if pip_version >= "9.0":
+        if pip_common.pip_version >= "9.0":
             options.append("--upgrade-strategy")
             if eager_upgrade:
                 options.append("eager")
@@ -113,11 +110,11 @@ def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=Fals
         options.append("-t")
         options.append(target_dir)
 
-    if constraint_file and _pip_supports_constraints():
+    if constraint_file and pip_common._pip_supports_constraints():
         options.append("-c")
         options.append(constraint_file)
 
-    if _pip_disallows_insecure_packages_by_default() and insecure_installs:
+    if pip_common._pip_disallows_insecure_packages_by_default() and insecure_installs:
         for insecure_install in insecure_installs:
             arguments_for_insecure_installation = ["--allow-unverified", insecure_install,
                                                    "--allow-external", insecure_install]
@@ -163,8 +160,8 @@ def get_package_version(mixed, logger=None):
 
     package_query = [normalized_package for normalized_package in
                      (normalize_dependency_package(p) for p in as_list(mixed)) if normalized_package]
-    pip_working_set_init()
-    search_packages_results = search_packages_info(package_query)
+    pip_common.pip_working_set_init()
+    search_packages_results = pip_common.search_packages_info(package_query)
     return dict(((result['name'].lower(), result['version']) for result in search_packages_results))
 
 
@@ -173,10 +170,10 @@ def version_satisfies_spec(spec, version):
         return True
     if not version:
         return False
-    if not isinstance(spec, SpecifierSet):
-        spec = SpecifierSet(spec)
-    if not isinstance(version, Version):
-        version = Version(version)
+    if not isinstance(spec, pip_common.SpecifierSet):
+        spec = pip_common.SpecifierSet(spec)
+    if not isinstance(version, pip_common.Version):
+        version = pip_common.Version(version)
     return spec.contains(version)
 
 
@@ -186,8 +183,8 @@ def should_update_package(version):
         False otherwise
     """
     if version:
-        if not isinstance(version, SpecifierSet):
-            version_specifier = SpecifierSet(version)
+        if not isinstance(version, pip_common.SpecifierSet):
+            version_specifier = pip_common.SpecifierSet(version)
         else:
             version_specifier = version
         # We always check if even one specifier in the set is not exact

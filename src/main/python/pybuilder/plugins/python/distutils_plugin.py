@@ -21,6 +21,8 @@ import re
 import string
 import subprocess
 import sys
+from datetime import datetime
+from textwrap import dedent
 
 try:
     from StringIO import StringIO
@@ -41,10 +43,9 @@ from pybuilder.utils import (as_list,
                              get_dist_version_string,
                              safe_log_file_name,
                              assert_can_execute)
-from pybuilder.pip_utils import build_dependency_version_string
-from textwrap import dedent
-from pybuilder.pip_utils import pip_install
-from datetime import datetime
+# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
+from pybuilder import pip_utils
+
 
 use_plugin("python.core")
 
@@ -243,10 +244,16 @@ def install_distribution(project, logger):
     _prepare_reports_dir(project)
     outfile_name = project.expand_path("$dir_reports", "distutils",
                                        "pip_install_%s" % datetime.utcnow().strftime("%Y%m%d%H%M%S"))
-    pip_install(project.expand_path("$dir_dist"), index_url=project.get_property("install_dependencies_index_url"),
-                extra_index_url=project.get_property("install_dependencies_extra_index_url"),
-                force_reinstall=True, logger=logger, verbose=project.get_property("verbose"), cwd=".",
-                outfile_name=outfile_name, error_file_name=outfile_name)
+    pip_utils.pip_install(
+        install_targets=project.expand_path("$dir_dist"),
+        index_url=project.get_property("install_dependencies_index_url"),
+        extra_index_url=project.get_property("install_dependencies_extra_index_url"),
+        force_reinstall=True,
+        logger=logger,
+        verbose=project.get_property("verbose"),
+        cwd=".",
+        outfile_name=outfile_name,
+        error_file_name=outfile_name)
 
 
 @task("upload", description="Upload a project to PyPi.")
@@ -339,7 +346,7 @@ def flatten_and_quote(requirements_file):
 
 
 def format_single_dependency(dependency):
-    return '%s%s' % (dependency.name, build_dependency_version_string(dependency))
+    return '%s%s' % (dependency.name, pip_utils.build_dependency_version_string(dependency))
 
 
 def build_install_dependencies_string(project):

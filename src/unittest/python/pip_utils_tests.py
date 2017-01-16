@@ -20,6 +20,7 @@ import os
 import unittest
 
 from pybuilder import core
+from pybuilder.pip_common import pip_version
 from pybuilder import pip_utils
 from test_utils import patch, ANY
 
@@ -80,10 +81,10 @@ class PipVersionTests(unittest.TestCase):
         self.assertEquals(pip_utils.build_pip_install_options(trusted_host=("foo", "bar")),
                           ["--trusted-host", "foo", "--trusted-host", "bar"])
         self.assertEquals(pip_utils.build_pip_install_options(upgrade=True),
-                          ["--upgrade"] if pip_utils.pip_version < "9.0" else
+                          ["--upgrade"] if pip_version < "9.0" else
                           ["--upgrade", "--upgrade-strategy", "only-if-needed"])
         self.assertEquals(pip_utils.build_pip_install_options(upgrade=True, eager_upgrade=True),
-                          ["--upgrade"] if pip_utils.pip_version < "9.0" else
+                          ["--upgrade"] if pip_version < "9.0" else
                           ["--upgrade", "--upgrade-strategy", "eager"])
         self.assertEquals(pip_utils.build_pip_install_options(verbose=True), ["--verbose"])
         self.assertEquals(pip_utils.build_pip_install_options(force_reinstall=True), ["--force-reinstall"])
