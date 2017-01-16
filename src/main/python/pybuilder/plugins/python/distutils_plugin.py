@@ -93,6 +93,7 @@ if __name__ == '__main__':
         cmdclass = {'install': install},
         keywords = $setup_keywords,
         python_requires = $python_requires,
+        obsoletes = $obsoletes,
     )
 """)
 
@@ -188,6 +189,7 @@ def render_setup_script(project):
         "postinstall_script": _normalize_setup_post_pre_script(project.setup_postinstall_script or "pass"),
         "setup_keywords": build_setup_keywords(project),
         "python_requires": as_str(default(project.requires_python)),
+        "obsoletes": build_string_from_array(project.obsoletes)
     }
 
     return SETUP_TEMPLATE.substitute(template_values)
