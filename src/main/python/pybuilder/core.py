@@ -321,6 +321,7 @@ class Project(object):
         self.license = ""
         self.url = ""
         self._requires_python = ""
+        self._obsoletes = []
         self._explicit_namespaces = []
         self._properties = {"verbose": False}
         self._install_dependencies = set()
@@ -355,6 +356,14 @@ class Project(object):
     def requires_python(self, value):
         spec_set = SpecifierSet(value)
         self._requires_python = str(spec_set)
+
+    @property
+    def obsoletes(self):
+        return self._obsoletes
+
+    @obsoletes.setter
+    def obsoletes(self, value):
+        self._obsoletes = as_list(value)
 
     @property
     def explicit_namespaces(self):
