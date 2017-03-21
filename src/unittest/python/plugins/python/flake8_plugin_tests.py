@@ -22,7 +22,8 @@ class FlakePluginInitializationTests(TestCase):
             "flake8_include_patterns": "*.py",
             "flake8_exclude_patterns": ".svn",
             "flake8_include_test_sources": True,
-            "flake8_include_scripts": True
+            "flake8_include_scripts": True,
+            "flake8_max_complexity": 10
             }
         for property_name, property_value in expected_properties.items():
             self.project.set_property(property_name, property_value)
@@ -42,3 +43,5 @@ class FlakePluginInitializationTests(TestCase):
                 self.project.get_property("flake8_include_test_sources"), True)
             self.assertEquals(
                 self.project.get_property("flake8_include_scripts"), True)
+            self.assertEquals(
+                self.project.get_property("flake8_max_complexity"), True)
