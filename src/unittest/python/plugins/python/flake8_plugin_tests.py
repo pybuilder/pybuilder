@@ -44,4 +44,4 @@ class FlakePluginInitializationTests(TestCase):
             self.assertEquals(
                 self.project.get_property("flake8_include_scripts"), True)
             self.assertEquals(
-                self.project.get_property("flake8_max_complexity"), True)
+                self.project.get_property("flake8_max_complexity"), 10)
