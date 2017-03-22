@@ -44,6 +44,7 @@ def initialize_flake8_plugin(project):
     project.set_property_if_unset("flake8_exclude_patterns", None)
     project.set_property_if_unset("flake8_include_test_sources", False)
     project.set_property_if_unset("flake8_include_scripts", False)
+    project.set_property_if_unset("flake8_max_complexity", None)
 
 
 @after("prepare")
@@ -70,6 +71,7 @@ def analyze(project, logger):
     command.use_argument('--max-line-length={0}').formatted_with_property('flake8_max_line_length')
     command.use_argument('--filename={0}').formatted_with_truthy_property('flake8_include_patterns')
     command.use_argument('--exclude={0}').formatted_with_truthy_property('flake8_exclude_patterns')
+    command.use_argument('--max-complexity={0}').formatted_with_truthy_property('flake8_max_complexity')
 
     include_test_sources = project.get_property("flake8_include_test_sources")
     include_scripts = project.get_property("flake8_include_scripts")
