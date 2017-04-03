@@ -16,29 +16,34 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+"""
+    Plugin for NPM Package APIDOC.
+    http://apidocjs.com/
+"""
+
 import os
 import errno
 
 from pybuilder.core import init, task, use_plugin, description, depends, after
 from pybuilder.utils import assert_can_execute, execute_command
 
+
+__author__ = 'Pablo Arias Mora'
+__email__ = "pabloariasmora@gmail.com"
+
 use_plugin("core")
 
 
 @init
 def init_apidoc_plugin(project):
-    """
-    Initialize all the plugin default properties.
-    """
+    """Initialize all the plugin default properties."""
     project.set_property_if_unset('apidoc_output_folder', 'docs/')
     project.set_property_if_unset('apidoc_src_folder', 'src/main/python/')
 
 
 @after('prepare')
 def assert_apidoc_is_executable(logger):
-    """
-    Assert that the apidoc script is executable.
-    """
+    """Assert that the apidoc script is executable."""
     logger.debug('Checking if apidoc is executable.')
 
     # APIDOC does not have --version command
@@ -49,9 +54,7 @@ def assert_apidoc_is_executable(logger):
 
 @after('prepare')
 def assert_apidoc_configuration_file_exist(logger):
-    """
-    Assert that the apidoc configuration file exist.
-    """
+    """Assert that the apidoc configuration file exist."""
     logger.debug("Checking if apidoc configuration file exist.")
 
     if not os.path.isfile('apidoc.json'):
@@ -61,13 +64,11 @@ def assert_apidoc_configuration_file_exist(logger):
 @task
 @depends('prepare')
 @description('Generates API documentation using apidoc.')
-def generate_api_documentation_html(project, logger):
-    """
-    Use the ronn script to convert a markdown source to a gzipped manpage.
-    """
+def generate_api_documentation(project, logger):
+    """Use the apidoc create HTML pages."""
     logger.info('Generating API Documentation')
     try:
-        os.makedirs(project.get_property('apidoc_folder'))
+        os.mkdir(project.get_property('apidoc_output_folder'))
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
