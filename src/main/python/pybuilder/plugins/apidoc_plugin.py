@@ -73,12 +73,20 @@ def generate_api_documentation(project, logger):
         if e.errno != errno.EEXIST:
             raise
 
+    apidoc_command = build_apidoc_command(project)
+
     apidoc_report_file = project.expand_path("$dir_reports/{0}".format(
         'generate_API_documentation')
     )
+
+    execute_command(apidoc_command, apidoc_report_file, shell=True)
+
+
+def build_apidoc_command(project):
+    """Should build the APIDOC command."""
     apidoc_command = 'apidoc -i %s -o %s' % (
         project.get_property('apidoc_src_folder'),
         project.get_property('apidoc_output_folder')
     )
 
-    execute_command(apidoc_command, apidoc_report_file, shell=True)
+    return apidoc_command
