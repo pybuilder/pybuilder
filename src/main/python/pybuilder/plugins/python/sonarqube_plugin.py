@@ -25,10 +25,10 @@ from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
 
 
 @before("run_sonar_analysis")
-def check_sonar_runner_availability():
+def check_sonar_scanner_availability():
     assert_can_execute(
-        ("sonar-runner", "-h"),
-        "sonar-runner", "plugin python.sonarqube")
+        ("sonar-scanner", "-h"),
+        "sonar-scanner", "plugin python.sonarqube")
 
 
 @init
@@ -37,17 +37,17 @@ def initialize_sonarqube_plugin(project):
     project.set_property_if_unset("sonarqube_project_name", project.name)
 
 
-@task("run_sonar_analysis", description="Launches sonar-runner for analysis.")
+@task("run_sonar_analysis", description="Launches sonar-scanner for analysis.")
 @depends("analyze")
 def run_sonar_analysis(project, logger):
 
-    sonar_runner = build_sonar_runner(project)
+    sonar_scanner = build_sonar_scanner(project)
 
-    result = sonar_runner.run(project.expand_path("$dir_reports/sonar-runner"))
+    result = sonar_scanner.run(project.expand_path("$dir_reports/sonar-scanner"))
 
     if result.exit_code != 0:
         logger.error(
-            "sonar-runner exited with code {exit_code}. See {reports_dir} for more information.".format(
+            "sonar-scanner exited with code {exit_code}. See {reports_dir} for more information.".format(
                 exit_code=result.exit_code,
                 reports_dir=project.expand_path("$dir_reports")))
 
@@ -58,8 +58,8 @@ def run_sonar_analysis(project, logger):
         raise BuildFailedException("Sonar analysis failed.")
 
 
-def build_sonar_runner(project):
-    return (SonarCommandBuilder("sonar-runner", project)
+def build_sonar_scanner(project):
+    return (SonarCommandBuilder("sonar-scanner", project)
             .set_sonar_key("sonar.projectKey").to_property_value("sonarqube_project_key")
             .set_sonar_key("sonar.projectName").to_property_value("sonarqube_project_name")
             .set_sonar_key("sonar.projectVersion").to(project.version)
