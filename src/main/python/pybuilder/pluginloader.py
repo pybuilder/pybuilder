@@ -143,6 +143,7 @@ class DispatchingPluginLoader(PluginLoader):
                 try:
                     return loader.load_plugin(project, name, version, plugin_module_name)
                 except MissingPluginException as e:
+                    self.logger.debug("Failed to load: '%s'", str(e))
                     last_problem = e
         if last_problem:
             raise last_problem

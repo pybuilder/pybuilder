@@ -21,7 +21,9 @@
 
 import sys
 from datetime import date
-from os import symlink, mkdir
+# os.symlink() isn't available into all systems and direct import could produce exception
+import os
+from os import mkdir
 from os.path import join, dirname, relpath, exists
 from shutil import rmtree
 
@@ -209,6 +211,12 @@ def sphinx_pyb_quickstart_generate(project, logger):
 
     Actually sticks the PyB-specific paths and generated stub into the configuration.
     """
+    if not callable(getattr(os, 'symlink', None)):
+        raise BuildFailedException(
+            "Task `sphinx_pyb_quickstart` isn't available, "
+            "because os.symlink() function isn't available in the system. "
+            "See Python docs for details."
+        )
     sphinx_quickstart_generate(project, logger)  # If this fails we won't touch the config directory further
 
     sphinx_config_path = project.get_property("sphinx_config_path")
@@ -246,7 +254,7 @@ from %(sphinx_pyb_module_name)s import *
     target_apidoc_dir = join(sphinx_pyb_rel_dir, SPHINX_PYB_APIDOC_DIR)
     source_apidoc_link = project.expand_path("$sphinx_source_dir", SPHINX_PYB_APIDOC_DIR)
     if not exists(source_apidoc_link):
-        symlink(target_apidoc_dir, source_apidoc_link, target_is_directory=True)
+        os.symlink(target_apidoc_dir, source_apidoc_link, target_is_directory=True)
 
 
 def get_sphinx_quickstart_command(project):
