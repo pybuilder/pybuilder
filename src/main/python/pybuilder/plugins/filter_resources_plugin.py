@@ -32,7 +32,7 @@ def init_filter_resources_plugin(project):
 
 @after("package", only_once=True)
 def filter_resources(project, logger):
-    globs = project.get_mandatory_property("filter_resources_glob")
+    globs = [project.expand(glob) for glob in project.get_mandatory_property("filter_resources_glob")]
     if not globs:
         logger.warn("No resources to filter configured. Consider removing plugin.")
         return

@@ -22,6 +22,7 @@
     build.py project descriptor.
 """
 
+from collections import Mapping
 import fnmatch
 import itertools
 import os
@@ -30,7 +31,7 @@ import sys
 from datetime import datetime
 from os.path import sep as PATH_SEPARATOR
 
-from pybuilder.errors import MissingPropertyException
+from pybuilder.errors import MissingPropertyException, LockedPropertyException
 from pybuilder.utils import as_list
 # Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
 from pybuilder import pip_common
@@ -51,6 +52,8 @@ DEPENDS_ATTRIBUTE = "_python_builder_depends"
 DEPENDENTS_ATTRIBUTE = "_python_builder_dependents"
 
 DESCRIPTION_ATTRIBUTE = "_python_builder_description"
+
+PROJECT_ATTRIBUTES_TO_PROPERTIES = ['basedir', 'name', 'version']
 
 
 def init(*possible_callable, **additional_arguments):
@@ -297,6 +300,23 @@ class RequirementsFile(object):
         return 42 * hash(self.name)
 
 
+class ProjectProperties(Mapping):
+    """
+    Read-only dictionary implementation.
+    """
+    def __init__(self, data):
+        self._data = data
+
+    def __getitem__(self, key):
+        return self._data[key]
+
+    def __len__(self):
+        return len(self._data)
+
+    def __iter__(self):
+        return iter(self._data)
+
+
 class Project(object):
     """
     Descriptor for a project to be built. A project has a number of attributes
@@ -416,9 +436,11 @@ class Project(object):
 
     @property
     def properties(self):
-        result = self._properties
-        result["basedir"] = self.basedir
-        return result
+        # create copy of existing properties
+        result = dict(self._properties)
+        for attr in PROJECT_ATTRIBUTES_TO_PROPERTIES:
+            result[attr] = getattr(self, attr)
+        return ProjectProperties(result)
 
     @property
     def dependencies(self):
@@ -582,7 +604,9 @@ class Project(object):
         return key in self.properties
 
     def set_property(self, key, value):
-        self.properties[key] = value
+        if key in PROJECT_ATTRIBUTES_TO_PROPERTIES:
+            raise LockedPropertyException(key)
+        self._properties[key] = value
 
     def set_property_if_unset(self, key, value):
         if not self.has_property(key):

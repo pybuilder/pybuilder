@@ -63,38 +63,43 @@ class ExternalCommandBuilderTests(unittest.TestCase):
         self.assertEqual(self.command.as_string, 'command-name --cool')
 
     def test_should_format_unconditional_argument_with_property_when_given(self):
-        self.project.set_property('name', 'value')
-        self.command.use_argument('--name={0}').formatted_with_property('name')
+        self.project.set_property('propname', 'value')
+        self.command.use_argument('--propname={0}').formatted_with_property('propname')
 
-        self.assertEqual(self.command.as_string, 'command-name --name=value')
+        self.assertEqual(self.command.as_string, 'command-name --propname=value')
 
     def test_should_format_unconditional_argument_with_value_when_given(self):
-        self.command.use_argument('--name={0}').formatted_with('value')
+        self.command.use_argument('--propname={0}').formatted_with('value')
 
-        self.assertEqual(self.command.as_string, 'command-name --name=value')
+        self.assertEqual(self.command.as_string, 'command-name --propname=value')
 
     def test_should_include_conditional_argument_with_formatting_when_property_is_falsy(self):
-        self.project.set_property('name', 'value')
-        self.command.use_argument('--name={0}').formatted_with_property('name').only_if_property_is_truthy('name')
+        self.project.set_property('propname', 'value')
+        self.command\
+            .use_argument('--propname={0}')\
+            .formatted_with_property('propname')\
+            .only_if_property_is_truthy('propname')
 
-        self.assertEqual(self.command.as_string, 'command-name --name=value')
+        self.assertEqual(self.command.as_string, 'command-name --propname=value')
 
     def test_should_omit_conditional_argument_with_formatting_when_property_is_falsy(self):
-        self.project.set_property('name', 'value')
+        self.project.set_property('propname', 'value')
         self.project.set_property('falsy', None)
-        self.command.use_argument('--name={0}').formatted_with_property('name').only_if_property_is_truthy('falsy')
+        self.command.use_argument('--propname={0}')\
+            .formatted_with_property('propname')\
+            .only_if_property_is_truthy('falsy')
 
         self.assertEqual(self.command.as_string, 'command-name')
 
     def test_should_include_conditional_argument_with_truthy_formatting(self):
-        self.project.set_property('name', 'value')
-        self.command.use_argument('--name={0}').formatted_with_truthy_property('name')
+        self.project.set_property('propname', 'value')
+        self.command.use_argument('--propname={0}').formatted_with_truthy_property('propname')
 
-        self.assertEqual(self.command.as_string, 'command-name --name=value')
+        self.assertEqual(self.command.as_string, 'command-name --propname=value')
 
     def test_should_omit_conditional_argument_with_falsy_formatting(self):
-        self.project.set_property('name', None)
-        self.command.use_argument('--name={0}').formatted_with_truthy_property('name')
+        self.project.set_property('propname', None)
+        self.command.use_argument('--propname={0}').formatted_with_truthy_property('propname')
 
         self.assertEqual(self.command.as_string, 'command-name')
 

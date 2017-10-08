@@ -114,6 +114,12 @@ class MissingPropertyException(PyBuilderException):
             "No such property: %s", property)
 
 
+class LockedPropertyException(PyBuilderException):
+    def __init__(self, property):
+        super(LockedPropertyException, self).__init__(
+            "Property `%s` cannot be set. Use project attributes for this purpose.", property)
+
+
 class ProjectValidationFailedException(BuildFailedException):
     def __init__(self, validation_messages):
         BuildFailedException.__init__(

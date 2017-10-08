@@ -33,7 +33,7 @@ def init_copy_resources_plugin(project):
 
 @task
 def package(project, logger):
-    globs = project.get_mandatory_property("copy_resources_glob")
+    globs = [project.expand(glob) for glob in project.get_mandatory_property("copy_resources_glob")]
     if not globs:
         logger.warn("No resources to copy configured. Consider removing plugin.")
         return

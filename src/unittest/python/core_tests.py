@@ -24,14 +24,17 @@ from pyassert import assert_that
 
 from pybuilder.core import (Project, Logger, init, INITIALIZER_ATTRIBUTE,
                             ENVIRONMENTS_ATTRIBUTE, task, description,
-                            Dependency, RequirementsFile)
-from pybuilder.errors import MissingPropertyException
+                            Dependency, RequirementsFile, PROJECT_ATTRIBUTES_TO_PROPERTIES)
+from pybuilder.errors import MissingPropertyException, LockedPropertyException
 from test_utils import patch
 
 
 class ProjectTest(unittest.TestCase):
     def setUp(self):
         self.project = Project(basedir="/imaginary", name="Unittest")
+
+    def test_version_default(self):
+        self.assertEquals("1.0.dev0", self.project.version)
 
     @patch("pybuilder.core.os.path.basename", return_value="imaginary")
     def test_should_pick_directory_name_for_project_name_when_name_is_not_given(self, os_path_basename):
@@ -46,6 +49,13 @@ class ProjectTest(unittest.TestCase):
     def test_get_property_should_return_property_value_when_property_is_set(self):
         self.project.set_property("spam", "eggs")
         self.assertEquals("eggs", self.project.get_property("spam", "spam"))
+
+    def test_get_property_should_return_specific_project_attributes(self):
+        for attr in PROJECT_ATTRIBUTES_TO_PROPERTIES:
+            self.assertEquals(
+                getattr(self.project, attr),
+                self.project.get_property(attr)
+            )
 
     def test_has_property_should_return_false_when_property_is_not_set(self):
         self.assertFalse(self.project.has_property("spam"))
@@ -62,6 +72,11 @@ class ProjectTest(unittest.TestCase):
         self.project.set_property("spam", "eggs")
         self.project.set_property_if_unset("spam", "spam")
         self.assertEquals("eggs", self.project.get_property("spam"))
+
+    def test_set_property_raise_specific_project_attributes(self):
+        for attr in PROJECT_ATTRIBUTES_TO_PROPERTIES:
+            self.assertRaises(
+                LockedPropertyException, self.project.set_property, attr, "new_value")
 
     def test_expand_should_raise_exception_when_property_is_not_set(self):
         self.assertRaises(

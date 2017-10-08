@@ -19,8 +19,8 @@
 import unittest
 
 from pybuilder.core import Project
-from pybuilder.plugins.filter_resources_plugin import ProjectDictWrapper
-from test_utils import Mock
+from pybuilder.plugins.filter_resources_plugin import ProjectDictWrapper, filter_resources
+from test_utils import Mock, patch, ANY
 
 
 class ProjectDictWrapperTest(unittest.TestCase):
@@ -52,3 +52,24 @@ class ProjectDictWrapperTest(unittest.TestCase):
         project_mock.get_property.assert_not_called()
         logger_mock.warn.assert_called_with(
             "Skipping impossible substitution for 'n/a' - there is no matching project attribute or property.")
+
+
+class FilterResourcesTest(unittest.TestCase):
+    def setUp(self):
+        self.project = Project("basedir")
+        self.project.name = 'filter-resources'
+        self.project.version = '1.2.3'
+
+    @patch("pybuilder.plugins.filter_resources_plugin.apply_on_files")
+    def test_filter_resources_placeholders(self, apply_on_files):
+
+        self.project.set_property("filter_resources_target", "/some/dir/${name}")
+        self.project.set_property("filter_resources_glob", ['path1/${name}', 'path2/${version}'])
+
+        filter_resources(self.project, Mock())
+        apply_on_files.assert_called_with(
+            "basedir/some/dir/filter-resources",
+            ANY,
+            ['path1/filter-resources', 'path2/1.2.3'],
+            ANY,
+            ANY)

@@ -29,6 +29,7 @@ use_plugin("python.distutils")
 
 name = "integration-test"
 default_task = "publish"
+version = "1.0.dev0"
 
 @init
 def init (project):
