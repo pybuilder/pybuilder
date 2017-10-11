@@ -394,7 +394,7 @@ class ExecutionManager(object):
         try:
             Graph(dependency_edges).assert_no_cycles_present()
         except GraphHasCycles as cycles:
-            raise CircularTaskDependencyException(str(cycles))
+            raise CircularTaskDependencyException(task_names, message=str(cycles))
 
         for task_name in as_list(task_names):
             self._enqueue_task(execution_plan, task_name)
@@ -416,9 +416,10 @@ class ExecutionManager(object):
                 break
 
         if self._current_task and self._current_task in shortest_plan:
-            raise CircularTaskDependencyException("Task '%s' attempted to invoke tasks %s, "
-                                                  "resulting in plan %s, creating circular dependency" %
-                                                  (self._current_task, task_names, shortest_plan))
+            raise CircularTaskDependencyException(
+                task_names=task_names,
+                repeated_task=self._current_task,
+                execution_plan=shortest_plan)
         return shortest_plan
 
     def _enqueue_task(self, execution_plan, task_name):

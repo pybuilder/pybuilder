@@ -393,7 +393,7 @@ def main(*args):
         draw_line()
 
     successful = True
-    failure_message = None
+    failure_message = "Not handled exception. Please report PyBuilder community."
     summary = None
 
     try:
@@ -416,10 +416,10 @@ def main(*args):
             raise PyBuilderException("Build aborted")
 
     except (Exception, SystemExit) as e:
+        successful = False
         failure_message = str(e)
         if options.debug:
             traceback.print_exc(file=sys.stderr)
-        successful = False
 
     finally:
         end = datetime.datetime.now()
