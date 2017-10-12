@@ -90,9 +90,9 @@ class InstallDependencyTest(unittest.TestCase):
 
     @patch("pybuilder.pip_utils.create_constraint_file")
     @patch("pybuilder.pip_utils.get_package_version", return_value={})
-    @patch("pybuilder.pip_common._pip_disallows_insecure_packages_by_default", return_value=True)
     @patch("pybuilder.pip_utils.execute_command", return_value=0)
-    def test_should_install_dependency_insecurely_when_property_is_set(self, exec_command, _, get_package_version,
+    def test_should_install_dependency_insecurely_when_property_is_set(self, exec_command,
+                                                                       get_package_version,
                                                                        constraint_file):
         dependency = Dependency("spam")
         self.project.set_property("install_dependencies_insecure_installation", ["spam"])
@@ -105,9 +105,8 @@ class InstallDependencyTest(unittest.TestCase):
 
     @patch("pybuilder.pip_utils.create_constraint_file")
     @patch("pybuilder.pip_utils.get_package_version", return_value={})
-    @patch("pybuilder.pip_common._pip_disallows_insecure_packages_by_default", return_value=True)
     @patch("pybuilder.pip_utils.execute_command", return_value=0)
-    def test_should_install_dependency_securely_when_property_is_not_set_to_dependency(self, exec_command, _,
+    def test_should_install_dependency_securely_when_property_is_not_set_to_dependency(self, exec_command,
                                                                                        get_package_version,
                                                                                        constraint_file):
         dependency = Dependency("spam")
@@ -123,22 +122,9 @@ class InstallDependencyTest(unittest.TestCase):
 
     @patch("pybuilder.pip_utils.create_constraint_file")
     @patch("pybuilder.pip_utils.get_package_version", return_value={})
-    @patch("pybuilder.pip_common._pip_disallows_insecure_packages_by_default", return_value=False)
     @patch("pybuilder.pip_utils.execute_command", return_value=0)
-    def test_should_not_use_insecure_flags_when_pip_version_is_too_low(self, exec_command, _, get_package_version,
-                                                                       constraint_file):
-        dependency = Dependency("spam")
-        self.project.set_property("install_dependencies_insecure_installation", ["spam"])
-
-        install_dependency(self.logger, self.project, dependency)
-
-        exec_command(
-            PIP_EXEC_STANZA + ["install", 'spam'], ANY, env=ANY, shell=False)
-
-    @patch("pybuilder.pip_utils.create_constraint_file")
-    @patch("pybuilder.pip_utils.get_package_version", return_value={})
-    @patch("pybuilder.pip_utils.execute_command", return_value=0)
-    def test_should_install_dependency_using_custom_index_url(self, exec_command, get_package_version,
+    def test_should_install_dependency_using_custom_index_url(self, exec_command,
+                                                              get_package_version,
                                                               constraint_file):
         self.project.set_property("install_dependencies_index_url", "some_index_url")
         dependency = Dependency("spam")
