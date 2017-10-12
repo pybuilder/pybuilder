@@ -14,6 +14,7 @@ branches:
   only:
   - master
   - doc/sphinxdoc
+  - 0.11
 before_script:
 - pip install coveralls
 script:
