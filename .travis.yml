@@ -1,19 +1,20 @@
 sudo: false
 language: python
 python:
-- '2.6'
 - '2.7'
-- '3.3'
 - '3.4'
 - '3.5'
 - '3.6'
-- pypy
+- '3.7-dev'
+- 'pypy'
+- 'pypy3'
 addons:
     apt_packages: [ pandoc ]
 branches:
   only:
   - master
   - doc/sphinxdoc
+  - 0.11
 before_script:
 - pip install coveralls
 script:
@@ -28,6 +29,6 @@ deploy:
   on:
     branch: master
     repo: pybuilder/pybuilder
-    python: '3.5'
+    python: '3.6'
   password:
     secure: QH11Nk1Mv6KVRr5L4z9dJfzDDxyUjkLJURWsJxYG0bGA8zxp7Tnfo1J5XDNRvT2bAxXSx0v5+C0y+0KE4z44z5wvE/hxHx9k+3PbETb1q1F1sVtWeA+i4cm7T7d4dh/9YfyfimcHNR/9U52qBpdSVjXqXcSzMzfgzhgFniGGJIU=

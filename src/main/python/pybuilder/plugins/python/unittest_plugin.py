@@ -39,12 +39,7 @@ use_plugin("python.core")
 
 @init
 def init_test_source_directory(project):
-    if sys.version_info[:2] <= (2, 6):
-        # Support for Python 2.6 was dropped in unittest-xml-reporting
-        # version 2.0, so use an older version.
-        project.plugin_depends_on("unittest-xml-reporting<2.0")
-    else:
-        project.plugin_depends_on("unittest-xml-reporting")
+    project.plugin_depends_on("unittest-xml-reporting", "~=2.0")
 
     project.set_property_if_unset("dir_source_unittest_python", "src/unittest/python")
     project.set_property_if_unset("unittest_module_glob", "*_tests")

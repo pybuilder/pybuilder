@@ -36,7 +36,7 @@ use_plugin("analysis")
 
 @init
 def init_coverage_properties(project):
-    project.plugin_depends_on("coverage", "~=4.2")
+    project.plugin_depends_on("coverage", "~=4.4")
 
     project.set_property_if_unset("coverage_threshold_warn", 70)
     project.set_property_if_unset("coverage_branch_threshold_warn", 0)

@@ -10,7 +10,6 @@ PyBuilder
 [![Ready in backlog](https://badge.waffle.io/pybuilder/pybuilder.png?label=ready&title=Ready)](https://waffle.io/pybuilder/pybuilder)
 [![Open bugs](https://badge.waffle.io/pybuilder/pybuilder.png?label=bug&title=Open%20Bugs)](https://waffle.io/pybuilder/pybuilder)
 
-
 PyBuilder is a software build tool written in 100% pure Python, mainly
 targeting Python applications.
 
@@ -18,7 +17,7 @@ PyBuilder is based on the concept of dependency based programming, but it also
 comes with a powerful plugin mechanism, allowing the construction of build life
 cycles similar to those known from other famous (Java) build tools.
 
-PyBuilder is running on the following versions of Python: 2.6, 2.7, 3.3, 3.4, 3.5 and PyPy.
+PyBuilder is running on the following versions of Python: 2.7, 3.4, 3.5, 3.6, 3.7, PyPy 2.7, and PyPy 3.5.
 
 See the [Travis Build](https://travis-ci.org/pybuilder/pybuilder) for version specific output.
 
