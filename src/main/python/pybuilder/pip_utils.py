@@ -110,11 +110,11 @@ def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=Fals
         options.append("-t")
         options.append(target_dir)
 
-    if constraint_file and pip_common._pip_supports_constraints():
+    if constraint_file:
         options.append("-c")
         options.append(constraint_file)
 
-    if pip_common._pip_disallows_insecure_packages_by_default() and insecure_installs:
+    if insecure_installs:
         for insecure_install in insecure_installs:
             arguments_for_insecure_installation = ["--allow-unverified", insecure_install,
                                                    "--allow-external", insecure_install]

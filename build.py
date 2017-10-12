@@ -76,9 +76,9 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            ]
 url = "http://pybuilder.github.io"
 license = "Apache License"
-version = "0.11.11.dev"
+version = "0.12.0.dev"
 
-requires_python = ">=2.6,!=3.0,!=3.1,!=3.2,<3.7"
+requires_python = ">=2.7,!=3.0,!=3.1,!=3.2,!=3.3,<3.8"
 
 default_task = ["install_dependencies", "analyze", "publish"]
 
@@ -91,13 +91,11 @@ def initialize(project):
     project.build_depends_on("pyfix")  # required test framework
     project.build_depends_on("pyassert")
     project.build_depends_on("pygments")
-    if sys.version_info[0:2] == (2, 6):
-        project.build_depends_on("importlib")  # for fluentmock
 
     project.depends_on("tblib")
-    project.depends_on("pip", ">=7.1")
-    project.depends_on("setuptools", "~=35.0")
-    project.depends_on("wheel")
+    project.depends_on("pip", "~=9.0")
+    project.depends_on("setuptools", "~=36.5")
+    project.depends_on("wheel", "~=0.30")
 
     project.set_property("verbose", True)
 
@@ -142,13 +140,13 @@ def initialize(project):
         'Programming Language :: Python',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
-        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',
