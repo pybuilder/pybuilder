@@ -64,15 +64,15 @@ def execute_pylint(project, logger):
             module_name = line.split(' ')[2]
 
         if line.startswith('E:') or line.startswith('F:'):
-            logger.error('Pylint: Module {}: '.format(module_name) + line)
+            logger.error('Pylint: Module %s: ' % module_name + line)
             errors += 1
 
         if show_warning_messages and line.startswith('W:'):
-            logger.warn('Pylint: Module {}: '.format(module_name) + line)
+            logger.warn('Pylint: Module %s: ' % module_name + line)
             warnings += 1
 
         if show_info_messages and (line.startswith('C:') or line.startswith('R:')):
-            logger.info('Pylint: Module {}: '.format(module_name) + line)
+            logger.info('Pylint: Module %s: ' % module_name + line)
 
         if line.startswith('Your code has been rated at '):
             pylint_score = float(line.split(' ')[6].split('/')[0])
@@ -100,7 +100,6 @@ def execute_pylint(project, logger):
                     "Pylint: Building failed due to Pylint score({}) less then expected({})".
                     format(pylint_score, pylint_expected_score)
                 )
-
     if pylint_expected_score_change and pylint_change < pylint_expected_score_change:
         raise BuildFailedException(
             "Pylint: Building failed due to Pylint score decrease({}) higher then allowed({})".
