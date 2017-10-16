@@ -64,7 +64,8 @@ class DiscoverAffectedFilesTest(unittest.TestCase):
         self.assertEqual(discover_python_files.call_args_list,
                          [call('dir_source_main_python'),
                           call('dir_source_unittest_python'),
-                          call('dir_source_integrationtest_python')])
+                          call('dir_source_integrationtest_python'),
+                          call('dir_source_pytest_python')])
 
     @patch('pybuilder.plugins.python.python_plugin_helper.discover_python_files')
     @patch('pybuilder.plugins.python.python_plugin_helper.discover_files_matching')
@@ -94,7 +95,8 @@ class DiscoverAffectedFilesTest(unittest.TestCase):
 
         self.assertEqual(discover_python_files.call_args_list,
                          [call('dir_source_main_python'),
-                          call('dir_source_unittest_python')])
+                          call('dir_source_unittest_python'),
+                          call('dir_source_pytest_python')])
 
     @patch('pybuilder.plugins.python.python_plugin_helper.discover_python_files')
     def test_should_discover_source_files_when_test_sources_are_included_and_only_integrationtests(self,
@@ -112,7 +114,8 @@ class DiscoverAffectedFilesTest(unittest.TestCase):
 
         self.assertEqual(discover_python_files.call_args_list,
                          [call('dir_source_main_python'),
-                          call('dir_source_integrationtest_python')])
+                          call('dir_source_integrationtest_python'),
+                          call('dir_source_pytest_python')])
 
     @patch('pybuilder.plugins.python.python_plugin_helper.discover_python_files')
     def test_should_discover_source_files_when_test_sources_are_included_and_no_tests(self, discover_python_files):
@@ -152,9 +155,14 @@ class DiscoverAffectedDirsTest(unittest.TestCase):
                           call('dir_source_unittest_python'),
                           call('dir_source_unittest_python'),
                           call('dir_source_integrationtest_python'),
-                          call('dir_source_integrationtest_python')])
+                          call('dir_source_integrationtest_python'),
+                          call('dir_source_pytest_python'),
+                          call('dir_source_pytest_python')])
         self.assertEquals(files,
-                          ['dir_source_main_python', 'dir_source_unittest_python', 'dir_source_integrationtest_python'])
+                          ['dir_source_main_python',
+                           'dir_source_unittest_python',
+                           'dir_source_integrationtest_python',
+                           'dir_source_pytest_python'])
 
     @patch('pybuilder.plugins.python.python_plugin_helper.os.path.isdir', return_value=True)
     def test_should_discover_source_dirs_when_test_sources_are_included_no_unittests(self, _):
@@ -169,9 +177,30 @@ class DiscoverAffectedDirsTest(unittest.TestCase):
                          [call('dir_source_main_python'),
                           call('dir_source_unittest_python'),
                           call('dir_source_integrationtest_python'),
-                          call('dir_source_integrationtest_python')])
+                          call('dir_source_integrationtest_python'),
+                          call('dir_source_pytest_python'),
+                          call('dir_source_pytest_python')])
         self.assertEquals(files,
-                          ['dir_source_main_python', 'dir_source_integrationtest_python'])
+                          ['dir_source_main_python', 'dir_source_integrationtest_python', 'dir_source_pytest_python'])
+
+    @patch('pybuilder.plugins.python.python_plugin_helper.os.path.isdir', return_value=True)
+    def test_should_discover_source_dirs_when_test_sources_are_included_no_pytests(self, _):
+        project = Mock()
+
+        project.get_property.side_effect = lambda \
+            _property: _property if _property != 'dir_source_pytest_python' else None
+
+        files = discover_affected_dirs(True, False, project)
+
+        self.assertEqual(project.get_property.call_args_list,
+                         [call('dir_source_main_python'),
+                          call('dir_source_unittest_python'),
+                          call('dir_source_unittest_python'),
+                          call('dir_source_integrationtest_python'),
+                          call('dir_source_integrationtest_python'),
+                          call('dir_source_pytest_python')])
+        self.assertEquals(files,
+                          ['dir_source_main_python', 'dir_source_unittest_python', 'dir_source_integrationtest_python'])
 
     @patch('pybuilder.plugins.python.python_plugin_helper.os.path.isdir', return_value=True)
     def test_should_discover_source_dirs_when_test_sources_are_included_no_integrationtests(self, _):
@@ -186,9 +215,11 @@ class DiscoverAffectedDirsTest(unittest.TestCase):
                          [call('dir_source_main_python'),
                           call('dir_source_unittest_python'),
                           call('dir_source_unittest_python'),
-                          call('dir_source_integrationtest_python')])
+                          call('dir_source_integrationtest_python'),
+                          call('dir_source_pytest_python'),
+                          call('dir_source_pytest_python')])
         self.assertEquals(files,
-                          ['dir_source_main_python', 'dir_source_unittest_python'])
+                          ['dir_source_main_python', 'dir_source_unittest_python', 'dir_source_pytest_python'])
 
     @patch('pybuilder.plugins.python.python_plugin_helper.os.path.isdir', return_value=True)
     def test_should_discover_source_dirs_when_script_sources_are_included(self, _):
