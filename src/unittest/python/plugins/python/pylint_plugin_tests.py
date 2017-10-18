@@ -15,7 +15,6 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-import os
 from logging import Logger
 from tempfile import NamedTemporaryFile
 from unittest import TestCase
@@ -29,6 +28,7 @@ from pybuilder.plugins.python.pylint_plugin import (check_pylint_availability,
 from test_utils import Mock, patch
 
 
+@patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
 class PylintPluginTests(TestCase):
 
     def setUp(self):
@@ -37,59 +37,60 @@ class PylintPluginTests(TestCase):
         self.mock_logger = Mock(Logger)
 
     @patch('pybuilder.plugins.python.pylint_plugin.assert_can_execute')
-    def test_should_check_that_pylint_can_be_executed(self, mock_assert_can_execute):
+    def test_should_check_that_pylint_can_be_executed(self, mock_assert_can_execute, execute_tool):
         check_pylint_availability(self.mock_logger)
         expected_command_line = ('pylint',)
         mock_assert_can_execute.assert_called_with(expected_command_line, 'pylint', 'plugin python.pylint')
 
-    def test_should_run_pylint_with_default_options(self):
+    def test_should_run_pylint_with_default_options(self, execute_tool):
         self._make_temp_test_file('E:476, 8: Error message')
-        self._run_execute_tool().assert_called_with(self.project, "pylint", ["pylint"] + DEFAULT_PYLINT_OPTIONS, True)
+        self._run_execute_tool(execute_tool).assert_called_with(
+            self.project, "pylint", ["pylint"] + DEFAULT_PYLINT_OPTIONS, True
+        )
 
-    def test_should_run_pylint_with_custom_options(self):
+    def test_should_run_pylint_with_custom_options(self, execute_tool):
         self._make_temp_test_file('E:476, 8: Error message')
         self.project.set_property("pylint_options", ["--test", "-f", "--x=y"])
-        self._run_execute_tool().assert_called_with(self.project, "pylint", ["pylint", "--test", "-f", "--x=y"], True)
+        self._run_execute_tool(execute_tool).assert_called_with(
+            self.project, "pylint", ["pylint", "--test", "-f", "--x=y"], True
+        )
 
-    def test_should_show_error_message_in_pyb_logs(self):
+    def test_should_show_error_message_in_pyb_logs(self, execute_tool):
         self._make_temp_test_file('E:476, 8: Error message')
-        self._run_execute_tool()
+        self._run_execute_tool(execute_tool)
         self.mock_logger.error.assert_called_with('Pylint: Module : E:476, 8: Error message')
 
-    def test_should_show_warning_message_in_pyb_logs(self):
+    def test_should_show_warning_message_in_pyb_logs(self, execute_tool):
         self._make_temp_test_file('W:2476, 8: Warning message')
         self.project.set_property('pylint_show_warning_messages', True)
-        self._run_execute_tool()
+        self._run_execute_tool(execute_tool)
         self.mock_logger.warn.assert_called_with('Pylint: Module : W:2476, 8: Warning message')
 
-    def test_should_break_build_on_errors(self):
+    def test_should_break_build_on_errors(self, execute_tool):
         self._make_temp_test_file('E:2476, 8: Warning message')
         self.project.set_property('pylint_break_build_on_errors', True)
         with self.assertRaises(BuildFailedException):
-            self._run_execute_tool()
+            self._run_execute_tool(execute_tool)
 
-    def test_should_break_build_on_too_low_pylint_score(self):
+    def test_should_break_build_on_too_low_pylint_score(self, execute_tool):
         self._make_temp_test_file('Your code has been rated at 4.60/10 (previous run: 4.60/10, +0.00)')
         self.project.set_property('pylint_score_threshold', 5.0)
         with self.assertRaises(BuildFailedException):
-            self._run_execute_tool()
+            self._run_execute_tool(execute_tool)
 
-    def test_should_break_build_on_too_high_pylint_score_decrease(self):
+    def test_should_break_build_on_too_high_pylint_score_decrease(self, execute_tool):
         self._make_temp_test_file('Your code has been rated at 4.60/10 (previous run: 6.60/10, -2.00)')
         self.project.set_property('pylint_score_change_threshold', -1.0)
         with self.assertRaises(BuildFailedException):
-            self._run_execute_tool()
+            self._run_execute_tool(execute_tool)
 
-    @staticmethod
-    def _make_temp_test_file(test_file_content):
-        temp_file = NamedTemporaryFile(delete=False)
-        temp_file.name = 'test.txt'
-        with open('test.txt', 'w') as f:
+    def _make_temp_test_file(self, test_file_content):
+        self.temp_file = NamedTemporaryFile()
+        with open(self.temp_file.name, 'w') as f:
             f.write(test_file_content)
+        return self.temp_file
 
-    @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
     def _run_execute_tool(self, execute_tool):
-        execute_tool.return_value = (0, 'test.txt')
+        execute_tool.return_value = (0, self.temp_file.name)
         execute_pylint(self.project, self.mock_logger)
-        os.remove('test.txt')
         return execute_tool
