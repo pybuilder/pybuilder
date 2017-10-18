@@ -44,14 +44,14 @@ class PylintPluginTests(TestCase):
 
     def test_should_run_pylint_with_default_options(self, mock_execute_tool):
         self._create_pylint_log_file('E:476, 8: Error message')
-        execute_tool = self._run_execute_tool(mock_execute_tool)
-        execute_tool.assert_called_with(self.project, "pylint", ["pylint"] + DEFAULT_PYLINT_OPTIONS, True)
+        self._run_execute_tool(mock_execute_tool)
+        mock_execute_tool.assert_called_with(self.project, "pylint", ["pylint"] + DEFAULT_PYLINT_OPTIONS, True)
 
     def test_should_run_pylint_with_custom_options(self, mock_execute_tool):
         self._create_pylint_log_file('E:476, 8: Error message')
         self.project.set_property("pylint_options", ["--test", "-f", "--x=y"])
-        execute_tool = self._run_execute_tool(mock_execute_tool)
-        execute_tool.assert_called_with(self.project, "pylint", ["pylint", "--test", "-f", "--x=y"], True)
+        self._run_execute_tool(mock_execute_tool)
+        mock_execute_tool.assert_called_with(self.project, "pylint", ["pylint", "--test", "-f", "--x=y"], True)
 
     def test_should_show_error_message_in_pyb_logs(self, mock_execute_tool):
         self._create_pylint_log_file('E:476, 8: Error message')
@@ -89,9 +89,7 @@ class PylintPluginTests(TestCase):
         self.temp_file = NamedTemporaryFile()
         with open(self.temp_file.name, 'w') as f:
             f.write(test_file_content)
-        return self.temp_file
 
     def _run_execute_tool(self, mock_execute_tool):
         mock_execute_tool.return_value = (0, self.temp_file.name)
         execute_pylint(self.project, self.mock_logger)
-        return mock_execute_tool
