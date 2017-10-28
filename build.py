@@ -109,7 +109,7 @@ def initialize(project):
     # Issue #284
     project.set_property("integrationtest_inherit_environment", True)
 
-    project.set_property('flake8_break_build', True)
+    project.set_property('flake8_break_build', False)
     project.set_property('flake8_include_test_sources', True)
     project.set_property('flake8_include_scripts', True)
     project.set_property('flake8_max_line_length', 130)
