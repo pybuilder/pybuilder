@@ -53,40 +53,8 @@ use_plugin("python.distutils")
 default_task = "publish"
 ```
 
-See the [PyBuilder homepage](http://pybuilder.github.com/) for more details.
-
-## Plugins
-
-PyBuilder provides a lot of plugins out of the box that utilize tools and libraries commonly used in Python projects:
-
-* [python.coverage](http://pybuilder.github.com/documentation/plugins.html#Measuringunittestcoverage) - Uses the standard [coverage](https://warehouse.python.org/project/coverage/) module to calculate unit test line coverage.
-* [python.distutils](http://pybuilder.github.com/documentation/plugins.html#BuildingaPythonpackage) - Provides support to generate and use [setup.py](https://warehouse.python.org/project/setuptools/) files.
-* **python.django** - Provides support for developing [Django](https://www.djangoproject.com/) applications.
-* [python.frosted](http://pybuilder.github.io/documentation/plugins.html#Frostedplugin) - Lint source files with [frosted](https://github.com/timothycrosley/frosted)
-* [python.flake8](http://pybuilder.github.io/documentation/plugins.html#Flake8plugin) - Provides support for [flake8](https://warehouse.python.org/project/flake8/)
-* [python.pep8](http://pybuilder.github.io/documentation/plugins.html#Pep8plugin) - Provides support for [pep8](https://warehouse.python.org/project/pep8/)
-* [python.install_dependencies](http://pybuilder.github.io/documentation/plugins.html#Installingdependencies) - Installs the projects build and runtime dependencies using `pip`
-* [python.pychecker](http://pybuilder.github.io/documentation/plugins.html#Pycheckerplugin) - Provides support for [pychecker](http://pychecker.sourceforge.net/)
-* [python.Pydev](http://pybuilder.github.io/documentation/plugins.html#ProjectfilesforEclipsePyDev) - Generates project files to import projects into [Eclipse PyDev](http://pydev.org/)
-* [python.PyCharm](http://pybuilder.github.io/documentation/plugins.html#ProjectfilesforJetbrainsPyCharm) - Generates project files to import projects into [Jetbrains PyCharm](http://www.jetbrains.com/pycharm/)
-* [python.pylint](http://pybuilder.github.io/documentation/plugins.html#Pylintplugin) - Executes [pylint](https://bitbucket.org/logilab/pylint/) on your sources.
-* [python.pymetrics](http://pybuilder.github.io/documentation/plugins.html#Pymetricsplugin) - Calculates several metrics using [pymetrics](http://sourceforge.net/projects/pymetrics/)
-* [python.unittest](http://pybuilder.github.com/documentation/plugins.html#RunningPythonUnittests) - Executes [unittest](http://docs.python.org/library/unittest.html) test cases
-* [python.integrationtest](http://pybuilder.github.com/documentation/plugins.html#RunningPythonIntegrationTests) - Executes python scripts as integrations tests
-* [python.pytddmon](http://pybuilder.github.io/documentation/plugins.html#Visualfeedbackfortests) - Provides visual feedback about unit tests through [pytddmon](http://pytddmon.org/)
-* [python.cram](http://pybuilder.github.io/documentation/plugins.html#RunningCramtests) - Runs [cram](https://warehouse.python.org/project/cram/) tests
-* [python.sphinx](http://pybuilder.github.io/documentation/plugins.html#Creatingdocumentationwithsphinx) - Build your documentation with [sphinx](http://sphinx-doc.org/)
-* [python.sonarqube](http://pybuilder.github.io/documentation/plugins.html#SonarQubeintegration) - Analyze your project with [SonarQube](http://www.sonarqube.org/).
-* python.snakefood - Analyze your code dependencies with [snakefood](https://bitbucket.org/blais/snakefood).
-
-In addition, a few common plugins are provided:
-
-* [copy_resources](http://pybuilder.github.io/documentation/plugins.html#Copyingresourcesintoadistribution) - Copies files.
-* [filter_resources](http://pybuilder.github.io/documentation/plugins.html#Filteringfiles) - Filters files by replacing tokens with configuration values.
-* [source_distribution](http://pybuilder.github.io/documentation/plugins.html#Creatingasourcedistribution) - Bundles a source distribution for shipping.
-
-External plugins:
-* [pybuilder_aws_plugin](https://github.com/immobilienscout24/pybuilder_aws_plugin) - handle AWS functionality
+See the [PyBuilder homepage](http://pybuilder.github.com/) for more details and
+a list of plugins.
 
 ## Release Notes
 
