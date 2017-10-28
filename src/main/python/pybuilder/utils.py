@@ -306,13 +306,13 @@ def fork_process(logger, group=None, target=None, name=None, args=(), kwargs={})
         ex = tb = None
         try:
             send_value = (target(*args, **kwargs), None, None)
-        except:
+        except Exception:
             _, ex, tb = sys.exc_info()
             send_value = (None, ex, tb)
 
         try:
             q.put(send_value)
-        except:
+        except Exception:
             _, send_ex, send_tb = sys.exc_info()
             e_out = Exception(str(send_ex), send_tb, None if ex is None else str(ex), tb)
             q.put(e_out)
