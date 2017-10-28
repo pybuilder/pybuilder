@@ -30,8 +30,8 @@ PyBuilder is available using pip:
     $ pip install pybuilder
 
 For development builds use:
-    
-    $ pip install --pre pybuilder 
+
+    $ pip install --pre pybuilder
 
 See the [Cheeseshop page](https://warehouse.python.org/project/pybuilder/) for more
 information.
