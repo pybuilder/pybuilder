@@ -85,6 +85,7 @@ In addition, a few common plugins are provided:
 
 External plugins:
 * [pybuilder_aws_plugin](https://github.com/immobilienscout24/pybuilder_aws_plugin) - handle AWS functionality
+* [pybuilder_cram_console_scripts](https://github.com/AlexeySanko/pybuilder_cram_console_scripts) - test console scripts with cram too
 
 ## Release Notes
 
