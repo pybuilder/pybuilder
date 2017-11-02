@@ -82,6 +82,7 @@ if __name__ == '__main__':
         url = $url,
         scripts = $scripts,
         packages = $packages,
+        package_dir = $package_dir,
         namespace_packages = $namespace_packages,
         py_modules = $modules,
         classifiers = $classifiers,
@@ -174,6 +175,7 @@ def render_setup_script(project):
         "url": as_str(default(project.url)),
         "scripts": build_scripts_string(project),
         "packages": build_packages_string(project),
+        "package_dir": build_package_dir_string(project),
         "namespace_packages": build_namespace_packages_string(project),
         "modules": build_modules_string(project),
         "classifiers": build_classifiers_string(project),
@@ -465,6 +467,10 @@ def build_namespace_packages_string(project):
     return build_string_from_array([pkg for pkg in project.explicit_namespaces])
 
 
+def build_package_dir_string(project):
+    return build_string_from_dict(project.package_dir)
+
+
 def build_packages_string(project):
     return build_string_from_array([pkg for pkg in project.list_packages()])
 
@@ -549,6 +555,8 @@ def build_string_from_array(arr, indent=12):
 
 
 def build_string_from_dict(d, indent=12):
+    if not d:
+        return "{}"
     element_separator = ",\n"
     element_separator += " " * indent
     map_elements = []

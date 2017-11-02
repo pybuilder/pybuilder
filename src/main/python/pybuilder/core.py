@@ -324,6 +324,7 @@ class Project(object):
         self._requires_python = ""
         self._obsoletes = []
         self._explicit_namespaces = []
+        self._package_dir = {}
         self._properties = {"verbose": False}
         self._install_dependencies = set()
         self._build_dependencies = set()
@@ -373,6 +374,14 @@ class Project(object):
     @explicit_namespaces.setter
     def explicit_namespaces(self, value):
         self._explicit_namespaces = as_list(value)
+
+    @property
+    def package_dir(self):
+        return self._package_dir
+
+    @package_dir.setter
+    def package_dir(self, value):
+        self._package_dir = dict(value)
 
     @property
     def dist_version(self):
