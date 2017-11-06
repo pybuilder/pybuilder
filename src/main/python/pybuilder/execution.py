@@ -296,7 +296,7 @@ class ExecutionManager(object):
                     number_of_actions += 1
 
             task.execute(self.logger, keyword_arguments)
-        except:
+        except Exception:
             if not has_teardown_tasks:
                 raise
             else:
@@ -307,7 +307,7 @@ class ExecutionManager(object):
                 if not task_error or action.teardown:
                     if self.execute_action(action, keyword_arguments):
                         number_of_actions += 1
-            except:
+            except Exception:
                 if not has_teardown_tasks:
                     raise
                 elif task_error:
