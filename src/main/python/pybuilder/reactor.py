@@ -102,18 +102,12 @@ class Reactor(object):
             project_directory, project_descriptor)
 
         self.logger.debug("Loading project module from %s", project_descriptor)
-
         self.project = Project(basedir=project_directory)
-
-        self.project_module = self.load_project_module(project_descriptor)
-
-        self.apply_project_attributes()
         self.override_properties(property_overrides)
-
+        self.project_module = self.load_project_module(project_descriptor)
+        self.apply_project_attributes()
         self.logger.debug("Have loaded plugins %s", ", ".join(self._plugins))
-
         self.collect_tasks_and_actions_and_initializers(self.project_module)
-
         self.execution_manager.resolve_dependencies(exclude_optional_tasks, exclude_tasks, exclude_all_optional)
 
     def build(self, tasks=None, environments=None):
