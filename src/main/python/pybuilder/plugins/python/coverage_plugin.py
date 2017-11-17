@@ -335,6 +335,10 @@ def _is_module_essential(module_name, sys_packages, sys_modules):
     if module_name in sys_modules:
         return True
 
+    # Issue 523: Coverage 4.4.2 breaks without this
+    if module_name == "__main__":
+        return True
+
     # Essential since we're in a fork for communicating exceptions back
     sys_packages.append("tblib")
     sys_packages.append("pybuilder.errors")
