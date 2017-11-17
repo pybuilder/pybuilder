@@ -36,7 +36,7 @@ use_plugin("analysis")
 
 @init
 def init_coverage_properties(project):
-    project.plugin_depends_on("coverage", "~=4.4,<4.4.2")
+    project.plugin_depends_on("coverage", "~=4.4")
 
     project.set_property_if_unset("coverage_threshold_warn", 70)
     project.set_property_if_unset("coverage_branch_threshold_warn", 0)
@@ -333,6 +333,10 @@ def _is_module_essential(module_name, sys_packages, sys_modules):
         return True
 
     if module_name in sys_modules:
+        return True
+
+    # Issue 523: Coverage 4.4.2 breaks without this
+    if module_name == "__main__":
         return True
 
     # Essential since we're in a fork for communicating exceptions back
