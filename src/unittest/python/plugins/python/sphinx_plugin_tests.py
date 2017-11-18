@@ -21,6 +21,7 @@ from logging import Logger
 from unittest import TestCase
 
 from pybuilder.core import Project, Author
+from pybuilder.errors import BuildFailedException
 from pybuilder.plugins.python.sphinx_plugin import (assert_sphinx_is_available,
                                                     assert_sphinx_quickstart_is_available,
                                                     get_sphinx_build_command,
@@ -253,7 +254,7 @@ class SphinxBuildCommandTests(TestCase):
     @patch("pybuilder.plugins.python.sphinx_plugin.rmtree")
     @patch("pybuilder.plugins.python.sphinx_plugin.exists")
     @patch("pybuilder.plugins.python.sphinx_plugin.mkdir")
-    @patch("pybuilder.plugins.python.sphinx_plugin.symlink")
+    @patch("pybuilder.plugins.python.sphinx_plugin.os.symlink")
     @patch("pybuilder.plugins.python.sphinx_plugin.execute_command")
     def test_sphinx_pyb_quickstart_generate(self,
                                             execute_command,
@@ -295,6 +296,18 @@ from sphinx_pyb_conf import *
         symlink.assert_called_with("../basedir/dir_target/sphinx_pyb/apidoc",
                                    "basedir/sphinx_source_dir/apidoc",
                                    target_is_directory=True)
+
+    @patch("pybuilder.plugins.python.sphinx_plugin.sphinx_quickstart_generate")
+    def test_sphinx_pyb_quickstart_generate_raise_symlink_unavailable(self, sphinx_quickstart_generate):
+        import os
+        delattr(os, 'symlink')
+        self.assertRaises(
+            BuildFailedException,
+            sphinx_pyb_quickstart_generate,
+            self.project,
+            Mock()
+        )
+        self.assertFalse(sphinx_quickstart_generate.called)
 
     @patch("pybuilder.plugins.python.sphinx_plugin.open", create=True)
     @patch("pybuilder.plugins.python.sphinx_plugin.rmtree")
