@@ -77,14 +77,14 @@ class InstallDependenciesTest(unittest.TestCase):
             initialize_distutils_plugin(self.project)
 
         for property_name, property_value in expected_properties.items():
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("distutils_commands"), ["foo", "bar"])
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("distutils_issue8876_workaround_enabled"), True)
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("distutils_classifiers"), ["Development Status :: 3 - Beta",
                                                                      "Programming Language :: Rust"])
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("distutils_use_setuptools"), False)
 
     def test_should_return_empty_string_when_no_dependency_is_given(self):
@@ -376,7 +376,7 @@ class RenderSetupScriptTest(PyBuilderTestCase):
     def test_should_render_build_scripts_properly_when_dir_scripts_is_provided(self):
         self.project.set_property("dir_dist_scripts", 'scripts')
         actual_build_script = build_scripts_string(self.project)
-        self.assertEquals(
+        self.assertEqual(
             "[\n            'scripts/spam',\n"
             "            'scripts/eggs'\n"
             "        ]", actual_build_script)
@@ -525,20 +525,20 @@ if __name__ == '__main__':
                                                                 "prerelease = zest.releaser.prerelease:main"])
 
         actual_setup_script = build_entry_points_string(self.project)
-        self.assertEquals("{\n"
-                          "            'console_scripts': [\n"
-                          "                'release = zest.releaser.release:main',\n"
-                          "                'prerelease = zest.releaser.prerelease:main'\n"
-                          "            ]\n"
-                          "        }", actual_setup_script)
+        self.assertEqual("{\n"
+                         "            'console_scripts': [\n"
+                         "                'release = zest.releaser.release:main',\n"
+                         "                'prerelease = zest.releaser.prerelease:main'\n"
+                         "            ]\n"
+                         "        }", actual_setup_script)
 
     def test_should_render_console_script_when_property_is_set(self):
         self.project.set_property("distutils_console_scripts", ["release = zest.releaser.release:main"])
 
         actual_setup_script = build_entry_points_string(self.project)
-        self.assertEquals("{\n"
-                          "            'console_scripts': ['release = zest.releaser.release:main']\n"
-                          "        }", actual_setup_script)
+        self.assertEqual("{\n"
+                         "            'console_scripts': ['release = zest.releaser.release:main']\n"
+                         "        }", actual_setup_script)
 
     def test_should_render_entry_points_when_property_is_set(self):
         self.project.set_property("distutils_entry_points", {'foo_entry': ["release = zest.releaser.release:main",
@@ -547,34 +547,34 @@ if __name__ == '__main__':
                                                              })
 
         actual_setup_script = build_entry_points_string(self.project)
-        self.assertEquals("{\n"
-                          "            'bar_entry': ['prerelease = zest.releaser.prerelease:main'],\n"
-                          "            'foo_entry': [\n"
-                          "                'release = zest.releaser.release:main',\n"
-                          "                'release1 = zest.releaser.release1:main'\n"
-                          "            ]\n"
-                          "        }", actual_setup_script)
+        self.assertEqual("{\n"
+                         "            'bar_entry': ['prerelease = zest.releaser.prerelease:main'],\n"
+                         "            'foo_entry': [\n"
+                         "                'release = zest.releaser.release:main',\n"
+                         "                'release1 = zest.releaser.release1:main'\n"
+                         "            ]\n"
+                         "        }", actual_setup_script)
 
     def test_should_render_setup_keywords_when_property_is_set(self):
         self.project.set_property("distutils_setup_keywords", "a b c")
         actual_setup_script = build_setup_keywords(self.project)
-        self.assertEquals("'a b c'", actual_setup_script)
+        self.assertEqual("'a b c'", actual_setup_script)
 
         self.project.set_property("distutils_setup_keywords", ["a"])
         actual_setup_script = build_setup_keywords(self.project)
-        self.assertEquals("'a'", actual_setup_script)
+        self.assertEqual("'a'", actual_setup_script)
 
         self.project.set_property("distutils_setup_keywords", ("a b"))
         actual_setup_script = build_setup_keywords(self.project)
-        self.assertEquals("'a b'", actual_setup_script)
+        self.assertEqual("'a b'", actual_setup_script)
 
     def test_should_render_single_entry_pointproperty_is_set(self):
         self.project.set_property("distutils_entry_points", {'foo_entry': "release = zest.releaser.release:main"})
 
         actual_setup_script = build_entry_points_string(self.project)
-        self.assertEquals("{\n"
-                          "            'foo_entry': ['release = zest.releaser.release:main']\n"
-                          "        }", actual_setup_script)
+        self.assertEqual("{\n"
+                         "            'foo_entry': ['release = zest.releaser.release:main']\n"
+                         "        }", actual_setup_script)
 
     def test_should_fail_with_entry_points_and_console_scripts_set(self):
         self.project.set_property("distutils_console_scripts", object())
@@ -584,7 +584,7 @@ if __name__ == '__main__':
 
     def test_should_render_explicit_namespaces(self):
         actual_setup_script = build_namespace_packages_string(self.project)
-        self.assertEquals("""[
+        self.assertEqual("""[
             'foo.bar',
             'quick.brown.fox'
         ]""", actual_setup_script)
@@ -597,11 +597,11 @@ if __name__ == '__main__':
         self.project.depends_on_requirements("requirements.txt")
 
         actual_setup_script = build_install_dependencies_string(self.project)
-        self.assertEquals("[\n"
-                          "            'sometool',\n"
-                          "            'foo',\n"
-                          "            'bar'\n"
-                          "        ]", actual_setup_script)
+        self.assertEqual("[\n"
+                         "            'sometool',\n"
+                         "            'foo',\n"
+                         "            'bar'\n"
+                         "        ]", actual_setup_script)
 
     def test_normalize_setup_post_pre_script(self):
         test_script = '''
@@ -686,7 +686,7 @@ class ExecuteDistUtilsTest(PyBuilderTestCase):
         commands = ["a", "b", "c"]
         execute_distutils(self.project, MagicMock(Logger), commands)
 
-        self.assertEquals(popen_distutils_args(self, 3, proc_runner), [[cmd] for cmd in commands])
+        self.assertEqual(popen_distutils_args(self, 3, proc_runner), [[cmd] for cmd in commands])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -697,7 +697,7 @@ class ExecuteDistUtilsTest(PyBuilderTestCase):
         commands = ["a", "b", "c"]
         execute_distutils(self.project, MagicMock(Logger), [commands])
 
-        self.assertEquals(popen_distutils_args(self, 1, proc_runner), [commands])
+        self.assertEqual(popen_distutils_args(self, 1, proc_runner), [commands])
 
     @patch("pybuilder.plugins.python.distutils_plugin.subprocess.Popen")
     def test__run_process_and_wait(self, popen):
@@ -706,77 +706,89 @@ class ExecuteDistUtilsTest(PyBuilderTestCase):
         popen.assert_called_with(commands, cwd="test cwd", stdout="test stdout", stderr="test_stderr", shell=False)
 
 
+class UploadTests(PyBuilderTestCase):
+    def setUp(self):
+        self.project = create_project()
+        self.project.set_property("dir_reports", "whatever reports")
+        self.project.set_property("dir_dist", "whatever dist")
+
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_upload_with_register(self, proc_runner, walk, *args):
+        proc_runner.return_value = 0
+        walk.return_value = [["dist", "", ["a", "b"]]]
+
+        self.project.set_property("distutils_upload_register", True)
+
+        upload(self.project, MagicMock(Logger))
+        self.assertEqual(popen_distutils_args(self, 3, proc_runner),
+                         [["twine", "register", "/whatever dist/dist/a"],
+                          ["twine", "register", "/whatever dist/dist/b"],
+                          ["twine", "upload", "/whatever dist/dist/a", "/whatever dist/dist/b"]])
+
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_upload(self, proc_runner, walk, *args):
+        proc_runner.return_value = 0
+        walk.return_value = [["dist", "", ["a", "b"]]]
+
+        upload(self.project, MagicMock(Logger))
+        self.assertEqual(popen_distutils_args(self, 1, proc_runner),
+                         [["twine", "upload", "/whatever dist/dist/a", "/whatever dist/dist/b"]])
+
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_upload_with_repo(self, proc_runner, walk, *args):
+        proc_runner.return_value = 0
+        walk.return_value = [["dist", "", ["a", "b"]]]
+        self.project.set_property("distutils_upload_repository", "test repo")
+
+        upload(self.project, MagicMock(Logger))
+        self.assertEqual(popen_distutils_args(self, 1, proc_runner),
+                         [["twine", "upload", "--repository-url", "test repo", "/whatever dist/dist/a",
+                           "/whatever dist/dist/b"]])
+
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_upload_with_signature(self, proc_runner, walk, *args):
+        proc_runner.return_value = 0
+        walk.return_value = [["dist", "", ["a", "b"]]]
+        self.project.set_property("distutils_upload_sign", True)
+
+        upload(self.project, MagicMock(Logger))
+        self.assertEqual(popen_distutils_args(self, 1, proc_runner),
+                         [["twine", "upload", "--sign", "/whatever dist/dist/a", "/whatever dist/dist/b"]])
+
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_upload_with_signature_and_identity(self, proc_runner, walk, *args):
+        proc_runner.return_value = 0
+        walk.return_value = [["dist", "", ["a", "b"]]]
+        self.project.set_property("distutils_upload_sign", True)
+        self.project.set_property("distutils_upload_sign_identity", "abcd")
+
+        upload(self.project, MagicMock(Logger))
+        self.assertEqual(popen_distutils_args(self, 1, proc_runner),
+                         [["twine", "upload", "--sign", "--identity", "abcd", "/whatever dist/dist/a",
+                           "/whatever dist/dist/b"]])
+
+
 class TasksTest(PyBuilderTestCase):
     def setUp(self):
         self.project = create_project()
         self.project.set_property("dir_reports", "whatever reports")
         self.project.set_property("dir_dist", "whatever dist")
         self.project.set_property("distutils_commands", ["sdist", "bdist_dumb"])
-
-    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
-    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_upload(self, proc_runner, *args):
-        proc_runner.return_value = 0
-
-        upload(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 3, proc_runner),
-                          [["register"],
-                           ["clean", "--all", "sdist", "upload"],
-                           ["clean", "--all", "bdist_dumb", "upload"]])
-
-    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
-    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_upload_with_command_options(self, proc_runner, *args):
-        proc_runner.return_value = 0
-        self.project.set_property("distutils_command_options", {"bdist_dumb": '--format=xztar'})
-
-        upload(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 3, proc_runner),
-                          [["register"],
-                           ["clean", "--all", "sdist", "upload"],
-                           ["clean", "--all", "bdist_dumb", "--format=xztar", "upload"]])
-
-    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
-    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_upload_with_repo(self, proc_runner, *args):
-        proc_runner.return_value = 0
-        self.project.set_property("distutils_upload_repository", "test repo")
-
-        upload(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 3, proc_runner),
-                          [["register", "-r", "test repo"],
-                           ["clean", "--all", "sdist", "upload", "-r", "test repo"],
-                           ["clean", "--all", "bdist_dumb", "upload", "-r", "test repo"]])
-
-    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
-    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_upload_with_signature(self, proc_runner, *args):
-        proc_runner.return_value = 0
-        self.project.set_property("distutils_upload_sign", True)
-
-        upload(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 3, proc_runner),
-                          [["register"],
-                           ["clean", "--all", "sdist", "upload", "--sign"],
-                           ["clean", "--all", "bdist_dumb", "upload", "--sign"]])
-
-    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
-    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_upload_with_signature_and_identity(self, proc_runner, *args):
-        proc_runner.return_value = 0
-        self.project.set_property("distutils_upload_sign", True)
-        self.project.set_property("distutils_upload_sign_identity", "abcd")
-
-        upload(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 3, proc_runner),
-                          [["register"],
-                           ["clean", "--all", "sdist", "upload", "--sign", "--identity", "abcd"],
-                           ["clean", "--all", "bdist_dumb", "upload", "--sign", "--identity", "abcd"]])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.pip_utils.open", create=True)
@@ -807,8 +819,8 @@ class TasksTest(PyBuilderTestCase):
         proc_runner.return_value = 0
 
         build_binary_distribution(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 2, proc_runner),
-                          [["clean", "--all", "sdist"], ["clean", "--all", "bdist_dumb"]])
+        self.assertEqual(popen_distutils_args(self, 2, proc_runner),
+                         [["clean", "--all", "sdist"], ["clean", "--all", "bdist_dumb"]])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -818,12 +830,12 @@ class TasksTest(PyBuilderTestCase):
         self.project.set_property("distutils_command_options", {"sdist": ['--formats', 'bztar']})
 
         build_binary_distribution(self.project, MagicMock(Logger))
-        self.assertEquals(popen_distutils_args(self, 2, proc_runner),
-                          [["clean", "--all", "sdist", "--formats", "bztar"], ["clean", "--all", "bdist_dumb"]])
+        self.assertEqual(popen_distutils_args(self, 2, proc_runner),
+                         [["clean", "--all", "sdist", "--formats", "bztar"], ["clean", "--all", "bdist_dumb"]])
 
 
 def popen_distutils_args(self, call_count, proc_runner):
-    self.assertEquals(proc_runner.call_count, call_count)
+    self.assertEqual(proc_runner.call_count, call_count)
     return [call_args[0][0][2:] for call_args in proc_runner.call_args_list]
 
 

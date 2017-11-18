@@ -72,7 +72,7 @@ class Reactor(object):
             try:
                 self._plugins.append(plugin)
                 self.import_plugin(plugin, version, plugin_module_name)
-            except:  # NOQA
+            except Exception:  # NOQA
                 self._plugins.remove(plugin)
                 raise
 
