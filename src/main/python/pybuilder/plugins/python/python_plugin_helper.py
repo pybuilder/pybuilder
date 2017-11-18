@@ -49,6 +49,9 @@ def discover_affected_files(include_test_sources, include_scripts, project):
         if project.get_property("dir_source_integrationtest_python"):
             integrationtest_dir = project.get_property("dir_source_integrationtest_python")
             files = itertools.chain(files, discover_python_files(integrationtest_dir))
+        if project.get_property("dir_source_pytest_python"):
+            pytest_dir = project.get_property("dir_source_pytest_python")
+            files = itertools.chain(files, discover_python_files(pytest_dir))
     if include_scripts and project.get_property("dir_source_main_scripts"):
         scripts_dir = project.get_property("dir_source_main_scripts")
         files = itertools.chain(files,
@@ -63,6 +66,8 @@ def discover_affected_dirs(include_test_sources, include_scripts, project):
             files.append(project.get_property("dir_source_unittest_python"))
         if _if_property_set_and_dir_exists(project.get_property("dir_source_integrationtest_python")):
             files.append(project.get_property("dir_source_integrationtest_python"))
+        if _if_property_set_and_dir_exists(project.get_property("dir_source_pytest_python")):
+            files.append(project.get_property("dir_source_pytest_python"))
     if include_scripts and _if_property_set_and_dir_exists(project.get_property("dir_source_main_scripts")):
         files.append(project.get_property("dir_source_main_scripts"))
     return files

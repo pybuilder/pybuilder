@@ -348,3 +348,10 @@ def safe_log_file_name(file_name):
     # per https://support.microsoft.com/en-us/kb/177506
     # per https://msdn.microsoft.com/en-us/library/aa365247
     return re.sub(r'\\|/|:|\*|\?|\"|<|>|\|', '_', file_name)
+
+
+def register_test_and_source_path_and_return_test_dir(project, system_path, execution_prefix):
+    test_dir = project.expand_path("$dir_source_%s_python" % execution_prefix)
+    system_path.insert(0, test_dir)
+    system_path.insert(0, project.expand_path("$dir_source_main_python"))
+    return test_dir

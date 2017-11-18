@@ -316,7 +316,14 @@ def _delete_non_essential_modules():
     for module_name in list(sys.modules.keys()):
         module = sys.modules[module_name]
         if module:
-            if not _is_module_essential(module.__name__, sys_packages, sys_modules):
+            try:
+                # if we try to remove non-module object
+                module__name__ = module.__name__
+            except:
+                module__name__ = None
+            if module__name__ is None:
+                module__name__ = module_name
+            if not _is_module_essential(module__name__, sys_packages, sys_modules):
                 _delete_module(module_name, module)
 
 
@@ -325,6 +332,9 @@ def _delete_module(module_name, module):
     try:
         delattr(module, module_name)
     except AttributeError:
+        pass
+    # if we try to remove non-class object
+    except ImportError:
         pass
 
 
@@ -342,6 +352,10 @@ def _is_module_essential(module_name, sys_packages, sys_modules):
     # Essential since we're in a fork for communicating exceptions back
     sys_packages.append("tblib")
     sys_packages.append("pybuilder.errors")
+    # External modules
+    sys_packages.append("pkg_resources")
+    sys_packages.append("_pytest")
+    sys_packages.append("py")
 
     for package in sys_packages:
         if module_name == package or module_name.startswith(package + "."):

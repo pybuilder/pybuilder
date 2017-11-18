@@ -26,6 +26,7 @@ import time
 import unittest
 from json import loads
 
+from pybuilder.core import Project
 from pybuilder.errors import PyBuilderException
 from pybuilder.utils import (GlobExpression,
                              Timer,
@@ -40,7 +41,8 @@ from pybuilder.utils import (GlobExpression,
                              render_report,
                              timedelta_in_millis,
                              fork_process,
-                             execute_command)
+                             execute_command,
+                             register_test_and_source_path_and_return_test_dir)
 from test_utils import patch, Mock
 
 
@@ -435,3 +437,29 @@ class CommandExecutionTest(unittest.TestCase):
         self.assertEquals(execute_command(["test", "commands"], outfile_name="test.out"), 0)
         self.assertEquals(
             execute_command(["test", "commands"], outfile_name="test.out", error_file_name="test.out.err"), 0)
+
+
+class PythonPathTests(unittest.TestCase):
+    def setUp(self):
+        self.project = Project('/path/to/project')
+        self.project.set_property('dir_source_unittest_python', 'unittest')
+        self.project.set_property('dir_source_main_python', 'src')
+
+    def test_should_register_source_paths(self):
+        system_path = ['some/python/path']
+
+        register_test_and_source_path_and_return_test_dir(self.project, system_path, "unittest")
+
+        self.assertTrue('/path/to/project/unittest' in system_path)
+        self.assertTrue('/path/to/project/src' in system_path)
+
+    def test_should_put_project_sources_before_other_sources(self):
+        system_path = ['irrelevant/sources']
+
+        register_test_and_source_path_and_return_test_dir(self.project, system_path, "unittest")
+
+        test_sources_index_in_path = system_path.index('/path/to/project/unittest')
+        main_sources_index_in_path = system_path.index('/path/to/project/src')
+        irrelevant_sources_index_in_path = system_path.index('irrelevant/sources')
+        self.assertTrue(test_sources_index_in_path < irrelevant_sources_index_in_path and
+                        main_sources_index_in_path < irrelevant_sources_index_in_path)

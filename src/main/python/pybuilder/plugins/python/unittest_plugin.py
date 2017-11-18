@@ -28,7 +28,10 @@ import unittest
 
 from pybuilder.core import init, task, description, use_plugin
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import discover_modules_matching, render_report, fork_process
+from pybuilder.utils import (discover_modules_matching,
+                             render_report,
+                             fork_process,
+                             register_test_and_source_path_and_return_test_dir)
 from pybuilder.ci_server_interaction import test_proxy_for
 from pybuilder.terminal import print_text_line
 from types import MethodType, FunctionType
@@ -72,7 +75,7 @@ def run_tests(project, logger, execution_prefix, execution_name):
 
 
 def do_run_tests(project, logger, execution_prefix, execution_name):
-    test_dir = _register_test_and_source_path_and_return_test_dir(project, sys.path, execution_prefix)
+    test_dir = register_test_and_source_path_and_return_test_dir(project, sys.path, execution_prefix)
 
     file_suffix = project.get_property("%s_file_suffix" % execution_prefix)
     if file_suffix is not None:
@@ -195,14 +198,6 @@ def _instrument_result(logger, result):
     result.failed_test_names_and_reasons = {}
     result.logger = logger
     return result
-
-
-def _register_test_and_source_path_and_return_test_dir(project, system_path, execution_prefix):
-    test_dir = project.expand_path("$dir_source_%s_python" % execution_prefix)
-    system_path.insert(0, test_dir)
-    system_path.insert(0, project.expand_path("$dir_source_main_python"))
-
-    return test_dir
 
 
 def write_report(name, project, logger, result, console_out):
