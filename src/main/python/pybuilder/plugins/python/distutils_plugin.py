@@ -46,7 +46,6 @@ from pybuilder.utils import (as_list,
 # Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
 from pybuilder import pip_utils
 
-
 use_plugin("python.core")
 
 LEADING_TAB_RE = re.compile(r'^(\t*)')
@@ -112,6 +111,7 @@ def as_str(value):
 @init
 def initialize_distutils_plugin(project):
     project.plugin_depends_on("pypandoc", "~=1.4")
+    project.plugin_depends_on("twine", "~=1.9")
 
     project.set_property_if_unset("distutils_commands", ["sdist", "bdist_wheel"])
     project.set_property_if_unset("distutils_command_options", None)
@@ -124,6 +124,7 @@ def initialize_distutils_plugin(project):
         "Programming Language :: Python"
     ])
     project.set_property_if_unset("distutils_use_setuptools", True)
+    project.set_property_if_unset("distutils_upload_register", False)
     project.set_property_if_unset("distutils_upload_repository", None)
     project.set_property_if_unset("distutils_upload_sign", False)
     project.set_property_if_unset("distutils_upload_sign_identity", None)
@@ -214,19 +215,6 @@ def write_manifest_file(project, logger):
     os.chmod(manifest_filename, 0o664)
 
 
-def render_manifest_file(project):
-    manifest_content = StringIO()
-
-    for included_file in project.manifest_included_files:
-        manifest_content.write("include %s\n" % included_file)
-
-    for directory, pattern_list in project.manifest_included_directories:
-        patterns = ' '.join(pattern_list)
-        manifest_content.write("recursive-include %s %s\n" % (directory, patterns))
-
-    return manifest_content.getvalue()
-
-
 @before("publish")
 def build_binary_distribution(project, logger):
     logger.info("Building binary distribution in %s",
@@ -261,7 +249,7 @@ def upload(project, logger):
     repository = project.get_property("distutils_upload_repository")
     repository_args = []
     if repository:
-        repository_args = ["-r", repository]
+        repository_args = ["--repository-url", repository]
 
     upload_sign = project.get_property("distutils_upload_sign")
     upload_sign_args = []
@@ -271,21 +259,31 @@ def upload(project, logger):
         if sign_identity:
             upload_sign_args += ["--identity", sign_identity]
 
-    # Unfortunately, distutils/setuptools doesn't throw error if register fails
-    # but upload command will fail if project will not be registered
-    logger.info("Registering project %s-%s%s", project.name, project.version,
-                (" into repository '%s'" % repository) if repository else "")
-    register_cmd_line = [["register"] + repository_args]
-    execute_distutils(project, logger, register_cmd_line, False)
+    if project.get_property("distutils_upload_register"):
+        logger.info("Registering project %s-%s%s", project.name, project.version,
+                    (" into repository '%s'" % repository) if repository else "")
+        execute_twine(project, logger, repository_args, True)
 
     logger.info("Uploading project %s-%s%s%s%s", project.name, project.version,
                 (" to repository '%s'" % repository) if repository else "",
                 get_dist_version_string(project, " as version %s"),
                 (" signing%s" % (" with %s" % sign_identity if sign_identity else "")) if upload_sign else "")
-    upload_cmd_line = [build_command_with_options(cmd, project.get_property("distutils_command_options")) + ["upload"] +
-                       repository_args + upload_sign_args
-                       for cmd in as_list(project.get_property("distutils_commands"))]
-    execute_distutils(project, logger, upload_cmd_line, True)
+
+    upload_cmd_args = repository_args + upload_sign_args
+    execute_twine(project, logger, upload_cmd_args, False)
+
+
+def render_manifest_file(project):
+    manifest_content = StringIO()
+
+    for included_file in project.manifest_included_files:
+        manifest_content.write("include %s\n" % included_file)
+
+    for directory, pattern_list in project.manifest_included_directories:
+        patterns = ' '.join(pattern_list)
+        manifest_content.write("recursive-include %s %s\n" % (directory, patterns))
+
+    return manifest_content.getvalue()
 
 
 def build_command_with_options(command, distutils_command_options=None):
@@ -323,6 +321,36 @@ def execute_distutils(project, logger, distutils_commands, clean=False):
             if return_code != 0:
                 raise BuildFailedException(
                     "Error while executing setup command %s, see %s for details" % (command, output_file_path))
+
+
+def execute_twine(project, logger, command_args, register):
+    reports_dir = _prepare_reports_dir(project)
+    dist_artifact_dir = project.expand_path("$dir_dist", "dist")
+
+    if register:
+        command = "register"
+    else:
+        command = "upload"
+
+    artifacts = [os.path.join(dist_artifact_dir, artifact) for artifact in list(os.walk(dist_artifact_dir))[0][2]]
+    if register:
+        for artifact in artifacts:
+            out_file = os.path.join(reports_dir,
+                                    safe_log_file_name("twine_%s_%s.log" % (command, os.path.basename(artifact))))
+            _execute_twine(project, logger, [command] + command_args + [artifact], dist_artifact_dir, out_file)
+    else:
+        out_file = os.path.join(reports_dir, safe_log_file_name("twine_%s.log" % command))
+        _execute_twine(project, logger, [command] + command_args + artifacts, dist_artifact_dir, out_file)
+
+
+def _execute_twine(project, logger, command, work_dir, out_file):
+    logger.debug("Executing Twine %s", command)
+    with open(out_file, "w") as out_f:
+        commands = [sys.executable, "-m", "twine"] + command
+        return_code = _run_process_and_wait(commands, work_dir, out_f)
+        if return_code != 0:
+            raise BuildFailedException(
+                "Error while executing Twine %s, see %s for details" % (command, out_file))
 
 
 def strip_comments(requirements):
