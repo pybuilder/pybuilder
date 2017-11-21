@@ -38,7 +38,8 @@ class IntegrationTestSupport(unittest.TestCase):
         self.tmp_directory = tempfile.mkdtemp(prefix="IntegrationTestSupport")
 
     def tearDown(self):
-        if self.tmp_directory and os.path.exists(self.tmp_directory):
+        outcomes = self.outcomes()
+        if self.tmp_directory and os.path.exists(self.tmp_directory) and not (outcomes[0] or outcomes[1]):
             shutil.rmtree(self.tmp_directory)
 
     def full_path(self, name):
@@ -120,3 +121,19 @@ class IntegrationTestSupport(unittest.TestCase):
         reactor = Reactor(logger, execution_manager)
         reactor.prepare_build(project_directory=self.tmp_directory)
         return reactor
+
+    def outcomes(self):
+        result = self._get_result()
+        return self._list2reason(result.errors), self._list2reason(result.failures)
+
+    def _get_result(self):
+        if hasattr(self, '_outcome'):  # Python 3.4+
+            result = self.defaultTestResult()  # these 2 methods have no side effects
+            self._feedErrorsToResult(result, self._outcome.errors)
+        else:  # Python 3.2 - 3.3 or 3.0 - 3.1 and 2.7
+            result = getattr(self, '_outcomeForDoCleanups', self._resultForDoCleanups)
+        return result
+
+    def _list2reason(self, exc_list):
+        if exc_list and exc_list[-1][0] is self:
+            return exc_list[-1][1]

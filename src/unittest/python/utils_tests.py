@@ -357,7 +357,7 @@ class ForkTest(unittest.TestCase):
             val = fork_process(Mock(), target=test_func)
             val = fork_process(Mock(), target=test_func)
             self.fail("should not have reached here, returned %s" % val)
-        except:
+        except Exception:
             ex_type, ex, tb = sys.exc_info()
             self.assertEquals(ex_type, PyBuilderException)
             self.assertEquals(ex.message, "Test failure message")
@@ -374,7 +374,7 @@ class ForkTest(unittest.TestCase):
         try:
             fork_process(Mock(), target=test_func)
             self.fail("should not have reached here")
-        except:
+        except Exception:
             ex_type, ex, tb = sys.exc_info()
             self.assertEquals(ex_type, Exception)
             self.assertTrue(str(ex).startswith("Fatal error occurred in the forked process"))
@@ -392,7 +392,7 @@ class ForkTest(unittest.TestCase):
         try:
             val = fork_process(Mock(), target=test_func)
             self.fail("should not have reached here, returned %s" % val)
-        except:
+        except Exception:
             ex_type, ex, tb = sys.exc_info()
             self.assertEquals(ex_type, Exception)
             self.assertTrue(str(ex).startswith("Fatal error occurred in the forked process"))
@@ -415,7 +415,7 @@ class ForkTest(unittest.TestCase):
         try:
             val = fork_process(Mock(), target=test_func)
             self.fail("should not have reached here, returned %s" % val)
-        except:
+        except Exception:
             ex_type, ex, tb = sys.exc_info()
             self.assertEquals(ex_type, Exception)
             self.assertTrue(str(ex).startswith("Fatal error occurred in the forked process"))
