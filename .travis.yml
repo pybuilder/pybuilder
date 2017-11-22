@@ -9,26 +9,22 @@ python:
 - 'pypy'
 - 'pypy3'
 addons:
-    apt_packages: [ pandoc ]
+  apt_packages: [ pandoc ]
 branches:
   only:
   - master
   - doc/sphinxdoc
   - 0.11
+env:
+  global:
+    - DEPLOY_BRANCHES: "'master 0.11'"
+    - DEPLOY_PYTHONS: "'2.7 3.6'"
+    - PYB_ARGS: "'-v -X install_dependencies analyze install'"
+    - TWINE_USERNAME: "pybuilder_travis2"
+    - secure: "MLdQVfB8Xj+8oHzOCrAGTRT2SIL2+daepxlhmPPj5KJ8Zo8Fm2zPkiiTpGsklkVN3pXWGKN8kAu71/yCS2KYR+Ui1WTAg9zKMMDMY2AXuMRDlp4y82ZIrIoprhzq/bjfmqpvSYP9Ppe39HULx9sy8hFuE328NylWXoedz6FgKLU="
 before_script:
 - pip install coveralls
 script:
-- "./build.py -v -X install_dependencies analyze install"
+- "./travis_build.sh"
 after_success:
 - coveralls --verbose
-deploy:
-  provider: pypi
-  user: pybuilder-travis
-  distributions: "sdist"
-  server: https://upload.pypi.org/legacy/
-  on:
-    branch: master
-    repo: pybuilder/pybuilder
-    python: '3.6'
-  password:
-    secure: QH11Nk1Mv6KVRr5L4z9dJfzDDxyUjkLJURWsJxYG0bGA8zxp7Tnfo1J5XDNRvT2bAxXSx0v5+C0y+0KE4z44z5wvE/hxHx9k+3PbETb1q1F1sVtWeA+i4cm7T7d4dh/9YfyfimcHNR/9U52qBpdSVjXqXcSzMzfgzhgFniGGJIU=
