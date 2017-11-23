@@ -79,7 +79,7 @@ class SphinxPluginInitializationTests(TestCase):
             initialize_sphinx_plugin(self.project)
 
         for property_name, property_value in expected_properties.items():
-            self.assertEquals(
+            self.assertEqual(
 
                 self.project.get_property(property_name),
                 property_value)
@@ -93,19 +93,19 @@ class SphinxPluginInitializationTests(TestCase):
         self.project.set_property("sphinx_project_name", "foo")
         self.project.set_property("sphinx_project_version", "1.0")
 
-        self.assertEquals(
+        self.assertEqual(
             self.project.get_property("sphinx_source_dir"), "docs")
-        self.assertEquals(
+        self.assertEqual(
             self.project.get_property("sphinx_output_dir"), "docs/_build/")
-        self.assertEquals(
+        self.assertEqual(
             self.project.get_property("sphinx_config_path"), "docs")
-        self.assertEquals(
+        self.assertEqual(
             self.project.get_property("sphinx_doc_author"), 'John Doe, Jane Doe')
-        self.assertEquals(
+        self.assertEqual(
             self.project.get_property("sphinx_doc_builder"), "html")
-        self.assertEquals(
+        self.assertEqual(
             self.project.get_property("sphinx_project_name"), "foo")
-        self.assertEquals(
+        self.assertEqual(
             self.project.get_property("sphinx_project_version"), "1.0")
 
 
@@ -192,7 +192,7 @@ class SphinxBuildCommandTests(TestCase):
         initialize_sphinx_plugin(self.project)
 
         run_sphinx_build(["foo"], "bar", Mock(), self.project)
-        self.assertEquals(exec_command.call_count, 1)
+        self.assertEqual(exec_command.call_count, 1)
 
     def test_get_sphinx_apidoc_command_enabled(self):
         sphinx_mock = Mock()

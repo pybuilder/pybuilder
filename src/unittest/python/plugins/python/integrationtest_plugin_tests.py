@@ -55,15 +55,15 @@ class TaskPoolProgressTests(unittest.TestCase):
             initialize_integrationtest_plugin(self.project)
 
         for property_name, property_value in expected_properties.items():
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("dir_source_integrationtest_python"), "foo/bar/python")
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("integrationtest_file_glob"), "*foo.py")
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("integrationtest_file_suffix"), True)
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("integrationtest_additional_environment"), {"env3": "foo"}),
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("integrationtest_always_verbose"), True)
 
     def test_should_create_new_progress(self):

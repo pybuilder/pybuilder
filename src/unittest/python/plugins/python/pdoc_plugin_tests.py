@@ -42,13 +42,13 @@ class PdocPluginTests(unittest.TestCase):
 
         os_path_exists.return_value = False
         pdoc_prepare(self.project, self.logger)
-        self.assertEquals(os_mkdir.call_count, 1)
+        self.assertEqual(os_mkdir.call_count, 1)
 
         os_path_exists.return_value = True
         pdoc_prepare(self.project, self.logger)
-        self.assertEquals(os_mkdir.call_count, 1)
+        self.assertEqual(os_mkdir.call_count, 1)
 
-        self.assertEquals(assert_can_exec.call_count, 2)
+        self.assertEqual(assert_can_exec.call_count, 2)
 
     @patch("pybuilder.plugins.python.pdoc_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.pdoc_plugin.os.path.exists")

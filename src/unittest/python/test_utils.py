@@ -101,9 +101,9 @@ class PyBuilderTestCase(TestCase):
    but got: "{actual_line}"
 """.format(line_number=i, expected_line=expected_line, actual_line=actual_line)
 
-            self.assertEquals(expected_line, actual_line, message)
-        self.assertEquals(len(expected_lines), len(actual_lines),
-                          'Multi-line strings do not have the same number of lines')
+            self.assertEqual(expected_line, actual_line, message)
+        self.assertEqual(len(expected_lines), len(actual_lines),
+                         'Multi-line strings do not have the same number of lines')
 
 
 __all__ = [PyBuilderTestCase, Mock, MagicMock, patch, ANY, DEFAULT, call]

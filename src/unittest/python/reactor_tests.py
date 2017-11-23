@@ -51,7 +51,7 @@ class ReactorTest(unittest.TestCase):
 
     def test_should_return_tasks_from_execution_manager_when_calling_get_tasks(self):
         self.execution_manager.tasks = ["spam"]
-        self.assertEquals(["spam"], self.reactor.get_tasks())
+        self.assertEqual(["spam"], self.reactor.get_tasks())
 
     def test_should_raise_exception_when_importing_plugin_and_plugin_not_found(self):
         self.plugin_loader_mock.load_plugin.side_effect = MissingPluginException("not_found")
@@ -72,10 +72,10 @@ class ReactorTest(unittest.TestCase):
 
         self.reactor.collect_tasks_and_actions_and_initializers(module)
 
-        self.assertEquals(len(self.execution_manager.register_task.call_args_list), 1)
+        self.assertEqual(len(self.execution_manager.register_task.call_args_list), 1)
         self.assertTrue(isinstance(self.execution_manager.register_task.call_args[0][0], Task) and len(
             self.execution_manager.register_task.call_args[0]) == 1)
-        self.assertEquals(self.execution_manager.register_task.call_args[0][0].name, "task")
+        self.assertEqual(self.execution_manager.register_task.call_args[0][0].name, "task")
 
     def test_should_collect_single_task_with_overridden_name(self):
         def task():
@@ -89,10 +89,10 @@ class ReactorTest(unittest.TestCase):
 
         self.reactor.collect_tasks_and_actions_and_initializers(module)
 
-        self.assertEquals(len(self.execution_manager.register_task.call_args_list), 1)
+        self.assertEqual(len(self.execution_manager.register_task.call_args_list), 1)
         self.assertTrue(isinstance(self.execution_manager.register_task.call_args[0][0], Task) and len(
             self.execution_manager.register_task.call_args[0]) == 1)
-        self.assertEquals(self.execution_manager.register_task.call_args[0][0].name, "overridden_name")
+        self.assertEqual(self.execution_manager.register_task.call_args[0][0].name, "overridden_name")
 
     def test_should_collect_multiple_tasks(self):
         def task():
@@ -111,7 +111,7 @@ class ReactorTest(unittest.TestCase):
 
         self.reactor.collect_tasks_and_actions_and_initializers(module)
 
-        self.assertEquals(len(self.execution_manager.register_task.call_args_list), 2)
+        self.assertEqual(len(self.execution_manager.register_task.call_args_list), 2)
         for call_args in self.execution_manager.register_task.call_args_list:
             self.assertTrue(isinstance(call_args[0][0], Task) and len(call_args[0]) == 1)
 
@@ -247,7 +247,7 @@ class ReactorTest(unittest.TestCase):
 
         self.reactor.collect_tasks_and_actions_and_initializers(module)
 
-        self.assertEquals(self.execution_manager.register_action.call_count, 1)
+        self.assertEqual(self.execution_manager.register_action.call_count, 1)
         self.assertTrue(isinstance(self.execution_manager.register_action.call_args[0][0], Action) and
                         len(self.execution_manager.register_action.call_args[0]) == 1)
 
@@ -261,7 +261,7 @@ class ReactorTest(unittest.TestCase):
 
         self.reactor.collect_tasks_and_actions_and_initializers(module)
 
-        self.assertEquals(self.execution_manager.register_action.call_count, 1)
+        self.assertEqual(self.execution_manager.register_action.call_count, 1)
         self.assertTrue(isinstance(self.execution_manager.register_action.call_args[0][0], Action) and
                         len(self.execution_manager.register_action.call_args[0]) == 1)
 
@@ -302,7 +302,7 @@ class ReactorTest(unittest.TestCase):
 
         self.reactor.collect_tasks_and_actions_and_initializers(module)
 
-        self.assertEquals(self.execution_manager.register_initializer.call_count, 1)
+        self.assertEqual(self.execution_manager.register_initializer.call_count, 1)
         self.assertTrue(isinstance(self.execution_manager.register_initializer.call_args[0][0], Initializer) and
                         len(self.execution_manager.register_initializer.call_args[0]) == 1)
 
@@ -328,7 +328,7 @@ class ReactorTest(unittest.TestCase):
 
         self.reactor.collect_tasks_and_actions_and_initializers(module)
 
-        self.assertEquals(
+        self.assertEqual(
             execution_manager_mock.initializer.environments, ["any_environment"])
 
     @patch("pybuilder.reactor.os.path.exists", return_value=False)
@@ -404,7 +404,7 @@ class ReactorTest(unittest.TestCase):
                                                                                                   os_path_isdir,
                                                                                                   os_path_join,
                                                                                                   os_path_isfile):
-        self.assertEquals(
+        self.assertEqual(
             ("/spam", "/spam/eggs"), self.reactor.verify_project_directory("spam", "eggs"))
 
         os_path_abspath.assert_called_with("spam")
@@ -443,14 +443,14 @@ class ReactorTest(unittest.TestCase):
 
         self.reactor.apply_project_attributes()
 
-        self.assertEquals("version", self.reactor.project.version)
-        self.assertEquals("default_task", self.reactor.project.default_task)
-        self.assertEquals("summary", self.reactor.project.summary)
-        self.assertEquals("home_page", self.reactor.project.home_page)
-        self.assertEquals("description", self.reactor.project.description)
-        self.assertEquals("authors", self.reactor.project.authors)
-        self.assertEquals("license", self.reactor.project.license)
-        self.assertEquals("url", self.reactor.project.url)
+        self.assertEqual("version", self.reactor.project.version)
+        self.assertEqual("default_task", self.reactor.project.default_task)
+        self.assertEqual("summary", self.reactor.project.summary)
+        self.assertEqual("home_page", self.reactor.project.home_page)
+        self.assertEqual("description", self.reactor.project.description)
+        self.assertEqual("authors", self.reactor.project.authors)
+        self.assertEqual("license", self.reactor.project.license)
+        self.assertEqual("url", self.reactor.project.url)
 
     def test_ensure_project_name_is_set_from_attribute_when_instantiating_project(self):
         module = ModuleType("mock_module")
@@ -460,7 +460,7 @@ class ReactorTest(unittest.TestCase):
         self.reactor.project_module = module
         self.reactor.apply_project_attributes()
 
-        self.assertEquals("mock_module", self.reactor.project.name)
+        self.assertEqual("mock_module", self.reactor.project.name)
 
     def test_should_import_plugin_only_once(self):
         plugin_module = ModuleType("mock_module")
@@ -469,7 +469,7 @@ class ReactorTest(unittest.TestCase):
         self.reactor.require_plugin("spam")
         self.reactor.require_plugin("spam")
 
-        self.assertEquals(["spam"], self.reactor.get_plugins())
+        self.assertEqual(["spam"], self.reactor.get_plugins())
 
         self.plugin_loader_mock.load_plugin.assert_called_with(ANY, "spam", None, None)
 
@@ -482,7 +482,7 @@ class ReactorTest(unittest.TestCase):
         self.reactor.log_project_properties()
 
         call_args = self.logger.debug.call_args
-        self.assertEquals(call_args[0][0], "Project properties: %s")
+        self.assertEqual(call_args[0][0], "Project properties: %s")
         self.assertTrue("basedir : spam" in call_args[0][1])
         self.assertTrue("eggs : eggs" in call_args[0][1])
         self.assertTrue("spam : spam" in call_args[0][1])
@@ -498,26 +498,26 @@ class ReactorTest(unittest.TestCase):
 
         self.reactor.project.default_task = ["a", "b"]
 
-        self.assertEquals(self.reactor._prepare_tasks(["c"]), ["c"])
-        self.assertEquals(self.reactor._prepare_tasks(["+c"]), ["a", "b", "c"])
-        self.assertEquals(self.reactor._prepare_tasks(["+c", '^c']), ["a", "b"])
-        self.assertEquals(self.reactor._prepare_tasks(["^b"]), ["a"])
-        self.assertEquals(self.reactor._prepare_tasks(["^a"]), ["b"])
-        self.assertEquals(self.reactor._prepare_tasks(["^d"]), ["a", "b"])
-        self.assertEquals(self.reactor._prepare_tasks(["+c", "d"]), ["d", "c"])
-        self.assertEquals(self.reactor._prepare_tasks(["+c", "d", "^b"]), ["d", "c"])
-        self.assertEquals(self.reactor._prepare_tasks(["+c", "+", "^"]), ["+", "^", "c"])
-        self.assertEquals(self.reactor._prepare_tasks([]), ["a", "b"])
+        self.assertEqual(self.reactor._prepare_tasks(["c"]), ["c"])
+        self.assertEqual(self.reactor._prepare_tasks(["+c"]), ["a", "b", "c"])
+        self.assertEqual(self.reactor._prepare_tasks(["+c", '^c']), ["a", "b"])
+        self.assertEqual(self.reactor._prepare_tasks(["^b"]), ["a"])
+        self.assertEqual(self.reactor._prepare_tasks(["^a"]), ["b"])
+        self.assertEqual(self.reactor._prepare_tasks(["^d"]), ["a", "b"])
+        self.assertEqual(self.reactor._prepare_tasks(["+c", "d"]), ["d", "c"])
+        self.assertEqual(self.reactor._prepare_tasks(["+c", "d", "^b"]), ["d", "c"])
+        self.assertEqual(self.reactor._prepare_tasks(["+c", "+", "^"]), ["+", "^", "c"])
+        self.assertEqual(self.reactor._prepare_tasks([]), ["a", "b"])
 
         self.reactor.project.default_task = []
 
-        self.assertEquals(self.reactor._prepare_tasks(["c"]), ["c"])
-        self.assertEquals(self.reactor._prepare_tasks(["+c"]), ["c"])
-        self.assertEquals(self.reactor._prepare_tasks(["+c", "^d"]), ["c"])
-        self.assertEquals(self.reactor._prepare_tasks(["+c", "d", "^d"]), ["c"])
-        self.assertEquals(self.reactor._prepare_tasks(["^c", "c"]), [])
-        self.assertEquals(self.reactor._prepare_tasks(["+c", "^c"]), [])
-        self.assertEquals(self.reactor._prepare_tasks(["+c", "d"]), ["d", "c"])
-        self.assertEquals(self.reactor._prepare_tasks(["+c", "+"]), ["+", "c"])
+        self.assertEqual(self.reactor._prepare_tasks(["c"]), ["c"])
+        self.assertEqual(self.reactor._prepare_tasks(["+c"]), ["c"])
+        self.assertEqual(self.reactor._prepare_tasks(["+c", "^d"]), ["c"])
+        self.assertEqual(self.reactor._prepare_tasks(["+c", "d", "^d"]), ["c"])
+        self.assertEqual(self.reactor._prepare_tasks(["^c", "c"]), [])
+        self.assertEqual(self.reactor._prepare_tasks(["+c", "^c"]), [])
+        self.assertEqual(self.reactor._prepare_tasks(["+c", "d"]), ["d", "c"])
+        self.assertEqual(self.reactor._prepare_tasks(["+c", "+"]), ["+", "c"])
 
         self.assertRaises(PyBuilderException, self.reactor._prepare_tasks, [])

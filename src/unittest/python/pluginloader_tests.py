@@ -85,7 +85,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         plugin = downloader.load_plugin(project, "pypi:external_plugin")
 
         load.assert_called_with("external_plugin", "pypi:external_plugin")
-        self.assertEquals(plugin, load.return_value)
+        self.assertEqual(plugin, load.return_value)
 
     @patch("pybuilder.pluginloader._load_plugin")
     @patch("pybuilder.pluginloader._install_external_plugin")
@@ -95,7 +95,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         downloader = DownloadingPluginLoader(Mock())
         self.assertRaises(MissingPluginException, downloader.load_plugin, Mock(), "pypi:external_plugin")
 
-        self.assertEquals(load.call_count, 1)
+        self.assertEqual(load.call_count, 1)
 
     @patch("pybuilder.pluginloader._load_plugin")
     @patch("pybuilder.pluginloader._install_external_plugin")
@@ -105,7 +105,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         downloader = DownloadingPluginLoader(Mock())
         self.assertRaises(MissingPluginException, downloader.load_plugin, Mock(), "vcs:external_plugin URL",
                           plugin_module_name="vcs_module_name")
-        self.assertEquals(load.call_count, 1)
+        self.assertEqual(load.call_count, 1)
 
     @patch("pybuilder.pluginloader._load_plugin")
     @patch("pybuilder.pluginloader._install_external_plugin")
@@ -130,7 +130,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         plugin = downloader.load_plugin(project, "vcs:external_plugin URL", plugin_module_name="external_plugin_module")
 
         load.assert_called_with("external_plugin_module", "vcs:external_plugin URL")
-        self.assertEquals(plugin, load.return_value)
+        self.assertEqual(plugin, load.return_value)
 
     @patch("pybuilder.pluginloader._load_plugin")
     @patch("pybuilder.pluginloader._install_external_plugin")
@@ -150,10 +150,10 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         downloader = DownloadingPluginLoader(Mock())
         load.return_value = Mock()
 
-        self.assertEquals(load.return_value, downloader.load_plugin(project, "spam"))
+        self.assertEqual(load.return_value, downloader.load_plugin(project, "spam"))
 
         install.assert_not_called()
-        self.assertEquals(install.call_count, 0)
+        self.assertEqual(install.call_count, 0)
 
     @patch("pybuilder.pluginloader._load_plugin")
     @patch("pybuilder.pluginloader._install_external_plugin")
@@ -162,10 +162,10 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         downloader = DownloadingPluginLoader(Mock())
         load.return_value = Mock()
 
-        self.assertEquals(load.return_value, downloader.load_plugin(project, "vcs:spam", plugin_module_name="spam"))
+        self.assertEqual(load.return_value, downloader.load_plugin(project, "vcs:spam", plugin_module_name="spam"))
 
         install.assert_called_with(project, "vcs:spam", None, downloader.logger, "spam", False, True)
-        self.assertEquals(install.call_count, 1)
+        self.assertEqual(install.call_count, 1)
 
     @patch("pybuilder.pluginloader._load_plugin")
     @patch("pybuilder.pluginloader._install_external_plugin")
@@ -174,10 +174,10 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         downloader = DownloadingPluginLoader(Mock())
         load.return_value = Mock()
 
-        self.assertEquals(load.return_value, downloader.load_plugin(project, "pypi:spam", ">1.2"))
+        self.assertEqual(load.return_value, downloader.load_plugin(project, "pypi:spam", ">1.2"))
 
         install.assert_called_with(project, "pypi:spam", ">1.2", downloader.logger, None, True, False)
-        self.assertEquals(install.call_count, 1)
+        self.assertEqual(install.call_count, 1)
 
     @patch("pybuilder.pluginloader._load_plugin")
     @patch("pybuilder.pluginloader._install_external_plugin")
@@ -187,10 +187,10 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         downloader = DownloadingPluginLoader(Mock())
         load.return_value = Mock()
 
-        self.assertEquals(load.return_value, downloader.load_plugin(project, "pypi:spam", ">1.2,==1.4"))
+        self.assertEqual(load.return_value, downloader.load_plugin(project, "pypi:spam", ">1.2,==1.4"))
 
         install.assert_called_with(project, "pypi:spam", ">1.2,==1.4", downloader.logger, None, True, False)
-        self.assertEquals(install.call_count, 1)
+        self.assertEqual(install.call_count, 1)
 
     @patch("pybuilder.pluginloader._load_plugin")
     @patch("pybuilder.pluginloader._install_external_plugin")
@@ -200,10 +200,10 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         plugin = Mock()
         load.side_effect = (MissingPluginException("no spam installed"), plugin)
 
-        self.assertEquals(plugin, downloader.load_plugin(project, "pypi:spam", "===1.4"))
+        self.assertEqual(plugin, downloader.load_plugin(project, "pypi:spam", "===1.4"))
 
         install.assert_called_with(project, "pypi:spam", "===1.4", downloader.logger, None)
-        self.assertEquals(install.call_count, 1)
+        self.assertEqual(install.call_count, 1)
 
 
 class InstallExternalPluginTests(unittest.TestCase):
@@ -312,7 +312,7 @@ class BuiltinPluginLoaderTest(unittest.TestCase):
         plugin_module = self.loader.load_plugin(self.project, "spam")
 
         load.assert_called_with("pybuilder.plugins.spam_plugin", "spam")
-        self.assertEquals(load.return_value, plugin_module)
+        self.assertEqual(load.return_value, plugin_module)
 
 
 class DispatchingPluginLoaderTest(unittest.TestCase):
@@ -339,7 +339,7 @@ class DispatchingPluginLoaderTest(unittest.TestCase):
         self.first_delegatee.load_plugin.side_effect = MissingPluginException("spam")
         self.second_delegatee.load_plugin.return_value = result
 
-        self.assertEquals(result, self.loader.load_plugin(self.project, "spam"))
+        self.assertEqual(result, self.loader.load_plugin(self.project, "spam"))
 
         self.first_delegatee.load_plugin.assert_called_with(self.project, "spam", None, None)
         self.second_delegatee.load_plugin.assert_called_with(self.project, "spam", None, None)
@@ -348,7 +348,7 @@ class DispatchingPluginLoaderTest(unittest.TestCase):
         result = "result"
         self.first_delegatee.load_plugin.return_value = result
 
-        self.assertEquals(result, self.loader.load_plugin(self.project, "spam"))
+        self.assertEqual(result, self.loader.load_plugin(self.project, "spam"))
 
         self.first_delegatee.load_plugin.assert_called_with(self.project, "spam", None, None)
         self.second_delegatee.load_plugin.assert_not_called()

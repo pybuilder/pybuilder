@@ -241,16 +241,16 @@ class UnittestRunnerTest(TestCase):
         self.assertTrue(isinstance(_create_runner(("unittest.TextTestRunner", Mock())), TextTestRunner))
 
     def test_get_make_result_method_name_default(self):
-        self.assertEquals(_get_make_result_method_name(TextTestRunner), "_makeResult")
+        self.assertEqual(_get_make_result_method_name(TextTestRunner), "_makeResult")
 
     def test_get_make_result_method_name_from_str(self):
-        self.assertEquals(_get_make_result_method_name((TextTestRunner, "_makeResult")), "_makeResult")
+        self.assertEqual(_get_make_result_method_name((TextTestRunner, "_makeResult")), "_makeResult")
 
     def test_get_make_result_method_name_from_method(self):
-        self.assertEquals(_get_make_result_method_name((TextTestRunner, TextTestRunner._makeResult)), "_makeResult")
+        self.assertEqual(_get_make_result_method_name((TextTestRunner, TextTestRunner._makeResult)), "_makeResult")
 
     def test_get_make_result_method_name_from_func(self):
         def _makeResult(self):
             pass
 
-        self.assertEquals(_get_make_result_method_name((TextTestRunner, _makeResult)), "_makeResult")
+        self.assertEqual(_get_make_result_method_name((TextTestRunner, _makeResult)), "_makeResult")

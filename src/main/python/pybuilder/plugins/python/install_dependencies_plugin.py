@@ -22,6 +22,8 @@ import collections
 import imp
 import sys
 
+# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
+from pybuilder import pip_utils
 from pybuilder.core import (before,
                             task,
                             description,
@@ -30,10 +32,7 @@ from pybuilder.core import (before,
                             Dependency,
                             RequirementsFile)
 from pybuilder.errors import BuildFailedException
-from pybuilder.terminal import print_file_content
-from pybuilder.utils import mkdir, as_list, safe_log_file_name
-# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
-from pybuilder import pip_utils
+from pybuilder.utils import mkdir, as_list, safe_log_file_name, tail_log
 
 __author__ = "Alexander Metzner, Arcadiy Ivanov"
 
@@ -219,13 +218,10 @@ def _do_install_dependency(logger, project, dependency, upgrade, eager_upgrade,
         else:
             dependency_name = " dependency '%s'." % dependency.name
 
-        if project.get_property("verbose"):
-            print_file_content(log_file)
-            raise BuildFailedException("Unable to install%s" % dependency_name)
-        else:
-            raise BuildFailedException("Unable to install%s See %s for details.",
-                                       dependency_name,
-                                       log_file)
+        raise BuildFailedException("Unable to install%s See %s for full details:\n%s",
+                                   dependency_name,
+                                   log_file,
+                                   tail_log(log_file))
 
 
 def __reload_pip_if_updated(logger, dependencies_to_install):

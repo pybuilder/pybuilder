@@ -73,9 +73,9 @@ class RenderReportTest(unittest.TestCase):
         actual_report = loads(actual_report_as_json_string)
         actual_keys = sorted(actual_report.keys())
 
-        self.assertEquals(actual_keys, ['eggs', 'spam'])
-        self.assertEquals(actual_report['eggs'], ["foo", "bar"])
-        self.assertEquals(actual_report['spam'], "baz")
+        self.assertEqual(actual_keys, ['eggs', 'spam'])
+        self.assertEqual(actual_report['eggs'], ["foo", "bar"])
+        self.assertEqual(actual_report['spam'], "baz")
 
 
 class FormatTimestampTest(unittest.TestCase):
@@ -93,37 +93,37 @@ class FormatTimestampTest(unittest.TestCase):
 
 class AsListTest(unittest.TestCase):
     def test_should_return_empty_list_when_no_argument_is_given(self):
-        self.assertEquals([], as_list())
+        self.assertEqual([], as_list())
 
     def test_should_return_empty_list_when_none_is_given(self):
-        self.assertEquals([], as_list(None))
+        self.assertEqual([], as_list(None))
 
     def test_should_wrap_single_string_as_list(self):
-        self.assertEquals(["spam"], as_list("spam"))
+        self.assertEqual(["spam"], as_list("spam"))
 
     def test_should_wrap_two_strings_as_list(self):
-        self.assertEquals(["spam", "eggs"], as_list("spam", "eggs"))
+        self.assertEqual(["spam", "eggs"], as_list("spam", "eggs"))
 
     def test_should_unwrap_single_list(self):
-        self.assertEquals(["spam", "eggs"], as_list(["spam", "eggs"]))
+        self.assertEqual(["spam", "eggs"], as_list(["spam", "eggs"]))
 
     def test_should_unwrap_multiple_lists(self):
-        self.assertEquals(
+        self.assertEqual(
             ["spam", "eggs", "foo", "bar"], as_list(["spam", "eggs"], ["foo", "bar"]))
 
     def test_should_unwrap_single_tuple(self):
-        self.assertEquals(["spam", "eggs"], as_list(("spam", "eggs")))
+        self.assertEqual(["spam", "eggs"], as_list(("spam", "eggs")))
 
     def test_should_unwrap_multiple_tuples(self):
-        self.assertEquals(
+        self.assertEqual(
             ["spam", "eggs", "foo", "bar"], as_list(("spam", "eggs"), ("foo", "bar")))
 
     def test_should_unwrap_mixed_tuples_and_lists_and_strings(self):
-        self.assertEquals(["spam", "eggs", "foo", "bar", "foobar"],
-                          as_list(("spam", "eggs"), ["foo", "bar"], "foobar"))
+        self.assertEqual(["spam", "eggs", "foo", "bar", "foobar"],
+                         as_list(("spam", "eggs"), ["foo", "bar"], "foobar"))
 
     def test_should_unwrap_mixed_tuples_and_lists_and_strings_and_ignore_none_values(self):
-        self.assertEquals(
+        self.assertEqual(
             ["spam", "eggs", "foo", "bar", "foobar"], as_list(None, ("spam", "eggs"),
                                                               None, ["foo", "bar"],
                                                               None, "foobar", None))
@@ -132,12 +132,12 @@ class AsListTest(unittest.TestCase):
         def foo():
             pass
 
-        self.assertEquals([foo], as_list(foo))
+        self.assertEqual([foo], as_list(foo))
 
 
 class TimedeltaInMillisTest(unittest.TestCase):
     def assertMillis(self, expected_millis, **timedelta_constructor_args):
-        self.assertEquals(expected_millis, timedelta_in_millis(
+        self.assertEqual(expected_millis, timedelta_in_millis(
             datetime.timedelta(**timedelta_constructor_args)))
 
     def test_should_return_number_of_millis_for_timedelta_with_microseconds_less_than_one_thousand(self):
@@ -166,26 +166,26 @@ class DiscoverFilesTest(unittest.TestCase):
     def test_should_only_return_py_suffix(self, walk):
         expected_result = ["spam/spam.py", "spam/eggs.py"]
         actual_result = set(discover_files("spam", ".py"))
-        self.assertEquals(set(expected_result), actual_result)
+        self.assertEqual(set(expected_result), actual_result)
         walk.assert_called_with("spam")
 
     @patch("pybuilder.utils.os.walk", return_value=[("spam", [], fake_dir_contents)])
     def test_should_only_return_py_glob(self, walk):
         expected_result = ["spam/README.md"]
         actual_result = set(discover_files_matching("spam", "README.?d"))
-        self.assertEquals(set(expected_result), actual_result)
+        self.assertEqual(set(expected_result), actual_result)
         walk.assert_called_with("spam")
 
 
 class DiscoverModulesTest(unittest.TestCase):
     @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["eggs.pi"])])
     def test_should_return_empty_list_when_directory_contains_single_file_not_matching_suffix(self, walk):
-        self.assertEquals([], discover_modules("spam", ".py"))
+        self.assertEqual([], discover_modules("spam", ".py"))
         walk.assert_called_with("spam")
 
     @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["eggs.py"])])
     def test_should_return_list_with_single_module_when_directory_contains_single_file(self, walk):
-        self.assertEquals(["eggs"], discover_modules("spam", ".py"))
+        self.assertEqual(["eggs"], discover_modules("spam", ".py"))
         walk.assert_called_with("spam")
 
     @patch("pybuilder.utils.os.walk", return_value=[("pet_shop", [],
@@ -194,28 +194,28 @@ class DiscoverModulesTest(unittest.TestCase):
     def test_should_only_match_py_files_regardless_of_glob(self, walk):
         expected_result = ["parrot"]
         actual_result = discover_modules_matching("pet_shop", "*parrot*")
-        self.assertEquals(set(expected_result), set(actual_result))
+        self.assertEqual(set(expected_result), set(actual_result))
         walk.assert_called_with("pet_shop")
 
     @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["eggs.py"])])
     def test_glob_should_return_list_with_single_module_when_directory_contains_single_file(self, walk):
-        self.assertEquals(["eggs"], discover_modules_matching("spam", "*"))
+        self.assertEqual(["eggs"], discover_modules_matching("spam", "*"))
         walk.assert_called_with("spam")
 
     @patch("pybuilder.utils.os.walk", return_value=[("spam", ["eggs"], []),
                                                     ("spam/eggs", [], ["__init__.py"])])
     def test_glob_should_return_list_with_single_module_when_directory_contains_package(self, walk):
-        self.assertEquals(["eggs"], discover_modules_matching("spam", "*"))
+        self.assertEqual(["eggs"], discover_modules_matching("spam", "*"))
 
         walk.assert_called_with("spam")
 
     @patch("pybuilder.utils.discover_files_matching", return_value=['/path/to/tests/reactor_tests.py'])
     def test_should_not_eat_first_character_of_modules_when_source_path_ends_with_slash(self, _):
-        self.assertEquals(["reactor_tests"], discover_modules_matching("/path/to/tests/", "*"))
+        self.assertEqual(["reactor_tests"], discover_modules_matching("/path/to/tests/", "*"))
 
     @patch("pybuilder.utils.discover_files_matching", return_value=['/path/to/tests/reactor_tests.py'])
     def test_should_honor_suffix_without_stripping_it_from_module_names(self, _):
-        self.assertEquals(["reactor_tests"], discover_modules_matching("/path/to/tests/", "*_tests"))
+        self.assertEqual(["reactor_tests"], discover_modules_matching("/path/to/tests/", "*_tests"))
 
 
 class GlobExpressionTest(unittest.TestCase):
@@ -253,8 +253,8 @@ class ApplyOnFilesTest(unittest.TestCase):
             relative_file_names.append(relative_file_name)
 
         apply_on_files("spam", callback, "*")
-        self.assertEquals(["spam/a", "spam/b", "spam/c"], absolute_file_names)
-        self.assertEquals(["a", "b", "c"], relative_file_names)
+        self.assertEqual(["spam/a", "spam/b", "spam/c"], absolute_file_names)
+        self.assertEqual(["a", "b", "c"], relative_file_names)
 
         walk.assert_called_with("spam")
 
@@ -266,7 +266,7 @@ class ApplyOnFilesTest(unittest.TestCase):
             called_on_file.append(absolute_file_name)
 
         apply_on_files("spam", callback, "a")
-        self.assertEquals(["spam/a"], called_on_file)
+        self.assertEqual(["spam/a"], called_on_file)
 
         walk.assert_called_with("spam")
 
@@ -275,11 +275,11 @@ class ApplyOnFilesTest(unittest.TestCase):
         called_on_file = []
 
         def callback(absolute_file_name, relative_file_name, additional_argument):
-            self.assertEquals("additional argument", additional_argument)
+            self.assertEqual("additional argument", additional_argument)
             called_on_file.append(absolute_file_name)
 
         apply_on_files("spam", callback, "a", "additional argument")
-        self.assertEquals(["spam/a"], called_on_file)
+        self.assertEqual(["spam/a"], called_on_file)
 
         walk.assert_called_with("spam")
 
@@ -331,23 +331,23 @@ class ForkTest(unittest.TestCase):
 
         val = fork_process(Mock(), target=test_func)
 
-        self.assertEquals(len(val), 2)
-        self.assertEquals(val[0], 0)
-        self.assertEquals(val[1], "success")
+        self.assertEqual(len(val), 2)
+        self.assertEqual(val[0], 0)
+        self.assertEqual(val[1], "success")
 
     def testForkParamPassing(self):
         def test_func(foo, bar):
             return "%s%s" % (foo, bar)
 
         val = fork_process(Mock(), target=test_func, kwargs={"foo": "foo", "bar": 10})
-        self.assertEquals(len(val), 2)
-        self.assertEquals(val[0], 0)
-        self.assertEquals(val[1], "foo10")
+        self.assertEqual(len(val), 2)
+        self.assertEqual(val[0], 0)
+        self.assertEqual(val[1], "foo10")
 
         val = fork_process(Mock(), target=test_func, args=("foo", 20))
-        self.assertEquals(len(val), 2)
-        self.assertEquals(val[0], 0)
-        self.assertEquals(val[1], "foo20")
+        self.assertEqual(len(val), 2)
+        self.assertEqual(val[0], 0)
+        self.assertEqual(val[1], "foo20")
 
     def testForkWithException(self):
         def test_func():
@@ -359,8 +359,8 @@ class ForkTest(unittest.TestCase):
             self.fail("should not have reached here, returned %s" % val)
         except Exception:
             ex_type, ex, tb = sys.exc_info()
-            self.assertEquals(ex_type, PyBuilderException)
-            self.assertEquals(ex.message, "Test failure message")
+            self.assertEqual(ex_type, PyBuilderException)
+            self.assertEqual(ex.message, "Test failure message")
             self.assertTrue(tb)
 
     def testForkWithValuePicklingError(self):
@@ -376,7 +376,7 @@ class ForkTest(unittest.TestCase):
             self.fail("should not have reached here")
         except Exception:
             ex_type, ex, tb = sys.exc_info()
-            self.assertEquals(ex_type, Exception)
+            self.assertEqual(ex_type, Exception)
             self.assertTrue(str(ex).startswith("Fatal error occurred in the forked process"))
             self.assertTrue("Can't pickle" in str(ex))
             self.assertTrue("FooError" in str(ex))
@@ -394,7 +394,7 @@ class ForkTest(unittest.TestCase):
             self.fail("should not have reached here, returned %s" % val)
         except Exception:
             ex_type, ex, tb = sys.exc_info()
-            self.assertEquals(ex_type, Exception)
+            self.assertEqual(ex_type, Exception)
             self.assertTrue(str(ex).startswith("Fatal error occurred in the forked process"))
             self.assertTrue("Can't pickle" in str(ex))
             self.assertTrue("FooError" in str(ex))
@@ -417,7 +417,7 @@ class ForkTest(unittest.TestCase):
             self.fail("should not have reached here, returned %s" % val)
         except Exception:
             ex_type, ex, tb = sys.exc_info()
-            self.assertEquals(ex_type, Exception)
+            self.assertEqual(ex_type, Exception)
             self.assertTrue(str(ex).startswith("Fatal error occurred in the forked process"))
             self.assertTrue("Can't pickle" in str(ex))
             self.assertTrue("FooError" in str(ex))
@@ -431,7 +431,7 @@ class CommandExecutionTest(unittest.TestCase):
     def test_execute_command(self, popen, _):
         popen.return_value = Mock()
         popen.return_value.wait.return_value = 0
-        self.assertEquals(execute_command(["test", "commands"]), 0)
-        self.assertEquals(execute_command(["test", "commands"], outfile_name="test.out"), 0)
-        self.assertEquals(
+        self.assertEqual(execute_command(["test", "commands"]), 0)
+        self.assertEqual(execute_command(["test", "commands"], outfile_name="test.out"), 0)
+        self.assertEqual(
             execute_command(["test", "commands"], outfile_name="test.out", error_file_name="test.out.err"), 0)

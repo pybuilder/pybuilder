@@ -194,6 +194,17 @@ def execute_command_and_capture_output(*command_and_arguments):
     return process_return_code, stdout, stderr
 
 
+def tail(file_path, lines=20):
+    import tailer
+
+    with open(file_path) as f:
+        return tailer.tail(f, lines)
+
+
+def tail_log(file_path, lines=20):
+    return "\n".join("\t" + l for l in tail(file_path, lines))
+
+
 def assert_can_execute(command_and_arguments, prerequisite, caller):
     with tempfile.NamedTemporaryFile() as f:
         try:

@@ -28,7 +28,7 @@ class ProjectDictWrapperTest(unittest.TestCase):
         project_mock = Mock(Project)
         project_mock.name = "my name"
 
-        self.assertEquals("my name", ProjectDictWrapper(project_mock, Mock())["name"])
+        self.assertEqual("my name", ProjectDictWrapper(project_mock, Mock())["name"])
 
         project_mock.get_property.assert_not_called()
 
@@ -37,7 +37,7 @@ class ProjectDictWrapperTest(unittest.TestCase):
         project_mock.has_property = Mock(return_value=True)
         project_mock.get_property = Mock(return_value="eggs")
 
-        self.assertEquals("eggs", ProjectDictWrapper(project_mock, Mock())["spam"])
+        self.assertEqual("eggs", ProjectDictWrapper(project_mock, Mock())["spam"])
 
         project_mock.get_property.assert_called_with("spam")
 
@@ -47,7 +47,7 @@ class ProjectDictWrapperTest(unittest.TestCase):
         project_mock.has_property = Mock(return_value=False)
         project_mock.get_property = Mock()
 
-        self.assertEquals("${n/a}", ProjectDictWrapper(project_mock, logger_mock)["n/a"])
+        self.assertEqual("${n/a}", ProjectDictWrapper(project_mock, logger_mock)["n/a"])
 
         project_mock.get_property.assert_not_called()
         logger_mock.warn.assert_called_with(

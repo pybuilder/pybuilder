@@ -26,11 +26,10 @@
 
 from pybuilder.core import after, task, init, use_plugin, depends
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import assert_can_execute
 from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
+from pybuilder.utils import assert_can_execute, tail_log
 
-__author__ = 'Maximilien Riehl'
-
+__author__ = "Maximilien Riehl"
 
 use_plugin("python.core")
 
@@ -63,9 +62,9 @@ def analyze(project, logger):
     verbose = project.get_property("verbose")
     project.set_property_if_unset("frosted_verbose_output", verbose)
 
-    command = ExternalCommandBuilder('frosted', project)
-    for ignored_error_code in project.get_property('frosted_ignore', []):
-        command.use_argument('--ignore={0}'.format(ignored_error_code))
+    command = ExternalCommandBuilder("frosted", project)
+    for ignored_error_code in project.get_property("frosted_ignore", []):
+        command.use_argument("--ignore={0}".format(ignored_error_code))
 
     include_test_sources = project.get_property("frosted_include_test_sources")
     include_scripts = project.get_property("frosted_include_scripts")
@@ -78,7 +77,8 @@ def analyze(project, logger):
     count_of_errors = len(result.error_report_lines)
 
     if count_of_errors > 0:
-        logger.error('Errors while running frosted, see {0}'.format(result.error_report_file))
+        logger.error("Errors while running frosted. See %s for full details:\n%s" % (
+            result.error_report_file, tail_log(result.error_report_file)))
 
     if count_of_warnings > 0:
         if project.get_property("frosted_break_build"):

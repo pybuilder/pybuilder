@@ -31,7 +31,7 @@ class PycheckerWarningTest(unittest.TestCase):
             "message": "any message",
             "line_number": 17
         }
-        self.assertEquals(
+        self.assertEqual(
             expected, PycheckerWarning("any message", 17).to_json_dict())
 
 
@@ -46,7 +46,7 @@ class PycheckerModuleReportTest(unittest.TestCase):
             "warnings": [{"message": "warning 1", "line_number": 1},
                          {"message": "warning 2", "line_number": 2}]
         }
-        self.assertEquals(expected, report.to_json_dict())
+        self.assertEqual(expected, report.to_json_dict())
 
 
 class PycheckerReportTest(unittest.TestCase):
@@ -78,7 +78,7 @@ class PycheckerReportTest(unittest.TestCase):
             ]
         }
 
-        self.assertEquals(expected, report.to_json_dict())
+        self.assertEqual(expected, report.to_json_dict())
 
 
 class ParsePycheckerOutputTest(unittest.TestCase):
@@ -96,23 +96,23 @@ class ParsePycheckerOutputTest(unittest.TestCase):
 
         report = parse_pychecker_output(project, warnings)
 
-        self.assertEquals(2, len(report.module_reports))
+        self.assertEqual(2, len(report.module_reports))
 
-        self.assertEquals("package.module_one", report.module_reports[0].name)
-        self.assertEquals(2, len(report.module_reports[0].warnings))
-        self.assertEquals(
+        self.assertEqual("package.module_one", report.module_reports[0].name)
+        self.assertEqual(2, len(report.module_reports[0].warnings))
+        self.assertEqual(
             "Sample warning", report.module_reports[0].warnings[0].message)
-        self.assertEquals(2, report.module_reports[0].warnings[0].line_number)
-        self.assertEquals("Another sample warning",
-                          report.module_reports[0].warnings[1].message)
-        self.assertEquals(4, report.module_reports[0].warnings[1].line_number)
+        self.assertEqual(2, report.module_reports[0].warnings[0].line_number)
+        self.assertEqual("Another sample warning",
+                         report.module_reports[0].warnings[1].message)
+        self.assertEqual(4, report.module_reports[0].warnings[1].line_number)
 
-        self.assertEquals("package.module_two", report.module_reports[1].name)
-        self.assertEquals(2, len(report.module_reports[1].warnings))
-        self.assertEquals("Another sample warning",
-                          report.module_reports[1].warnings[0].message)
-        self.assertEquals(33, report.module_reports[1].warnings[0].line_number)
-        self.assertEquals("Yet another sample warning",
-                          report.module_reports[1].warnings[1].message)
-        self.assertEquals(
+        self.assertEqual("package.module_two", report.module_reports[1].name)
+        self.assertEqual(2, len(report.module_reports[1].warnings))
+        self.assertEqual("Another sample warning",
+                         report.module_reports[1].warnings[0].message)
+        self.assertEqual(33, report.module_reports[1].warnings[0].line_number)
+        self.assertEqual("Yet another sample warning",
+                         report.module_reports[1].warnings[1].message)
+        self.assertEqual(
             332, report.module_reports[1].warnings[1].line_number)

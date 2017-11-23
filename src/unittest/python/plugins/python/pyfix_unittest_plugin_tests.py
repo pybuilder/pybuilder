@@ -17,17 +17,15 @@
 #   limitations under the License.
 
 from unittest import TestCase
-from test_utils import Mock, call, patch
 
 from pybuilder.core import Project
 from pybuilder.plugins.python.pyfix_unittest_plugin import init_test_source_directory
+from test_utils import Mock, call, patch
 
 
 class InitTestSourceDirectoryTests(TestCase):
-
     @patch('pybuilder.plugins.python.pyfix_plugin_impl.execute_tests_matching')
     def test_should_set_pyfix_dependency(self, mock_execute_tests_matching):
-
         mock_project = Mock(Project)
 
         init_test_source_directory(mock_project)
@@ -36,12 +34,11 @@ class InitTestSourceDirectoryTests(TestCase):
 
     @patch('pybuilder.plugins.python.pyfix_plugin_impl.execute_tests_matching')
     def test_should_set_default_properties(self, mock_execute_tests_matching):
-
         mock_project = Mock(Project)
 
         init_test_source_directory(mock_project)
 
-        self.assertEquals(mock_project.set_property_if_unset.call_args_list,
-                          [call('dir_source_unittest_python', 'src/unittest/python'),
-                           call('pyfix_unittest_module_glob', '*_pyfix_tests'),
-                           call('pyfix_unittest_file_suffix', None)])
+        self.assertEqual(mock_project.set_property_if_unset.call_args_list,
+                         [call('dir_source_unittest_python', 'src/unittest/python'),
+                          call('pyfix_unittest_module_glob', '*_pyfix_tests'),
+                          call('pyfix_unittest_file_suffix', None)])

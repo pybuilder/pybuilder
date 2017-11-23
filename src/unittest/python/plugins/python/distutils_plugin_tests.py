@@ -703,7 +703,8 @@ class ExecuteDistUtilsTest(PyBuilderTestCase):
     def test__run_process_and_wait(self, popen):
         commands = ["a", "b", "c"]
         _run_process_and_wait(commands, "test cwd", "test stdout", "test_stderr")
-        popen.assert_called_with(commands, cwd="test cwd", stdout="test stdout", stderr="test_stderr", shell=False)
+        popen.assert_called_with(commands, cwd="test cwd", stdin=ANY, stdout="test stdout", stderr="test_stderr",
+                                 shell=False)
 
 
 class UploadTests(PyBuilderTestCase):
