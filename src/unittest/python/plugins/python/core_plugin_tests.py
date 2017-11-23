@@ -19,18 +19,16 @@
 import unittest
 from os.path import join
 
-from test_utils import patch
-
-from pybuilder.plugins.python.core_plugin import init_python_directories
+from pybuilder.core import Project
 from pybuilder.plugins.python.core_plugin import (DISTRIBUTION_PROPERTY,
                                                   PYTHON_SOURCES_PROPERTY,
                                                   SCRIPTS_SOURCES_PROPERTY,
                                                   SCRIPTS_TARGET_PROPERTY)
-from pybuilder.core import Project
+from pybuilder.plugins.python.core_plugin import init_python_directories
+from test_utils import patch
 
 
-class InitPythonDirectoriesTest (unittest.TestCase):
-
+class InitPythonDirectoriesTest(unittest.TestCase):
     def greedy(self, generator):
         return [element for element in generator]
 
@@ -44,7 +42,7 @@ class InitPythonDirectoriesTest (unittest.TestCase):
 
         init_python_directories(self.project)
 
-        self.assertEquals(
+        self.assertEqual(
             ['foo', 'bar'],
             self.greedy(self.project.list_modules())
         )
@@ -61,7 +59,7 @@ class InitPythonDirectoriesTest (unittest.TestCase):
 
         init_python_directories(self.project)
 
-        self.assertEquals(
+        self.assertEqual(
             ['pybuilder.pluginhelper',
              'pybuilder.plugins'],
             self.greedy(self.project.list_packages())
@@ -79,7 +77,7 @@ class InitPythonDirectoriesTest (unittest.TestCase):
 
         init_python_directories(self.project)
 
-        self.assertEquals(
+        self.assertEqual(
             ['pybuilder.pluginhelper',
              'pybuilder.plugins'],
             self.greedy(self.project.list_packages())
@@ -87,20 +85,20 @@ class InitPythonDirectoriesTest (unittest.TestCase):
 
     def test_should_set_python_sources_property(self):
         init_python_directories(self.project)
-        self.assertEquals(
+        self.assertEqual(
             "src/main/python", self.project.get_property(PYTHON_SOURCES_PROPERTY, "caboom"))
 
     def test_should_set_scripts_sources_property(self):
         init_python_directories(self.project)
-        self.assertEquals(
+        self.assertEqual(
             "src/main/scripts", self.project.get_property(SCRIPTS_SOURCES_PROPERTY, "caboom"))
 
     def test_should_set_dist_scripts_property(self):
         init_python_directories(self.project)
-        self.assertEquals(
+        self.assertEqual(
             "scripts", self.project.get_property(SCRIPTS_TARGET_PROPERTY))
 
     def test_should_set_dist_property(self):
         init_python_directories(self.project)
-        self.assertEquals("$dir_target/dist/.-1.0.dev0",
-                          self.project.get_property(DISTRIBUTION_PROPERTY, "caboom"))
+        self.assertEqual("$dir_target/dist/.-1.0.dev0",
+                         self.project.get_property(DISTRIBUTION_PROPERTY, "caboom"))

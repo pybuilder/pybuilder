@@ -42,7 +42,8 @@ from pybuilder.utils import (as_list,
                              is_notstr_iterable,
                              get_dist_version_string,
                              safe_log_file_name,
-                             assert_can_execute)
+                             assert_can_execute,
+                             tail_log)
 # Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
 from pybuilder import pip_utils
 
@@ -304,10 +305,10 @@ def execute_distutils(project, logger, distutils_commands, clean=False):
     for command in distutils_commands:
         logger.debug("Executing distutils command %s", command)
         if is_string(command):
-            output_file_path = os.path.join(reports_dir, safe_log_file_name(command))
+            out_file = os.path.join(reports_dir, safe_log_file_name(command))
         else:
-            output_file_path = os.path.join(reports_dir, safe_log_file_name("__".join(command)))
-        with open(output_file_path, "w") as output_file:
+            out_file = os.path.join(reports_dir, safe_log_file_name("__".join(command)))
+        with open(out_file, "w") as out_f:
             commands = [sys.executable, setup_script]
             if project.get_property("verbose"):
                 commands.append("-v")
@@ -317,10 +318,11 @@ def execute_distutils(project, logger, distutils_commands, clean=False):
                 commands.extend(command.split())
             else:
                 commands.extend(command)
-            return_code = _run_process_and_wait(commands, project.expand_path("$dir_dist"), output_file)
+            return_code = _run_process_and_wait(commands, project.expand_path("$dir_dist"), out_f)
             if return_code != 0:
                 raise BuildFailedException(
-                    "Error while executing setup command %s, see %s for details" % (command, output_file_path))
+                    "Error while executing setup command %s. See %s for full details:\n%s",
+                    command, out_file, tail_log(out_file))
 
 
 def execute_twine(project, logger, command_args, register):
@@ -350,7 +352,7 @@ def _execute_twine(project, logger, command, work_dir, out_file):
         return_code = _run_process_and_wait(commands, work_dir, out_f)
         if return_code != 0:
             raise BuildFailedException(
-                "Error while executing Twine %s, see %s for details" % (command, out_file))
+                "Error while executing Twine %s. See %s for full details:\n%s", command, out_file, tail_log(out_file))
 
 
 def strip_comments(requirements):
@@ -625,12 +627,14 @@ def _normalize_setup_post_pre_script(s, indent=8):
 
 
 def _run_process_and_wait(commands, cwd, stdout, stderr=None):
-    process = subprocess.Popen(commands,
-                               cwd=cwd,
-                               stdout=stdout,
-                               stderr=stderr or stdout,
-                               shell=False)
-    return process.wait()
+    with open(os.devnull) as devnull:
+        process = subprocess.Popen(commands,
+                                   cwd=cwd,
+                                   stdin=devnull,
+                                   stdout=stdout,
+                                   stderr=stderr or stdout,
+                                   shell=False)
+        return process.wait()
 
 
 def _prepare_reports_dir(project):

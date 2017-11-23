@@ -31,17 +31,17 @@ class FlakePluginInitializationTests(TestCase):
             initialize_flake8_plugin(self.project)
 
         for property_name, property_value in expected_properties.items():
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("flake8_break_build"), True)
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("flake8_max_line_length"), 80)
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("flake8_include_patterns"), "*.py")
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("flake8_exclude_patterns"), ".svn")
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("flake8_include_test_sources"), True)
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("flake8_include_scripts"), True)
-            self.assertEquals(
+            self.assertEqual(
                 self.project.get_property("flake8_max_complexity"), 10)

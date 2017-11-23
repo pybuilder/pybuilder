@@ -78,7 +78,7 @@ class IntegrationTestSupport(unittest.TestCase):
     def assert_file_empty(self, name):
         self.assert_file_exists(name)
         full_path = self.full_path(name)
-        self.assertEquals(0, os.path.getsize(full_path), msg="File %s is not empty." % full_path)
+        self.assertEqual(0, os.path.getsize(full_path), msg="File %s is not empty." % full_path)
 
     def assert_file_contains(self, name, expected_content_part):
         full_path = self.full_path(name)
@@ -111,7 +111,7 @@ class IntegrationTestSupport(unittest.TestCase):
 
                 message = 'line {0} is not as expected.\n   expected: "{1}"\n    but got: "{2}"'.format(
                     actual_line_number, expected_line_showing_escaped_new_line, actual_line_showing_escaped_new_line)
-                self.assertEquals(expected_line, actual_line, message)
+                self.assertEqual(expected_line, actual_line, message)
 
         self.assertEqual(expected_lines, actual_line_number)
 

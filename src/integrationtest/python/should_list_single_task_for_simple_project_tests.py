@@ -32,8 +32,8 @@ def my_task (): pass
         reactor = self.prepare_reactor()
 
         tasks = reactor.get_tasks()
-        self.assertEquals(1, len(tasks))
-        self.assertEquals("my_task", tasks[0].name)
+        self.assertEqual(1, len(tasks))
+        self.assertEqual("my_task", tasks[0].name)
 
 
 if __name__ == "__main__":

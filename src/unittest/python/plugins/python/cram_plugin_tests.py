@@ -18,8 +18,6 @@
 
 import unittest
 
-from test_utils import patch, Mock, call
-
 from pybuilder.core import Project
 from pybuilder.errors import BuildFailedException
 from pybuilder.plugins.python.cram_plugin import (
@@ -28,6 +26,7 @@ from pybuilder.plugins.python.cram_plugin import (
     _report_file,
     run_cram_tests,
 )
+from test_utils import patch, Mock, call
 
 
 class CramPluginTests(unittest.TestCase):
@@ -36,14 +35,14 @@ class CramPluginTests(unittest.TestCase):
         project.set_property('verbose', False)
         expected = ['cram', '-E']
         received = _cram_command_for(project)
-        self.assertEquals(expected, received)
+        self.assertEqual(expected, received)
 
     def test_command_respects_verbose(self):
         project = Project('.')
         project.set_property('verbose', True)
         expected = ['cram', '-E', '--verbose']
         received = _cram_command_for(project)
-        self.assertEquals(expected, received)
+        self.assertEqual(expected, received)
 
     @patch('pybuilder.plugins.python.cram_plugin.discover_files_matching')
     def test_find_files(self, discover_mock):
@@ -53,7 +52,7 @@ class CramPluginTests(unittest.TestCase):
         expected = ['/any/dir/test.cram']
         discover_mock.return_value = expected
         received = _find_files(project)
-        self.assertEquals(expected, received)
+        self.assertEqual(expected, received)
         discover_mock.assert_called_once_with('/any/dir', '*.t')
 
     def test_report(self):
@@ -61,7 +60,7 @@ class CramPluginTests(unittest.TestCase):
         project.set_property('dir_reports', '/any/dir')
         expected = './any/dir/cram.err'
         received = _report_file(project)
-        self.assertEquals(expected, received)
+        self.assertEqual(expected, received)
 
     @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
@@ -101,7 +100,7 @@ class CramPluginTests(unittest.TestCase):
                                call('Cram tests were fine'),
                                call('results'),
                                ]
-        self.assertEquals(expected_info_calls, logger.info.call_args_list)
+        self.assertEqual(expected_info_calls, logger.info.call_args_list)
 
     @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
@@ -141,8 +140,9 @@ class CramPluginTests(unittest.TestCase):
                                call('Cram tests were fine'),
                                call('results'),
                                ]
-        self.assertEquals(expected_info_calls, logger.info.call_args_list)
+        self.assertEqual(expected_info_calls, logger.info.call_args_list)
 
+    @patch('pybuilder.plugins.python.cram_plugin.tail_log')
     @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
     @patch('pybuilder.plugins.python.cram_plugin._report_file')
@@ -155,7 +155,8 @@ class CramPluginTests(unittest.TestCase):
                                   os_mock,
                                   report_mock,
                                   find_files_mock,
-                                  command_mock
+                                  command_mock,
+                                  tail_mock,
                                   ):
         project = Project('.')
         project.set_property('verbose', False)
@@ -169,6 +170,7 @@ class CramPluginTests(unittest.TestCase):
         os_mock.copy.return_value = {}
         read_file_mock.return_value = ['test failes for file', '# results']
         execute_mock.return_value = 1
+        tail_mock.return_value = "tail data"
 
         self.assertRaises(
             BuildFailedException, run_cram_tests, project, logger)
@@ -179,56 +181,10 @@ class CramPluginTests(unittest.TestCase):
         )
         expected_info_calls = [call('Running Cram command line tests'),
                                ]
-        expected_error_calls = [call('Cram tests failed!'),
-                                call('results'),
-                                call("See: 'report_file' for details"),
+        expected_error_calls = [call('Cram tests failed! See report_file for full details:\ntail data'),
                                 ]
-        self.assertEquals(expected_info_calls, logger.info.call_args_list)
-        self.assertEquals(expected_error_calls, logger.error.call_args_list)
-
-    @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
-    @patch('pybuilder.plugins.python.cram_plugin._find_files')
-    @patch('pybuilder.plugins.python.cram_plugin._report_file')
-    @patch('os.environ')
-    @patch('pybuilder.plugins.python.cram_plugin.read_file')
-    @patch('pybuilder.plugins.python.cram_plugin.execute_command')
-    def test_running_plugin_fails_with_verbose(self,
-                                               execute_mock,
-                                               read_file_mock,
-                                               os_mock,
-                                               report_mock,
-                                               find_files_mock,
-                                               command_mock
-                                               ):
-        project = Project('.')
-        project.set_property('verbose', True)
-        project.set_property('dir_source_main_python', 'python')
-        project.set_property('dir_source_main_scripts', 'scripts')
-        logger = Mock()
-
-        command_mock.return_value = ['cram']
-        find_files_mock.return_value = ['test1.cram', 'test2.cram']
-        report_mock.return_value = 'report_file'
-        os_mock.copy.return_value = {}
-        read_file_mock.return_value = ['test failes for file', '# results']
-        execute_mock.return_value = 1
-
-        self.assertRaises(
-            BuildFailedException, run_cram_tests, project, logger)
-        execute_mock.assert_called_once_with(
-            ['cram', 'test1.cram', 'test2.cram'], 'report_file',
-            error_file_name='report_file',
-            env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
-        )
-        expected_info_calls = [call('Running Cram command line tests'),
-                               ]
-        expected_error_calls = [call('Cram tests failed!'),
-                                call('test failes for file'),
-                                call('# results'),
-                                call("See: 'report_file' for details"),
-                                ]
-        self.assertEquals(expected_info_calls, logger.info.call_args_list)
-        self.assertEquals(expected_error_calls, logger.error.call_args_list)
+        self.assertEqual(expected_info_calls, logger.info.call_args_list)
+        self.assertEqual(expected_error_calls, logger.error.call_args_list)
 
     @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
@@ -263,7 +219,7 @@ class CramPluginTests(unittest.TestCase):
         execute_mock.assert_not_called()
         expected_info_calls = [call('Running Cram command line tests'),
                                ]
-        self.assertEquals(expected_info_calls, logger.info.call_args_list)
+        self.assertEqual(expected_info_calls, logger.info.call_args_list)
 
     @patch('pybuilder.plugins.python.cram_plugin._cram_command_for')
     @patch('pybuilder.plugins.python.cram_plugin._find_files')
@@ -299,4 +255,4 @@ class CramPluginTests(unittest.TestCase):
         execute_mock.assert_not_called()
         expected_info_calls = [call('Running Cram command line tests'),
                                ]
-        self.assertEquals(expected_info_calls, logger.info.call_args_list)
+        self.assertEqual(expected_info_calls, logger.info.call_args_list)

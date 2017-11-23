@@ -30,7 +30,8 @@ from pybuilder.core import after, depends, init, task, use_plugin
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import (execute_command,
                              assert_can_execute,
-                             as_list)
+                             as_list,
+                             tail_log)
 
 __author__ = 'Thomas Prebble', 'Marcel Wolf', 'Arcadiy Ivanov'
 
@@ -168,7 +169,9 @@ def run_sphinx_build(build_command, task_name, logger, project, builder=None):
 
     exit_code = execute_command(build_command, log_file, shell=False)
     if exit_code != 0:
-        raise BuildFailedException("Sphinx build command failed. See %s for details.", log_file)
+        raise BuildFailedException("Sphinx build command failed. See %s for full details:\n%s",
+                                   log_file,
+                                   tail_log(log_file))
 
 
 @task("sphinx_generate_documentation", "Generates documentation with sphinx")

@@ -37,15 +37,15 @@ class ProjectTest(unittest.TestCase):
     def test_should_pick_directory_name_for_project_name_when_name_is_not_given(self, os_path_basename):
         project = Project(basedir="/imaginary")
 
-        self.assertEquals("imaginary", project.name)
+        self.assertEqual("imaginary", project.name)
         os_path_basename.assert_called_with("/imaginary")
 
     def test_get_property_should_return_default_value_when_property_is_not_set(self):
-        self.assertEquals("spam", self.project.get_property("spam", "spam"))
+        self.assertEqual("spam", self.project.get_property("spam", "spam"))
 
     def test_get_property_should_return_property_value_when_property_is_set(self):
         self.project.set_property("spam", "eggs")
-        self.assertEquals("eggs", self.project.get_property("spam", "spam"))
+        self.assertEqual("eggs", self.project.get_property("spam", "spam"))
 
     def test_has_property_should_return_false_when_property_is_not_set(self):
         self.assertFalse(self.project.has_property("spam"))
@@ -56,12 +56,12 @@ class ProjectTest(unittest.TestCase):
 
     def test_set_property_if_unset_should_set_property_when_property_is_not_set(self):
         self.project.set_property_if_unset("spam", "spam")
-        self.assertEquals("spam", self.project.get_property("spam"))
+        self.assertEqual("spam", self.project.get_property("spam"))
 
     def test_set_property_if_unset_should_not_set_property_when_property_is_already_set(self):
         self.project.set_property("spam", "eggs")
         self.project.set_property_if_unset("spam", "spam")
-        self.assertEquals("eggs", self.project.get_property("spam"))
+        self.assertEqual("eggs", self.project.get_property("spam"))
 
     def test_expand_should_raise_exception_when_property_is_not_set(self):
         self.assertRaises(
@@ -69,18 +69,18 @@ class ProjectTest(unittest.TestCase):
 
     def test_expand_should_return_expanded_string_when_property_is_set(self):
         self.project.set_property("spam", "eggs")
-        self.assertEquals("eggs", self.project.expand("$spam"))
+        self.assertEqual("eggs", self.project.expand("$spam"))
 
     def test_expand_should_return_expanded_string_when_two_properties_are_found_and_set(self):
         self.project.set_property("spam", "spam")
         self.project.set_property("eggs", "eggs")
-        self.assertEquals(
+        self.assertEqual(
             "spam and eggs", self.project.expand("$spam and $eggs"))
 
     def test_expand_should_expand_property_with_value_being_an_property_expression(self):
         self.project.set_property("spam", "spam")
         self.project.set_property("eggs", "$spam")
-        self.assertEquals("spam", self.project.expand("$eggs"))
+        self.assertEqual("spam", self.project.expand("$eggs"))
 
     def test_expand_should_raise_exception_when_first_expansion_leads_to_property_reference_and_property_is_undefined(
             self):
@@ -91,13 +91,13 @@ class ProjectTest(unittest.TestCase):
     def test_expand_path_should_return_expanded_path(self):
         self.project.set_property("spam", "spam")
         self.project.set_property("eggs", "eggs")
-        self.assertEquals(os.path.join("/imaginary", "spam", "eggs"),
-                          self.project.expand_path("$spam/$eggs"))
+        self.assertEqual(os.path.join("/imaginary", "spam", "eggs"),
+                         self.project.expand_path("$spam/$eggs"))
 
     def test_expand_path_should_return_expanded_path_and_additional_parts_when_additional_parts_are_given(self):
         self.project.set_property("spam", "spam")
         self.project.set_property("eggs", "eggs")
-        self.assertEquals(
+        self.assertEqual(
             os.path.join("/imaginary", "spam", "eggs", "foo", "bar"),
             self.project.expand_path("$spam/$eggs", "foo", "bar"))
 
@@ -107,26 +107,26 @@ class ProjectTest(unittest.TestCase):
 
     def test_should_return_property_value_when_getting_mandatory_propert_and_property_exists(self):
         self.project.set_property("spam", "spam")
-        self.assertEquals("spam", self.project.get_mandatory_property("spam"))
+        self.assertEqual("spam", self.project.get_mandatory_property("spam"))
 
     def test_should_add_runtime_dependency_with_name_only(self):
         self.project.depends_on("spam")
-        self.assertEquals(1, len(self.project.dependencies))
-        self.assertEquals("spam", self.project.dependencies[0].name)
-        self.assertEquals(None, self.project.dependencies[0].version)
+        self.assertEqual(1, len(self.project.dependencies))
+        self.assertEqual("spam", self.project.dependencies[0].name)
+        self.assertEqual(None, self.project.dependencies[0].version)
 
     def test_should_add_dependency_with_name_and_version(self):
         self.project.depends_on("spam", "0.7")
-        self.assertEquals(1, len(self.project.dependencies))
-        self.assertEquals("spam", self.project.dependencies[0].name)
-        self.assertEquals(">=0.7", self.project.dependencies[0].version)
+        self.assertEqual(1, len(self.project.dependencies))
+        self.assertEqual("spam", self.project.dependencies[0].name)
+        self.assertEqual(">=0.7", self.project.dependencies[0].version)
 
     def test_should_add_dependency_with_name_and_version_only_once(self):
         self.project.depends_on("spam", "0.7")
         self.project.depends_on("spam", "0.7")
-        self.assertEquals(1, len(self.project.dependencies))
-        self.assertEquals("spam", self.project.dependencies[0].name)
-        self.assertEquals(">=0.7", self.project.dependencies[0].version)
+        self.assertEqual(1, len(self.project.dependencies))
+        self.assertEqual("spam", self.project.dependencies[0].name)
+        self.assertEqual(">=0.7", self.project.dependencies[0].version)
 
 
 class ProjectManifestTests(unittest.TestCase):
@@ -150,30 +150,30 @@ class ProjectManifestTests(unittest.TestCase):
 
     def test_should_add_filename_to_list_of_included_files(self):
         self.project._manifest_include("spam")
-        self.assertEquals(["spam"], self.project.manifest_included_files)
+        self.assertEqual(["spam"], self.project.manifest_included_files)
 
     def test_should_add_filenames_in_correct_order_to_list_of_included_files(self):
         self.project._manifest_include("spam")
         self.project._manifest_include("egg")
         self.project._manifest_include("yadt")
-        self.assertEquals(
+        self.assertEqual(
             ["spam", "egg", "yadt"], self.project.manifest_included_files)
 
     def test_should_add_directory_to_list_of_includes(self):
         self.project._manifest_include_directory('yadt', ('egg', 'spam',))
-        self.assertEquals([('yadt', ('egg', 'spam',)), ],
-                          self.project.manifest_included_directories)
+        self.assertEqual([('yadt', ('egg', 'spam',)), ],
+                         self.project.manifest_included_directories)
 
     def test_should_add_directories_in_correct_order_to_list_of_includes(self):
         self.project._manifest_include_directory('spam', ('*',))
         self.project._manifest_include_directory('egg', ('*',))
         self.project._manifest_include_directory('yadt/spam', ('*',))
 
-        self.assertEquals([('spam', ('*',)),
-                           ('egg', ('*',)),
-                           ('yadt/spam', ('*',)),
-                           ],
-                          self.project.manifest_included_directories)
+        self.assertEqual([('spam', ('*',)),
+                          ('egg', ('*',)),
+                          ('yadt/spam', ('*',)),
+                          ],
+                         self.project.manifest_included_directories)
 
 
 class ProjectPackageDataTests(unittest.TestCase):
@@ -208,33 +208,33 @@ class ProjectPackageDataTests(unittest.TestCase):
         self.assertRaises(ValueError, self.project.include_directory, "spam", ["\t   \n"])
 
     def test_should_package_data_dictionary_is_empty(self):
-        self.assertEquals({}, self.project.package_data)
+        self.assertEqual({}, self.project.package_data)
 
     def test_should_add_filename_to_list_of_included_files_for_package_spam(self):
         self.project.include_file("spam", "eggs")
 
-        self.assertEquals({"spam": ["eggs"]}, self.project.package_data)
+        self.assertEqual({"spam": ["eggs"]}, self.project.package_data)
 
     def test_should_add_two_filenames_to_list_of_included_files_for_package_spam(self):
         self.project.include_file("spam", "eggs")
         self.project.include_file("spam", "ham")
 
-        self.assertEquals({"spam": ["eggs", "ham"]}, self.project.package_data)
+        self.assertEqual({"spam": ["eggs", "ham"]}, self.project.package_data)
 
     def test_should_add_two_filenames_to_list_of_included_files_for_two_different_packages(self):
         self.project.include_file("spam", "eggs")
         self.project.include_file("monty", "ham")
 
-        self.assertEquals(
+        self.assertEqual(
             {"monty": ["ham"], "spam": ["eggs"]}, self.project.package_data)
 
     def test_should_add_two_filenames_to_list_of_included_files_and_to_manifest(self):
         self.project.include_file("spam", "eggs")
         self.project.include_file("monty", "ham")
 
-        self.assertEquals(
+        self.assertEqual(
             {"monty": ["ham"], "spam": ["eggs"]}, self.project.package_data)
-        self.assertEquals(
+        self.assertEqual(
             ["spam/eggs", "monty/ham"], self.project.manifest_included_files)
 
 
@@ -243,12 +243,12 @@ class ProjectDataFilesTests(unittest.TestCase):
         self.project = Project(basedir="/imaginary", name="Unittest")
 
     def test_should_return_empty_list_for_property_files_to_install(self):
-        self.assertEquals([], self.project.files_to_install)
+        self.assertEqual([], self.project.files_to_install)
 
     def test_should_return_file_to_install(self):
         self.project.install_file("destination", "filename")
 
-        self.assertEquals(
+        self.assertEqual(
             [("destination", ["filename"])], self.project.files_to_install)
 
     def test_should_raise_exception_when_no_destination_given(self):
@@ -267,7 +267,7 @@ class ProjectDataFilesTests(unittest.TestCase):
         self.project.install_file("destination", "filename1")
         self.project.install_file("destination", "filename2")
 
-        self.assertEquals(
+        self.assertEqual(
             [("destination", ["filename1", "filename2"])], self.project.files_to_install)
 
     def test_should_return_files_to_install_into_different_destinations(self):
@@ -275,18 +275,18 @@ class ProjectDataFilesTests(unittest.TestCase):
         self.project.install_file("destination_a", "filename_a_2")
         self.project.install_file("destination_b", "filename_b")
 
-        self.assertEquals([("destination_a", ["filename_a_1", "filename_a_2"]),
-                           ("destination_b", ["filename_b"])], self.project.files_to_install)
+        self.assertEqual([("destination_a", ["filename_a_1", "filename_a_2"]),
+                          ("destination_b", ["filename_b"])], self.project.files_to_install)
 
     def test_should_return_files_to_install_into_different_destinations_and_add_them_to_manifest(self):
         self.project.install_file("destination_a", "somepackage1/filename1")
         self.project.install_file("destination_a", "somepackage2/filename2")
         self.project.install_file("destination_b", "somepackage3/filename3")
 
-        self.assertEquals(
+        self.assertEqual(
             [("destination_a", ["somepackage1/filename1", "somepackage2/filename2"]),
              ("destination_b", ["somepackage3/filename3"])], self.project.files_to_install)
-        self.assertEquals(
+        self.assertEqual(
             ["somepackage1/filename1", "somepackage2/filename2", "somepackage3/filename3"],
             self.project.manifest_included_files)
 

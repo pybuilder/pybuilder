@@ -25,7 +25,8 @@ from pybuilder.core import (after,
                             depends)
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import (assert_can_execute,
-                             execute_command
+                             execute_command,
+                             tail_log
                              )
 
 __author__ = 'Marcel Wolf'
@@ -102,4 +103,4 @@ def run_py2dsc_deb_build(build_command, task_name, logger, project):
         exit_code = execute_command(build_command, log_file, shell=True)
         if exit_code != 0:
             raise BuildFailedException(
-                "py2dsc_deb build command failed. See %s for details.", log_file)
+                "py2dsc_deb build command failed. See %s for full details:\n%s", log_file, tail_log(log_file))

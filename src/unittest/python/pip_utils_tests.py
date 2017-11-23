@@ -20,26 +20,26 @@ import os
 import unittest
 
 from pybuilder import core
-from pybuilder.pip_common import pip_version
 from pybuilder import pip_utils
+from pybuilder.pip_common import pip_version
 from test_utils import patch, ANY
 
 
 class PipVersionTests(unittest.TestCase):
     def test_pip_dependency_version(self):
-        self.assertEquals(pip_utils.build_dependency_version_string(core.Dependency("test", "1.2.3")), ">=1.2.3")
-        self.assertEquals(pip_utils.build_dependency_version_string(core.Dependency("test", ">=1.2.3,<=2.3.4")),
-                          "<=2.3.4,>=1.2.3")
-        self.assertEquals(pip_utils.build_dependency_version_string("1.2.3"), "1.2.3")
-        self.assertEquals(pip_utils.build_dependency_version_string(None), "")
+        self.assertEqual(pip_utils.build_dependency_version_string(core.Dependency("test", "1.2.3")), ">=1.2.3")
+        self.assertEqual(pip_utils.build_dependency_version_string(core.Dependency("test", ">=1.2.3,<=2.3.4")),
+                         "<=2.3.4,>=1.2.3")
+        self.assertEqual(pip_utils.build_dependency_version_string("1.2.3"), "1.2.3")
+        self.assertEqual(pip_utils.build_dependency_version_string(None), "")
 
     def test_version_satisfies_spec(self):
-        self.assertEquals(pip_utils.version_satisfies_spec(None, "blah"), True)
-        self.assertEquals(pip_utils.version_satisfies_spec("blah", None), False)
-        self.assertEquals(pip_utils.version_satisfies_spec(">=1.2.3", "1.2.4"), True)
-        self.assertEquals(pip_utils.version_satisfies_spec(">=1.2.3", "1.2.4.dev987"), False)
-        self.assertEquals(pip_utils.version_satisfies_spec(">=1.0", "1.1.dev1"), False)
-        self.assertEquals(pip_utils.version_satisfies_spec(">=1.0,>=0.0.dev0", "1.1.dev1"), True)
+        self.assertEqual(pip_utils.version_satisfies_spec(None, "blah"), True)
+        self.assertEqual(pip_utils.version_satisfies_spec("blah", None), False)
+        self.assertEqual(pip_utils.version_satisfies_spec(">=1.2.3", "1.2.4"), True)
+        self.assertEqual(pip_utils.version_satisfies_spec(">=1.2.3", "1.2.4.dev987"), False)
+        self.assertEqual(pip_utils.version_satisfies_spec(">=1.0", "1.1.dev1"), False)
+        self.assertEqual(pip_utils.version_satisfies_spec(">=1.0,>=0.0.dev0", "1.1.dev1"), True)
 
     def test_get_package_version(self):
         # Single item
@@ -60,7 +60,7 @@ class PipVersionTests(unittest.TestCase):
         multiple_identical_items = pip_utils.get_package_version(
             ["pip", core.Dependency("pip")])
         self.assertTrue("pip" in multiple_identical_items)
-        self.assertEquals(len(multiple_identical_items), 1)
+        self.assertEqual(len(multiple_identical_items), 1)
 
         # Validate case
         lower_case_packages = pip_utils.get_package_version("PiP")
@@ -69,30 +69,30 @@ class PipVersionTests(unittest.TestCase):
         self.assertTrue("PiP" not in lower_case_packages)
 
     def test_build_pip_install_options(self):
-        self.assertEquals(pip_utils.build_pip_install_options(), [])
-        self.assertEquals(pip_utils.build_pip_install_options(index_url="foo"), ["--index-url", "foo"])
-        self.assertEquals(pip_utils.build_pip_install_options(extra_index_url="foo"), ["--extra-index-url", "foo"])
-        self.assertEquals(pip_utils.build_pip_install_options(index_url="foo", extra_index_url="bar"),
-                          ["--index-url", "foo", "--extra-index-url", "bar"])
-        self.assertEquals(pip_utils.build_pip_install_options(extra_index_url=("foo", "bar")),
-                          ["--extra-index-url", "foo", "--extra-index-url", "bar"])
-        self.assertEquals(pip_utils.build_pip_install_options(trusted_host="foo"),
-                          ["--trusted-host", "foo"])
-        self.assertEquals(pip_utils.build_pip_install_options(trusted_host=("foo", "bar")),
-                          ["--trusted-host", "foo", "--trusted-host", "bar"])
-        self.assertEquals(pip_utils.build_pip_install_options(upgrade=True),
-                          ["--upgrade"] if pip_version < "9.0" else
-                          ["--upgrade", "--upgrade-strategy", "only-if-needed"])
-        self.assertEquals(pip_utils.build_pip_install_options(upgrade=True, eager_upgrade=True),
-                          ["--upgrade"] if pip_version < "9.0" else
-                          ["--upgrade", "--upgrade-strategy", "eager"])
-        self.assertEquals(pip_utils.build_pip_install_options(verbose=True), ["--verbose"])
-        self.assertEquals(pip_utils.build_pip_install_options(force_reinstall=True), ["--force-reinstall"])
-        self.assertEquals(pip_utils.build_pip_install_options(target_dir="target dir"), ["-t", "target dir"])
-        self.assertEquals(pip_utils.build_pip_install_options(target_dir="target dir"), ["-t", "target dir"])
-        self.assertEquals(pip_utils.build_pip_install_options(constraint_file="constraint file"),
-                          ["-c", "constraint file"])
-        self.assertEquals(pip_utils.build_pip_install_options(insecure_installs=["foo", "bar"]), [
+        self.assertEqual(pip_utils.build_pip_install_options(), [])
+        self.assertEqual(pip_utils.build_pip_install_options(index_url="foo"), ["--index-url", "foo"])
+        self.assertEqual(pip_utils.build_pip_install_options(extra_index_url="foo"), ["--extra-index-url", "foo"])
+        self.assertEqual(pip_utils.build_pip_install_options(index_url="foo", extra_index_url="bar"),
+                         ["--index-url", "foo", "--extra-index-url", "bar"])
+        self.assertEqual(pip_utils.build_pip_install_options(extra_index_url=("foo", "bar")),
+                         ["--extra-index-url", "foo", "--extra-index-url", "bar"])
+        self.assertEqual(pip_utils.build_pip_install_options(trusted_host="foo"),
+                         ["--trusted-host", "foo"])
+        self.assertEqual(pip_utils.build_pip_install_options(trusted_host=("foo", "bar")),
+                         ["--trusted-host", "foo", "--trusted-host", "bar"])
+        self.assertEqual(pip_utils.build_pip_install_options(upgrade=True),
+                         ["--upgrade"] if pip_version < "9.0" else
+                         ["--upgrade", "--upgrade-strategy", "only-if-needed"])
+        self.assertEqual(pip_utils.build_pip_install_options(upgrade=True, eager_upgrade=True),
+                         ["--upgrade"] if pip_version < "9.0" else
+                         ["--upgrade", "--upgrade-strategy", "eager"])
+        self.assertEqual(pip_utils.build_pip_install_options(verbose=True), ["--verbose"])
+        self.assertEqual(pip_utils.build_pip_install_options(force_reinstall=True), ["--force-reinstall"])
+        self.assertEqual(pip_utils.build_pip_install_options(target_dir="target dir"), ["-t", "target dir"])
+        self.assertEqual(pip_utils.build_pip_install_options(target_dir="target dir"), ["-t", "target dir"])
+        self.assertEqual(pip_utils.build_pip_install_options(constraint_file="constraint file"),
+                         ["-c", "constraint file"])
+        self.assertEqual(pip_utils.build_pip_install_options(insecure_installs=["foo", "bar"]), [
             "--allow-unverified", "foo",
             "--allow-external", "foo",
             "--allow-unverified", "bar",

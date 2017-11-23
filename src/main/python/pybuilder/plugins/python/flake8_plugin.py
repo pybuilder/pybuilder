@@ -25,11 +25,10 @@
 
 from pybuilder.core import after, task, init, use_plugin, depends
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import assert_can_execute
 from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
+from pybuilder.utils import assert_can_execute, tail_log
 
 __author__ = 'Michael Gruber'
-
 
 use_plugin("python.core")
 
@@ -85,7 +84,8 @@ def analyze(project, logger):
     count_of_errors = len(result.error_report_lines)
 
     if count_of_errors > 0:
-        logger.error('Errors while running flake8, see {0}'.format(result.error_report_file))
+        logger.error('Errors while running flake8. See %s for full details:\n%s' % (
+            result.error_report_file, tail_log(result.error_report_file)))
 
     if count_of_warnings > 0:
         if project.get_property("flake8_break_build"):

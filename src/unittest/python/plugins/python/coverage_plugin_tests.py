@@ -55,13 +55,13 @@ class CoveragePluginTests(TestCase):
             init_coverage_properties(self.project)
 
         for property_name, property_value in expected_properties.items():
-            self.assertEquals(self.project.get_property("coverage_threshold_warn"), 120)
-            self.assertEquals(self.project.get_property("coverage_branch_threshold_warn"), 120)
-            self.assertEquals(self.project.get_property("coverage_branch_partial_threshold_warn"), 120)
-            self.assertEquals(self.project.get_property("coverage_break_build"), False)
-            self.assertEquals(self.project.get_property("coverage_reload_modules"), False)
-            self.assertEquals(self.project.get_property("coverage_exceptions"), ["foo"])
-            self.assertEquals(self.project.get_property("coverage_fork"), True)
+            self.assertEqual(self.project.get_property("coverage_threshold_warn"), 120)
+            self.assertEqual(self.project.get_property("coverage_branch_threshold_warn"), 120)
+            self.assertEqual(self.project.get_property("coverage_branch_partial_threshold_warn"), 120)
+            self.assertEqual(self.project.get_property("coverage_break_build"), False)
+            self.assertEqual(self.project.get_property("coverage_reload_modules"), False)
+            self.assertEqual(self.project.get_property("coverage_exceptions"), ["foo"])
+            self.assertEqual(self.project.get_property("coverage_fork"), True)
 
     def test_list_all_covered_modules_all_loaded(self):
         module_a_val = MagicMock(__name__='module_a', __file__='module_a.py')
@@ -71,7 +71,7 @@ class CoveragePluginTests(TestCase):
                 returned_modules, non_imported_modules = _list_all_covered_modules(MagicMock(),
                                                                                    ['module_a', 'module_b'], [], True)
 
-        self.assertEquals([module_a_val, module_b_val], returned_modules)
+        self.assertEqual([module_a_val, module_b_val], returned_modules)
         import_func.assert_not_called()
 
     def test_list_all_covered_modules_not_imported(self):
@@ -83,8 +83,8 @@ class CoveragePluginTests(TestCase):
                 returned_modules, non_imported_modules = _list_all_covered_modules(MagicMock(),
                                                                                    ['module_a', 'module_b'], [], False)
 
-        self.assertEquals([module_a_val, module_b_val], returned_modules)
-        self.assertEquals([module_b_val.__name__], non_imported_modules)
+        self.assertEqual([module_a_val, module_b_val], returned_modules)
+        self.assertEqual([module_b_val.__name__], non_imported_modules)
         import_func.assert_called_once_with('module_b')
 
     def test_list_all_covered_modules_load(self):
@@ -96,7 +96,7 @@ class CoveragePluginTests(TestCase):
                 returned_modules, non_imported_modules = _list_all_covered_modules(MagicMock(),
                                                                                    ['module_a', 'module_b'], [], True)
 
-        self.assertEquals([module_a_val, module_b_val], returned_modules)
+        self.assertEqual([module_a_val, module_b_val], returned_modules)
         import_func.assert_called_once_with('module_b')
 
     def test_list_all_covered_modules_duplicate(self):
@@ -108,7 +108,7 @@ class CoveragePluginTests(TestCase):
                                                                                    ['module_a', 'module_b', 'module_a'],
                                                                                    [], True)
 
-        self.assertEquals([module_a_val, module_b_val], returned_modules)
+        self.assertEqual([module_a_val, module_b_val], returned_modules)
         import_func.assert_not_called()
 
     def test_list_all_covered_modules_exclusions(self):
@@ -121,7 +121,7 @@ class CoveragePluginTests(TestCase):
                                                                                    ['module_a', 'module_b', 'module_c'],
                                                                                    ['module_c'], True)
 
-        self.assertEquals([module_a_val, module_b_val], returned_modules)
+        self.assertEqual([module_a_val, module_b_val], returned_modules)
         import_func.assert_not_called()
         logger.debug.assert_called_with("Module '%s' was excluded", 'module_c')
 
@@ -138,9 +138,9 @@ class CoveragePluginTests(TestCase):
         n.n_missing_branches = 0
 
         report = _build_module_report(coverage, MagicMock())
-        self.assertEquals(report.code_coverage, 100)
-        self.assertEquals(report.branch_coverage, 100)
-        self.assertEquals(report.branch_partial_coverage, 100)
+        self.assertEqual(report.code_coverage, 100)
+        self.assertEqual(report.branch_coverage, 100)
+        self.assertEqual(report.branch_partial_coverage, 100)
 
     @patch('coverage.results.Analysis')
     @patch('coverage.coverage')
@@ -155,9 +155,9 @@ class CoveragePluginTests(TestCase):
         n.n_missing_branches = 10
 
         report = _build_module_report(coverage, MagicMock())
-        self.assertEquals(report.code_coverage, 0)
-        self.assertEquals(report.branch_coverage, 0)
-        self.assertEquals(report.branch_partial_coverage, 0)
+        self.assertEqual(report.code_coverage, 0)
+        self.assertEqual(report.branch_coverage, 0)
+        self.assertEqual(report.branch_partial_coverage, 0)
 
     @patch('coverage.results.Analysis')
     @patch('coverage.coverage')
@@ -172,9 +172,9 @@ class CoveragePluginTests(TestCase):
         n.n_missing_branches = 5
 
         report = _build_module_report(coverage, MagicMock())
-        self.assertEquals(report.code_coverage, 50)
-        self.assertEquals(report.branch_coverage, 50)
-        self.assertEquals(report.branch_partial_coverage, 50)
+        self.assertEqual(report.code_coverage, 50)
+        self.assertEqual(report.branch_coverage, 50)
+        self.assertEqual(report.branch_partial_coverage, 50)
 
     @patch('coverage.coverage')
     def test_build_coverage_report_no_modules(self, coverage):
@@ -226,6 +226,6 @@ class CoveragePluginTests(TestCase):
         self.assertTrue(_build_coverage_report(project, MagicMock(Logger), execution_name, execution_prefix, coverage,
                                                modules) is None)
         report = render_report.call_args[0][0]
-        self.assertEquals(report['overall_coverage'], 50)
-        self.assertEquals(report['overall_branch_coverage'], 50)
-        self.assertEquals(report['overall_branch_partial_coverage'], 50)
+        self.assertEqual(report['overall_coverage'], 50)
+        self.assertEqual(report['overall_branch_coverage'], 50)
+        self.assertEqual(report['overall_branch_partial_coverage'], 50)

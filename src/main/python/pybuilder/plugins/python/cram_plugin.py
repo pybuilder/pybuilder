@@ -28,7 +28,7 @@ import os
 from pybuilder.core import after, task, init, use_plugin, depends, description
 from pybuilder.errors import BuildFailedException
 from pybuilder.plugins.python.python_plugin_helper import execute_command
-from pybuilder.utils import assert_can_execute, discover_files_matching, read_file
+from pybuilder.utils import assert_can_execute, discover_files_matching, read_file, tail_log
 
 __author__ = 'Valentin Haenel'
 
@@ -110,20 +110,13 @@ def run_cram_tests(project, logger):
                                   env=env,
                                   error_file_name=report_file)
 
+    if return_code != 0:
+        error_str = "Cram tests failed! See %s for full details:\n%s" % (report_file, tail_log(report_file))
+        logger.error(error_str)
+        raise BuildFailedException(error_str)
+
     report = read_file(report_file)
     result = report[-1][2:].strip()
-
-    if return_code != 0:
-        logger.error("Cram tests failed!")
-        if project.get_property("verbose"):
-            for line in report:
-                logger.error(line.rstrip())
-        else:
-            logger.error(result)
-
-        logger.error("See: '{0}' for details".format(report_file))
-        raise BuildFailedException("Cram tests failed!")
-
     logger.info("Cram tests were fine")
     logger.info(result)
 

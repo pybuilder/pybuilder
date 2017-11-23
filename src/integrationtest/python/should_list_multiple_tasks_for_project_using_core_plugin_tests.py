@@ -32,7 +32,7 @@ use_plugin("core")
 
         tasks = reactor.get_tasks()
 
-        self.assertEquals(11, len(tasks))
+        self.assertEqual(11, len(tasks))
 
         task_names = list(map(lambda task: task.name, tasks))
 

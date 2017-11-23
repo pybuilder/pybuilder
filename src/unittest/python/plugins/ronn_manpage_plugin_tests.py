@@ -58,7 +58,7 @@ class RonnPluginInitializationTests(TestCase):
             init_ronn_manpage_plugin(self.project)
 
         for property_name, property_value in expected_properties.items():
-            self.assertEquals(
+            self.assertEqual(
 
                 self.project.get_property(property_name),
                 property_value)
