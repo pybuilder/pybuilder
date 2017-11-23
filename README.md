@@ -1,6 +1,8 @@
 PyBuilder
 =========
 
+[![Join the chat at https://gitter.im/pybuilder/pybuilder](https://badges.gitter.im/pybuilder/pybuilder.svg)](https://gitter.im/pybuilder/pybuilder?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [PyBuilder](http://pybuilder.github.io)
 
 
