@@ -25,7 +25,6 @@ try:
 except ImportError:
     from Queue import Empty
 
-
 from pybuilder.core import init, use_plugin, task, description
 from pybuilder.utils import discover_files_matching, execute_command, Timer, read_file
 from pybuilder.terminal import print_text_line, print_file_content, print_text
@@ -44,6 +43,8 @@ def initialize_integrationtest_plugin(project):
     project.set_property_if_unset("integrationtest_additional_environment", {})
     project.set_property_if_unset("integrationtest_inherit_environment", False)
     project.set_property_if_unset("integrationtest_always_verbose", False)
+    project.set_property_if_unset("integrationtest_parallel", False)
+    project.set_property_if_unset("integrationtest_cpu_scaling_factor", 4)
 
 
 @task
@@ -84,8 +85,7 @@ def run_integration_tests_in_parallel(project, logger):
     tests = multiprocessing.Queue()
     reports = ConsumingQueue()
     reports_dir = prepare_reports_directory(project)
-    cpu_scaling_factor = project.get_property(
-        'integrationtest_cpu_scaling_factor', 4)
+    cpu_scaling_factor = project.get_property("integrationtest_cpu_scaling_factor", 4)
     cpu_count = multiprocessing.cpu_count()
     worker_pool_size = cpu_count * cpu_scaling_factor
     logger.debug(
@@ -250,7 +250,6 @@ def run_single_test(logger, project, reports_dir, test, output_test_names=True):
 
 
 class ConsumingQueue(object):
-
     def __init__(self):
         self._items = []
         self._queue = multiprocessing.Queue()
@@ -279,7 +278,6 @@ class ConsumingQueue(object):
 
 
 class TaskPoolProgress(object):
-
     """
     Class that renders progress for a set of tasks run in parallel.
     The progress is based on
@@ -317,7 +315,8 @@ class TaskPoolProgress(object):
             self.WAITING_SYMBOL * waiting_tasks_count, fg(GREY))
         trailing_space = ' ' if not pacman else ''
 
-        return "[%s%s%s%s]%s" % (finished_tests_progress, pacman, running_tests_progress, waiting_tasks_progress, trailing_space)
+        return "[%s%s%s%s]%s" % (
+        finished_tests_progress, pacman, running_tests_progress, waiting_tasks_progress, trailing_space)
 
     def render_to_terminal(self):
         if self.can_be_displayed:

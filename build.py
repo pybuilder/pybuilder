@@ -87,6 +87,7 @@ default_task = ["install_dependencies", "analyze", "publish"]
 def initialize(project):
     if sys.version_info[0] == 2:
         project.build_depends_on("mock")
+        project.depends_on("selectors34", "~=1.2")
 
     project.build_depends_on("pyfix")  # required test framework
     project.build_depends_on("pyassert")
