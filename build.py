@@ -116,9 +116,9 @@ def initialize(project):
     project.set_property('frosted_include_test_sources', True)
     project.set_property('frosted_include_scripts', True)
 
-    project.set_property("copy_resources_target", "$dir_dist/pybuilder")
+    project.set_property("copy_resources_target", "$dir_dist/${name}")
     project.get_property("copy_resources_glob").append("LICENSE")
-    project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
+    project.get_property("filter_resources_glob").append("**/${name}/__init__.py")
     project.include_file("pybuilder", "LICENSE")
 
     project.set_property("sphinx_doc_author", "PyBuilder Team")
