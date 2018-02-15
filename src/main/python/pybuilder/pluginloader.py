@@ -22,14 +22,12 @@
 """
 
 import sys
-import tempfile
 
 from pybuilder import __version__ as pyb_version
 from pybuilder.errors import (MissingPluginException,
                               IncompatiblePluginException,
                               UnspecifiedPluginNameException,
                               )
-from pybuilder.utils import read_file
 # Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
 from pybuilder import pip_utils, pip_common
 
@@ -165,9 +163,7 @@ def _install_external_plugin(project, name, version, logger, plugin_module_name,
         pip_package = name.replace(VCS_PLUGIN_PROTOCOL, "")
         force_reinstall = True
 
-    with tempfile.NamedTemporaryFile(delete=True) as log_file:
-        log_file_name = log_file.name
-        result = pip_utils.pip_install(
+    return_code, command_out, command_err = pip_utils.pip_install_get_output(
             install_targets=pip_package,
             index_url=project.get_property("install_dependencies_index_url"),
             extra_index_url=project.get_property("install_dependencies_extra_index_url"),
@@ -175,13 +171,11 @@ def _install_external_plugin(project, name, version, logger, plugin_module_name,
             upgrade=upgrade,
             force_reinstall=force_reinstall,
             logger=logger,
-            outfile_name=log_file_name,
-            error_file_name=log_file_name,
             cwd=".")
-        if result != 0:
-            logger.error("The following pip error was encountered:\n" + "".join(read_file(log_file_name)))
-            message = "Failed to install plugin from {0}".format(pip_package)
-            raise MissingPluginException(name, message)
+    if return_code != 0:
+        logger.error("The following pip error was encountered:\n" + command_err)
+        message = "Failed to install plugin from {0}".format(pip_package)
+        raise MissingPluginException(name, message)
 
 
 def _plugin_display_name(name, version, plugin_module_name):

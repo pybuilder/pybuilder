@@ -186,8 +186,8 @@ def execute_command(command_and_arguments, outfile_name=None, env=None, cwd=None
             out_file.close()
 
 
-def execute_command_and_capture_output(*command_and_arguments):
-    process_handle = Popen(command_and_arguments, stdout=PIPE, stderr=PIPE)
+def execute_command_and_capture_output(*command_and_arguments, env=None, cwd=None):
+    process_handle = Popen(command_and_arguments, stdout=PIPE, stderr=PIPE, env=env, cwd=cwd)
     stdout, stderr = process_handle.communicate()
     stdout, stderr = stdout.decode(sys.stdout.encoding or 'utf-8'), stderr.decode(sys.stderr.encoding or 'utf-8')
     process_return_code = process_handle.returncode
