@@ -224,7 +224,6 @@ class InstallExternalPluginTests(unittest.TestCase):
         execute.return_value = 0, "Ok", ""
 
         _install_external_plugin(Mock(), "pypi:some-plugin", "===1.2.3", Mock(), None)
-        new_pip_args = ["--upgrade", "--upgrade-strategy", "only-if-needed"]
         if(pip_version < "9.0"):
             execute.assert_called_with(
                 *PIP_EXEC_STANZA, 'install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
@@ -233,7 +232,7 @@ class InstallExternalPluginTests(unittest.TestCase):
         else:
             execute.assert_called_with(
                 *PIP_EXEC_STANZA, 'install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
-                *new_pip_args,
+                "--upgrade", "--upgrade-strategy", "only-if-needed"
                 'some-plugin===1.2.3', cwd=".", env=ANY)
 
     @patch("pybuilder.pip_utils.execute_command_and_capture_output")
