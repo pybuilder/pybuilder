@@ -210,59 +210,53 @@ class InstallExternalPluginTests(unittest.TestCase):
     def test_should_raise_error_when_protocol_is_invalid(self):
         self.assertRaises(MissingPluginException, _install_external_plugin, Mock(), "some-plugin", None, Mock(), None)
 
-    @patch("pybuilder.pip_utils.execute_command_and_capture_output")
+    @patch("pybuilder.pip_utils.execute_commandstr_and_capture_output")
     def test_should_install_plugin(self, execute):
         execute.return_value = 0, "Ok", ""
 
         _install_external_plugin(Mock(), "pypi:some-plugin", None, Mock(), None)
         execute.assert_called_with(
-            *PIP_EXEC_STANZA, 'install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
-            'some-plugin', cwd=".", env=ANY)
+            PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
+                               'some-plugin'], cwd=".", env=ANY)
 
-    @patch("pybuilder.pip_utils.execute_command_and_capture_output")
+    @patch("pybuilder.pip_utils.execute_commandstr_and_capture_output")
     def test_should_install_plugin_with_version(self, execute):
         execute.return_value = 0, "Ok", ""
 
         _install_external_plugin(Mock(), "pypi:some-plugin", "===1.2.3", Mock(), None)
-        if(pip_version < "9.0"):
-            execute.assert_called_with(
-                *PIP_EXEC_STANZA, 'install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
-                "--upgrade",
-                'some-plugin===1.2.3', cwd=".", env=ANY)
-        else:
-            execute.assert_called_with(
-                *PIP_EXEC_STANZA, 'install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
-                "--upgrade", "--upgrade-strategy", "only-if-needed"
-                'some-plugin===1.2.3', cwd=".", env=ANY)
+        execute.assert_called_with(
+                 PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY] +
+                 (["--upgrade"] if pip_version < "9.0" else ["--upgrade", "--upgrade-strategy", "only-if-needed"])
+                 + ['some-plugin===1.2.3'], cwd=".", env=ANY)
 
-    @patch("pybuilder.pip_utils.execute_command_and_capture_output")
+    @patch("pybuilder.pip_utils.execute_commandstr_and_capture_output")
     def test_should_install_plugin_with_vcs(self, execute):
         execute.return_value = 0, "Ok", ""
 
         _install_external_plugin(Mock(), "vcs:some-plugin URL", None, Mock(), None)
 
         execute.assert_called_with(
-            *PIP_EXEC_STANZA, 'install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
-            '--force-reinstall', 'some-plugin URL', cwd=".", env=ANY)
+            PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
+                               '--force-reinstall', 'some-plugin URL'], cwd=".", env=ANY)
 
-    @patch("pybuilder.pip_utils.execute_command_and_capture_output")
+    @patch("pybuilder.pip_utils.execute_commandstr_and_capture_output")
     def test_should_install_plugin_with_vcs_and_version(self, execute):
         execute.return_value = 0, "Ok", ""
 
         _install_external_plugin(Mock(), "vcs:some-plugin URL", "===1.2.3", Mock(), None)
 
         execute.assert_called_with(
-            *PIP_EXEC_STANZA, 'install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
-            '--force-reinstall', 'some-plugin URL',  cwd=".", env=ANY)
+            PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
+                               '--force-reinstall', 'some-plugin URL'],  cwd=".", env=ANY)
 
-    @patch("pybuilder.pip_utils.execute_command_and_capture_output")
+    @patch("pybuilder.pip_utils.execute_commandstr_and_capture_output")
     def test_should_raise_error_when_install_from_pypi_fails(self, execute):
         execute.return_value = 1, "Not Ok", "Error"
 
         self.assertRaises(MissingPluginException, _install_external_plugin, Mock(), "pypi:some-plugin", None, Mock(),
                           None)
 
-    @patch("pybuilder.pip_utils.execute_command_and_capture_output")
+    @patch("pybuilder.pip_utils.execute_commandstr_and_capture_output")
     def test_should_raise_error_when_install_from_vcs_fails(self, execute):
         execute.return_value = 1, "Not Ok", "Error"
 

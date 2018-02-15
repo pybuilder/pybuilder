@@ -21,7 +21,7 @@ import re
 import sys
 
 from pybuilder.core import Dependency, RequirementsFile
-from pybuilder.utils import execute_command, as_list, execute_command_and_capture_output
+from pybuilder.utils import execute_command, as_list, execute_commandstr_and_capture_output
 # Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
 from pybuilder import pip_common
 
@@ -64,7 +64,7 @@ def pip_install_get_output(install_targets, index_url=None,
 
     if logger:
         logger.debug("Invoking pip: %s", command_line)
-    return execute_command_and_capture_output(*command_line, env=env, cwd=cwd)
+    return execute_commandstr_and_capture_output(command_line, env=env, cwd=cwd)
 
 
 def pip_install(install_targets, index_url=None, extra_index_url=None,
