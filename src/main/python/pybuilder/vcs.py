@@ -45,6 +45,21 @@ class VCSRevision(object):
         raise PyBuilderException(
             "Cannot determine VCS revision: project is neither a git nor a svn repo.")
 
+    @property
+    def description(self):
+        """
+        Returns a human readable revision description as a string.
+        """
+        if self.is_a_git_repo():
+            return self.get_git_description()
+
+        if self.is_a_svn_repo():
+            raise PyBuilderException(
+                "'description' is not implemented for svn repos")
+
+        raise PyBuilderException(
+            "Cannot determine VCS revision: project is neither a git nor a svn repo.")
+
     def get_git_hash(self, abbreviate=7):
         if self.is_a_git_repo():
             exit_code, stdout, stderr = execute_command_and_capture_output(
@@ -65,6 +80,18 @@ class VCSRevision(object):
             raise PyBuilderException("Cannot determine git revision: git rev-list HEAD failed:\n{0}".
                                      format(stderr))
         return str(len(stdout.splitlines()))
+
+    def get_git_description(self):
+        if self.is_a_git_repo():
+            exit_code, stdout, stderr = execute_command_and_capture_output(
+                "git", "describe", "--always", "--tags", "--dirty")
+            if exit_code != 0:
+                raise PyBuilderException("Cannot determine git description: git describe failed:\n{0}".
+                                         format(stderr))
+            else:
+                return stdout.strip()
+        else:
+            raise PyBuilderException("Cannot determine git description: project is not a git repo.")
 
     def get_svn_revision_count(self):
         exit_code, stdout, stderr = execute_command_and_capture_output(
@@ -92,3 +119,8 @@ def count_travis():
     """ Version number dervived from commit count and travis build number. """
     return '{0}.{1}'.format(VCSRevision().count,
                             os.environ.get('TRAVIS_BUILD_NUMBER', 0))
+
+
+def description():
+    """  Human readable revision description. """
+    return VCSRevision().description
