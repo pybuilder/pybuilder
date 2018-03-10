@@ -21,7 +21,7 @@ import re
 import sys
 
 from pybuilder.core import Dependency, RequirementsFile
-from pybuilder.utils import execute_command, as_list
+from pybuilder.utils import execute_command, as_list, execute_commandstr_and_capture_output
 # Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
 from pybuilder import pip_common
 
@@ -41,10 +41,69 @@ def build_dependency_version_string(mixed):
     return version
 
 
-def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=False, insecure_installs=None,
-                force_reinstall=False, target_dir=None, verbose=False, trusted_host=None, constraint_file=None,
+def pip_install_get_output(install_targets, index_url=None,
+                           extra_index_url=None, upgrade=False,
+                           insecure_installs=None,
+                           force_reinstall=False, target_dir=None,
+                           verbose=False, trusted_host=None,
+                           constraint_file=None, eager_upgrade=False,
+                           logger=None, env=None, cwd=None):
+    command_line = _create_pip_command_line(install_targets=install_targets,
+                                            index_url=index_url,
+                                            extra_index_url=extra_index_url,
+                                            upgrade=upgrade,
+                                            insecure_installs=insecure_installs,
+                                            force_reinstall=force_reinstall,
+                                            target_dir=target_dir,
+                                            verbose=verbose,
+                                            trusted_host=trusted_host,
+                                            constraint_file=constraint_file,
+                                            eager_upgrade=eager_upgrade)
+    if env is None:
+        env = os.environ
+
+    if logger:
+        logger.debug("Invoking pip: %s", command_line)
+    return execute_commandstr_and_capture_output(command_line, env=env, cwd=cwd)
+
+
+def pip_install(install_targets, index_url=None, extra_index_url=None,
+                upgrade=False, insecure_installs=None,
+                force_reinstall=False, target_dir=None,
+                verbose=False, trusted_host=None, constraint_file=None,
                 eager_upgrade=False,
-                logger=None, outfile_name=None, error_file_name=None, env=None, cwd=None):
+                logger=None, outfile_name=None,
+                error_file_name=None, env=None, cwd=None):
+
+    command_line = _create_pip_command_line(install_targets=install_targets,
+                                            index_url=index_url,
+                                            extra_index_url=extra_index_url,
+                                            upgrade=upgrade,
+                                            insecure_installs=insecure_installs,
+                                            force_reinstall=force_reinstall,
+                                            target_dir=target_dir,
+                                            verbose=verbose,
+                                            trusted_host=trusted_host,
+                                            constraint_file=constraint_file,
+                                            eager_upgrade=eager_upgrade)
+
+    if env is None:
+        env = os.environ
+
+    if logger:
+        logger.debug("Invoking pip: %s", command_line)
+
+    return execute_command(command_line, outfile_name=outfile_name,
+                           env=env, cwd=cwd,
+                           error_file_name=error_file_name, shell=False)
+
+
+def _create_pip_command_line(install_targets, index_url=None,
+                             extra_index_url=None, upgrade=False,
+                             insecure_installs=None,
+                             force_reinstall=False, target_dir=None,
+                             verbose=False, trusted_host=None,
+                             constraint_file=None, eager_upgrade=False):
     pip_command_line = list()
     pip_command_line.extend(PIP_EXEC_STANZA)
     pip_command_line.append("install")
@@ -61,14 +120,7 @@ def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=F
                                                       ))
     for install_target in as_list(install_targets):
         pip_command_line.extend(as_pip_install_target(install_target))
-
-    if env is None:
-        env = os.environ
-
-    if logger:
-        logger.debug("Invoking pip: %s", pip_command_line)
-    return execute_command(pip_command_line, outfile_name=outfile_name, env=env, cwd=cwd,
-                           error_file_name=error_file_name, shell=False)
+    return pip_command_line
 
 
 def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=False, insecure_installs=None,

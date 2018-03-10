@@ -194,6 +194,14 @@ def execute_command_and_capture_output(*command_and_arguments):
     return process_return_code, stdout, stderr
 
 
+def execute_commandstr_and_capture_output(command_and_arguments, env=None, cwd=None):
+    process_handle = Popen(command_and_arguments, stdout=PIPE, stderr=PIPE, env=env, cwd=cwd)
+    stdout, stderr = process_handle.communicate()
+    stdout, stderr = stdout.decode(sys.stdout.encoding or 'utf-8'), stderr.decode(sys.stderr.encoding or 'utf-8')
+    process_return_code = process_handle.returncode
+    return process_return_code, stdout, stderr
+
+
 def tail(file_path, lines=20):
     import tailer
 
