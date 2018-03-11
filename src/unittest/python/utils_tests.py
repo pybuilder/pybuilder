@@ -25,6 +25,7 @@ import tempfile
 import time
 import unittest
 from json import loads
+from os.path import normcase as nc
 
 from pybuilder.errors import PyBuilderException
 from pybuilder.utils import (GlobExpression,
@@ -160,19 +161,19 @@ class TimedeltaInMillisTest(unittest.TestCase):
 
 
 class DiscoverFilesTest(unittest.TestCase):
-    fake_dir_contents = ["README.md", ".gitignore", "spam.py", "eggs.py", "eggs.py~"]
+    fake_dir_contents = ["readme.md", ".gitignore", "spam.py", "eggs.py", "eggs.py~"]
 
     @patch("pybuilder.utils.os.walk", return_value=[("spam", [], fake_dir_contents)])
     def test_should_only_return_py_suffix(self, walk):
-        expected_result = ["spam/spam.py", "spam/eggs.py"]
+        expected_result = [nc("spam/spam.py"), nc("spam/eggs.py")]
         actual_result = set(discover_files("spam", ".py"))
         self.assertEqual(set(expected_result), actual_result)
         walk.assert_called_with("spam")
 
     @patch("pybuilder.utils.os.walk", return_value=[("spam", [], fake_dir_contents)])
     def test_should_only_return_py_glob(self, walk):
-        expected_result = ["spam/README.md"]
-        actual_result = set(discover_files_matching("spam", "README.?d"))
+        expected_result = [nc("spam/readme.md")]
+        actual_result = set(discover_files_matching("spam", "readme.?d"))
         self.assertEqual(set(expected_result), actual_result)
         walk.assert_called_with("spam")
 
@@ -253,7 +254,7 @@ class ApplyOnFilesTest(unittest.TestCase):
             relative_file_names.append(relative_file_name)
 
         apply_on_files("spam", callback, "*")
-        self.assertEqual(["spam/a", "spam/b", "spam/c"], absolute_file_names)
+        self.assertEqual([nc("spam/a"), nc("spam/b"), nc("spam/c")], absolute_file_names)
         self.assertEqual(["a", "b", "c"], relative_file_names)
 
         walk.assert_called_with("spam")
@@ -266,7 +267,7 @@ class ApplyOnFilesTest(unittest.TestCase):
             called_on_file.append(absolute_file_name)
 
         apply_on_files("spam", callback, "a")
-        self.assertEqual(["spam/a"], called_on_file)
+        self.assertEqual([nc("spam/a")], called_on_file)
 
         walk.assert_called_with("spam")
 
@@ -279,7 +280,7 @@ class ApplyOnFilesTest(unittest.TestCase):
             called_on_file.append(absolute_file_name)
 
         apply_on_files("spam", callback, "a", "additional argument")
-        self.assertEqual(["spam/a"], called_on_file)
+        self.assertEqual([nc("spam/a")], called_on_file)
 
         walk.assert_called_with("spam")
 
@@ -363,6 +364,7 @@ class ForkTest(unittest.TestCase):
             self.assertEqual(ex.message, "Test failure message")
             self.assertTrue(tb)
 
+    @unittest.skipIf(sys.platform == "win32", "Not on Windows")
     def testForkWithValuePicklingError(self):
         class FooError(Exception):
             def __init__(self):
@@ -381,6 +383,7 @@ class ForkTest(unittest.TestCase):
             self.assertTrue("Can't pickle" in str(ex))
             self.assertTrue("FooError" in str(ex))
 
+    @unittest.skipIf(sys.platform == "win32", "Not on Windows")
     def testForkWithExceptionPicklingError(self):
         class FooError(Exception):
             def __init__(self):
@@ -399,6 +402,7 @@ class ForkTest(unittest.TestCase):
             self.assertTrue("Can't pickle" in str(ex))
             self.assertTrue("FooError" in str(ex))
 
+    @unittest.skipIf(sys.platform == "win32", "Not on Windows")
     def testForkWithSendPicklingError(self):
         class Foo(object):
             @staticmethod

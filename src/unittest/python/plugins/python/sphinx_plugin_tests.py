@@ -19,7 +19,7 @@
 import sys
 from logging import Logger
 from unittest import TestCase
-
+from os.path import normcase as nc
 from pybuilder.core import Project, Author
 from pybuilder.plugins.python.sphinx_plugin import (assert_sphinx_is_available,
                                                     assert_sphinx_quickstart_is_available,
@@ -96,7 +96,7 @@ class SphinxPluginInitializationTests(TestCase):
         self.assertEqual(
             self.project.get_property("sphinx_source_dir"), "docs")
         self.assertEqual(
-            self.project.get_property("sphinx_output_dir"), "docs/_build/")
+            self.project.get_property("sphinx_output_dir"), nc("docs/_build/"))
         self.assertEqual(
             self.project.get_property("sphinx_config_path"), "docs")
         self.assertEqual(
@@ -122,7 +122,7 @@ class SphinxBuildCommandTests(TestCase):
         sphinx_build_command = get_sphinx_build_command(self.project, Mock(), 'JSONx')
 
         self.assertEqual(sphinx_build_command,
-                         ["sphinx", "-b", "JSONx", "basedir/docs/", "basedir/docs/_build/"])
+                         ["sphinx", "-b", "JSONx", nc("basedir/docs/"), nc("basedir/docs/_build/")])
 
     def test_should_generate_sphinx_build_command_verbose(self):
         self.project.set_property("sphinx_config_path", "docs/")
@@ -134,7 +134,7 @@ class SphinxBuildCommandTests(TestCase):
         sphinx_build_command = get_sphinx_build_command(self.project, Mock(), 'JSONx')
 
         self.assertEqual(sphinx_build_command,
-                         ["sphinx", "-b", "JSONx", "-v", "basedir/docs/", "basedir/docs/_build/"])
+                         ["sphinx", "-b", "JSONx", "-v", nc("basedir/docs/"), nc("basedir/docs/_build/")])
 
     def test_should_generate_sphinx_build_command_debug(self):
         self.project.set_property("sphinx_config_path", "docs/")
@@ -149,7 +149,7 @@ class SphinxBuildCommandTests(TestCase):
         sphinx_build_command = get_sphinx_build_command(self.project, logger, 'JSONx')
 
         self.assertEqual(sphinx_build_command,
-                         ["sphinx", "-b", "JSONx", "-vvvv", "basedir/docs/", "basedir/docs/_build/"])
+                         ["sphinx", "-b", "JSONx", "-vvvv", nc("basedir/docs/"), nc("basedir/docs/_build/")])
 
     def test_should_generate_sphinx_build_command_forced_builder_dir(self):
         self.project.set_property("sphinx_config_path", "docs/")
@@ -161,7 +161,7 @@ class SphinxBuildCommandTests(TestCase):
         sphinx_build_command = get_sphinx_build_command(self.project, Mock(), 'JSONx')
 
         self.assertEqual(sphinx_build_command,
-                         ["sphinx", "-b", "JSONx", "basedir/docs/", "basedir/docs/_build/JSONx"])
+                         ["sphinx", "-b", "JSONx", nc("basedir/docs/"), nc("basedir/docs/_build/JSONx")])
 
     def test_should_generate_sphinx_build_command_builder_dir(self):
         self.project.set_property("sphinx_config_path", "docs/")
@@ -172,7 +172,7 @@ class SphinxBuildCommandTests(TestCase):
         sphinx_build_command = get_sphinx_build_command(self.project, Mock(), 'JSONx')
 
         self.assertEqual(sphinx_build_command,
-                         ["sphinx", "-b", "JSONx", "basedir/docs/", "basedir/docs/_build/JSONx"])
+                         ["sphinx", "-b", "JSONx", nc("basedir/docs/"), nc("basedir/docs/_build/JSONx")])
 
     def test_should_generate_sphinx_quickstart_command_with_project_properties(self):
         self.project.set_property("sphinx_doc_author", "bar")
@@ -183,7 +183,7 @@ class SphinxBuildCommandTests(TestCase):
         sphinx_quickstart_command = get_sphinx_quickstart_command(self.project)
 
         self.assertEqual(sphinx_quickstart_command,
-                         ["sphinx.quickstart", "-q", "-p", "foo", "-a", "bar", "-v", "3", "basedir/docs/"])
+                         ["sphinx.quickstart", "-q", "-p", "foo", "-a", "bar", "-v", "3", nc("basedir/docs/")])
 
     @patch('pybuilder.plugins.python.sphinx_plugin.execute_command', return_value=0)
     def test_should_execute_command_regardless_of_verbose(self, exec_command):
@@ -210,8 +210,8 @@ class SphinxBuildCommandTests(TestCase):
                               '-H',
                               'project_name',
                               '-o',
-                              'basedir/dir_target/sphinx_pyb/apidoc',
-                              'basedir/dir_source'
+                              nc('basedir/dir_target/sphinx_pyb/apidoc'),
+                              nc('basedir/dir_source')
                               ]
                              )
         finally:
@@ -235,15 +235,15 @@ class SphinxBuildCommandTests(TestCase):
                               'project_name',
                               '--implicit-namespaces',
                               '-o',
-                              'basedir/dir_target/sphinx_pyb/apidoc',
-                              'basedir/dir_source'
+                              nc('basedir/dir_target/sphinx_pyb/apidoc'),
+                              nc('basedir/dir_source')
                               ] if sys.version_info[:3] >= (3, 3) else
                              ['sphinx.apidoc',
                               '-H',
                               'project_name',
                               '-o',
-                              'basedir/dir_target/sphinx_pyb/apidoc',
-                              'basedir/dir_source'
+                              nc('basedir/dir_target/sphinx_pyb/apidoc'),
+                              nc('basedir/dir_source')
                               ]
                              )
         finally:
@@ -279,7 +279,7 @@ class SphinxBuildCommandTests(TestCase):
 import sys
 from os import path
 
-sphinx_pyb_dir = path.abspath(path.join(path.dirname(__file__) if __file__ else ".", "../basedir/dir_target/sphinx_pyb"))
+sphinx_pyb_dir = path.abspath(path.join(path.dirname(__file__) if __file__ else ".", "%s"))
 sphinx_pyb_module = "sphinx_pyb_conf"
 sphinx_pyb_module_file = path.abspath(path.join(sphinx_pyb_dir, sphinx_pyb_module + ".py"))
 
@@ -291,9 +291,9 @@ if not path.exists(sphinx_pyb_module_file):
 from sphinx_pyb_conf import *
 
 # Overwrite PyB-settings here statically if that's the thing that you want
-""")
-        symlink.assert_called_with("../basedir/dir_target/sphinx_pyb/apidoc",
-                                   "basedir/sphinx_source_dir/apidoc",
+""" % nc("../basedir/dir_target/sphinx_pyb"))
+        symlink.assert_called_with(nc("../basedir/dir_target/sphinx_pyb/apidoc"),
+                                   nc("basedir/sphinx_source_dir/apidoc"),
                                    target_is_directory=True)
 
     @patch("pybuilder.plugins.python.sphinx_plugin.open", create=True)
@@ -331,24 +331,25 @@ from sphinx_pyb_conf import *
         finally:
             del sys.modules["sphinx"]
 
-        exists.assert_called_with("basedir/dir_target/sphinx_pyb/apidoc")
-        rmtree.assert_called_with("basedir/dir_target/sphinx_pyb/apidoc")
-        mkdir.assert_called_with("basedir/dir_target/sphinx_pyb/apidoc")
+        exists.assert_called_with(nc("basedir/dir_target/sphinx_pyb/apidoc"))
+        rmtree.assert_called_with(nc("basedir/dir_target/sphinx_pyb/apidoc"))
+        mkdir.assert_called_with(nc("basedir/dir_target/sphinx_pyb/apidoc"))
+        print(open().__enter__().write.call_args_list)
         open().__enter__().write.assert_has_calls([call("a = 1\n"), call("b = 'foo'\n"), call(
-            "\nimport sys\nsys.path.insert(0, 'basedir/dir_source')\n")], any_order=True)
+            "\nimport sys\nsys.path.insert(0, %r)\n" % nc("basedir/dir_source"))], any_order=True)
         execute_command.assert_has_calls([
             call([sys.executable, '-m', 'sphinx.apidoc', '-H', 'project_name', '-o',
-                  'basedir/dir_target/sphinx_pyb/apidoc', 'basedir/dir_source']
+                  nc('basedir/dir_target/sphinx_pyb/apidoc'), nc('basedir/dir_source')]
                  if sys.version_info[:2] < (3, 3) else
                  [sys.executable, '-m', 'sphinx.apidoc', '-H', 'project_name', '--implicit-namespaces', '-o',
-                  'basedir/dir_target/sphinx_pyb/apidoc', 'basedir/dir_source'],
-                 'basedir/dir_target/reports/sphinx-apidoc', shell=False),
-            call([sys.executable, '-m', 'sphinx', '-b', 'JSONx', 'basedir/sphinx_config_path',
-                  'basedir/sphinx_output_dir/JSONx'],
-                 'basedir/dir_target/reports/sphinx_JSONx', shell=False),
-            call([sys.executable, '-m', 'sphinx', '-b', 'pdf', 'basedir/sphinx_config_path',
-                  'basedir/sphinx_output_dir/pdf'],
-                 'basedir/dir_target/reports/sphinx_pdf', shell=False)])
+                 nc('basedir/dir_target/sphinx_pyb/apidoc'), nc('basedir/dir_source')],
+                 nc('basedir/dir_target/reports/sphinx-apidoc'), shell=False),
+            call([sys.executable, '-m', 'sphinx', '-b', 'JSONx', nc('basedir/sphinx_config_path'),
+                 nc('basedir/sphinx_output_dir/JSONx')],
+                 nc('basedir/dir_target/reports/sphinx_JSONx'), shell=False),
+            call([sys.executable, '-m', 'sphinx', '-b', 'pdf', nc('basedir/sphinx_config_path'),
+                 nc('basedir/sphinx_output_dir/pdf')],
+                 nc('basedir/dir_target/reports/sphinx_pdf'), shell=False)])
 
     @patch("pybuilder.plugins.python.sphinx_plugin.open", create=True)
     @patch("pybuilder.plugins.python.sphinx_plugin.rmtree")

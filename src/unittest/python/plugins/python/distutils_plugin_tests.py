@@ -24,6 +24,7 @@ except NameError:
     TYPE_FILE = FileIO
 
 import unittest
+from os.path import normcase as nc
 
 from pybuilder.core import Project, Author, Logger
 from pybuilder.errors import BuildFailedException
@@ -667,8 +668,8 @@ class RenderManifestFileTest(unittest.TestCase):
 
         self.assertEqual("""include file1
 include file2
-include spam/eggs
-""", actual_manifest_file)
+include %s
+""" % nc("spam/eggs"), actual_manifest_file)
 
 
 class ExecuteDistUtilsTest(PyBuilderTestCase):
@@ -725,9 +726,9 @@ class UploadTests(PyBuilderTestCase):
 
         upload(self.project, MagicMock(Logger))
         self.assertEqual(popen_distutils_args(self, 3, proc_runner),
-                         [["twine", "register", "/whatever dist/dist/a"],
-                          ["twine", "register", "/whatever dist/dist/b"],
-                          ["twine", "upload", "/whatever dist/dist/a", "/whatever dist/dist/b"]])
+                         [["twine", "register", nc("/whatever dist/dist/a")],
+                          ["twine", "register", nc("/whatever dist/dist/b")],
+                          ["twine", "upload", nc("/whatever dist/dist/a"), nc("/whatever dist/dist/b")]])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -739,7 +740,7 @@ class UploadTests(PyBuilderTestCase):
 
         upload(self.project, MagicMock(Logger))
         self.assertEqual(popen_distutils_args(self, 1, proc_runner),
-                         [["twine", "upload", "/whatever dist/dist/a", "/whatever dist/dist/b"]])
+                         [["twine", "upload", nc("/whatever dist/dist/a"), nc("/whatever dist/dist/b")]])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -752,8 +753,8 @@ class UploadTests(PyBuilderTestCase):
 
         upload(self.project, MagicMock(Logger))
         self.assertEqual(popen_distutils_args(self, 1, proc_runner),
-                         [["twine", "upload", "--repository-url", "test repo", "/whatever dist/dist/a",
-                           "/whatever dist/dist/b"]])
+                         [["twine", "upload", "--repository-url", "test repo", nc("/whatever dist/dist/a"),
+                           nc("/whatever dist/dist/b")]])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -766,7 +767,7 @@ class UploadTests(PyBuilderTestCase):
 
         upload(self.project, MagicMock(Logger))
         self.assertEqual(popen_distutils_args(self, 1, proc_runner),
-                         [["twine", "upload", "--sign", "/whatever dist/dist/a", "/whatever dist/dist/b"]])
+                         [["twine", "upload", "--sign", nc("/whatever dist/dist/a"), nc("/whatever dist/dist/b")]])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -780,8 +781,8 @@ class UploadTests(PyBuilderTestCase):
 
         upload(self.project, MagicMock(Logger))
         self.assertEqual(popen_distutils_args(self, 1, proc_runner),
-                         [["twine", "upload", "--sign", "--identity", "abcd", "/whatever dist/dist/a",
-                           "/whatever dist/dist/b"]])
+                         [["twine", "upload", "--sign", "--identity", "abcd", nc("/whatever dist/dist/a"),
+                           nc("/whatever dist/dist/b")]])
 
 
 class TasksTest(PyBuilderTestCase):
@@ -796,7 +797,7 @@ class TasksTest(PyBuilderTestCase):
     @patch("pybuilder.pip_utils.execute_command")
     def test_install(self, execute_command, *args):
         install_distribution(self.project, MagicMock(Logger))
-        execute_command.assert_called_with(PIP_EXEC_STANZA + ["install", "--force-reinstall", '/whatever dist'],
+        execute_command.assert_called_with(PIP_EXEC_STANZA + ["install", "--force-reinstall", nc('/whatever dist')],
                                            cwd=".", env=ANY,
                                            outfile_name=ANY, error_file_name=ANY, shell=False)
 
@@ -810,7 +811,7 @@ class TasksTest(PyBuilderTestCase):
         install_distribution(self.project, MagicMock(Logger))
         execute_command.assert_called_with(
             PIP_EXEC_STANZA + ["install", "--index-url", "index_url", "--extra-index-url", "extra_index_url",
-                               "--force-reinstall", '/whatever dist'], cwd=".", env=ANY, outfile_name=ANY,
+                               "--force-reinstall", nc('/whatever dist')], cwd=".", env=ANY, outfile_name=ANY,
             error_file_name=ANY, shell=False)
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")

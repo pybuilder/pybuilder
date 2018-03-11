@@ -167,23 +167,32 @@ def execute_command(command_and_arguments, outfile_name=None, env=None, cwd=None
     if error_file_name is None and outfile_name:
         error_file_name = outfile_name + ".err"
 
-    out_file = open(outfile_name, "w") if outfile_name else None
+    out_file_created = False
+    error_file_created = False
+
+    if not hasattr(outfile_name, "write"):
+        outfile_name = open(outfile_name, "w") if outfile_name else None
+        out_file_created = True
+
     try:
-        error_file = open(error_file_name, "w") if error_file_name else None
+        if not hasattr(error_file_name, "write"):
+            error_file_name = open(error_file_name, "w") if error_file_name else None
+            error_file_created = True
+
         try:
             process = Popen(command_and_arguments,
-                            stdout=out_file,
-                            stderr=error_file,
+                            stdout=outfile_name,
+                            stderr=error_file_name,
                             env=env,
                             cwd=cwd,
                             shell=shell)
             return process.wait()
         finally:
-            if error_file:
-                error_file.close()
+            if error_file_name and error_file_created:
+                error_file_name.close()
     finally:
-        if out_file:
-            out_file.close()
+        if outfile_name and out_file_created:
+            outfile_name.close()
 
 
 def execute_command_and_capture_output(*command_and_arguments):
@@ -195,7 +204,10 @@ def execute_command_and_capture_output(*command_and_arguments):
 
 
 def tail(file_path, lines=20):
-    import tailer
+    try:
+        import tailer
+    except ImportError:
+        return read_file(file_path)
 
     with open(file_path) as f:
         return tailer.tail(f, lines)
@@ -215,8 +227,13 @@ def assert_can_execute(command_and_arguments, prerequisite, caller):
 
 
 def read_file(file_name):
-    with open(file_name, "r") as file_handle:
-        return file_handle.readlines()
+    if hasattr(file_name, "mode"):
+        # This is an open file with mode
+        file_name.seek(0)
+        return file_name.readlines()
+    else:
+        with open(file_name, "r") as file_handle:
+            return file_handle.readlines()
 
 
 def write_file(file_name, *lines):

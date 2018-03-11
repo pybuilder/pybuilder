@@ -17,6 +17,7 @@
 #   limitations under the License.
 
 import unittest
+from os.path import normcase as nc
 
 from pybuilder.plugins.python.pychecker_plugin import (PycheckerModuleReport,
                                                        PycheckerWarning,
@@ -84,14 +85,14 @@ class PycheckerReportTest(unittest.TestCase):
 class ParsePycheckerOutputTest(unittest.TestCase):
     def test_should_parse_report(self):
         project = Mock()
-        project.expand_path.return_value = "/path/to"
+        project.expand_path.return_value = nc("/path/to")
 
         warnings = [
-            "/path/to/package/module_one:2: Sample warning",
-            "/path/to/package/module_one:4: Another sample warning",
+            nc("/path/to/package/module_one") + ":2: Sample warning",
+            nc("/path/to/package/module_one") + ":4: Another sample warning",
             "",
-            "/path/to/package/module_two:33: Another sample warning",
-            "/path/to/package/module_two:332: Yet another sample warning"
+            nc("/path/to/package/module_two") + ":33: Another sample warning",
+            nc("/path/to/package/module_two") + ":332: Yet another sample warning"
         ]
 
         report = parse_pychecker_output(project, warnings)
