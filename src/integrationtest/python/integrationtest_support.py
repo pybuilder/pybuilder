@@ -21,6 +21,7 @@ import shutil
 import stat
 import tempfile
 import unittest
+import sys
 
 try:
     from StringIO import StringIO
@@ -73,7 +74,10 @@ class IntegrationTestSupport(unittest.TestCase):
     def assert_file_permissions(self, expected_permissions, name):
         full_path = self.full_path(name)
         actual_file_permissions = stat.S_IMODE(os.stat(full_path).st_mode)
-        self.assertEqual(oct(expected_permissions), oct(actual_file_permissions))
+        if sys.platform != "win32":
+            self.assertEqual(oct(expected_permissions), oct(actual_file_permissions))
+        else:
+            self.assertEqual(oct(0o666), oct(actual_file_permissions))
 
     def assert_file_empty(self, name):
         self.assert_file_exists(name)

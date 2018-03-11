@@ -21,15 +21,15 @@ try:
 except NameError:
     from io import FileIO as TYPE_FILE
 
-
 import unittest
-from test_utils import patch, Mock, MagicMock, call
+from os.path import normcase as nc
 
 from pybuilder.core import Project
 from pybuilder.plugins.python.pydev_plugin import (
     pydev_generate,
     init_pydev_plugin
 )
+from test_utils import patch, Mock, MagicMock, call
 
 
 class PydevPluginTests(unittest.TestCase):
@@ -46,7 +46,7 @@ class PydevPluginTests(unittest.TestCase):
         pydev_generate(project, Mock())
 
         self.assertEqual(mock_open.call_args_list,
-                         [call('basedir/.project', 'w'), call('basedir/.pydevproject', 'w')])
+                         [call(nc('basedir/.project'), 'w'), call(nc('basedir/.pydevproject'), 'w')])
         metadata_file = mock_open.return_value.__enter__.return_value
 
         self.assertEqual(metadata_file.write.call_args_list,

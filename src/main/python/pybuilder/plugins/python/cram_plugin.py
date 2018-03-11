@@ -69,7 +69,7 @@ def _find_files(project):
 
 
 def _report_file(project):
-    return project.expand_path("$dir_reports/{0}".format('cram.err'))
+    return project.expand_path("$dir_reports", "cram.err")
 
 
 def _prepend_path(env, variable, value):

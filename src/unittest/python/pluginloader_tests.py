@@ -18,11 +18,9 @@
 
 import unittest
 
-from pip._vendor.packaging.version import Version
-
 from pybuilder import pluginloader
 from pybuilder.errors import MissingPluginException, IncompatiblePluginException, UnspecifiedPluginNameException
-from pybuilder.pip_common import pip_version
+from pybuilder import pip_common
 from pybuilder.pip_utils import PIP_EXEC_STANZA
 from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
@@ -41,25 +39,25 @@ class PluginVersionCheckTest(unittest.TestCase):
 
     def test_version_exact_match(self):
         plugin_module = Mock()
-        pluginloader.PYB_VERSION = Version("1.2.3")
+        pluginloader.PYB_VERSION = pip_common.Version("1.2.3")
         plugin_module.pyb_version = "===1.2.3"
         _check_plugin_version(plugin_module, "test plugin")
 
     def test_version_compatible_match(self):
         plugin_module = Mock()
-        pluginloader.PYB_VERSION = Version("1.2.3")
+        pluginloader.PYB_VERSION = pip_common.Version("1.2.3")
         plugin_module.pyb_version = "~=1.2"
         _check_plugin_version(plugin_module, "test plugin")
 
     def test_version_multiple_specifier_match(self):
         plugin_module = Mock()
-        pluginloader.PYB_VERSION = Version("1.2.3")
+        pluginloader.PYB_VERSION = pip_common.Version("1.2.3")
         plugin_module.pyb_version = ">=1.2.0,<=1.2.4"
         _check_plugin_version(plugin_module, "test plugin")
 
     def test_version_no_match(self):
         plugin_module = Mock()
-        pluginloader.PYB_VERSION = Version("1.2.3")
+        pluginloader.PYB_VERSION = pip_common.Version("1.2.3")
         plugin_module.pyb_version = ">=1.2.5"
         self.assertRaises(IncompatiblePluginException, _check_plugin_version, plugin_module, "test plugin")
 
@@ -236,7 +234,7 @@ class InstallExternalPluginTests(unittest.TestCase):
 
         execute.assert_called_with(
             PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY] +
-            (["--upgrade"] if pip_version < "9.0" else ["--upgrade", "--upgrade-strategy", "only-if-needed"])
+            (["--upgrade"] if pip_common.pip_version < "9.0" else ["--upgrade", "--upgrade-strategy", "only-if-needed"])
             + ['some-plugin===1.2.3'], shell=False, outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
 
     @patch("pybuilder.pluginloader.read_file")
