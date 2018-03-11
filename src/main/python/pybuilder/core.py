@@ -25,15 +25,18 @@
 import fnmatch
 import itertools
 import os
+import re
 import string
 import sys
 from datetime import datetime
-from os.path import sep as PATH_SEPARATOR
+from os.path import sep as PATH_SEPARATOR, normcase as nc, join as jp, isdir, isfile, basename
 
-from pybuilder.errors import MissingPropertyException
-from pybuilder.utils import as_list
 # Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
 from pybuilder import pip_common
+from pybuilder.errors import MissingPropertyException
+from pybuilder.utils import as_list
+
+PATH_SEP_RE = re.compile("[\\/]")
 
 INITIALIZER_ATTRIBUTE = "_python_builder_initializer"
 
@@ -201,10 +204,10 @@ def use_bldsup(build_support_dir="bldsup"):
 
     WARNING: The BUILD_SUPPORT_DIR must exist and must have an __init__.py file in it.
     """
-    assert os.path.isdir(build_support_dir), "use_bldsup('{0}'): The {0} directory must exist!".format(
+    assert isdir(build_support_dir), "use_bldsup('{0}'): The {0} directory must exist!".format(
         build_support_dir)
-    init_file = os.path.join(build_support_dir, "__init__.py")
-    assert os.path.isfile(init_file), "use_bldsup('{0}'): The {1} file must exist!".format(build_support_dir, init_file)
+    init_file = jp(build_support_dir, "__init__.py")
+    assert isfile(init_file), "use_bldsup('{0}'): The {1} file must exist!".format(build_support_dir, init_file)
     sys.path.insert(0, build_support_dir)
 
 
@@ -310,7 +313,7 @@ class Project(object):
         self.version = version
         self.basedir = basedir
         if not self.name:
-            self.name = os.path.basename(basedir)
+            self.name = basename(basedir)
 
         self.default_task = None
 
@@ -498,7 +501,7 @@ class Project(object):
         if not filename or filename.strip() == "":
             raise ValueError("Missing argument filename.")
 
-        full_filename = os.path.join(package_name, filename)
+        full_filename = jp(package_name, filename)
         self._manifest_include(full_filename)
 
         if package_name not in self._package_data:
@@ -516,13 +519,13 @@ class Project(object):
         package_name = package_path.replace(PATH_SEPARATOR, '.')
         self._manifest_include_directory(package_path, patterns_list)
 
-        package_full_path = os.path.join(package_root, package_path)
+        package_full_path = jp(package_root, package_path)
 
         for root, dirnames, filenames in os.walk(package_full_path):
             filenames = list(fnmatch.filter(filenames, pattern) for pattern in patterns_list)
 
             for filename in itertools.chain.from_iterable(filenames):
-                full_path = os.path.join(root, filename)
+                full_path = jp(root, filename)
                 relative_path = full_path.replace(package_full_path, '', 1).lstrip(PATH_SEPARATOR)
                 self._package_data.setdefault(package_name, []).append(relative_path)
 
@@ -566,9 +569,9 @@ class Project(object):
 
     def expand_path(self, format_string, *additional_path_elements):
         elements = [self.basedir]
-        elements += self.expand(format_string).split(PATH_SEPARATOR)
+        elements += list(PATH_SEP_RE.split(self.expand(format_string)))
         elements += list(additional_path_elements)
-        return os.path.normcase(os.path.join(*elements))
+        return nc(jp(*elements))
 
     def get_property(self, key, default_value=None):
         return self.properties.get(key, default_value)

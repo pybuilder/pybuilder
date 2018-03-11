@@ -23,15 +23,16 @@
 
 import sys
 import tempfile
+from traceback import format_exc
 
 from pybuilder import __version__ as pyb_version
+# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
+from pybuilder import pip_utils, pip_common
 from pybuilder.errors import (MissingPluginException,
                               IncompatiblePluginException,
                               UnspecifiedPluginNameException,
                               )
 from pybuilder.utils import read_file
-# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
-from pybuilder import pip_utils, pip_common
 
 PYPI_PLUGIN_PROTOCOL = "pypi:"
 VCS_PLUGIN_PROTOCOL = "vcs:"
@@ -61,7 +62,12 @@ class BuiltinPluginLoader(PluginLoader):
         self.logger.debug("Trying to load builtin plugin '%s'", name)
         builtin_plugin_name = plugin_module_name or "pybuilder.plugins.%s_plugin" % name
 
-        plugin_module = _load_plugin(builtin_plugin_name, name)
+        try:
+            plugin_module = _load_plugin(builtin_plugin_name, name)
+        except MissingPluginException as e:
+            self.logger.debug("Builtin plugin %s failed to load: %s", builtin_plugin_name, e.message)
+            raise
+
         self.logger.debug("Found builtin plugin '%s'", builtin_plugin_name)
         return plugin_module
 
@@ -165,8 +171,7 @@ def _install_external_plugin(project, name, version, logger, plugin_module_name,
         pip_package = name.replace(VCS_PLUGIN_PROTOCOL, "")
         force_reinstall = True
 
-    with tempfile.NamedTemporaryFile(delete=True) as log_file:
-        log_file_name = log_file.name
+    with tempfile.NamedTemporaryFile(mode="w+t") as log_file:
         result = pip_utils.pip_install(
             install_targets=pip_package,
             index_url=project.get_property("install_dependencies_index_url"),
@@ -175,11 +180,11 @@ def _install_external_plugin(project, name, version, logger, plugin_module_name,
             upgrade=upgrade,
             force_reinstall=force_reinstall,
             logger=logger,
-            outfile_name=log_file_name,
-            error_file_name=log_file_name,
+            outfile_name=log_file,
+            error_file_name=log_file,
             cwd=".")
         if result != 0:
-            logger.error("The following pip error was encountered:\n" + "".join(read_file(log_file_name)))
+            logger.error("The following pip error was encountered:\n" + "".join(read_file(log_file)))
             message = "Failed to install plugin from {0}".format(pip_package)
             raise MissingPluginException(name, message)
 
@@ -196,8 +201,8 @@ def _load_plugin(plugin_module_name, plugin_name):
         _check_plugin_version(plugin_module, plugin_name)
         return plugin_module
 
-    except ImportError as import_error:
-        raise MissingPluginException(plugin_name, import_error)
+    except ImportError:
+        raise MissingPluginException(plugin_name, format_exc())
 
 
 def _check_plugin_version(plugin_module, plugin_name):

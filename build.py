@@ -39,7 +39,7 @@ use_plugin("source_distribution")
 
 use_plugin("python.unittest")
 
-if sys.platform != 'win32':
+if sys.platform != "win32":
     use_plugin("python.cram")
 
 use_plugin("python.integrationtest")
@@ -55,7 +55,9 @@ use_plugin("python.pycharm")
 use_plugin("python.pytddmon")
 
 use_plugin("python.sphinx")
-use_plugin("python.pdoc")
+
+if sys.platform != "win32":
+    use_plugin("python.pdoc")
 
 name = "pybuilder"
 summary = "An extensible, easy to use continuous build tool for Python"
@@ -96,8 +98,8 @@ def initialize(project):
 
     project.depends_on("tblib")
     project.depends_on("pip", ">=7.1")
-    project.depends_on("setuptools", "~=35.0")
-    project.depends_on("wheel")
+    project.depends_on("setuptools", "~=36.0")
+    project.depends_on("wheel", "~=0.29.0")
 
     project.set_property("verbose", True)
 

@@ -35,11 +35,11 @@ default_task = "publish"
 @init
 def init (project):
     project.depends_on("spam")
-    project.depends_on_requirements("{0}")
+    project.depends_on_requirements(%r)
     project.depends_on("pyassert", url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz")
     project.depends_on("eggs", "==0.2.3")
     project.build_depends_on("eggy")
-""".format(requirements))
+""" % requirements)
         self.create_directory("src/main/python/spam")
         self.write_file("requirements.txt", """
 awesome>=1.3.37

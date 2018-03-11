@@ -17,6 +17,7 @@
 #   limitations under the License.
 
 import unittest
+from os.path import normcase as nc
 
 from test_utils import patch, Mock, call
 
@@ -48,18 +49,19 @@ class CramPluginTests(unittest.TestCase):
     @patch('pybuilder.plugins.python.cram_plugin.discover_files_matching')
     def test_find_files(self, discover_mock):
         project = Project('.')
-        project.set_property('dir_source_cmdlinetest', '/any/dir')
+        project.set_property('dir_source_cmdlinetest', nc('/any/dir'))
         project.set_property('cram_test_file_glob', '*.t')
-        expected = ['/any/dir/test.cram']
+        expected = [nc('./any/dir/test.cram')]
         discover_mock.return_value = expected
         received = _find_files(project)
-        self.assertEquals(expected, received)
-        discover_mock.assert_called_once_with('/any/dir', '*.t')
+
+        self.assertEqual(expected, received)
+        discover_mock.assert_called_once_with(nc('/any/dir'), '*.t')
 
     def test_report(self):
         project = Project('.')
         project.set_property('dir_reports', '/any/dir')
-        expected = './any/dir/cram.err'
+        expected = nc('./any/dir/cram.err')
         received = _report_file(project)
         self.assertEquals(expected, received)
 
@@ -95,7 +97,7 @@ class CramPluginTests(unittest.TestCase):
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
             error_file_name='report_file',
-            env={'PYTHONPATH': './python:', 'PATH': './python/scripts:'}
+            env={'PYTHONPATH': nc('./python:'), 'PATH': nc('./python/scripts:')}
         )
         expected_info_calls = [call('Running Cram command line tests'),
                                call('Cram tests were fine'),
@@ -135,7 +137,7 @@ class CramPluginTests(unittest.TestCase):
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
             error_file_name='report_file',
-            env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
+            env={'PYTHONPATH': nc('./python:'), 'PATH': nc('./scripts:')}
         )
         expected_info_calls = [call('Running Cram command line tests'),
                                call('Cram tests were fine'),
@@ -175,7 +177,7 @@ class CramPluginTests(unittest.TestCase):
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
             error_file_name='report_file',
-            env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
+            env={'PYTHONPATH': nc('./python:'), 'PATH': nc('./scripts:')}
         )
         expected_info_calls = [call('Running Cram command line tests'),
                                ]
@@ -218,7 +220,7 @@ class CramPluginTests(unittest.TestCase):
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
             error_file_name='report_file',
-            env={'PYTHONPATH': './python:', 'PATH': './scripts:'}
+            env={'PYTHONPATH': nc('./python:'), 'PATH': nc('./scripts:')}
         )
         expected_info_calls = [call('Running Cram command line tests'),
                                ]

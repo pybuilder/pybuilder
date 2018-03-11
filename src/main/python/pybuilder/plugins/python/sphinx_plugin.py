@@ -21,8 +21,8 @@
 
 import sys
 from datetime import date
-from os import symlink, mkdir
-from os.path import join, dirname, relpath, exists
+from os import mkdir
+from os.path import join, dirname, relpath, exists, isdir
 from shutil import rmtree
 
 from pybuilder import scaffolding as SCAFFOLDING
@@ -31,6 +31,20 @@ from pybuilder.errors import BuildFailedException
 from pybuilder.utils import (execute_command,
                              assert_can_execute,
                              as_list)
+
+try:
+    from os import symlink
+except ImportError:
+    import ctypes
+
+    csl = ctypes.windll.kernel32.CreateSymbolicLinkW
+    csl.argtypes = (ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32)
+    csl.restype = ctypes.c_ubyte
+
+    def symlink(source, link_name):
+        flags = 1 if isdir(source) else 0
+        if csl(link_name, source, flags) == 0:
+            raise ctypes.WinError()
 
 __author__ = 'Thomas Prebble', 'Marcel Wolf', 'Arcadiy Ivanov'
 
