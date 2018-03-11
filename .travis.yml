@@ -23,7 +23,7 @@ after_success:
 - coveralls --verbose
 deploy:
   provider: pypi
-  user: pybuilder-travis
+  user: pybuilder-travis2
   distributions: "sdist"
   server: https://upload.pypi.org/legacy/
   on:
@@ -31,4 +31,4 @@ deploy:
     repo: pybuilder/pybuilder
     python: '3.5'
   password:
-    secure: QH11Nk1Mv6KVRr5L4z9dJfzDDxyUjkLJURWsJxYG0bGA8zxp7Tnfo1J5XDNRvT2bAxXSx0v5+C0y+0KE4z44z5wvE/hxHx9k+3PbETb1q1F1sVtWeA+i4cm7T7d4dh/9YfyfimcHNR/9U52qBpdSVjXqXcSzMzfgzhgFniGGJIU=
+    secure: D49QJr9Z4v9yz9VObFw0q44o2fy3YBjI48b6+Vb1qr2RNMF5GpVj+xWFTr9j1qMw7ilfwWCEKlHytKmh/OSOStUcd1vTlasGz8YefBCP8iIbvp9M6qcBKqMlp8f/6uxwUxak+OMvj5WuKwtyIUy8L9JwDxd02Q12MUW6SNtu2Lo=
