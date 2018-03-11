@@ -1,7 +1,11 @@
 environment:
   matrix:
+  - PYTHON_BIN_HOME: "C:\\Python26"
+  - PYTHON_BIN_HOME: "C:\\Python26-x64"
   - PYTHON_BIN_HOME: "C:\\Python27"
   - PYTHON_BIN_HOME: "C:\\Python27-x64"
+  - PYTHON_BIN_HOME: "C:\\Python33"
+  - PYTHON_BIN_HOME: "C:\\Python33-x64"
   - PYTHON_BIN_HOME: "C:\\Python34"
   - PYTHON_BIN_HOME: "C:\\Python34-x64"
   - PYTHON_BIN_HOME: "C:\\Python35"
