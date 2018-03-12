@@ -34,5 +34,6 @@ test_script:
   - ps: .\venv\Scripts\activate.ps1
   - cmd: where python
   - cmd: python --version
+  - cmd: pip install -U setuptools~=36.0
   - cmd: python build.py -v -X install_dependencies
   - cmd: python build.py -v -X analyze install
