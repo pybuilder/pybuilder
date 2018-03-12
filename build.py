@@ -78,7 +78,7 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            ]
 url = "http://pybuilder.github.io"
 license = "Apache License"
-version = "0.11.13"
+version = "0.11.14"
 
 requires_python = ">=2.6,!=3.0,!=3.1,!=3.2,<3.7"
 
