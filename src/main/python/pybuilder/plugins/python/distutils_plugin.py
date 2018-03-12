@@ -112,7 +112,7 @@ def as_str(value):
 @init
 def initialize_distutils_plugin(project):
     project.plugin_depends_on("pypandoc", "~=1.4")
-    project.plugin_depends_on("twine", "~=1.9")
+    project.plugin_depends_on("twine", "~=1.10")
 
     project.set_property_if_unset("distutils_commands", ["sdist", "bdist_wheel"])
     project.set_property_if_unset("distutils_command_options", None)

@@ -16,7 +16,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-"""Sphinx-plugin for PyBuildern to run a sphinx quickstart and generate the documentation once set up.
+"""Sphinx-plugin for PyBuilder to run a sphinx quickstart and generate the documentation once set up.
 """
 
 import sys
