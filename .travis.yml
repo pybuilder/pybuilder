@@ -18,7 +18,8 @@ branches:
 before_script:
 - pip install coveralls
 script:
-- "./build.py -v -X install_dependencies analyze install"
+- "./build.py -v -X install_dependencies"
+- "./build.py -v -X analyze install"
 after_success:
 - coveralls --verbose
 deploy:

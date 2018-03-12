@@ -34,4 +34,5 @@ test_script:
   - ps: .\venv\Scripts\activate.ps1
   - cmd: where python
   - cmd: python --version
-  - cmd: python build.py -v -X install_dependencies analyze install
+  - cmd: python build.py -v -X install_dependencies
+  - cmd: python build.py -v -X analyze install
