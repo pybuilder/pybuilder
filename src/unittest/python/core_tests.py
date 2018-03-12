@@ -19,6 +19,7 @@
 import os
 import types
 import unittest
+from os.path import normcase as nc
 
 from pyassert import assert_that
 
@@ -33,7 +34,7 @@ class ProjectTest(unittest.TestCase):
     def setUp(self):
         self.project = Project(basedir="/imaginary", name="Unittest")
 
-    @patch("pybuilder.core.os.path.basename", return_value="imaginary")
+    @patch("pybuilder.core.basename", return_value="imaginary")
     def test_should_pick_directory_name_for_project_name_when_name_is_not_given(self, os_path_basename):
         project = Project(basedir="/imaginary")
 
@@ -91,14 +92,14 @@ class ProjectTest(unittest.TestCase):
     def test_expand_path_should_return_expanded_path(self):
         self.project.set_property("spam", "spam")
         self.project.set_property("eggs", "eggs")
-        self.assertEquals(os.path.join("/imaginary", "spam", "eggs"),
-                          self.project.expand_path("$spam/$eggs"))
+        self.assertEqual(nc(os.path.join("/imaginary", "spam", "eggs")),
+                         self.project.expand_path("$spam/$eggs"))
 
     def test_expand_path_should_return_expanded_path_and_additional_parts_when_additional_parts_are_given(self):
         self.project.set_property("spam", "spam")
         self.project.set_property("eggs", "eggs")
-        self.assertEquals(
-            os.path.join("/imaginary", "spam", "eggs", "foo", "bar"),
+        self.assertEqual(
+            nc(os.path.join("/imaginary", "spam", "eggs", "foo", "bar")),
             self.project.expand_path("$spam/$eggs", "foo", "bar"))
 
     def test_should_raise_exception_when_getting_mandatory_propert_and_property_is_not_found(self):
@@ -234,8 +235,8 @@ class ProjectPackageDataTests(unittest.TestCase):
 
         self.assertEquals(
             {"monty": ["ham"], "spam": ["eggs"]}, self.project.package_data)
-        self.assertEquals(
-            ["spam/eggs", "monty/ham"], self.project.manifest_included_files)
+        self.assertEqual(
+            [nc("spam/eggs"), nc("monty/ham")], self.project.manifest_included_files)
 
 
 class ProjectDataFilesTests(unittest.TestCase):

@@ -18,6 +18,7 @@
 
 import unittest
 
+from os.path import normcase as nc
 from integrationtest_support import IntegrationTestSupport
 
 
@@ -61,10 +62,10 @@ def init (project):
 
         self.assert_file_exists(manifest_in)
         self.assert_file_permissions(0o664, manifest_in)
-        self.assert_file_content(manifest_in, """include spam/eggs
+        self.assert_file_content(manifest_in, """include %s
 include more_spam
 include more_eggs
-""")
+""" % nc("spam/eggs"))
 
 
 if __name__ == "__main__":

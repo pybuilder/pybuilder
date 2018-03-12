@@ -18,6 +18,7 @@
 
 
 import unittest
+from os.path import normcase as nc
 
 from pybuilder.core import (Project,
                             Logger,
@@ -57,7 +58,7 @@ class InstallDependencyTest(unittest.TestCase):
                                         (["--upgrade"] if pip_version < "9.0" else
                                          ["--upgrade", "--upgrade-strategy", "only-if-needed"]) +
                                         ['-c',
-                                         'unittest/any_target_directory/install_dependencies_constraints',
+                                         nc('unittest/any_target_directory/install_dependencies_constraints'),
                                          'spam'],
                                         cwd=ANY,
                                         env=ANY,

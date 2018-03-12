@@ -409,7 +409,7 @@ def build_scripts_string(project):
 
     scripts_dir = project.get_property("dir_dist_scripts")
     if scripts_dir:
-        scripts = list(map(lambda s: '{}/{}'.format(scripts_dir, s), scripts))
+        scripts = list(map(lambda s: '%s/%s' % (scripts_dir, s), scripts))
 
     return build_string_from_array(scripts)
 

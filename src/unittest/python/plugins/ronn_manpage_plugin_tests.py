@@ -16,27 +16,30 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from unittest import TestCase
-from pybuilder.core import Project
-from test_utils import Mock, patch
 from logging import Logger
+from os.path import normcase as nc
+from unittest import TestCase
+
+from pybuilder.core import Project
 from pybuilder.plugins.ronn_manpage_plugin import (
     build_generate_manpages_command,
     init_ronn_manpage_plugin,
     assert_ronn_is_executable,
     assert_gzip_is_executable
-    )
+)
+from test_utils import Mock, patch
 
 
 class RonnManpagePluginTests(TestCase):
 
     def test_should_generate_command_abiding_to_configuration(self):
         project = Project('egg')
-        project.set_property("dir_manpages", "docs/man")
+        project.set_property("dir_manpages", nc("docs/man"))
         project.set_property("manpage_source", "README.md")
         project.set_property("manpage_section", 1)
 
-        self.assertEqual(build_generate_manpages_command(project), 'ronn -r --pipe README.md | gzip -9 > docs/man/egg.1.gz')
+        self.assertEqual(build_generate_manpages_command(project),
+                         'ronn -r --pipe README.md | gzip -9 > ' + nc('docs/man/egg.1.gz'))
 
 
 class RonnPluginInitializationTests(TestCase):

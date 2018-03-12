@@ -18,9 +18,8 @@
 
 from __future__ import unicode_literals
 
+from os.path import normcase as nc
 from unittest import TestCase, TextTestRunner
-
-from test_utils import Mock, patch
 
 from pybuilder.core import Project
 from pybuilder.plugins.python.unittest_plugin import (execute_tests, execute_tests_matching,
@@ -29,32 +28,33 @@ from pybuilder.plugins.python.unittest_plugin import (execute_tests, execute_tes
                                                       _create_runner,
                                                       _get_make_result_method_name,
                                                       report_to_ci_server)
+from test_utils import Mock, patch
 
 __author__ = 'Michael Gruber'
 
 
 class PythonPathTests(TestCase):
     def setUp(self):
-        self.project = Project('/path/to/project')
+        self.project = Project(nc('/path/to/project'))
         self.project.set_property('dir_source_unittest_python', 'unittest')
         self.project.set_property('dir_source_main_python', 'src')
 
     def test_should_register_source_paths(self):
-        system_path = ['some/python/path']
+        system_path = [nc('some/python/path')]
 
         _register_test_and_source_path_and_return_test_dir(self.project, system_path, "unittest")
 
-        self.assertTrue('/path/to/project/unittest' in system_path)
-        self.assertTrue('/path/to/project/src' in system_path)
+        self.assertTrue(nc('/path/to/project/unittest') in system_path)
+        self.assertTrue(nc('/path/to/project/src') in system_path)
 
     def test_should_put_project_sources_before_other_sources(self):
-        system_path = ['irrelevant/sources']
+        system_path = [nc('irrelevant/sources')]
 
         _register_test_and_source_path_and_return_test_dir(self.project, system_path, "unittest")
 
-        test_sources_index_in_path = system_path.index('/path/to/project/unittest')
-        main_sources_index_in_path = system_path.index('/path/to/project/src')
-        irrelevant_sources_index_in_path = system_path.index('irrelevant/sources')
+        test_sources_index_in_path = system_path.index(nc('/path/to/project/unittest'))
+        main_sources_index_in_path = system_path.index(nc('/path/to/project/src'))
+        irrelevant_sources_index_in_path = system_path.index(nc('irrelevant/sources'))
         self.assertTrue(test_sources_index_in_path < irrelevant_sources_index_in_path and
                         main_sources_index_in_path < irrelevant_sources_index_in_path)
 

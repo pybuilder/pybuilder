@@ -24,6 +24,7 @@ except NameError:
     TYPE_FILE = FileIO
 
 import unittest
+from os.path import normcase as nc
 
 from pybuilder.core import Project, Author, Logger
 from pybuilder.errors import BuildFailedException
@@ -667,8 +668,8 @@ class RenderManifestFileTest(unittest.TestCase):
 
         self.assertEqual("""include file1
 include file2
-include spam/eggs
-""", actual_manifest_file)
+include %s
+""" % nc("spam/eggs"), actual_manifest_file)
 
 
 class ExecuteDistUtilsTest(PyBuilderTestCase):
@@ -783,7 +784,7 @@ class TasksTest(PyBuilderTestCase):
     @patch("pybuilder.pip_utils.execute_command")
     def test_install(self, execute_command, *args):
         install_distribution(self.project, MagicMock(Logger))
-        execute_command.assert_called_with(PIP_EXEC_STANZA + ["install", "--force-reinstall", '/whatever dist'],
+        execute_command.assert_called_with(PIP_EXEC_STANZA + ["install", "--force-reinstall", nc('/whatever dist')],
                                            cwd=".", env=ANY,
                                            outfile_name=ANY, error_file_name=ANY, shell=False)
 
@@ -797,7 +798,7 @@ class TasksTest(PyBuilderTestCase):
         install_distribution(self.project, MagicMock(Logger))
         execute_command.assert_called_with(
             PIP_EXEC_STANZA + ["install", "--index-url", "index_url", "--extra-index-url", "extra_index_url",
-                               "--force-reinstall", '/whatever dist'], cwd=".", env=ANY, outfile_name=ANY,
+                               "--force-reinstall", nc('/whatever dist')], cwd=".", env=ANY, outfile_name=ANY,
             error_file_name=ANY, shell=False)
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
