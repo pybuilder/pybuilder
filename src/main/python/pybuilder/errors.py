@@ -47,14 +47,19 @@ class NoSuchTaskException(PyBuilderException):
 
 
 class CircularTaskDependencyException(PyBuilderException):
-    def __init__(self, first, second=None, message=None):
+    def __init__(self, task_names, repeated_task=None, execution_plan=None, message=None):
         if message:
             super(CircularTaskDependencyException, self).__init__(message)
-        elif second:
-            super(CircularTaskDependencyException, self).__init__("Circular task dependency detected between %s and %s",
-                                                                  first, second)
-            self.first = first
-            self.second = second
+        elif repeated_task:
+            super(CircularTaskDependencyException, self).__init__(
+                "Task '%s' attempted to invoke tasks %s, "
+                "resulting in plan %s, creating circular dependency." %
+                (repeated_task, task_names, execution_plan)
+            )
+        else:
+            super(CircularTaskDependencyException, self).__init__(
+                "Found circular dependency into %s." % task_names
+            )
 
 
 class MissingPrerequisiteException(PyBuilderException):
