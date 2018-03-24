@@ -20,13 +20,6 @@ A module containing utilities for operations on a directed graph
 """
 
 
-class GraphHasCycles(Exception):
-    """
-    To be raised when a graph has one or more cycles
-    """
-    pass
-
-
 class Graph(object):
     """
         A graph using an edge dictionary as an internal representation.
@@ -45,10 +38,10 @@ class Graph(object):
                 # contains at least one directed cycle, so len()>1 is a showstopper
 
         if cycles:
-            raise self.error_with_cycles(cycles)
+            return cycles
 
         if include_trivial_cycles:
-            self.assert_no_trivial_cycles_present()
+            return self.assert_no_trivial_cycles_present()
 
     def assert_no_trivial_cycles_present(self):
         trivial_cycles = []
@@ -57,13 +50,7 @@ class Graph(object):
                 trivial_cycles.append((source, source))
 
         if trivial_cycles:
-            raise self.error_with_cycles(trivial_cycles)
-
-    def error_with_cycles(self, cycles):
-        error_message = "Found cycle(s):\n"
-        for cycle in cycles:
-            error_message += "\tThese nodes form a cycle : " + str(cycle) + "\n"
-        return GraphHasCycles(error_message)
+            return trivial_cycles
 
 
 def tarjan_scc(graph):
