@@ -37,7 +37,7 @@ from pybuilder.errors import (CircularTaskDependencyException,
                               MissingActionDependencyException,
                               NoSuchTaskException,
                               RequiredTaskExclusionException)
-from pybuilder.graph_utils import Graph, GraphHasCycles
+from pybuilder.graph_utils import Graph
 from pybuilder.utils import as_list, Timer, odict
 
 if sys.version_info[0] < 3:  # if major is less than 3
@@ -391,10 +391,10 @@ class ExecutionManager(object):
         dependency_edges = {}
         for task in self.collect_all_transitive_tasks(as_list(task_names)):
             dependency_edges[task.name] = [dependency.name for dependency in task.dependencies]
-        try:
-            Graph(dependency_edges).assert_no_cycles_present()
-        except GraphHasCycles as cycles:
-            raise CircularTaskDependencyException(str(cycles))
+
+        cycles = Graph(dependency_edges).assert_no_cycles_present()
+        if cycles:
+            raise CircularTaskDependencyException(cycles)
 
         for task_name in as_list(task_names):
             self._enqueue_task(execution_plan, task_name)
@@ -417,8 +417,8 @@ class ExecutionManager(object):
 
         if self._current_task and self._current_task in shortest_plan:
             raise CircularTaskDependencyException("Task '%s' attempted to invoke tasks %s, "
-                                                  "resulting in plan %s, creating circular dependency" %
-                                                  (self._current_task, task_names, shortest_plan))
+                                                  "resulting in plan %s, creating circular dependency",
+                                                  self._current_task, task_names, shortest_plan)
         return shortest_plan
 
     def _enqueue_task(self, execution_plan, task_name):
