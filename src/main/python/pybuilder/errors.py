@@ -21,6 +21,8 @@
     Defines all possible errors that can arise during the execution of PyBuilder.
 """
 
+from pprint import pformat
+
 
 class PyBuilderException(Exception):
     def __init__(self, message, *arguments):
@@ -47,14 +49,15 @@ class NoSuchTaskException(PyBuilderException):
 
 
 class CircularTaskDependencyException(PyBuilderException):
-    def __init__(self, first, second=None, message=None):
-        if message:
-            super(CircularTaskDependencyException, self).__init__(message)
-        elif second:
-            super(CircularTaskDependencyException, self).__init__("Circular task dependency detected between %s and %s",
-                                                                  first, second)
-            self.first = first
-            self.second = second
+    def __init__(self, message, *args):
+        if isinstance(message, (list, tuple)):
+            cycles = message
+            super(CircularTaskDependencyException, self).__init__("Circular task dependencies detected:\n%s",
+                                                                  "\n".join("\t" + pformat(cycle) for cycle in cycles)
+                                                                  )
+        else:
+            super(CircularTaskDependencyException, self).__init__(message,
+                                                                  *args)
 
 
 class MissingPrerequisiteException(PyBuilderException):

@@ -145,8 +145,8 @@ def set_description(project, logger):
         try:
             assert_can_execute(["pandoc", "--version"], "pandoc", "distutils")
             doc_convert(project, logger)
-        except MissingPrerequisiteException:
-            logger.warn("Was unable to find pandoc and did not convert the documentation")
+        except (MissingPrerequisiteException, ImportError):
+            logger.warn("Was unable to find pandoc or pypandoc and did not convert the documentation")
 
 
 @after("package")
