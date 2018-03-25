@@ -204,7 +204,7 @@ def tail(file_path, lines=20):
     try:
         import tailer
     except ImportError:
-        return read_file(file_path)
+        return (l[:len(l)] for l in read_file(file_path))
 
     with open(file_path) as f:
         return tailer.tail(f, lines)

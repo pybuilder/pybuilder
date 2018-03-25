@@ -20,10 +20,11 @@ import os
 import shutil
 from os.path import join
 
-from pybuilder.core import init, task, description, depends, optional
-from pybuilder.utils import safe_log_file_name
 # Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
 from pybuilder import pip_utils
+from pybuilder.core import init, task, description, depends, optional
+from pybuilder.errors import MissingPluginDependencyException
+from pybuilder.utils import safe_log_file_name, tail
 
 
 @init
@@ -63,14 +64,18 @@ def prepare(project, logger):
     plugin_dependency_versions = pip_utils.get_package_version(project.plugin_dependencies, logger)
     for plugin_dependency in project.plugin_dependencies:
         logger.debug("Processing plugin dependency %s" % plugin_dependency)
-        if plugin_dependency.name.lower() not in plugin_dependency_versions \
-                or not pip_utils.version_satisfies_spec(plugin_dependency.version,
-                                                        plugin_dependency_versions[plugin_dependency.name.lower()]):
+        dependency_name = plugin_dependency.name.lower()
+        no_version_installed = dependency_name not in plugin_dependency_versions
+        if not no_version_installed:
+            version_satisfies = pip_utils.version_satisfies_spec(plugin_dependency.version,
+                                                                 plugin_dependency_versions[dependency_name])
+        if no_version_installed or not version_satisfies:
             logger.info("Installing plugin dependency %s" % plugin_dependency)
             log_file = project.expand_path("$dir_reports",
                                            safe_log_file_name("dependency_%s_install.log" % plugin_dependency))
-            pip_utils.pip_install(
-                install_targets=pip_utils.as_pip_install_target(plugin_dependency),
+            install_targets = pip_utils.as_pip_install_target(plugin_dependency)
+            result = pip_utils.pip_install(
+                install_targets=install_targets,
                 index_url=project.get_property("install_dependencies_index_url"),
                 extra_index_url=project.get_property("install_dependencies_extra_index_url"),
                 verbose=project.get_property("verbose"),
@@ -78,6 +83,13 @@ def prepare(project, logger):
                 force_reinstall=plugin_dependency.url is not None,
                 outfile_name=log_file,
                 error_file_name=log_file)
+            if result:
+                log_lines = list(tail(log_file))
+                log = log_lines[-1] if not project.get_property("debug") else "\n".join(log_lines)
+                if no_version_installed:
+                    raise MissingPluginDependencyException(",".join(install_targets), log)
+                else:
+                    logger.error("Failed to install '%s':\n%s", plugin_dependency, log)
 
 
 @task
