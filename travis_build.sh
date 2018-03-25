@@ -28,4 +28,6 @@ else
     echo "Running PR Build"
 fi
 
+PYTHONIOENCODING=utf8
+export PYTHONIOENCODING
 ./build.py $PYB_ARGS
