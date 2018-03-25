@@ -94,6 +94,12 @@ class MissingPluginException(PyBuilderException):
             "Missing plugin '%s': %s", plugin, message)
 
 
+class MissingPluginDependencyException(PyBuilderException):
+    def __init__(self, dependency, message=""):
+        super(MissingPluginDependencyException, self).__init__(
+            "Missing plugin dependency '%s': %s", dependency, message)
+
+
 class UnspecifiedPluginNameException(PyBuilderException):
     def __init__(self, plugin):
         super(UnspecifiedPluginNameException, self).__init__(
