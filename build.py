@@ -100,6 +100,7 @@ def initialize(project):
     project.depends_on("pip", ">=7.1")
     project.depends_on("setuptools", "~=36.0")
     project.depends_on("wheel", "~=0.29.0")
+    project.depends_on("tailer")
 
     project.set_property("verbose", True)
 
