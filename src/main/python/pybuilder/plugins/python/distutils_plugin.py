@@ -127,6 +127,7 @@ def initialize_distutils_plugin(project):
     project.set_property_if_unset("distutils_use_setuptools", True)
     project.set_property_if_unset("distutils_upload_register", False)
     project.set_property_if_unset("distutils_upload_repository", None)
+    project.set_property_if_unset("distutils_upload_repository_key", None)
     project.set_property_if_unset("distutils_upload_sign", False)
     project.set_property_if_unset("distutils_upload_sign_identity", None)
 
@@ -251,6 +252,10 @@ def upload(project, logger):
     repository_args = []
     if repository:
         repository_args = ["--repository-url", repository]
+    else:
+        repository_key = project.get_property("distutils_upload_repository_key")
+        if repository_key:
+            repository_args = ["--repository", repository_key]
 
     upload_sign = project.get_property("distutils_upload_sign")
     upload_sign_args = []

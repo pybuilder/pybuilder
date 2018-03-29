@@ -760,6 +760,35 @@ class UploadTests(PyBuilderTestCase):
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
     @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_upload_with_repo_and_repo_key(self, proc_runner, walk, *args):
+        proc_runner.return_value = 0
+        walk.return_value = [["dist", "", ["a", "b"]]]
+        self.project.set_property("distutils_upload_repository", "test repo")
+        self.project.set_property("distutils_upload_repository_key", "test repo key")
+
+        upload(self.project, MagicMock(Logger))
+        self.assertEqual(popen_distutils_args(self, 1, proc_runner),
+                         [["twine", "upload", "--repository-url", "test repo", nc("/whatever dist/dist/a"),
+                           nc("/whatever dist/dist/b")]])
+
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
+    def test_upload_with_repo_key_only(self, proc_runner, walk, *args):
+        proc_runner.return_value = 0
+        walk.return_value = [["dist", "", ["a", "b"]]]
+        self.project.set_property("distutils_upload_repository_key", "test repo key")
+
+        upload(self.project, MagicMock(Logger))
+        self.assertEqual(popen_distutils_args(self, 1, proc_runner),
+                         [["twine", "upload", "--repository", "test repo key", nc("/whatever dist/dist/a"),
+                           nc("/whatever dist/dist/b")]])
+
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
+    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
     def test_upload_with_signature(self, proc_runner, walk, *args):
         proc_runner.return_value = 0
         walk.return_value = [["dist", "", ["a", "b"]]]
