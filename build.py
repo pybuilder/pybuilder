@@ -96,8 +96,8 @@ def initialize(project):
 
     project.depends_on("tblib")
     project.depends_on("pip", "~=9.0")
-    project.depends_on("setuptools", "~=38.5")
-    project.depends_on("wheel", "~=0.30")
+    project.depends_on("setuptools", "~=39.0.0")
+    project.depends_on("wheel", "~=0.31")
     project.depends_on("tailer", "~=0.4")
 
     project.set_property("verbose", True)
