@@ -19,7 +19,11 @@
 from pip._vendor.packaging.specifiers import SpecifierSet, InvalidSpecifier
 from pip._vendor.packaging.version import Version, InvalidVersion
 from pip._vendor.pkg_resources import _initialize_master_working_set
-from pip.commands.show import search_packages_info
+
+try:
+    from pip.commands.show import search_packages_info
+except ImportError:
+    from pip._internal.commands.show import search_packages_info
 
 pip_working_set_init = _initialize_master_working_set
 
