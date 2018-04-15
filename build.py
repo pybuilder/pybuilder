@@ -78,7 +78,7 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            ]
 url = "http://pybuilder.github.io"
 license = "Apache License"
-version = "0.11.15"
+version = "0.11.16"
 
 requires_python = ">=2.6,!=3.0,!=3.1,!=3.2,<3.7"
 
@@ -97,7 +97,8 @@ def initialize(project):
         project.build_depends_on("importlib")  # for fluentmock
 
     project.depends_on("tblib")
-    project.depends_on("pip", ">=7.1")
+
+    project.depends_on("pip", ">=7.1,!=10.*,<10dev")
     project.depends_on("setuptools", "~=36.0")
     project.depends_on("wheel", "~=0.29.0")
     project.depends_on("tailer")

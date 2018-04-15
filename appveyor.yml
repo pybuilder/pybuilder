@@ -34,6 +34,9 @@ test_script:
   - ps: .\venv\Scripts\activate.ps1
   - cmd: where python
   - cmd: python --version
-  - cmd: pip install -U setuptools~=36.0
+  - cmd: pip --version
+  - ps: Start-FileDownload 'https://bootstrap.pypa.io/2.6/get-pip.py'
+  - cmd: "python get-pip.py"
+  - cmd: pip --version
   - cmd: python build.py -v -X install_dependencies
   - cmd: python build.py -v -X analyze install
