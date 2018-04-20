@@ -78,7 +78,7 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            ]
 url = "http://pybuilder.github.io"
 license = "Apache License"
-version = "0.11.16"
+version = "0.11.17"
 
 requires_python = ">=2.6,!=3.0,!=3.1,!=3.2,<3.7"
 
@@ -98,9 +98,15 @@ def initialize(project):
 
     project.depends_on("tblib")
 
-    project.depends_on("pip", ">=7.1,!=10.*,<10dev")
-    project.depends_on("setuptools", "~=36.0")
-    project.depends_on("wheel", "~=0.29.0")
+    if sys.version_info[0:2] in ((2, 6), (3, 3)):
+        project.depends_on("pip", ">=7.1,!=10.*,<10dev")
+        project.depends_on("setuptools", "~=36.0")
+        project.depends_on("wheel", "~=0.29.0")
+    else:
+        project.depends_on("pip", ">=7.1,<11dev")
+        project.depends_on("setuptools", "~=39.0.0")
+        project.depends_on("wheel", "~=0.31")
+
     project.depends_on("tailer")
 
     project.set_property("verbose", True)
