@@ -18,7 +18,11 @@
 
 from pip._vendor.packaging.specifiers import SpecifierSet, InvalidSpecifier
 from pip._vendor.packaging.version import Version, InvalidVersion
-from pip.commands.show import search_packages_info
+
+try:
+    from pip.commands.show import search_packages_info
+except ImportError:
+    from pip._internal.commands.show import search_packages_info
 
 try:
     # This is the path for pip 7.x and beyond
@@ -45,12 +49,12 @@ def _pip_disallows_insecure_packages_by_default():
     # (2014-01-01) BACKWARD INCOMPATIBLE pip no longer will scrape insecure external urls by default
     # nor will it install externally hosted files by default
     # Also pip v1.1 for example has no __version__
-    return hasattr(pip, "__version__") and pip.__version__ >= '1.5'
+    return hasattr(pip, "__version__") and (pip.__version__ >= '1.5' or pip.__version__ >= '10.0')
 
 
 def _pip_supports_constraints():
     import pip
-    return hasattr(pip, "__version__") and pip.__version__ >= '7.1'
+    return hasattr(pip, "__version__") and (pip.__version__ >= '7.1' or pip.__version__ >= '10.0')
 
 
 def _pip_version():
