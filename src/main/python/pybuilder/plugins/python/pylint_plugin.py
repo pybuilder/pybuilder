@@ -34,7 +34,7 @@ def init_pylint(project):
 
 @after("prepare")
 def check_pylint_availability(logger):
-    logger.debug("Checking availability of pychecker")
+    logger.debug("Checking availability of pylint")
     assert_can_execute(("pylint", ), "pylint", "plugin python.pylint")
     logger.debug("pylint has been found")
 
