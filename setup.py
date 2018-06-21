@@ -45,7 +45,7 @@ try:
         target_file_name = os.path.join(script_dir, file_name)
         if os.path.exists(target_file_name):
             if os.path.isdir(target_file_name):
-                os.removedirs(target_file_name)
+                shutil.rmtree(target_file_name)
             else:
                 os.remove(target_file_name)
         shutil.move(src_file, script_dir)
