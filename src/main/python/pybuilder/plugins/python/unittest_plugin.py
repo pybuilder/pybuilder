@@ -20,7 +20,7 @@ from __future__ import unicode_literals
 
 try:
     from StringIO import StringIO
-except ImportError as e:
+except ImportError:
     from io import StringIO
 
 import sys
