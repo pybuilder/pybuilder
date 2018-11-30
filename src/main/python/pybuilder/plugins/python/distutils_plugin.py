@@ -26,7 +26,7 @@ from textwrap import dedent
 
 try:
     from StringIO import StringIO
-except ImportError as e:
+except ImportError:
     from io import StringIO
 
 from pybuilder.core import (after,
