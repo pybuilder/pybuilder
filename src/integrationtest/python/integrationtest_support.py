@@ -54,6 +54,10 @@ class IntegrationTestSupport(unittest.TestCase):
         with open(self.full_path(name), "w") as file:
             file.writelines(content)
 
+    def write_binary_file(self, name, *content):
+        with open(self.full_path(name), "wb") as file:
+            file.writelines(content)
+
     def write_build_file(self, content):
         self.write_file("build.py", content)
 

@@ -67,7 +67,8 @@ def init_python_directories(project):
         if not os.path.exists(scripts_dir):
             return
         for script in os.listdir(scripts_dir):
-            if os.path.isfile(os.path.join(scripts_dir, script)):
+            if os.path.isfile(os.path.join(scripts_dir, script)) \
+               and not HIDDEN_FILE_NAME_PATTERN.match(script):
                 yield script
 
     project.list_scripts = list_scripts
