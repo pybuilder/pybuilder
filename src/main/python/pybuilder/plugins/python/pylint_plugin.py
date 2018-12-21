@@ -19,17 +19,21 @@
 from pybuilder.core import use_plugin, after, init, task
 from pybuilder.utils import assert_can_execute
 from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_modules
+from pybuilder.errors import BuildFailedException
+from pybuilder.utils import read_file
 
 use_plugin("python.core")
 use_plugin("analysis")
 
 DEFAULT_PYLINT_OPTIONS = ["--max-line-length=100", "--no-docstring-rgx=.*"]
+DEFAULT_PYLINT_BREAK_BUILD = False
 
 
 @init
 def init_pylint(project):
     project.plugin_depends_on("pylint")
     project.set_property_if_unset("pylint_options", DEFAULT_PYLINT_OPTIONS)
+    project.set_property_if_unset("pylint_break_build", DEFAULT_PYLINT_BREAK_BUILD)
 
 
 @after("prepare")
@@ -44,4 +48,15 @@ def execute_pylint(project, logger):
     logger.info("Executing pylint on project sources")
 
     command_and_arguments = ["pylint"] + project.get_property("pylint_options")
-    execute_tool_on_modules(project, "pylint", command_and_arguments, True)
+    result_tuple = execute_tool_on_modules(project, "pylint", command_and_arguments, True)
+
+    if project.get_property("pylint_break_build"):
+        report_file = result_tuple[1]  # access by position to avoid changing mocking behaviour
+
+        warnings = read_file(report_file)
+        warning_count = len(warnings)
+
+        if warning_count > 0:
+            message = "Pylint found {} warning(s).".format(warning_count)
+            logger.error(message)
+            raise BuildFailedException(message)

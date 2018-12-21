@@ -25,6 +25,7 @@ from pybuilder.plugins.python.pylint_plugin import (check_pylint_availability,
                                                     init_pylint,
                                                     execute_pylint,
                                                     DEFAULT_PYLINT_OPTIONS)
+from pybuilder.errors import BuildFailedException
 
 
 class PylintPluginTests(TestCase):
@@ -57,3 +58,26 @@ class PylintPluginTests(TestCase):
         execute_pylint(project, Mock(Logger))
 
         execute_tool.assert_called_with(project, "pylint", ["pylint", "--test", "-f", "--x=y"], True)
+
+    def test_should_check_that_pylint_breaks_build(self):
+        project = Project(".")
+        init_pylint(project)
+
+        project.set_property('dir_source_main_python', 'src')
+        project.set_property("dir_reports", "target/reports")
+        project.set_property("pylint_options", ["--max-line-length=80"])
+        project.set_property("pylint_break_build", True)
+
+        with self.assertRaises(BuildFailedException):
+            execute_pylint(project, Mock(Logger))
+
+    def test_should_check_that_pylint_does_not_break_build(self):
+        project = Project(".")
+        init_pylint(project)
+
+        project.set_property('dir_source_main_python', 'src')
+        project.set_property("dir_reports", "target/reports")
+        project.set_property("pylint_options", ["--max-line-length=80"])
+        project.set_property("pylint_break_build", False)
+
+        execute_pylint(project, Mock(Logger))
