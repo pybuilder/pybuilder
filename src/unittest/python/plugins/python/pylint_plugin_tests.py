@@ -64,10 +64,6 @@ class PylintPluginTests(TestCase):
     def test_should_break_build_when_warnings_and_set(self, execute_tool, warnings):
         project = Project(".")
         init_pylint(project)
-
-        project.set_property('dir_source_main_python', 'src')
-        project.set_property("dir_reports", "target/reports")
-        project.set_property("pylint_options", ["--max-line-length=80"])
         project.set_property("pylint_break_build", True)
 
         with self.assertRaises(BuildFailedException):
@@ -78,10 +74,6 @@ class PylintPluginTests(TestCase):
     def test_should_not_break_build_when_warnings_and_not_set(self, execute_tool, warnings):
         project = Project(".")
         init_pylint(project)
-
-        project.set_property('dir_source_main_python', 'src')
-        project.set_property("dir_reports", "target/reports")
-        project.set_property("pylint_options", ["--max-line-length=80"])
         project.set_property("pylint_break_build", False)
 
         execute_pylint(project, Mock(Logger))
@@ -91,10 +83,6 @@ class PylintPluginTests(TestCase):
     def test_should_not_break_build_when_no_warnings_and_set(self, execute_tool, warnings):
         project = Project(".")
         init_pylint(project)
-
-        project.set_property('dir_source_main_python', 'src')
-        project.set_property("dir_reports", "target/reports")
-        project.set_property("pylint_options", ["--max-line-length=80"])
         project.set_property("pylint_break_build", True)
 
         execute_pylint(project, Mock(Logger))
@@ -104,10 +92,6 @@ class PylintPluginTests(TestCase):
     def test_should_not_break_build_when_no_warnings_and_not_set(self, execute_tool, warnings):
         project = Project(".")
         init_pylint(project)
-
-        project.set_property('dir_source_main_python', 'src')
-        project.set_property("dir_reports", "target/reports")
-        project.set_property("pylint_options", ["--max-line-length=80"])
         project.set_property("pylint_break_build", False)
 
         execute_pylint(project, Mock(Logger))
