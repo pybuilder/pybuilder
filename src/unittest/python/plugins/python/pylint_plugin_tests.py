@@ -59,7 +59,9 @@ class PylintPluginTests(TestCase):
 
         execute_tool.assert_called_with(project, "pylint", ["pylint", "--test", "-f", "--x=y"], True)
 
-    def test_should_check_that_pylint_breaks_build(self):
+    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=['one warning', 'another warning'])
+    @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
+    def test_should_break_build_when_warnings_and_set(self, execute_tool, warnings):
         project = Project(".")
         init_pylint(project)
 
@@ -71,7 +73,35 @@ class PylintPluginTests(TestCase):
         with self.assertRaises(BuildFailedException):
             execute_pylint(project, Mock(Logger))
 
-    def test_should_check_that_pylint_does_not_break_build(self):
+    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=['one warning', 'another warning'])
+    @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
+    def test_should_not_break_build_when_warnings_and_not_set(self, execute_tool, warnings):
+        project = Project(".")
+        init_pylint(project)
+
+        project.set_property('dir_source_main_python', 'src')
+        project.set_property("dir_reports", "target/reports")
+        project.set_property("pylint_options", ["--max-line-length=80"])
+        project.set_property("pylint_break_build", False)
+
+        execute_pylint(project, Mock(Logger))
+
+    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=[])
+    @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
+    def test_should_not_break_build_when_no_warnings_and_set(self, execute_tool, warnings):
+        project = Project(".")
+        init_pylint(project)
+
+        project.set_property('dir_source_main_python', 'src')
+        project.set_property("dir_reports", "target/reports")
+        project.set_property("pylint_options", ["--max-line-length=80"])
+        project.set_property("pylint_break_build", True)
+
+        execute_pylint(project, Mock(Logger))
+
+    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=[])
+    @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
+    def test_should_not_break_build_when_no_warnings_and_not_set(self, execute_tool, warnings):
         project = Project(".")
         init_pylint(project)
 
