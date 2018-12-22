@@ -25,6 +25,7 @@ from pybuilder.plugins.python.pylint_plugin import (check_pylint_availability,
                                                     init_pylint,
                                                     execute_pylint,
                                                     DEFAULT_PYLINT_OPTIONS)
+from pybuilder.errors import BuildFailedException
 
 
 class PylintPluginTests(TestCase):
@@ -57,3 +58,40 @@ class PylintPluginTests(TestCase):
         execute_pylint(project, Mock(Logger))
 
         execute_tool.assert_called_with(project, "pylint", ["pylint", "--test", "-f", "--x=y"], True)
+
+    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=['one warning', 'another warning'])
+    @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
+    def test_should_break_build_when_warnings_and_set(self, execute_tool, warnings):
+        project = Project(".")
+        init_pylint(project)
+        project.set_property("pylint_break_build", True)
+
+        with self.assertRaises(BuildFailedException):
+            execute_pylint(project, Mock(Logger))
+
+    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=['one warning', 'another warning'])
+    @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
+    def test_should_not_break_build_when_warnings_and_not_set(self, execute_tool, warnings):
+        project = Project(".")
+        init_pylint(project)
+        project.set_property("pylint_break_build", False)
+
+        execute_pylint(project, Mock(Logger))
+
+    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=[])
+    @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
+    def test_should_not_break_build_when_no_warnings_and_set(self, execute_tool, warnings):
+        project = Project(".")
+        init_pylint(project)
+        project.set_property("pylint_break_build", True)
+
+        execute_pylint(project, Mock(Logger))
+
+    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=[])
+    @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
+    def test_should_not_break_build_when_no_warnings_and_not_set(self, execute_tool, warnings):
+        project = Project(".")
+        init_pylint(project)
+        project.set_property("pylint_break_build", False)
+
+        execute_pylint(project, Mock(Logger))
