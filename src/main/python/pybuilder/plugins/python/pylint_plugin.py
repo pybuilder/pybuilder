@@ -53,7 +53,9 @@ def execute_pylint(project, logger):
     if project.get_property("pylint_break_build"):
         report_file = result_tuple[1]  # access by position to avoid changing mocking behaviour
 
-        warnings = read_file(report_file)
+        warnings = [line
+                    for line in read_file(report_file)
+                    if line.find('.py:') >= 0]
         warning_count = len(warnings)
 
         if warning_count > 0:

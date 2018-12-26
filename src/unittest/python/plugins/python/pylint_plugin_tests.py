@@ -28,6 +28,20 @@ from pybuilder.plugins.python.pylint_plugin import (check_pylint_availability,
 from pybuilder.errors import BuildFailedException
 
 
+PYLINT_ERROR_OUTPUT = [
+    '************* Module mode.file',
+    'src/main/python/module/file.py:34:0: C0301: Line too long (365/100) (line-too-long)',
+    'src/main/python/module/file.py:34:0: R1705: Unnecessary "else" after "return" (no-else-return)',
+    'Your code has been rated at 9.79/10 (previous run: 9.79/10, +0.00)',
+    ''
+    ]
+
+PYLINT_NORMAL_OUTPUT = [
+    'Your code has been rated at 9.79/10 (previous run: 9.79/10, +0.00)',
+    ''
+    ]
+
+
 class PylintPluginTests(TestCase):
 
     @patch('pybuilder.plugins.python.pylint_plugin.assert_can_execute')
@@ -59,7 +73,7 @@ class PylintPluginTests(TestCase):
 
         execute_tool.assert_called_with(project, "pylint", ["pylint", "--test", "-f", "--x=y"], True)
 
-    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=['one warning', 'another warning'])
+    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=PYLINT_ERROR_OUTPUT)
     @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
     def test_should_break_build_when_warnings_and_set(self, execute_tool, warnings):
         project = Project(".")
@@ -69,7 +83,7 @@ class PylintPluginTests(TestCase):
         with self.assertRaises(BuildFailedException):
             execute_pylint(project, Mock(Logger))
 
-    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=['one warning', 'another warning'])
+    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=PYLINT_ERROR_OUTPUT)
     @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
     def test_should_not_break_build_when_warnings_and_not_set(self, execute_tool, warnings):
         project = Project(".")
@@ -78,7 +92,7 @@ class PylintPluginTests(TestCase):
 
         execute_pylint(project, Mock(Logger))
 
-    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=[])
+    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=PYLINT_NORMAL_OUTPUT)
     @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
     def test_should_not_break_build_when_no_warnings_and_set(self, execute_tool, warnings):
         project = Project(".")
@@ -87,7 +101,7 @@ class PylintPluginTests(TestCase):
 
         execute_pylint(project, Mock(Logger))
 
-    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=[])
+    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=PYLINT_NORMAL_OUTPUT)
     @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
     def test_should_not_break_build_when_no_warnings_and_not_set(self, execute_tool, warnings):
         project = Project(".")
