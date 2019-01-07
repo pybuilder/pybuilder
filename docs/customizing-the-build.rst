@@ -179,6 +179,21 @@ We're now able to do::
     the project root directory, but relative to the distribution directory instead. It just incidentally
     happens to be the same here.
 
+By default when copying resources the whole path to the resources is recreated in the destination path, e.g. 
+in the example above the whole ``src/main/resources`` is recreated inside ``target/dist/myproject-0.0.1``.
+
+Sometimes this behavior might be undesirable and in such cases it's possible to set ``copy_resources_dir``
+property to set the root search directory for your resources:
+
+    use_plugin("copy_resources")
+
+    @init
+    def initialize(project):
+        project.set_property("copy_resources_dir", "src/main/resources")
+        project.get_property("copy_resources_glob").append("my-config.yaml")
+        project.set_property("copy_resources_target", "$dir_dist")
+
+With this configuration ``my-config.yaml`` will be copied into ``target/dist/myproject-0.0.1/my-config.yaml``.
 
 Including files
 ^^^^^^^^^^^^^^^^^
