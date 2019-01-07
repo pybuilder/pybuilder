@@ -40,7 +40,7 @@ def package(project, logger):
         logger.warn("No resources to copy configured. Consider removing plugin.")
         return
 
-    source = os.path.join(project.basedir, dir)
+    source = os.path.normpath(os.path.join(project.basedir, dir))
     target = project.expand_path("$copy_resources_target")
     logger.info("Copying resources matching '%s' from %s to %s", " ".join(globs), source, target)
 
