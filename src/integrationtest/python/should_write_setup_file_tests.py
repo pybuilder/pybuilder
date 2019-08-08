@@ -64,7 +64,7 @@ def spam ():
 
         self.assert_file_content(setup_py, """#!/usr/bin/env python
 
-from setuptools import setup
+from setuptools import setup, Extension
 from setuptools.command.install import install as _install
 
 class install(_install):
@@ -95,6 +95,7 @@ if __name__ == '__main__':
         packages = ['spam'],
         namespace_packages = [],
         py_modules = ['standalone_module'],
+        ext_modules = [],
         classifiers = [
             'Development Status :: 3 - Alpha',
             'Programming Language :: Python'
