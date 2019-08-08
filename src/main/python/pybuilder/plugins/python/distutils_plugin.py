@@ -53,7 +53,7 @@ LEADING_TAB_RE = re.compile(r'^(\t*)')
 DATA_FILES_PROPERTY = "distutils_data_files"
 SETUP_TEMPLATE = string.Template("""#!/usr/bin/env python
 $remove_hardlink_capabilities_for_shared_filesystems
-from $module import setup
+from $module import setup, Extension
 from $module.command.install import install as _install
 
 class install(_install):
@@ -84,6 +84,7 @@ if __name__ == '__main__':
         packages = $packages,
         namespace_packages = $namespace_packages,
         py_modules = $modules,
+        ext_modules = $ext_modules,
         classifiers = $classifiers,
         entry_points = $entry_points,
         data_files = $data_files,
@@ -139,6 +140,8 @@ def initialize_distutils_plugin(project):
     project.set_property_if_unset("distutils_entry_points", None)
     project.set_property_if_unset("distutils_setup_keywords", None)
 
+    project.set_property_if_unset("distutils_ext_modules", None)
+
 
 @after("prepare")
 def set_description(project, logger):
@@ -179,6 +182,7 @@ def render_setup_script(project):
         "packages": build_packages_string(project),
         "namespace_packages": build_namespace_packages_string(project),
         "modules": build_modules_string(project),
+        "ext_modules": build_ext_modules_string(project),
         "classifiers": build_classifiers_string(project),
         "entry_points": build_entry_points_string(project),
         "data_files": build_data_files_string(project),
@@ -508,6 +512,17 @@ def build_modules_string(project):
     return build_string_from_array([mod for mod in project.list_modules()])
 
 
+def build_ext_modules_string(project):
+    ext_modules_desc = project.get_property("distutils_ext_modules")
+    if ext_modules_desc is None:
+        ext_modules_desc = []
+    ext_modules_strings = []
+    for ext_module_desc in ext_modules_desc:
+        ext_module_kwargs_str = ",".join(["{}={}".format(key, value) for key, value in ext_module_desc.items()])
+        ext_modules_strings.append("""Extension({})""".format(ext_module_kwargs_str))
+    return build_string_from_array([mod for mod in ext_modules_strings], quote_item=False)
+
+
 def build_entry_points_string(project):
     console_scripts = project.get_property('distutils_console_scripts')
     entry_points = project.get_property('distutils_entry_points')
@@ -552,7 +567,7 @@ def build_classifiers_string(project):
     return build_string_from_array(classifiers, indent=12)
 
 
-def build_string_from_array(arr, indent=12):
+def build_string_from_array(arr, indent=12, quote_item=True):
     result = ""
 
     if len(arr) == 1:
@@ -563,7 +578,10 @@ def build_string_from_array(arr, indent=12):
             if is_notstr_iterable(arr[0]):
                 result += "[" + build_string_from_array(arr[0], indent + 4) + "]"
             else:
-                result += "['%s']" % arr[0]
+                if quote_item:
+                    result += "['%s']" % arr[0]
+                else:
+                    result += "[%s]" % arr[0]
         else:
             result = '[[]]'
     elif len(arr) > 1:
