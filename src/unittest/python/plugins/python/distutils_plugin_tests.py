@@ -387,7 +387,7 @@ class RenderSetupScriptTest(PyBuilderTestCase):
 
         self.assert_line_by_line_equal("""#!/usr/bin/env python
 
-from distutils.core import setup
+from distutils.core import setup, Extension
 from distutils.core.command.install import install as _install
 
 class install(_install):
@@ -430,6 +430,7 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
+        ext_modules = [],
         classifiers = [
             'Development Status :: 5 - Beta',
             'Environment :: Console'
@@ -457,7 +458,7 @@ if __name__ == '__main__':
         actual_setup_script = render_setup_script(self.project)
         self.assert_line_by_line_equal("""#!/usr/bin/env python
 
-from distutils.core import setup
+from distutils.core import setup, Extension
 from distutils.core.command.install import install as _install
 
 class install(_install):
@@ -500,6 +501,7 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
+        ext_modules = [],
         classifiers = [
             'Development Status :: 5 - Beta',
             'Environment :: Console'
