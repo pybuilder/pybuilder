@@ -15,7 +15,6 @@
 #  limitations under the License.
 
 import unittest
-from os.path import join
 
 from integrationtest_support import IntegrationTestSupport
 
