@@ -55,6 +55,7 @@ SETUP_TEMPLATE = string.Template("""#!/usr/bin/env python
 $remove_hardlink_capabilities_for_shared_filesystems
 from $module import setup, Extension
 from $module.command.install import install as _install
+$cython_imports
 
 class install(_install):
     def pre_install_script(self):
@@ -170,6 +171,8 @@ def render_setup_script(project):
 
     template_values = {
         "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
+        "cython_imports":
+            "from Cython.Build import cythonize" if project.get_property("distutils_cython_ext_modules") else "",
         "name": as_str(project.name),
         "version": as_str(project.dist_version),
         "summary": as_str(default(project.summary)),
@@ -513,13 +516,24 @@ def build_modules_string(project):
 
 
 def build_ext_modules_string(project):
+
+    ext_modules_strings = []
+
+    # Standard extensions
     ext_modules_desc = project.get_property("distutils_ext_modules")
     if ext_modules_desc is None:
         ext_modules_desc = []
-    ext_modules_strings = []
     for ext_module_desc in ext_modules_desc:
         ext_module_kwargs_str = ",".join(["{}={}".format(key, value) for key, value in ext_module_desc.items()])
         ext_modules_strings.append("""Extension({})""".format(ext_module_kwargs_str))
+
+    # Cython extensions
+    cython_ext_modules_desc = project.get_property("distutils_cython_ext_modules")
+    if cython_ext_modules_desc is None:
+        cython_ext_modules_desc = []
+    for ext_module_desc in cython_ext_modules_desc:
+        ext_module_kwargs_str = ",".join(["{}={}".format(key, value) for key, value in ext_module_desc.items()])
+        ext_modules_strings.append("""cythonize({})""".format(ext_module_kwargs_str))
     return build_string_from_array([mod for mod in ext_modules_strings], quote_item=False)
 
 
