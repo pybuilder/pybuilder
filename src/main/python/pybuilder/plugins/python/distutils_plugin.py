@@ -517,9 +517,8 @@ def build_modules_string(project):
 
 def build_ext_modules_string(project):
 
-    ext_modules_strings = []
-
     # Standard extensions
+    ext_modules_strings = []
     ext_modules_desc = project.get_property("distutils_ext_modules")
     if ext_modules_desc is None:
         ext_modules_desc = []
@@ -528,13 +527,18 @@ def build_ext_modules_string(project):
         ext_modules_strings.append("""Extension({})""".format(ext_module_kwargs_str))
 
     # Cython extensions
+    cython_ext_modules_strings = []
     cython_ext_modules_desc = project.get_property("distutils_cython_ext_modules")
     if cython_ext_modules_desc is None:
         cython_ext_modules_desc = []
     for ext_module_desc in cython_ext_modules_desc:
         ext_module_kwargs_str = ",".join(["{}={}".format(key, value) for key, value in ext_module_desc.items()])
-        ext_modules_strings.append("""cythonize({})""".format(ext_module_kwargs_str))
-    return build_string_from_array([mod for mod in ext_modules_strings], quote_item=False)
+        cython_ext_modules_strings.append("""cythonize({})""".format(ext_module_kwargs_str))
+    ext_modules_final_string = build_string_from_array([mod for mod in ext_modules_strings], quote_item=False)
+    cython_ext_modules_final_string = " + ".join(cython_ext_modules_strings)
+    if not cython_ext_modules_final_string:
+        cython_ext_modules_final_string = "[]"
+    return ext_modules_final_string + cython_ext_modules_final_string
 
 
 def build_entry_points_string(project):
