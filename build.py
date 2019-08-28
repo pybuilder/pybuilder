@@ -95,8 +95,8 @@ def initialize(project):
     project.build_depends_on("pygments")
 
     project.depends_on("tblib")
-    project.depends_on("pip", "~=9.0")
-    project.depends_on("setuptools", "~=39.0")
+    project.depends_on("pip")
+    project.depends_on("setuptools")
     project.depends_on("wheel", "~=0.31")
     project.depends_on("tailer", "~=0.4")
 
