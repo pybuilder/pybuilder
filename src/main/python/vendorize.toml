@@ -1,0 +1,6 @@
+target = "pybuilder/_vendor"
+packages = [
+    "tblib~=1.5",
+    "tailer~=0.4",
+    "setuptools~=41.0"
+]

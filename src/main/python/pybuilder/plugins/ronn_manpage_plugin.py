@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ def init_ronn_manpage_plugin(project):
 
 
 @after("prepare")
-def assert_ronn_is_executable(logger):
+def assert_ronn_is_executable(project, logger):
     """
         Asserts that the ronn script is executable.
     """
@@ -41,11 +41,12 @@ def assert_ronn_is_executable(logger):
 
     assert_can_execute(command_and_arguments=["ronn", "--version"],
                        prerequisite="ronn",
-                       caller="plugin ronn_manpage_plugin")
+                       caller="plugin ronn_manpage_plugin",
+                       env=project.plugin_env)
 
 
 @after("prepare")
-def assert_gzip_is_executable(logger):
+def assert_gzip_is_executable(project, logger):
     """
         Asserts that the gzip program is executable.
     """
@@ -53,7 +54,8 @@ def assert_gzip_is_executable(logger):
 
     assert_can_execute(command_and_arguments=["gzip", "--version"],
                        prerequisite="gzip",
-                       caller="plugin ronn_manpage_plugin")
+                       caller="plugin ronn_manpage_plugin",
+                       env=project.plugin_env)
 
 
 @task

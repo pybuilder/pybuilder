@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -150,7 +150,18 @@ def _list_all_covered_modules(logger, module_names, modules_exceptions, allow_no
     modules = []
     non_imported_modules = []
     for module_name in module_names:
-        if module_name in modules_exceptions:
+        skip_module = False
+        for module_exception in modules_exceptions:
+            if module_exception.endswith("*"):
+                if module_name.startswith(module_exception[:-1]):
+                    skip_module = True
+                    break
+            else:
+                if module_name == module_exception:
+                    skip_module = True
+                    break
+
+        if skip_module:
             logger.debug("Module '%s' was excluded", module_name)
             continue
         try:

@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -152,25 +152,25 @@ def initialize_sphinx_plugin(project):
 
 
 @after("prepare")
-def assert_sphinx_is_available(logger):
+def assert_sphinx_is_available(project, logger):
     """Asserts that the sphinx-build script is available.
     """
     logger.debug("Checking if sphinx-build and sphinx-apidoc are available.")
 
     assert_can_execute(
-        ["sphinx-build", "--version"], "sphinx", "plugin python.sphinx")
+        ["sphinx-build", "--version"], "sphinx", "plugin python.sphinx", env=project.plugin_env)
     assert_can_execute(
-        ["sphinx-apidoc", "--version"], "sphinx", "plugin python.sphinx")
+        ["sphinx-apidoc", "--version"], "sphinx", "plugin python.sphinx", env=project.plugin_env)
 
 
 @after("prepare")
-def assert_sphinx_quickstart_is_available(logger):
+def assert_sphinx_quickstart_is_available(project, logger):
     """Asserts that the sphinx-quickstart script is available.
     """
     logger.debug("Checking if sphinx-quickstart is available.")
 
     assert_can_execute(
-        ["sphinx-quickstart", "--version"], "sphinx", "plugin python.sphinx")
+        ["sphinx-quickstart", "--version"], "sphinx", "plugin python.sphinx", env=project.plugin_env)
 
 
 def run_sphinx_build(build_command, task_name, logger, project, builder=None):

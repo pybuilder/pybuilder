@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 #   limitations under the License.
 
 import sys
-from logging import Logger
-from unittest import TestCase
 from os.path import normcase as nc
-from pybuilder.core import Project, Author
+from unittest import TestCase
+
+from pybuilder.core import Project, Author, Logger
 from pybuilder.plugins.python.sphinx_plugin import (assert_sphinx_is_available,
                                                     assert_sphinx_quickstart_is_available,
                                                     get_sphinx_build_command,
@@ -31,30 +31,33 @@ from pybuilder.plugins.python.sphinx_plugin import (assert_sphinx_is_available,
                                                     sphinx_pyb_quickstart_generate,
                                                     sphinx_generate,
                                                     generate_sphinx_apidocs)
-from test_utils import Mock, patch, call
+from test_utils import Mock, patch, call, ANY
 
 
 class CheckSphinxAvailableTests(TestCase):
     @patch('pybuilder.plugins.python.sphinx_plugin.assert_can_execute')
     def test_should_check_that_sphinx_can_be_executed(self, mock_assert_can_execute):
+        mock_project = Mock(Project)
         mock_logger = Mock(Logger)
 
-        assert_sphinx_is_available(mock_logger)
+        assert_sphinx_is_available(mock_project, mock_logger)
 
         mock_assert_can_execute.assert_has_calls(
             [
-                call(['sphinx-build', '--version'], 'sphinx', 'plugin python.sphinx'),
-                call(['sphinx-apidoc', '--version'], 'sphinx', 'plugin python.sphinx')
+                call(['sphinx-build', '--version'], 'sphinx', 'plugin python.sphinx', env=ANY),
+                call(['sphinx-apidoc', '--version'], 'sphinx', 'plugin python.sphinx', env=ANY)
             ]
         )
 
     @patch('pybuilder.plugins.python.sphinx_plugin.assert_can_execute')
     def test_should_check_that_sphinx_quickstart_can_be_executed(self, mock_assert_can_execute):
+        mock_project = Mock(Project)
         mock_logger = Mock(Logger)
 
-        assert_sphinx_quickstart_is_available(mock_logger)
+        assert_sphinx_quickstart_is_available(mock_project, mock_logger)
+
         mock_assert_can_execute.assert_called_with(
-            ['sphinx-quickstart', '--version'], 'sphinx', 'plugin python.sphinx')
+            ['sphinx-quickstart', '--version'], 'sphinx', 'plugin python.sphinx', env=ANY)
 
 
 class SphinxPluginInitializationTests(TestCase):
@@ -342,13 +345,13 @@ from sphinx_pyb_conf import *
                   nc('basedir/dir_target/sphinx_pyb/apidoc'), nc('basedir/dir_source')]
                  if sys.version_info[:2] < (3, 3) else
                  [sys.executable, '-m', 'sphinx.apidoc', '-H', 'project_name', '--implicit-namespaces', '-o',
-                 nc('basedir/dir_target/sphinx_pyb/apidoc'), nc('basedir/dir_source')],
+                  nc('basedir/dir_target/sphinx_pyb/apidoc'), nc('basedir/dir_source')],
                  nc('basedir/dir_target/reports/sphinx-apidoc'), shell=False),
             call([sys.executable, '-m', 'sphinx', '-b', 'JSONx', nc('basedir/sphinx_config_path'),
-                 nc('basedir/sphinx_output_dir/JSONx')],
+                  nc('basedir/sphinx_output_dir/JSONx')],
                  nc('basedir/dir_target/reports/sphinx_JSONx'), shell=False),
             call([sys.executable, '-m', 'sphinx', '-b', 'pdf', nc('basedir/sphinx_config_path'),
-                 nc('basedir/sphinx_output_dir/pdf')],
+                  nc('basedir/sphinx_output_dir/pdf')],
                  nc('basedir/dir_target/reports/sphinx_pdf'), shell=False)])
 
     @patch("pybuilder.plugins.python.sphinx_plugin.open", create=True)

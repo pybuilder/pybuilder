@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -42,9 +42,9 @@ def init_pychecker(project):
 
 
 @after("prepare")
-def check_pychecker_available(logger):
+def check_pychecker_available(project, logger):
     logger.debug("Checking availability of pychecker")
-    assert_can_execute(("pychecker", ), "pychecker", "plugin python.pychecker")
+    assert_can_execute(("pychecker", ), "pychecker", "plugin python.pychecker", env=project.plugin_env)
 
 
 def build_command_line(project):

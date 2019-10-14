@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ def log_report(logger, name, report_lines):
             logger.warn(name + ': ' + report_line[:-1])
 
 
-def discover_python_files(directory):
-    return discover_files_matching(directory, "*.py")
+def discover_python_files(directory, exclude_glob=None):
+    return discover_files_matching(directory, "*.py", exclude_glob)
 
 
 def discover_affected_files(include_test_sources, include_scripts, project):
@@ -83,7 +83,7 @@ def execute_tool_on_source_files(project, name, command_and_arguments, logger=No
 
     report_file = project.expand_path("$dir_reports/{0}".format(name))
 
-    execution_result = execute_command(command, report_file), report_file
+    execution_result = execute_command(command, report_file, env=project.plugin_env), report_file
 
     report_file = execution_result[1]
     report_lines = read_file(report_file)
@@ -101,7 +101,7 @@ def execute_tool_on_modules(project, name, command_and_arguments, extend_pythonp
 
     report_file = project.expand_path("$dir_reports/%s" % name)
 
-    env = os.environ
+    env = dir(project.plugin_env)
     if extend_pythonpath:
         env["PYTHONPATH"] = source_dir
     return execute_command(command, report_file, env=env), report_file

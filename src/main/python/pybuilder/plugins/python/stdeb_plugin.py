@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -54,23 +54,23 @@ def initialize_make_deb_plugin(project):
 
 
 @after("prepare")
-def assert_py2dsc_deb_is_available(logger):
+def assert_py2dsc_deb_is_available(project, logger):
     """Asserts that the py2dsc-deb is available.
     """
     logger.debug("Checking if py2dsc-deb is available.")
 
     assert_can_execute(
-        ["py2dsc-deb", "-h"], "py2dsc-deb", "plugin python.stdeb")
+        ["py2dsc-deb", "-h"], "py2dsc-deb", "plugin python.stdeb", env=project.plugin_env)
 
 
 @after("prepare")
-def assert_dpkg_is_available(logger):
+def assert_dpkg_is_available(project, logger):
     """Asserts that the dpkg-buildpackage is available.
     """
     logger.debug("Checking if dpkg-buildpackage is available")
 
     assert_can_execute(
-        ["dpkg-buildpackage", "--help"], "dpkg-buildpackage", "plugin python.stdeb")
+        ["dpkg-buildpackage", "--help"], "dpkg-buildpackage", "plugin python.stdeb", env=project.plugin_env)
 
 
 @task("make_deb", "converts a source tarball into a Debian source package and build a .deb package")

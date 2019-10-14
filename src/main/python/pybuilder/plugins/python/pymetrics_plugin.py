@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -31,9 +31,10 @@ def init_pylint(project):
 
 
 @after("prepare")
-def check_pymetrics_available(logger):
+def check_pymetrics_available(project, logger):
     logger.debug("Checking availability of pymetrics")
-    assert_can_execute(("pymetrics", "--nosql", "--nocsv"), "pymetrics", "plugin python.pymetrics")
+    assert_can_execute(("pymetrics", "--nosql", "--nocsv"), "pymetrics", "plugin python.pymetrics",
+                       env=project.plugin_env)
     logger.debug("pymetrics has been found")
 
 

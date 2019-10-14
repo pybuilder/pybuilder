@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ use_plugin("python.core")
 
 @init
 def initialize_flake8_plugin(project):
-    project.plugin_depends_on("flake8", "~=3.5")
+    project.plugin_depends_on("flake8", "~=3.7")
 
     project.set_property_if_unset("flake8_break_build", False)
     project.set_property_if_unset("flake8_max_line_length", 120)
@@ -47,13 +47,15 @@ def initialize_flake8_plugin(project):
 
 
 @after("prepare")
-def assert_flake8_is_executable(logger):
+def assert_flake8_is_executable(project, logger):
     """ Asserts that the flake8 script is executable. """
     logger.debug("Checking if flake8 is executable.")
 
     assert_can_execute(command_and_arguments=["flake8", "--version"],
                        prerequisite="flake8",
-                       caller="plugin python.flake8")
+                       caller="plugin python.flake8",
+                       env=project.plugin_env
+                       )
 
 
 @task

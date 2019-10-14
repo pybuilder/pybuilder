@@ -1,5 +1,5 @@
 from unittest import TestCase
-from test_utils import Mock, patch
+from test_utils import Mock, patch, ANY
 from logging import Logger
 from pybuilder.core import Project
 from pybuilder.plugins.python.snakefood_plugin import (
@@ -26,20 +26,20 @@ class CheckSnakeFoodAvailableTests(TestCase):
 
         mock_logger = Mock(Logger)
 
-        check_snakefood_available(mock_logger)
+        check_snakefood_available(self.project, mock_logger)
 
         mock_execute_command.assert_called_with(
-            ("sfood", "-h"), "sfood", "plugin python.snakefood")
+            ("sfood", "-h"), "sfood", "plugin python.snakefood", env=ANY)
 
     @patch('pybuilder.plugins.python.snakefood_plugin.assert_can_execute')
     def test_should_check_that_graphviz_is_available(self, mock_execute_command):
 
         mock_logger = Mock(Logger)
 
-        check_graphviz_available(mock_logger)
+        check_graphviz_available(self.project, mock_logger)
 
         mock_execute_command.assert_called_with(
-            ('dot', '-V'), 'graphviz', 'plugin python.snakefood')
+            ('dot', '-V'), 'graphviz', 'plugin python.snakefood', env=ANY)
 
     @patch('pybuilder.plugins.python.snakefood_plugin.execute_command')
     def test_should_call_generate_graph(self, mock_execute_command):

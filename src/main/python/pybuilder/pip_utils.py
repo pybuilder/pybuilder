@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -17,16 +17,15 @@
 #   limitations under the License.
 
 import os
-import re
 import sys
+from collections import namedtuple
 
 from pybuilder.core import Dependency, RequirementsFile
-from pybuilder.utils import execute_command, as_list
-# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
-from pybuilder import pip_common
+from pybuilder.pip_common import canonicalize_name, WorkingSet, SpecifierSet, Version
+from pybuilder.utils import execute_command, as_list, odict
 
-PIP_EXEC_STANZA = [sys.executable, "-m", "pip.__main__"]
-__RE_PIP_PACKAGE_VERSION = re.compile(r"^Version:\s+(.+)$", re.MULTILINE)
+PIP_MODULE_STANZA = ["-m", "pip.__main__"]
+PIP_EXEC_STANZA = [sys.executable] + PIP_MODULE_STANZA
 
 
 def build_dependency_version_string(mixed):
@@ -41,12 +40,16 @@ def build_dependency_version_string(mixed):
     return version
 
 
-def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=False, insecure_installs=None,
-                force_reinstall=False, target_dir=None, verbose=False, trusted_host=None, constraint_file=None,
-                eager_upgrade=False,
-                logger=None, outfile_name=None, error_file_name=None, env=None, cwd=None):
-    pip_command_line = list()
-    pip_command_line.extend(PIP_EXEC_STANZA)
+def pip_install_batches(packages, index_url=None, extra_index_url=None, upgrade=False, insecure_installs=None,
+                        force_reinstall=False, target_dir=None, verbose=False, trusted_host=None, constraint_file=None,
+                        eager_upgrade=False, ignore_installed=False, prefix_dir=None,
+                        logger=None, outfile_name=None, error_file_name=None, env=None, cwd=None, python_exec=None):
+    """install_batches is a list of dependencies in a form of a tuple [package_spec, {build options}}]
+    The batches will be assembled in a way that ensures that installation of packages with identical options occurs
+    together to cut down on the number of round trips.
+    """
+    pip_command_line = []
+    pip_command_line.extend(PIP_EXEC_STANZA if not python_exec else [python_exec] + PIP_MODULE_STANZA)
     pip_command_line.append("install")
     pip_command_line.extend(build_pip_install_options(index_url=index_url,
                                                       extra_index_url=extra_index_url,
@@ -57,7 +60,63 @@ def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=F
                                                       verbose=verbose,
                                                       trusted_host=trusted_host,
                                                       constraint_file=constraint_file,
-                                                      eager_upgrade=eager_upgrade
+                                                      eager_upgrade=eager_upgrade,
+                                                      ignore_installed=ignore_installed,
+                                                      prefix_dir=prefix_dir,
+                                                      ))
+    if env is None:
+        env = os.environ
+
+    batches = odict()
+    for package in packages:
+        pkg_spec, opts = package
+        opts = tuple(build_pip_install_options(**opts))
+
+        if opts in batches:
+            batch_pkgs = batches[opts]
+        else:
+            batch_pkgs = []
+            batches[opts] = batch_pkgs
+        batch_pkgs.append(pkg_spec)
+
+    results = []
+    for opts, pkgs in batches.items():
+        cmd_line = list(pip_command_line)
+        cmd_line.extend(opts)
+        cmd_line.extend(pkgs)
+
+        if logger:
+            logger.debug("Invoking pip: %s", cmd_line)
+
+        results.append(execute_command(cmd_line,
+                                       outfile_name=outfile_name,
+                                       error_file_name=error_file_name,
+                                       env=env,
+                                       cwd=cwd,
+                                       shell=False))
+
+    return results
+
+
+def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=False, insecure_installs=None,
+                force_reinstall=False, target_dir=None, verbose=False, trusted_host=None, constraint_file=None,
+                eager_upgrade=False, ignore_installed=False, prefix_dir=None,
+                logger=None, outfile_name=None, error_file_name=None, env=None, cwd=None, python_exec=None):
+    pip_command_line = list()
+    pip_command_line.extend(PIP_EXEC_STANZA if not python_exec else [python_exec] + PIP_MODULE_STANZA)
+    pip_command_line.append("install")
+    pip_command_line.extend(build_pip_install_options(index_url=index_url,
+                                                      extra_index_url=extra_index_url,
+                                                      upgrade=upgrade,
+                                                      insecure_installs=insecure_installs,
+                                                      force_reinstall=force_reinstall,
+                                                      target_dir=target_dir,
+                                                      verbose=verbose,
+                                                      trusted_host=trusted_host,
+                                                      constraint_file=constraint_file,
+                                                      eager_upgrade=eager_upgrade,
+                                                      ignore_installed=ignore_installed,
+                                                      prefix_dir=prefix_dir,
                                                       ))
     for install_target in as_list(install_targets):
         pip_command_line.extend(as_pip_install_target(install_target))
@@ -73,7 +132,7 @@ def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=F
 
 def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=False, insecure_installs=None,
                               force_reinstall=False, target_dir=None, verbose=False, trusted_host=None,
-                              constraint_file=None, eager_upgrade=False):
+                              constraint_file=None, eager_upgrade=False, ignore_installed=False, prefix_dir=None):
     options = []
     if index_url:
         options.append("--index-url")
@@ -93,15 +152,17 @@ def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=Fals
 
     if upgrade:
         options.append("--upgrade")
-        if pip_common.pip_version >= "9.0":
-            options.append("--upgrade-strategy")
-            if eager_upgrade:
-                options.append("eager")
-            else:
-                options.append("only-if-needed")
+        options.append("--upgrade-strategy")
+        if eager_upgrade:
+            options.append("eager")
+        else:
+            options.append("only-if-needed")
 
     if verbose:
-        options.append("--verbose")
+        verbose = int(verbose)
+        if verbose > 3:
+            verbose = 3
+        options.append("-" + ("v" * verbose))
 
     if force_reinstall:
         options.append("--force-reinstall")
@@ -109,6 +170,13 @@ def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=Fals
     if target_dir:
         options.append("-t")
         options.append(target_dir)
+
+    if ignore_installed:
+        options.append("-I")
+
+    if prefix_dir:
+        options.append("--prefix")
+        options.append(prefix_dir)
 
     if constraint_file:
         options.append("-c")
@@ -143,11 +211,10 @@ def as_pip_install_target(mixed):
                 arguments.append("{0}{1}".format(target.name, build_dependency_version_string(target)))
         else:
             arguments.append(str(target))
-
     return arguments
 
 
-def get_package_version(mixed, logger=None):
+def get_package_version(mixed, logger=None, entry_paths=None):
     def normalize_dependency_package(mixed):
         if isinstance(mixed, RequirementsFile):
             return None
@@ -158,11 +225,55 @@ def get_package_version(mixed, logger=None):
         else:
             return mixed
 
+    entry_paths = as_list(entry_paths) if entry_paths else None
     package_query = [normalized_package for normalized_package in
                      (normalize_dependency_package(p) for p in as_list(mixed)) if normalized_package]
-    pip_common.pip_working_set_init()
-    search_packages_results = pip_common.search_packages_info(package_query)
-    return dict(((result['name'].lower(), result['version']) for result in search_packages_results))
+    ws = WorkingSet(entry_paths)
+    search_packages_results = list(search_packages_info(package_query, ws))
+    return {result['name'].lower(): result['version'] for result in search_packages_results}
+
+
+_PackageInfo = namedtuple("PackageInfo", ["name", "version", "location", "requires"])
+
+
+def get_packages_info(entry_paths=None):
+    """
+    Gather details from installed distributions. Print distribution name,
+    version, location, and installed files.
+    """
+    ws = WorkingSet(entry_paths)
+    installed = {}
+    for dist in ws:
+        package = _PackageInfo(canonicalize_name(dist.project_name),
+                               dist.version,
+                               dist.location,
+                               [dep.project_name for dep in dist.requires()])
+
+        installed[package.name] = package
+
+    return installed
+
+
+def search_packages_info(query, ws):
+    """
+    Gather details from installed distributions. Print distribution name,
+    version, location, and installed files.
+    """
+    installed = {}
+    for p in ws:
+        installed[canonicalize_name(p.project_name)] = p
+
+    query_names = [canonicalize_name(name) for name in query]
+
+    for dist in [installed[pkg] for pkg in query_names if pkg in installed]:
+        package = {
+            'name': dist.project_name,
+            'version': dist.version,
+            'location': dist.location,
+            'requires': [dep.project_name for dep in dist.requires()],
+        }
+
+        yield package
 
 
 def version_satisfies_spec(spec, version):
@@ -170,10 +281,10 @@ def version_satisfies_spec(spec, version):
         return True
     if not version:
         return False
-    if not isinstance(spec, pip_common.SpecifierSet):
-        spec = pip_common.SpecifierSet(spec)
-    if not isinstance(version, pip_common.Version):
-        version = pip_common.Version(version)
+    if not isinstance(spec, SpecifierSet):
+        spec = SpecifierSet(spec)
+    if not isinstance(version, Version):
+        version = Version(version)
     return spec.contains(version)
 
 
@@ -183,8 +294,8 @@ def should_update_package(version):
         False otherwise
     """
     if version:
-        if not isinstance(version, pip_common.SpecifierSet):
-            version_specifier = pip_common.SpecifierSet(version)
+        if not isinstance(version, SpecifierSet):
+            version_specifier = SpecifierSet(version)
         else:
             version_specifier = version
         # We always check if even one specifier in the set is not exact

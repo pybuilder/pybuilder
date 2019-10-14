@@ -8,6 +8,10 @@ environment:
   - PYTHON_BIN_HOME: "C:\\Python35-x64"
   - PYTHON_BIN_HOME: "C:\\Python36"
   - PYTHON_BIN_HOME: "C:\\Python36-x64"
+  - PYTHON_BIN_HOME: "C:\\Python37"
+  - PYTHON_BIN_HOME: "C:\\Python37-x64"
+  - PYTHON_BIN_HOME: "C:\\Python38"
+  - PYTHON_BIN_HOME: "C:\\Python38-x64"
 
 # stop as soon as the first failing test
 matrix:
@@ -30,4 +34,4 @@ test_script:
   - ps: .\venv\Scripts\activate.ps1
   - cmd: where python
   - cmd: python --version
-  - cmd: python build.py -v -X install_dependencies analyze install
+  - cmd: python build.py -v -X analyze install

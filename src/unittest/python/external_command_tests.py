@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -18,10 +18,9 @@
 
 import unittest
 
-from test_utils import Mock, patch, call
-
-from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
 from pybuilder.core import Project
+from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
+from test_utils import Mock, patch, call, ANY
 
 
 class ExternalCommandBuilderTests(unittest.TestCase):
@@ -111,7 +110,10 @@ class ExternalCommandExecutionTests(unittest.TestCase):
     def test_should_execute_external_command(self, _, execute_command):
         self.command.run("any-outfile-name")
 
-        execute_command.assert_called_with(['command-name', '--foo', '--bar'], 'any-outfile-name')
+        execute_command.assert_called_with(
+            ['command-name', '--foo', '--bar'],
+            'any-outfile-name',
+            env=ANY)
 
     @patch('pybuilder.pluginhelper.external_command.read_file')
     @patch('pybuilder.pluginhelper.external_command.execute_tool_on_source_files')

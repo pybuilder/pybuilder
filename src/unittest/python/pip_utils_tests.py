@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import unittest
 
 from pybuilder import core
 from pybuilder import pip_utils
-from pybuilder.pip_common import pip_version
 from test_utils import patch, ANY
 
 
@@ -81,12 +80,14 @@ class PipVersionTests(unittest.TestCase):
         self.assertEqual(pip_utils.build_pip_install_options(trusted_host=("foo", "bar")),
                          ["--trusted-host", "foo", "--trusted-host", "bar"])
         self.assertEqual(pip_utils.build_pip_install_options(upgrade=True),
-                         ["--upgrade"] if pip_version < "9.0" else
                          ["--upgrade", "--upgrade-strategy", "only-if-needed"])
         self.assertEqual(pip_utils.build_pip_install_options(upgrade=True, eager_upgrade=True),
-                         ["--upgrade"] if pip_version < "9.0" else
                          ["--upgrade", "--upgrade-strategy", "eager"])
-        self.assertEqual(pip_utils.build_pip_install_options(verbose=True), ["--verbose"])
+        self.assertEqual(pip_utils.build_pip_install_options(verbose=True), ["-v"])
+        self.assertEqual(pip_utils.build_pip_install_options(verbose=1), ["-v"])
+        self.assertEqual(pip_utils.build_pip_install_options(verbose=2), ["-vv"])
+        self.assertEqual(pip_utils.build_pip_install_options(verbose=3), ["-vvv"])
+        self.assertEqual(pip_utils.build_pip_install_options(verbose=4), ["-vvv"])
         self.assertEqual(pip_utils.build_pip_install_options(force_reinstall=True), ["--force-reinstall"])
         self.assertEqual(pip_utils.build_pip_install_options(target_dir="target dir"), ["-t", "target dir"])
         self.assertEqual(pip_utils.build_pip_install_options(target_dir="target dir"), ["-t", "target dir"])

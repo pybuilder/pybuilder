@@ -5,7 +5,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 
 import sys
 
-sys.path.insert(0, 'src/main/python')  # This is only necessary in PyBuilder sources for bootstrap
+sys.path.insert(0, "src/main/python")  # This is only necessary in PyBuilder sources for bootstrap
 
 from pybuilder import bootstrap
 from pybuilder.core import Author, init, use_plugin
@@ -31,7 +31,7 @@ bootstrap()
 use_plugin("python.core")
 use_plugin("python.pytddmon")
 use_plugin("python.distutils")
-use_plugin("python.install_dependencies")
+use_plugin("python.venv")
 
 use_plugin("copy_resources")
 use_plugin("filter_resources")
@@ -45,7 +45,7 @@ if sys.platform != "win32":
 use_plugin("python.integrationtest")
 use_plugin("python.coverage")
 use_plugin("python.flake8")
-use_plugin('filter_resources')
+use_plugin("filter_resources")
 
 if not sys.version_info[0] == 3:
     use_plugin("python.snakefood")
@@ -80,9 +80,9 @@ url = "http://pybuilder.github.io"
 license = "Apache License"
 version = "0.12.0.dev"
 
-requires_python = ">=2.7,!=3.0,!=3.1,!=3.2,!=3.3,<3.8"
+requires_python = ">=2.7,!=3.0,!=3.1,!=3.2,!=3.3,!=3.4,<3.9"
 
-default_task = ["install_dependencies", "analyze", "publish"]
+default_task = ["analyze", "publish"]
 
 
 @init
@@ -94,18 +94,17 @@ def initialize(project):
     project.build_depends_on("pyassert")
     project.build_depends_on("pygments")
 
-    project.depends_on("tblib")
-    project.depends_on("pip", "~=9.0")
-    project.depends_on("setuptools", "~=39.0")
-    project.depends_on("wheel", "~=0.31")
-    project.depends_on("tailer", "~=0.4")
-
     project.set_property("verbose", True)
 
     project.set_property("coverage_break_build", False)
     project.set_property("coverage_reset_modules", True)
     project.get_property("coverage_exceptions").append("pybuilder.cli")
     project.get_property("coverage_exceptions").append("pybuilder.plugins.core_plugin")
+    project.get_property("coverage_exceptions").append("pybuilder._backport")
+    project.get_property("coverage_exceptions").append("pybuilder._backport.*")
+    project.get_property("coverage_exceptions").append("pybuilder._vendor")
+    project.get_property("coverage_exceptions").append("pybuilder._vendor.*")
+    project.get_property("coverage_exceptions").append("vendorize_pyb")
 
     # Issue #284
     project.set_property("integrationtest_inherit_environment", True)
@@ -113,6 +112,9 @@ def initialize(project):
     project.set_property('flake8_break_build', True)
     project.set_property('flake8_include_test_sources', True)
     project.set_property('flake8_include_scripts', True)
+    project.set_property('flake8_exclude_patterns', ",".join([
+        project.expand_path("$dir_source_main_python", "pybuilder/_backport/*"),
+        project.expand_path("$dir_source_main_python", "pybuilder/_vendor/*")]))
     project.set_property('flake8_max_line_length', 130)
 
     project.set_property('frosted_include_test_sources', True)

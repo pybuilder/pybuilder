@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -44,13 +44,14 @@ def initialize_frosted_plugin(project):
 
 
 @after("prepare")
-def assert_frosted_is_executable(logger):
+def assert_frosted_is_executable(project, logger):
     """ Asserts that the frosted script is executable. """
     logger.debug("Checking if frosted is executable.")
 
     assert_can_execute(command_and_arguments=["frosted", "--version"],
                        prerequisite="frosted (PyPI)",
-                       caller="plugin python.frosted")
+                       caller="plugin python.frosted",
+                       env=project.plugin_env)
 
 
 @task

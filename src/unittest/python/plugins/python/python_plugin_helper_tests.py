@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ from pybuilder.plugins.python.python_plugin_helper import (log_report,
                                                            discover_affected_dirs,
                                                            execute_tool_on_source_files,
                                                            _if_property_set_and_dir_exists)
-from test_utils import Mock, call, patch
+from test_utils import Mock, call, patch, ANY
 
 
 class LogReportsTest(unittest.TestCase):
@@ -234,7 +234,7 @@ class ExecuteToolOnSourceFilesTest(unittest.TestCase):
 
         execute_tool_on_source_files(project, 'name', 'foo --bar')
 
-        execute.assert_called_with(['foo --bar', 'file1', 'file2'], '/path/to/report')
+        execute.assert_called_with(['foo --bar', 'file1', 'file2'], '/path/to/report', env=ANY)
 
     @patch('pybuilder.plugins.python.python_plugin_helper.log_report')
     @patch('pybuilder.plugins.python.python_plugin_helper.read_file')
@@ -248,7 +248,7 @@ class ExecuteToolOnSourceFilesTest(unittest.TestCase):
 
         execute_tool_on_source_files(project, 'name', 'foo --bar', include_dirs_only=True)
 
-        execute.assert_called_with(['foo --bar', '/dir1', '/dir2'], '/path/to/report')
+        execute.assert_called_with(['foo --bar', '/dir1', '/dir2'], '/path/to/report', env=ANY)
 
     @patch('pybuilder.plugins.python.python_plugin_helper.log_report')
     @patch('pybuilder.plugins.python.python_plugin_helper.read_file')

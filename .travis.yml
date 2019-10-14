@@ -5,9 +5,10 @@ python:
 - '3.4'
 - '3.5'
 - '3.6'
-- 3.7-dev
-- pypy
-- pypy3
+- '3.7'
+- '3.8'
+- 'pypy'
+- 'pypy3'
 addons:
   apt_packages:
   - pandoc
@@ -19,8 +20,8 @@ branches:
 env:
   global:
   - DEPLOY_BRANCHES: "'master 0.11'"
-  - DEPLOY_PYTHONS: "'2.7 3.6'"
-  - PYB_ARGS: "'-v -X install_dependencies analyze install'"
+  - DEPLOY_PYTHONS: "'2.7 3.7'"
+  - PYB_ARGS: "'-v -X analyze install'"
   - TWINE_USERNAME: pybuilder-travis2
   - secure: D49QJr9Z4v9yz9VObFw0q44o2fy3YBjI48b6+Vb1qr2RNMF5GpVj+xWFTr9j1qMw7ilfwWCEKlHytKmh/OSOStUcd1vTlasGz8YefBCP8iIbvp9M6qcBKqMlp8f/6uxwUxak+OMvj5WuKwtyIUy8L9JwDxd02Q12MUW6SNtu2Lo=
 before_script:

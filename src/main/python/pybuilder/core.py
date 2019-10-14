@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@
     Contains the most important classes and syntax used in a
     build.py project descriptor.
 """
-
 import fnmatch
 import itertools
 import os
@@ -29,12 +28,12 @@ import re
 import string
 import sys
 from datetime import datetime
-from os.path import sep as PATH_SEPARATOR, normcase as nc, join as jp, isdir, isfile, basename
+from os.path import sep as PATH_SEPARATOR, normcase as nc, join as jp, isdir, isfile, basename, dirname
 
 # Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
 from pybuilder import pip_common
-from pybuilder.errors import MissingPropertyException
-from pybuilder.utils import as_list
+from pybuilder.errors import MissingPropertyException, UnspecifiedPluginNameException
+from pybuilder.utils import as_list, python_specific_dir_name, sys_executable_suffix
 
 PATH_SEP_RE = re.compile("[\\/]")
 
@@ -300,6 +299,49 @@ class RequirementsFile(object):
         return 42 * hash(self.name)
 
 
+class PluginDef:
+    PYPI_PLUGIN_PROTOCOL = "pypi:"
+    VCS_PLUGIN_PROTOCOL = "vcs:"
+
+    def __init__(self, name, version=None, plugin_module_name=None):
+        pip_package = pip_package_version = pip_package_url = None
+
+        if name.startswith(PluginDef.PYPI_PLUGIN_PROTOCOL):
+            pip_package = name.replace(PluginDef.PYPI_PLUGIN_PROTOCOL, "")
+            if version:
+                pip_package_version = str(version)
+            plugin_module_name = pip_package
+        elif name.startswith(PluginDef.VCS_PLUGIN_PROTOCOL):
+            pip_package_url = name.replace(PluginDef.VCS_PLUGIN_PROTOCOL, "")
+            if not plugin_module_name:
+                raise UnspecifiedPluginNameException(name)
+
+        self._dep = Dependency(pip_package, pip_package_version, pip_package_url)
+        self._val = (name, version, plugin_module_name)
+
+    @property
+    def name(self):
+        return self._val[0]
+
+    @property
+    def version(self):
+        return self._val[1]
+
+    @property
+    def plugin_module_name(self):
+        return self._val[2]
+
+    @property
+    def dependency(self):
+        return self._dep
+
+    def __eq__(self, other):
+        return isinstance(other, PluginDef) and other._val == self._val
+
+    def __hash__(self):
+        return self._val.__hash__()
+
+
 class Project(object):
     """
     Descriptor for a project to be built. A project has a number of attributes
@@ -337,6 +379,12 @@ class Project(object):
         self._files_to_install = []
         self._preinstall_script = None
         self._postinstall_script = None
+
+        self._plugin_dir = jp(nc(self.basedir), ".pybuilder", "plugins", python_specific_dir_name)
+        self._plugin_install_log = jp(self._plugin_dir, "install.log")
+        self._plugin_python = jp(self._plugin_dir, sys_executable_suffix)
+        self._plugin_env = os.environ.copy()
+        self._plugin_env["PATH"] = os.pathsep.join((dirname(self._plugin_python), self._plugin_env["PATH"]))
 
     def __str__(self):
         return "[Project name=%s basedir=%s]" % (self.name, self.basedir)
@@ -590,6 +638,26 @@ class Project(object):
     def set_property_if_unset(self, key, value):
         if not self.has_property(key):
             self.set_property(key, value)
+
+    @property
+    def plugin_dir(self):
+        """Path to project's PyB's plugin directory"""
+        return self._plugin_dir
+
+    @property
+    def plugin_python(self):
+        """Path to plugin VEnv Python executable"""
+        return self._plugin_python
+
+    @property
+    def plugin_env(self):
+        """Plugin ENV dictionary"""
+        return self._plugin_env
+
+    @property
+    def plugin_install_log(self):
+        """The path to log file containing all plugin installation logs"""
+        return self._plugin_install_log
 
 
 class Logger(object):

@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import collections
 import fnmatch
 import json
 import os
+import platform
 import re
 import subprocess
 import sys
@@ -34,6 +35,11 @@ import traceback
 from collections import OrderedDict
 from multiprocessing import Process
 from subprocess import Popen, PIPE
+
+try:
+    from venv import EnvBuilder
+except ImportError:
+    from pybuilder._backport.venv import EnvBuilder  # NOQA
 
 try:
     from multiprocessing import SimpleQueue
@@ -51,10 +57,14 @@ if sys.version_info[0] < 3:  # if major is less than 3
     from .excp_util_2 import raise_exception, is_string
 
     is_string = is_string
+
+    def makedirs(name, mode=0o777, exist_ok=False):
+        return os.makedirs(name, mode)
 else:
     from .excp_util_3 import raise_exception, is_string
 
     is_string = is_string
+    makedirs = os.makedirs
 
 odict = OrderedDict
 
@@ -156,9 +166,13 @@ def discover_files(start_dir, suffix):
     return discover_files_matching(start_dir, "*{0}".format(suffix))
 
 
-def discover_files_matching(start_dir, file_glob):
+def discover_files_matching(start_dir, file_glob, exclude_file_glob=None):
     for root, _, files in os.walk(start_dir):
         for file_name in files:
+            if exclude_file_glob:
+                for exclude_pat in as_list(exclude_file_glob):
+                    if fnmatch.fnmatch(file_name, exclude_pat):
+                        continue
             if fnmatch.fnmatch(file_name, file_glob):
                 yield os.path.join(root, file_name)
 
@@ -205,7 +219,7 @@ def execute_command_and_capture_output(*command_and_arguments):
 
 def tail(file_path, lines=20):
     try:
-        import tailer
+        import pybuilder._vendor.tailer as tailer
     except ImportError:
         return read_file(file_path)
 
@@ -217,10 +231,10 @@ def tail_log(file_path, lines=20):
     return "\n".join("\t" + l for l in tail(file_path, lines))
 
 
-def assert_can_execute(command_and_arguments, prerequisite, caller):
+def assert_can_execute(command_and_arguments, prerequisite, caller, env):
     with tempfile.NamedTemporaryFile() as f:
         try:
-            process = subprocess.Popen(command_and_arguments, stdout=f, stderr=f, shell=False)
+            process = subprocess.Popen(command_and_arguments, stdout=f, stderr=f, shell=False, env=env)
             process.wait()
         except OSError:
             raise MissingPrerequisiteException(prerequisite, caller)
@@ -299,7 +313,7 @@ def mkdir(directory):
             message = "Unable to created directory '%s': A file with that name already exists"
             raise PyBuilderException(message, directory)
         return
-    os.makedirs(directory)
+    makedirs(directory, exist_ok=True)
 
 
 def is_windows():
@@ -322,11 +336,11 @@ def fork_process(logger, group=None, target=None, name=None, args=(), kwargs={})
             "Measurements (coverage, etc.) might be biased." % target)
         return fake_windows_fork(group, target, name, args, kwargs)
     try:
-        sys.modules["tblib.pickling_support"]
+        sys.modules["pybuilder._vendor.tblib"]
     except KeyError:
-        import tblib.pickling_support
+        from pybuilder._vendor.tblib import pickling_support
 
-        tblib.pickling_support.install()
+        pickling_support.install()
 
     q = SimpleQueue()
 
@@ -376,3 +390,42 @@ def safe_log_file_name(file_name):
     # per https://support.microsoft.com/en-us/kb/177506
     # per https://msdn.microsoft.com/en-us/library/aa365247
     return re.sub(r'\\|/|:|\*|\?|\"|<|>|\|', '_', file_name)
+
+
+sys_executable_suffix = sys.executable[len(sys.exec_prefix) + 1:]
+
+python_specific_dir_name = "%s-%s" % (platform.python_implementation().lower(),
+                                      ".".join(str(f) for f in sys.version_info))
+
+venv_symlinks = os.name == "posix"
+_, _venv_python_exename = os.path.split(os.path.abspath(getattr(sys, "_base_executable", sys.executable)))
+_venv_binname = "Scripts" if sys.platform == "win32" else "bin"
+
+
+def add_env_to_path(env_dir, sys_path, ):
+    for path in getsitepaths(env_dir):
+        if path not in sys_path:
+            sys_path.append(path)
+
+
+def venv_python_executable(env_dir):
+    return os.path.join(env_dir, _venv_binname, _venv_python_exename)
+
+
+def getsitepaths(prefix):
+    if os.sep == '/':
+        yield os.path.join(prefix, "lib",
+                           "python%d.%d" % sys.version_info[:2],
+                           "site-packages")
+    else:
+        yield prefix
+        yield os.path.join(prefix, "lib", "site-packages")
+
+    if sys.platform == "darwin":
+        # for framework builds *only* we add the standard Apple
+        # locations.
+        from sysconfig import get_config_var
+        framework = get_config_var("PYTHONFRAMEWORK")
+        if framework:
+            yield os.path.join("/Library", framework,
+                               '%d.%d' % sys.version_info[:2], "site-packages")

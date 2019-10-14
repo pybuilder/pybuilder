@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ from pybuilder.plugins.ronn_manpage_plugin import (
     assert_ronn_is_executable,
     assert_gzip_is_executable
 )
-from test_utils import Mock, patch
+from test_utils import Mock, patch, ANY
 
 
 class RonnManpagePluginTests(TestCase):
@@ -70,20 +70,24 @@ class RonnPluginInitializationTests(TestCase):
     def test_should_check_that_ronn_is_executable(self, mock_assert_can_execute):
 
         mock_logger = Mock(Logger)
+        mock_project = Mock(Project)
 
-        assert_ronn_is_executable(mock_logger)
+        assert_ronn_is_executable(mock_project, mock_logger)
         mock_assert_can_execute.assert_called_with(
             caller='plugin ronn_manpage_plugin',
             command_and_arguments=['ronn', '--version'],
-            prerequisite='ronn')
+            prerequisite='ronn',
+            env=ANY)
 
     @patch('pybuilder.plugins.ronn_manpage_plugin.assert_can_execute')
     def test_should_check_that_gzip_is_executable(self, mock_assert_can_execute):
 
         mock_logger = Mock(Logger)
+        mock_project = Mock(Project)
 
-        assert_gzip_is_executable(mock_logger)
+        assert_gzip_is_executable(mock_project, mock_logger)
         mock_assert_can_execute.assert_called_with(
             caller="plugin ronn_manpage_plugin",
             command_and_arguments=["gzip", "--version"],
-            prerequisite="gzip")
+            prerequisite="gzip",
+            env=ANY)

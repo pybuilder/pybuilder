@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2016 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
 import unittest
 
 from pybuilder.core import Project
@@ -73,7 +72,7 @@ class PdocPluginTests(unittest.TestCase):
                                         cwd=self.project.expand_path("$dir_target", "pdocs"),
                                         env={
                                             'PYTHONPATH': self.project.expand_path("$dir_source_main_python"),
-                                            'PATH': os.environ['PATH']
+                                            'PATH': self.project.plugin_env['PATH']
                                         },
                                         outfile_name=self.project.expand_path('$dir_reports', 'pdoc'))
 
@@ -85,7 +84,7 @@ class PdocPluginTests(unittest.TestCase):
                                         cwd=self.project.expand_path("$dir_target", "pdocs"),
                                         env={
                                             'PYTHONPATH': self.project.expand_path("$dir_source_main_python"),
-                                            'PATH': os.environ['PATH']
+                                            'PATH': self.project.plugin_env['PATH']
                                         },
                                         outfile_name=self.project.expand_path('$dir_reports', 'pdoc')
                                         )

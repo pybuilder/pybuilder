@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -48,7 +48,8 @@ def pdoc_prepare(project, logger):
 
     assert_can_execute(command_and_arguments=["pdoc", "--version"],
                        prerequisite="pdoc",
-                       caller="plugin python.pdoc")
+                       caller="plugin python.pdoc",
+                       env=project.plugin_env)
 
     pdoc_output_dir = project.expand_path("$pdoc_output_dir")
     if not os.path.exists(pdoc_output_dir):
@@ -74,7 +75,7 @@ def pdoc_compile_docs(project, logger):
 
     source_directory = project.expand_path("$pdoc_source")
     environment = {"PYTHONPATH": source_directory,
-                   "PATH": os.environ["PATH"]}
+                   "PATH": project.plugin_env["PATH"]}
 
     logger.debug("Executing pdoc as: %s", command_and_arguments)
     execute_command(command_and_arguments, outfile_name=project.expand_path("$dir_reports", "pdoc"), env=environment,

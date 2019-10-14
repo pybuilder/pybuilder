@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -144,7 +144,7 @@ def initialize_distutils_plugin(project):
 def set_description(project, logger):
     if project.get_property("distutils_readme_description"):
         try:
-            assert_can_execute(["pandoc", "--version"], "pandoc", "distutils")
+            assert_can_execute(["pandoc", "--version"], "pandoc", "distutils", env=project.plugin_env)
             doc_convert(project, logger)
         except (MissingPrerequisiteException, ImportError):
             logger.warn("Was unable to find pandoc or pypandoc and did not convert the documentation")
@@ -240,7 +240,7 @@ def install_distribution(project, logger):
         extra_index_url=project.get_property("install_dependencies_extra_index_url"),
         force_reinstall=True,
         logger=logger,
-        verbose=project.get_property("verbose"),
+        verbose=project.get_property("pip_verbose"),
         cwd=".",
         outfile_name=outfile_name,
         error_file_name=outfile_name)

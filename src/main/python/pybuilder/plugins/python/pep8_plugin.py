@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -29,9 +29,9 @@ def init_pep8_properties(project):
 
 
 @after("prepare")
-def check_pep8_available(logger):
+def check_pep8_available(project, logger):
     logger.debug("Checking availability of pep8")
-    assert_can_execute(("pep8", ), "pep8", "plugin python.pep8")
+    assert_can_execute(("pep8", ), "pep8", "plugin python.pep8", env=project.plugin_env)
 
 
 @task

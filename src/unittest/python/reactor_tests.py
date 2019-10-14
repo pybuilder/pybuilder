@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ from pybuilder.core import (ENVIRONMENTS_ATTRIBUTE,
                             NAME_ATTRIBUTE,
                             TASK_ATTRIBUTE,
                             Project,
+                            PluginDef,
                             task,
                             depends,
                             dependents,
@@ -57,9 +58,9 @@ class ReactorTest(unittest.TestCase):
         self.plugin_loader_mock.load_plugin.side_effect = MissingPluginException("not_found")
 
         self.assertRaises(
-            MissingPluginException, self.reactor.import_plugin, "not_found")
+            MissingPluginException, self.reactor.import_plugin, PluginDef("not_found"))
 
-        self.plugin_loader_mock.load_plugin.assert_called_with(ANY, "not_found", None, None)
+        self.plugin_loader_mock.load_plugin.assert_called_with(ANY, PluginDef("not_found"))
 
     def test_should_collect_single_task(self):
         def task():
@@ -469,9 +470,11 @@ class ReactorTest(unittest.TestCase):
         self.reactor.require_plugin("spam")
         self.reactor.require_plugin("spam")
 
+        self.reactor._load_deferred_plugins()
+
         self.assertEqual(["spam"], self.reactor.get_plugins())
 
-        self.plugin_loader_mock.load_plugin.assert_called_with(ANY, "spam", None, None)
+        self.plugin_loader_mock.load_plugin.assert_called_with(ANY, PluginDef("spam"))
 
     def test_ensure_project_properties_are_logged_when_calling_log_project_properties(self):
         project = Project("spam")

@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -45,13 +45,14 @@ def initialize_cram_plugin(project):
 
 
 @after("prepare")
-def assert_cram_is_executable(logger):
+def assert_cram_is_executable(project, logger):
     """ Asserts that the cram script is executable. """
     logger.debug("Checking if cram is executable.")
 
     assert_can_execute(command_and_arguments=["cram", "--version"],
                        prerequisite="cram",
-                       caller="plugin python.cram")
+                       caller="plugin python.cram",
+                       env=project.plugin_env)
 
 
 def _cram_command_for(project):
@@ -93,7 +94,7 @@ def run_cram_tests(project, logger):
     command_and_arguments.extend(cram_tests)
     report_file = _report_file(project)
 
-    env = os.environ.copy()
+    env = project.plugin_env.copy()
     if project.get_property('cram_run_test_from_target'):
         dist_dir = project.expand_path("$dir_dist")
         _prepend_path(env, "PYTHONPATH", dist_dir)

@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ class ExternalCommandBuilder(object):
 
     def run(self, outfile_name):
         error_file_name = "{0}.err".format(outfile_name)
-        return_code = execute_command(self.parts, outfile_name)
+        return_code = execute_command(self.parts, outfile_name, env=self.project.plugin_env)
         error_file_lines = read_file(error_file_name)
         outfile_lines = read_file(outfile_name)
 
@@ -71,7 +71,9 @@ class ExternalCommandBuilder(object):
                                      outfile_name, outfile_lines,
                                      error_file_name, error_file_lines)
 
-    def run_on_production_source_files(self, logger, include_test_sources=False, include_scripts=False,
+    def run_on_production_source_files(self, logger,
+                                       include_test_sources=False,
+                                       include_scripts=False,
                                        include_dirs_only=False):
         execution_result = execute_tool_on_source_files(project=self.project,
                                                         name=self.command_name,
@@ -87,7 +89,10 @@ class ExternalCommandBuilder(object):
         return ExternalCommandResult(exit_code, report_file, report_lines, error_report_file, error_report_lines)
 
     def run_on_production_and_test_source_files(self, logger):
-        return self.run_on_production_source_files(logger, include_test_sources=True)
+        return self.run_on_production_source_files(logger,
+                                                   include_test_sources=True)
 
     def run_on_production_and_test_source_files_and_scripts(self, logger):
-        return self.run_on_production_source_files(logger, include_test_sources=True, include_scripts=True)
+        return self.run_on_production_source_files(logger,
+                                                   include_test_sources=True,
+                                                   include_scripts=True)

@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -155,6 +155,12 @@ def parse_options(args):
                              metavar="<task>",
                              help="Exclude any task dependencies "
                                   "(dangerous, may break the build in unexpected ways)")
+
+    project_group.add_option("--reset-plugins",
+                             action="store_true",
+                             dest="reset_plugins",
+                             default=True,
+                             help="Reset plugins directory prior to running the build")
 
     parser.add_option_group(project_group)
 

@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2019 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -17,38 +17,37 @@
 #   limitations under the License.
 
 from unittest import TestCase
-from test_utils import Mock, patch
-from pybuilder.core import Project
-from logging import Logger
+
+from pybuilder.core import Project, Logger
 from pybuilder.plugins.python.stdeb_plugin import (
     assert_py2dsc_deb_is_available,
     get_py2dsc_deb_command,
     assert_dpkg_is_available)
+from test_utils import Mock, patch, ANY
 
 
 class CheckStdebAvailableTests(TestCase):
 
     @patch('pybuilder.plugins.python.stdeb_plugin.assert_can_execute')
     def test_should_check_that_py2dsc_deb_can_be_executed(self, mock_assert_can_execute):
-
+        mock_project = Mock(Project)
         mock_logger = Mock(Logger)
 
-        assert_py2dsc_deb_is_available(mock_logger)
+        assert_py2dsc_deb_is_available(mock_project, mock_logger)
 
         expected_command_line = ['py2dsc-deb', '-h']
-        mock_assert_can_execute.assert_called_with(
-            expected_command_line, 'py2dsc-deb', 'plugin python.stdeb')
+        mock_assert_can_execute.assert_called_with(expected_command_line, 'py2dsc-deb', 'plugin python.stdeb', env=ANY)
 
     @patch('pybuilder.plugins.python.stdeb_plugin.assert_can_execute')
     def test_should_check_that_dpkg_buildpackage_can_be_executed(self, mock_assert_can_execute):
-
+        mock_project = Mock(Project)
         mock_logger = Mock(Logger)
 
-        assert_dpkg_is_available(mock_logger)
+        assert_dpkg_is_available(mock_project, mock_logger)
 
         expected_command_line = ['dpkg-buildpackage', '--help']
         mock_assert_can_execute.assert_called_with(
-            expected_command_line, 'dpkg-buildpackage', 'plugin python.stdeb')
+            expected_command_line, 'dpkg-buildpackage', 'plugin python.stdeb', env=ANY)
 
 
 class StdebBuildCommandTests(TestCase):
@@ -65,4 +64,5 @@ class StdebBuildCommandTests(TestCase):
         py2dsc_deb_command = get_py2dsc_deb_command(self.project)
 
         self.assertEqual(
-            py2dsc_deb_command, "py2dsc-deb --maintainer 'foo <foo@bar.com>' -d '/path/to/final/build' /path/to/source/")
+            py2dsc_deb_command,
+            "py2dsc-deb --maintainer 'foo <foo@bar.com>' -d '/path/to/final/build' /path/to/source/")
