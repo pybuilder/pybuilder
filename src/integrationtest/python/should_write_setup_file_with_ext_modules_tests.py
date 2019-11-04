@@ -113,6 +113,7 @@ def spam ():
 from setuptools import setup, Extension
 from setuptools.command.install import install as _install
 
+
 class install(_install):
     def pre_install_script(self):
         pass
@@ -126,6 +127,8 @@ class install(_install):
         _install.run(self)
 
         self.post_install_script()
+
+
 
 if __name__ == '__main__':
     setup(
@@ -141,7 +144,7 @@ if __name__ == '__main__':
         packages = ['spam'],
         namespace_packages = [],
         py_modules = ['standalone_module'],
-        ext_modules = [Extension(name='ext_module',sources=['ext_module.c'],depends=['ext_module.h'],include_dirs=['ext_module/include'],optional=False)],
+        ext_modules = [Extension(name='ext_module',sources=['ext_module.c'],depends=['ext_module.h'],include_dirs=['ext_module/include'],optional=False)] + [],
         classifiers = [
             'Development Status :: 3 - Alpha',
             'Programming Language :: Python'
@@ -160,7 +163,7 @@ if __name__ == '__main__':
         python_requires = '',
         obsoletes = [],
     )
-""")
+""")  # noqa: E501
 
 
 if __name__ == "__main__":

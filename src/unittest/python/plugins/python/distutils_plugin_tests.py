@@ -390,6 +390,7 @@ class RenderSetupScriptTest(PyBuilderTestCase):
 from distutils.core import setup, Extension
 from distutils.core.command.install import install as _install
 
+
 class install(_install):
     def pre_install_script(self):
         pass
@@ -403,6 +404,8 @@ class install(_install):
         _install.run(self)
 
         self.post_install_script()
+
+
 
 if __name__ == '__main__':
     setup(
@@ -430,7 +433,7 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
-        ext_modules = [],
+        ext_modules = [] + [],
         classifiers = [
             'Development Status :: 5 - Beta',
             'Environment :: Console'
@@ -461,6 +464,7 @@ if __name__ == '__main__':
 from distutils.core import setup, Extension
 from distutils.core.command.install import install as _install
 
+
 class install(_install):
     def pre_install_script(self):
         pre_install_test()
@@ -474,6 +478,8 @@ class install(_install):
         _install.run(self)
 
         self.post_install_script()
+
+
 
 if __name__ == '__main__':
     setup(
@@ -501,7 +507,7 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
-        ext_modules = [],
+        ext_modules = [] + [],
         classifiers = [
             'Development Status :: 5 - Beta',
             'Environment :: Console'

@@ -71,6 +71,8 @@ $postinstall_script
 
         self.post_install_script()
 
+$cython_definitions
+
 if __name__ == '__main__':
     setup(
         name = $name,
@@ -93,7 +95,7 @@ if __name__ == '__main__':
         install_requires = $dependencies,
         dependency_links = $dependency_links,
         zip_safe = True,
-        cmdclass = {'install': install},
+        cmdclass = $cmd_class,
         keywords = $setup_keywords,
         python_requires = $python_requires,
         obsoletes = $obsoletes,
@@ -171,8 +173,9 @@ def render_setup_script(project):
 
     template_values = {
         "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
-        "cython_imports":
-            "from Cython.Build import cythonize" if project.get_property("distutils_cython_ext_modules") else "",
+        "cython_imports": "",
+        "cython_definitions": "",
+        "cmd_class": "{'install': install}",
         "name": as_str(project.name),
         "version": as_str(project.dist_version),
         "summary": as_str(default(project.summary)),
@@ -202,6 +205,51 @@ def render_setup_script(project):
         "python_requires": as_str(default(project.requires_python)),
         "obsoletes": build_string_from_array(project.obsoletes)
     }
+
+    # If there are modules to be cythonized, do some necessary imports
+    if project.get_property("distutils_cython_ext_modules"):
+        template_values["cython_imports"] = """
+from Cython.Build import cythonize
+from setuptools.command.build_py import build_py as _build_py
+import glob
+"""
+        # If the Python sources should not be included in the distribution, add some other necessary functions
+        # Note: The Python sources will be removed even from sdist (as this is modifying build_py command that
+        # is used by both bdist & sdist) -> you must add them manually into the MANIFEST.in file to put them back.
+        if project.get_property("distutils_cython_remove_python_sources", False):
+
+            # First, get a list of Cython modules (might be glob patterns) to include and to exclude
+            cython_ext_modules_desc = project.get_property("distutils_cython_ext_modules")
+            if cython_ext_modules_desc is None:
+                cython_ext_modules_desc = []
+            cython_module_list = []
+            cython_exclude = []
+            for ext_module_desc in cython_ext_modules_desc:
+                cython_module_list.extend(ext_module_desc.get("module_list", []))
+                cython_exclude.extend(ext_module_desc.get("exclude", []))
+
+            # Next, put necessary functions into the setup.py template
+            template_values["cmd_class"] = "{'install': install,'build_py': build_py}"
+            template_values["cython_definitions"] = """
+cython_module_list = {cython_module_list}
+cython_excludes = {cython_exclude}
+def not_cythonized(tup):
+    (package, module, filepath) = tup
+    return any(
+        [filepath in glob.iglob(pattern, recursive=True) for pattern in cython_excludes]
+    ) or not any(
+        [filepath in glob.iglob(pattern, recursive=True) for pattern in cython_module_list]
+    )
+
+class build_py(_build_py):
+    def find_modules(self):
+        modules = super().find_modules()
+        return list(filter(not_cythonized, modules))
+
+    def find_package_modules(self, package, package_dir):
+        modules = super().find_package_modules(package, package_dir)
+        return list(filter(not_cythonized, modules))
+""".format(cython_module_list=cython_module_list, cython_exclude=cython_exclude)
 
     return SETUP_TEMPLATE.substitute(template_values)
 
