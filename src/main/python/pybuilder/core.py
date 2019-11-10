@@ -28,12 +28,12 @@ import re
 import string
 import sys
 from datetime import datetime
-from os.path import sep as PATH_SEPARATOR, normcase as nc, join as jp, isdir, isfile, basename, dirname
+from os.path import sep as PATH_SEPARATOR, normcase as nc, join as jp, isdir, isfile, basename
 
 # Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
 from pybuilder import pip_common
 from pybuilder.errors import MissingPropertyException, UnspecifiedPluginNameException
-from pybuilder.utils import as_list, python_specific_dir_name, sys_executable_suffix
+from pybuilder.utils import as_list, python_specific_dir_name, sys_executable_suffix, venv_binname
 
 PATH_SEP_RE = re.compile("[\\/]")
 
@@ -310,7 +310,7 @@ class PluginDef:
             pip_package = name.replace(PluginDef.PYPI_PLUGIN_PROTOCOL, "")
             if version:
                 pip_package_version = str(version)
-            plugin_module_name = pip_package
+            plugin_module_name = plugin_module_name or pip_package
         elif name.startswith(PluginDef.VCS_PLUGIN_PROTOCOL):
             pip_package_url = name.replace(PluginDef.VCS_PLUGIN_PROTOCOL, "")
             if not plugin_module_name:
@@ -334,6 +334,15 @@ class PluginDef:
     @property
     def dependency(self):
         return self._dep
+
+    def __repr__(self):
+        return "PluginDef [name=%r, version=%r, plugin_module_name=%r]" % (self.name,
+                                                                           self.version,
+                                                                           self.plugin_module_name)
+
+    def __str__(self):
+        return "%s%s%s" % (self.name, " version %s" % self.version if self.version else "",
+                           ", module name '%s'" % self.plugin_module_name if self.plugin_module_name else "")
 
     def __eq__(self, other):
         return isinstance(other, PluginDef) and other._val == self._val
@@ -384,7 +393,8 @@ class Project(object):
         self._plugin_install_log = jp(self._plugin_dir, "install.log")
         self._plugin_python = jp(self._plugin_dir, sys_executable_suffix)
         self._plugin_env = os.environ.copy()
-        self._plugin_env["PATH"] = os.pathsep.join((dirname(self._plugin_python), self._plugin_env["PATH"]))
+        self._plugin_env["PATH"] = os.pathsep.join([jp(self._plugin_dir, venv_binname)] +
+                                                   self._plugin_env.get("PATH", "").split(os.pathsep))
 
     def __str__(self):
         return "[Project name=%s basedir=%s]" % (self.name, self.basedir)

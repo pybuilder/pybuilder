@@ -17,7 +17,6 @@
 #   limitations under the License.
 
 import itertools
-
 import os
 
 from pybuilder.utils import (discover_modules,

@@ -45,6 +45,22 @@ class InstallDependencyTest(unittest.TestCase):
     @patch("pybuilder.install_utils.create_constraint_file")
     @patch("pybuilder.install_utils.get_packages_info", return_value={})
     @patch("pybuilder.pip_utils.execute_command", return_value=0)
+    def test_should_install_requirements_file_dependency(self, exec_command,
+                                                         get_packages_info,
+                                                         constraint_file,
+                                                         _):
+        dependency = RequirementsFile("requirements.txt")
+
+        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch",
+                             constraints_file_name="constraint_file")
+
+        exec_command(
+            PIP_EXEC_STANZA + ["install", '-r', "requirements.txt"], ANY, env=ANY, shell=False)
+
+    @patch("pybuilder.install_utils.open")
+    @patch("pybuilder.install_utils.create_constraint_file")
+    @patch("pybuilder.install_utils.get_packages_info", return_value={})
+    @patch("pybuilder.pip_utils.execute_command", return_value=0)
     def test_should_install_dependency_without_version(self, exec_command,
                                                        get_packages_info,
                                                        constraint_file,
@@ -70,22 +86,6 @@ class InstallDependencyTest(unittest.TestCase):
     @patch("pybuilder.install_utils.create_constraint_file")
     @patch("pybuilder.install_utils.get_packages_info", return_value={})
     @patch("pybuilder.pip_utils.execute_command", return_value=0)
-    def test_should_install_requirements_file_dependency(self, exec_command,
-                                                         get_packages_info,
-                                                         constraint_file,
-                                                         _):
-        dependency = RequirementsFile("requirements.txt")
-
-        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch",
-                             constraints_file_name="constraint_file")
-
-        exec_command(
-            PIP_EXEC_STANZA + ["install", '-r', "requirements.txt"], ANY, env=ANY, shell=False)
-
-    @patch("pybuilder.install_utils.open")
-    @patch("pybuilder.install_utils.create_constraint_file")
-    @patch("pybuilder.install_utils.get_packages_info", return_value={})
-    @patch("pybuilder.pip_utils.execute_command", return_value=0)
     def test_should_install_dependency_without_version_on_windows_derivate(self, exec_command,
                                                                            get_packages_info,
                                                                            constraint_file,
@@ -95,8 +95,7 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch",
                              constraints_file_name="constraint_file")
 
-        exec_command(
-            PIP_EXEC_STANZA + ["install", "spam"], ANY, env=ANY, shell=False)
+        exec_command(PIP_EXEC_STANZA + ["install", "spam"], ANY, env=ANY, shell=False)
 
     @patch("pybuilder.install_utils.open")
     @patch("pybuilder.install_utils.create_constraint_file")
@@ -112,9 +111,8 @@ class InstallDependencyTest(unittest.TestCase):
         install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch",
                              constraints_file_name="constraint_file")
 
-        exec_command(
-            PIP_EXEC_STANZA + ["install", "--allow-unverified", "spam", "--allow-external", "spam", 'spam'],
-            ANY, env=ANY, shell=False)
+        exec_command(PIP_EXEC_STANZA + ["install", "--allow-unverified", "spam", "--allow-external", "spam", 'spam'],
+                     ANY, env=ANY, shell=False)
 
     @patch("pybuilder.install_utils.open")
     @patch("pybuilder.install_utils.create_constraint_file")

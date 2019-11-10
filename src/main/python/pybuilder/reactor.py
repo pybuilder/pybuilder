@@ -42,9 +42,10 @@ from pybuilder.utils import (as_list,
                              get_dist_version_string,
                              basestring,
                              odict,
-                             EnvBuilder,
+                             create_venv,
                              venv_symlinks,
-                             add_env_to_path)
+                             add_env_to_path,
+                             patch_mp_plugin_dir)
 
 
 class BuildSummary:
@@ -193,6 +194,11 @@ class Reactor:
         self._setup_plugin_directory(reset_plugins)
 
         self._setup_deferred_plugin_import()
+
+        if sys.version_info[0] < 3:
+            # This is really a way to make sure we can install `billiard` as a dependency
+            # before any of the plugins actually initialize
+            self.require_plugin("pypi:billiard", plugin_module_name="pybuilder.plugins.billiard_plugin")
 
         self.project_module = self.load_project_module(project_descriptor)
 
@@ -465,10 +471,12 @@ class Reactor:
     def _setup_plugin_directory(self, reset_plugins):
         plugin_dir = self.project.plugin_dir
         self.logger.debug("Setting up plugins VEnv at %s", plugin_dir)
-        venv_builder = EnvBuilder(with_pip=True, symlinks=venv_symlinks, upgrade=True, clear=reset_plugins)
-        venv_builder.create(plugin_dir)
+        create_venv(plugin_dir, with_pip=True, symlinks=venv_symlinks, upgrade=True, clear=reset_plugins)
 
         add_env_to_path(plugin_dir, sys.path)
+        if sys.version_info[0] < 3:
+            # This is a horrible hack for Python 2
+            patch_mp_plugin_dir(plugin_dir)
 
     def _setup_deferred_plugin_import(self):
         self._old_import = __import__

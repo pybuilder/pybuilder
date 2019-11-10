@@ -16,13 +16,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pybuilder._vendor import tailer, pkg_resources
-from pybuilder._vendor import virtualenv
-from pybuilder._vendor.pkg_resources._vendor import packaging
-from pybuilder._vendor.pkg_resources._vendor.packaging import specifiers, version, utils
+# This plugin populates pybuilder.utils._mp_get_context in Python 2.7
+# and patches the spawn system to get plugin dir venv into Python sys.path
+# to expose billiard early.
 
-packaging.specifiers = specifiers
-packaging.version = version
-packaging.utils = utils
+from pybuilder import utils
 
-__all__ = ["tailer", "pkg_resources", "packaging", "virtualenv"]
+utils.patch_mp()

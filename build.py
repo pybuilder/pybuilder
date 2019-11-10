@@ -87,8 +87,9 @@ default_task = ["analyze", "publish"]
 
 @init
 def initialize(project):
-    if sys.version_info[0] == 2:
+    if sys.version_info[0] < 3:
         project.build_depends_on("mock")
+        project.build_depends_on("billiard")
 
     project.build_depends_on("pyfix")  # required test framework
     project.build_depends_on("pyassert")
@@ -113,8 +114,8 @@ def initialize(project):
     project.set_property('flake8_include_test_sources', True)
     project.set_property('flake8_include_scripts', True)
     project.set_property('flake8_exclude_patterns', ",".join([
-        project.expand_path("$dir_source_main_python", "pybuilder/_backport/*"),
-        project.expand_path("$dir_source_main_python", "pybuilder/_vendor/*")]))
+        project.expand_path("$dir_source_main_python", "pybuilder/_vendor/*")
+    ]))
     project.set_property('flake8_max_line_length', 130)
 
     project.set_property('frosted_include_test_sources', True)
@@ -148,10 +149,10 @@ def initialize(project):
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',

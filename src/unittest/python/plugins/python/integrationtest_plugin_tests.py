@@ -17,12 +17,13 @@
 #   limitations under the License.
 
 import unittest
+
 try:
     from queue import Empty
 except ImportError:
     from Queue import Empty
 
-from test_utils import patch
+from test_utils import patch, Mock
 
 from pybuilder.core import Project
 from pybuilder.plugins.python.integrationtest_plugin import (
@@ -30,7 +31,7 @@ from pybuilder.plugins.python.integrationtest_plugin import (
     add_additional_environment_keys,
     ConsumingQueue,
     initialize_integrationtest_plugin
-    )
+)
 
 
 class TaskPoolProgressTests(unittest.TestCase):
@@ -48,7 +49,7 @@ class TaskPoolProgressTests(unittest.TestCase):
             "integrationtest_additional_environment": {"env3": "foo"},
             "integrationtest_inherit_environment": True,
             "integrationtest_always_verbose": True
-            }
+        }
         for property_name, property_value in expected_properties.items():
             self.project.set_property(property_name, property_value)
 
@@ -192,7 +193,7 @@ class ConsumingQueueTests(unittest.TestCase):
 
     @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
     def test_should_consume_no_items_when_underlying_queue_empty(self, underlying_nowait_get):
-        queue = ConsumingQueue()
+        queue = ConsumingQueue(Mock())
 
         def empty_queue_get_nowait():
             raise Empty()
@@ -205,7 +206,7 @@ class ConsumingQueueTests(unittest.TestCase):
 
     @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
     def test_should_consume_one_item_when_underlying_queue_has_one(self, underlying_nowait_get):
-        queue = ConsumingQueue()
+        queue = ConsumingQueue(Mock())
 
         def empty_queue_get_nowait():
             yield "any-item"
@@ -220,7 +221,7 @@ class ConsumingQueueTests(unittest.TestCase):
 
     @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
     def test_should_consume_many_items_when_underlying_queue_has_them(self, underlying_nowait_get):
-        queue = ConsumingQueue()
+        queue = ConsumingQueue(Mock())
 
         def empty_queue_get_nowait():
             yield "any-item"
@@ -239,7 +240,7 @@ class ConsumingQueueTests(unittest.TestCase):
 
     @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
     def test_should_give_item_size_of_zero_when_underlying_queue_is_empty(self, underlying_nowait_get):
-        queue = ConsumingQueue()
+        queue = ConsumingQueue(Mock())
 
         def empty_queue_get_nowait():
             raise Empty()
@@ -253,7 +254,7 @@ class ConsumingQueueTests(unittest.TestCase):
 
     @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
     def test_should_give_item_size_of_n_when_underlying_queue_has_n_elements(self, underlying_nowait_get):
-        queue = ConsumingQueue()
+        queue = ConsumingQueue(Mock())
 
         def empty_queue_get_nowait():
             yield 'first'

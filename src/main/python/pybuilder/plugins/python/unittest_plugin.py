@@ -18,6 +18,8 @@
 
 from __future__ import unicode_literals
 
+from functools import partial
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -45,9 +47,14 @@ def init_test_source_directory(project):
     project.set_property_if_unset("unittest_module_glob", "*_tests")
     project.set_property_if_unset("unittest_file_suffix", None)  # deprecated, use unittest_module_glob.
     project.set_property_if_unset("unittest_test_method_prefix", None)
-    project.set_property_if_unset("unittest_runner", (
-        lambda stream: __import__("xmlrunner").XMLTestRunner(output=project.expand_path("$dir_target/reports"),
-                                                             stream=stream), "_make_result"))
+    project.set_property_if_unset("unittest_runner", (partial(xml_unittest_runner, project), "_make_result"))
+
+
+def xml_unittest_runner(project, stream):
+    import xmlrunner
+
+    return xmlrunner.XMLTestRunner(output=project.expand_path("$dir_target/reports"),
+                                   stream=stream)
 
 
 @task
@@ -62,8 +69,7 @@ def run_tests(project, logger, execution_prefix, execution_name):
         logger.debug("Forking process to run %s", execution_name)
         exit_code, _ = fork_process(logger,
                                     target=do_run_tests,
-                                    args=(
-                                        project, logger, execution_prefix, execution_name))
+                                    args=(project, logger, execution_prefix, execution_name))
         if exit_code:
             raise BuildFailedException(
                 "Forked %s process indicated failure with error code %d" % (execution_name, exit_code))
@@ -141,7 +147,7 @@ def _create_runner(runner_generator, output_log_file=None):
         runner_generator = runner_generator[0]
     if not hasattr(runner_generator, '__call__'):
         runner_generator = reduce(getattr, runner_generator.split("."), sys.modules[__name__])
-    return runner_generator(stream=output_log_file)
+    return runner_generator(output_log_file)
 
 
 def _get_make_result_method_name(runner_generator):

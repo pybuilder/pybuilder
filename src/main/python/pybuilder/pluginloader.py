@@ -61,16 +61,17 @@ class BuiltinPluginLoader(PluginLoader):
         return ":" not in plugin_def.name
 
     def load_plugin(self, project, plugin_defs):
-        self.logger.debug("Trying to load builtin plugin '%s'", plugin_defs.name)
         builtin_plugin_name = plugin_defs.plugin_module_name or "pybuilder.plugins.%s_plugin" % plugin_defs.name
-
+        self.logger.debug("Trying to load builtin plugin %r, module %r", plugin_defs.name, builtin_plugin_name)
         try:
             plugin_module = _load_plugin(builtin_plugin_name, plugin_defs.name)
         except MissingPluginException as e:
-            self.logger.debug("Builtin plugin %s failed to load: %s", builtin_plugin_name, e.message)
+            self.logger.debug("Builtin plugin %r, module %r failed to load: %s", plugin_defs.name,
+                              builtin_plugin_name,
+                              e.message)
             raise
 
-        self.logger.debug("Found builtin plugin '%s'", builtin_plugin_name)
+        self.logger.debug("Found builtin plugin %r, module %r", plugin_defs.name, builtin_plugin_name)
         return plugin_module
 
 
@@ -85,7 +86,7 @@ class DownloadingPluginLoader(PluginLoader):
 
         for plugin_def in plugin_defs:
             self._check_plugin_def_type(plugin_def)
-            display_name = _plugin_display_name(plugin_def.name, plugin_def.version, plugin_def.plugin_module_name)
+            display_name = str(plugin_def)
 
             self.logger.info("Installing or updating plugin {0}".format(display_name))
 
@@ -102,16 +103,16 @@ class DownloadingPluginLoader(PluginLoader):
 
     def load_plugin(self, project, plugin_def):
         plugin_module_name = plugin_def.plugin_module_name or plugin_def.name
-        self.logger.debug("Trying to load third party plugin '%s'", plugin_module_name)
+        self.logger.debug("Trying to load third party plugin %r, module %r", plugin_def.name, plugin_module_name)
         plugin_module = _load_plugin(plugin_module_name, plugin_def.name)
-        self.logger.debug("Found third party plugin '%s'", plugin_module_name)
+        self.logger.debug("Found third party plugin %r, module %r", plugin_def.name, plugin_module_name)
         return plugin_module
 
     def _check_plugin_def_type(self, plugin_def):
         if (not plugin_def.name.startswith(PluginDef.PYPI_PLUGIN_PROTOCOL) and
                 not plugin_def.name.startswith(PluginDef.VCS_PLUGIN_PROTOCOL)):
             message = "Only plugins starting with '{0}' are currently supported"
-            raise MissingPluginException(plugin_def.name, message.format(
+            raise MissingPluginException(plugin_def, message.format(
                 (PluginDef.PYPI_PLUGIN_PROTOCOL, PluginDef.VCS_PLUGIN_PROTOCOL)))
 
 
@@ -141,9 +142,7 @@ class DispatchingPluginLoader(PluginLoader):
                     loader_found = True
                     break
             if not loader_found:
-                raise MissingPluginException(_plugin_display_name(plugin_def.name,
-                                                                  plugin_def.version,
-                                                                  plugin_def.plugin_module_name),
+                raise MissingPluginException(plugin_def,
                                              "no plugin loader was able to load the plugin specified")
 
         for loader, plugin_defs in loader_plugins.items():
@@ -162,15 +161,8 @@ class DispatchingPluginLoader(PluginLoader):
         if last_problem:
             raise last_problem
         else:
-            raise MissingPluginException(_plugin_display_name(plugin_def.name,
-                                                              plugin_def.version,
-                                                              plugin_def.plugin_module_name),
+            raise MissingPluginException(plugin_def,
                                          "no plugin loader was able to load the plugin specified")
-
-
-def _plugin_display_name(name, version, plugin_module_name):
-    return "%s%s%s" % (name, " version %s" % version if version else "",
-                       ", module name '%s'" % plugin_module_name if plugin_module_name else "")
 
 
 def _load_plugin(plugin_module_name, plugin_name):
@@ -181,7 +173,7 @@ def _load_plugin(plugin_module_name, plugin_name):
         return plugin_module
 
     except ImportError:
-        raise MissingPluginException(plugin_name, format_exc())
+        raise MissingPluginException("plugin %r, module %r" % (plugin_name, plugin_module_name), format_exc())
 
 
 def _check_plugin_version(plugin_module, plugin_name):

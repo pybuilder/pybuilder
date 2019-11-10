@@ -28,6 +28,7 @@ PROJECT_TEMPLATE = string.Template("""<?xml version="1.0" encoding="UTF-8"?>
   <component name="NewModuleRootManager">
     <content url="file://$$MODULE_DIR$$">
       <sourceFolder url="file://$$MODULE_DIR$$/${source_dir}" isTestSource="false" />${unit_tests}${integration_tests}
+      <excludeFolder url="file://$$MODULE_DIR$$/.pybuilder" />
       ${output_directory}
     </content>
     <orderEntry type="inheritedJdk" />

@@ -42,6 +42,27 @@ def vendorize():
             else:
                 unlink(p)
 
+#     patch_billiard(vendor_dir)
+#
+#
+# def patch_file(path, old, new):
+#     with open(path, "rt") as f:
+#         txt = f.read()
+#
+#     with open(path, "wt") as f:
+#         patched_txt = txt.replace(old, new)
+#         f.write(patched_txt)
+#
+#
+# def patch_billiard(vendor_dir):
+#     patch_file(join(vendor_dir, "billiard", "semaphore_tracker.py"),
+#                'from billiard.semaphore_tracker import main;',
+#                'from pybuilder._vendor.billiard.semaphore_tracker import main;')
+#
+#     patch_file(join(vendor_dir, "billiard", "spawn.py"),
+#                'from billiard.spawn import spawn_main;',
+#                'from pybuilder._vendor.billiard.spawn import spawn_main;')
+
 
 if __name__ == "__main__":
     vendorize()

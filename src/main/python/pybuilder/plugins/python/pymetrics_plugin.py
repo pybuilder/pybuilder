@@ -55,5 +55,6 @@ def execute_pymetrics(project, logger):
 
     report_file = project.expand_path("$dir_reports/pymetrics")
 
-    env = {"PYTHONPATH": source_dir}
+    env = project.pluginenv.copy()
+    env.update({"PYTHONPATH": source_dir})
     execute_command(command, report_file, env=env)

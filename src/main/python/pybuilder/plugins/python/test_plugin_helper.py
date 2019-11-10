@@ -16,9 +16,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from pybuilder.ci_server_interaction import test_proxy_for
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import render_report
-from pybuilder.ci_server_interaction import test_proxy_for
 
 
 class ReportsProcessor(object):

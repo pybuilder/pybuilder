@@ -18,6 +18,7 @@
 
 import os
 import shutil
+from functools import partial
 from os.path import join as jp
 
 from pybuilder.core import init, task, description, depends, optional
@@ -30,11 +31,12 @@ def init(project):
     project.set_property("dir_reports", jp("$dir_target", "reports"))
     project.set_property("dir_logs", jp("$dir_target", "logs"))
 
-    def write_report(file, *content):
-        with open(project.expand_path("$dir_reports", file), "w") as report_file:
-            report_file.writelines(content)
+    project.write_report = partial(write_report, project)
 
-    project.write_report = write_report
+
+def write_report(project, file, *content):
+    with open(project.expand_path("$dir_reports", file), "w") as report_file:
+        report_file.writelines(content)
 
 
 @task

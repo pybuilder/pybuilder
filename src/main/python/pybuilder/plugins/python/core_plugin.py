@@ -19,6 +19,7 @@
 import os
 import re
 import shutil
+from functools import partial
 
 from pybuilder.core import init, task, description, use_plugin
 
@@ -40,38 +41,40 @@ def init_python_directories(project):
     project.set_property_if_unset(DISTRIBUTION_PROPERTY,
                                   "$dir_target/dist/{0}-{1}".format(project.name, project.version))
 
-    def list_packages():
-        source_path = project.expand_path("$dir_source_main_python")
-        for root, dirnames, _ in os.walk(source_path):
-            for directory in dirnames:
-                full_path = os.path.join(root, directory)
-                if os.path.exists(os.path.join(full_path, "__init__.py")):
-                    package = full_path.replace(source_path, "")
-                    if package.startswith(os.sep):
-                        package = package[1:]
-                    package = package.replace(os.sep, ".")
-                    yield package
+    project.list_packages = partial(list_packages, project)
+    project.list_modules = partial(list_modules, project)
+    project.list_scripts = partial(list_scripts, project)
 
-    def list_modules():
-        source_path = project.expand_path("$dir_source_main_python")
-        for potential_module_file in os.listdir(source_path):
-            potential_module_path = os.path.join(source_path, potential_module_file)
-            if os.path.isfile(potential_module_path) and potential_module_file.endswith(".py"):
-                yield potential_module_file[:-len(".py")]
 
-    project.list_packages = list_packages
-    project.list_modules = list_modules
+def list_packages(project):
+    source_path = project.expand_path("$dir_source_main_python")
+    for root, dirnames, _ in os.walk(source_path):
+        for directory in dirnames:
+            full_path = os.path.join(root, directory)
+            if os.path.exists(os.path.join(full_path, "__init__.py")):
+                package = full_path.replace(source_path, "")
+                if package.startswith(os.sep):
+                    package = package[1:]
+                package = package.replace(os.sep, ".")
+                yield package
 
-    def list_scripts():
-        scripts_dir = project.expand_path("$dir_source_main_scripts")
-        if not os.path.exists(scripts_dir):
-            return
-        for script in os.listdir(scripts_dir):
-            if os.path.isfile(os.path.join(scripts_dir, script)) \
-               and not HIDDEN_FILE_NAME_PATTERN.match(script):
-                yield script
 
-    project.list_scripts = list_scripts
+def list_modules(project):
+    source_path = project.expand_path("$dir_source_main_python")
+    for potential_module_file in os.listdir(source_path):
+        potential_module_path = os.path.join(source_path, potential_module_file)
+        if os.path.isfile(potential_module_path) and potential_module_file.endswith(".py"):
+            yield potential_module_file[:-len(".py")]
+
+
+def list_scripts(project):
+    scripts_dir = project.expand_path("$dir_source_main_scripts")
+    if not os.path.exists(scripts_dir):
+        return
+    for script in os.listdir(scripts_dir):
+        if os.path.isfile(os.path.join(scripts_dir, script)) \
+                and not HIDDEN_FILE_NAME_PATTERN.match(script):
+            yield script
 
 
 @task

@@ -25,7 +25,7 @@ from pybuilder.core import (dependents,
                             use_plugin,
                             init)
 from pybuilder.install_utils import install_dependencies
-from pybuilder.utils import EnvBuilder, python_specific_dir_name, venv_symlinks, as_list, mkdir, add_env_to_path
+from pybuilder.utils import create_venv, python_specific_dir_name, venv_symlinks, as_list, mkdir, add_env_to_path
 
 __author__ = "Arcadiy Ivanov"
 
@@ -85,8 +85,9 @@ def install_test_venv(logger, project):
 def install_venv(project, logger, venv_name):
     venv_dir = _get_venv_dir(project, venv_name)
     logger.info("Creating target '%s' VEnv in '%s'", venv_name, venv_dir)
-    venv_builder = EnvBuilder(with_pip=True, symlinks=venv_symlinks, clear=project.get_property("venv_clean"))
-    venv_builder.create(venv_dir)
+    # venv_builder = EnvBuilder(with_pip=True, symlinks=venv_symlinks, clear=project.get_property("venv_clean"))
+    # venv_builder.create(venv_dir)
+    create_venv(venv_dir, with_pip=True, symlinks=venv_symlinks, clear=project.get_property("venv_clean"))
 
 
 def install_venv_dependencies(logger, project, venv_name, dependencies=None):
