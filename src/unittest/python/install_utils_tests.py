@@ -51,11 +51,13 @@ class InstallDependencyTest(unittest.TestCase):
                                                          _):
         dependency = RequirementsFile("requirements.txt")
 
-        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch",
-                             constraints_file_name="constraint_file")
+        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch")
 
-        exec_command(
-            PIP_EXEC_STANZA + ["install", '-r', "requirements.txt"], ANY, env=ANY, shell=False)
+        exec_command.assert_called_with(PIP_EXEC_STANZA + ["install", "-r", "requirements.txt"],
+                                        cwd=ANY, env=ANY,
+                                        error_file_name=ANY,
+                                        outfile_name=ANY,
+                                        shell=False, no_path_search=True)
 
     @patch("pybuilder.install_utils.open")
     @patch("pybuilder.install_utils.create_constraint_file")
@@ -73,14 +75,12 @@ class InstallDependencyTest(unittest.TestCase):
         exec_command.assert_called_with(PIP_EXEC_STANZA +
                                         ["install"] +
                                         ["-c",
-                                         nc(jp(sys.exec_prefix, 'constraint_file')),
-                                         "--upgrade", "--upgrade-strategy", "only-if-needed",
+                                         nc(jp(sys.exec_prefix, "constraint_file")),
                                          "spam"],
-                                        cwd=ANY,
-                                        env=ANY,
+                                        cwd=ANY, env=ANY,
                                         error_file_name=ANY,
                                         outfile_name=ANY,
-                                        shell=False)
+                                        shell=False, no_path_search=True)
 
     @patch("pybuilder.install_utils.open")
     @patch("pybuilder.install_utils.create_constraint_file")
@@ -92,10 +92,13 @@ class InstallDependencyTest(unittest.TestCase):
                                                                            _):
         dependency = Dependency("spam")
 
-        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch",
-                             constraints_file_name="constraint_file")
+        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch")
 
-        exec_command(PIP_EXEC_STANZA + ["install", "spam"], ANY, env=ANY, shell=False)
+        exec_command.assert_called_with(PIP_EXEC_STANZA + ["install", "spam"],
+                                        cwd=ANY, env=ANY,
+                                        error_file_name=ANY,
+                                        outfile_name=ANY,
+                                        shell=False, no_path_search=True)
 
     @patch("pybuilder.install_utils.open")
     @patch("pybuilder.install_utils.create_constraint_file")
@@ -108,11 +111,14 @@ class InstallDependencyTest(unittest.TestCase):
         dependency = Dependency("spam")
         self.project.set_property("install_dependencies_insecure_installation", ["spam"])
 
-        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch",
-                             constraints_file_name="constraint_file")
+        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch")
 
-        exec_command(PIP_EXEC_STANZA + ["install", "--allow-unverified", "spam", "--allow-external", "spam", 'spam'],
-                     ANY, env=ANY, shell=False)
+        exec_command.assert_called_with(
+            PIP_EXEC_STANZA + ["install", "--allow-unverified", "spam", "--allow-external", "spam", "spam"],
+            cwd=ANY, env=ANY,
+            error_file_name=ANY,
+            outfile_name=ANY,
+            shell=False, no_path_search=True)
 
     @patch("pybuilder.install_utils.open")
     @patch("pybuilder.install_utils.create_constraint_file")
@@ -130,8 +136,8 @@ class InstallDependencyTest(unittest.TestCase):
 
         exec_command(
             PIP_EXEC_STANZA + ["install", "--allow-unverified", "some-other-dependency", "--allow-external",
-                               "some-other-dependency", 'spam'], ANY, env=ANY, shell=False)
-        #  some-other-dependency might be a dependency of 'spam'
+                               "some-other-dependency", "spam"], ANY, env=ANY, shell=False, no_path_search=True)
+        #  some-other-dependency might be a dependency of "spam"
         #  so we always have to put the insecure dependencies in the command line :-(
 
     @patch("pybuilder.install_utils.open")
@@ -145,12 +151,14 @@ class InstallDependencyTest(unittest.TestCase):
         self.project.set_property("install_dependencies_index_url", "some_index_url")
         dependency = Dependency("spam")
 
-        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch",
-                             constraints_file_name="constraint_file")
+        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch")
 
-        exec_command(
-            PIP_EXEC_STANZA + ["install", "--index-url", "some_index_url", 'spam'], ANY, env=ANY,
-            shell=False)
+        exec_command.assert_called_with(
+            PIP_EXEC_STANZA + ["install", "--index-url", "some_index_url", "spam"],
+            cwd=ANY, env=ANY,
+            error_file_name=ANY,
+            outfile_name=ANY,
+            shell=False, no_path_search=True)
 
     @patch("pybuilder.install_utils.open")
     @patch("pybuilder.install_utils.create_constraint_file")
@@ -163,12 +171,14 @@ class InstallDependencyTest(unittest.TestCase):
         self.project.set_property("install_dependencies_extra_index_url", "some_extra_index_url")
         dependency = Dependency("spam")
 
-        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch",
-                             constraints_file_name="constraint_file")
+        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch")
 
-        exec_command(
-            PIP_EXEC_STANZA + ["install", "--extra-index-url", "some_extra_index_url", 'spam'], ANY,
-            env=ANY, shell=False)
+        exec_command.assert_called_with(
+            PIP_EXEC_STANZA + ["install", "--extra-index-url", "some_extra_index_url", "spam"],
+            cwd=ANY, env=ANY,
+            error_file_name=ANY,
+            outfile_name=ANY,
+            shell=False, no_path_search=True)
 
     @patch("pybuilder.install_utils.open")
     @patch("pybuilder.install_utils.create_constraint_file")
@@ -182,29 +192,15 @@ class InstallDependencyTest(unittest.TestCase):
         self.project.set_property("install_dependencies_extra_index_url", "some_extra_index_url")
         dependency = Dependency("spam")
 
-        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch",
-                             constraints_file_name="constraint_file")
+        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch")
 
-        exec_command(
+        exec_command.assert_called_with(
             PIP_EXEC_STANZA + ["install", "--index-url", "some_index_url", "--extra-index-url",
-                               "some_extra_index_url", 'spam'], ANY, env=ANY, shell=False)
-
-    @patch("pybuilder.install_utils.open")
-    @patch("pybuilder.install_utils.create_constraint_file")
-    @patch("pybuilder.install_utils.get_packages_info", return_value={})
-    @patch("pybuilder.pip_utils.execute_command", return_value=0)
-    def test_should_upgrade_dependencies(self, exec_command,
-                                         get_packages_info,
-                                         constraint_file,
-                                         _):
-        self.project.set_property("install_dependencies_upgrade", True)
-        dependency = Dependency("spam")
-
-        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch",
-                             constraints_file_name="constraint_file")
-
-        exec_command(
-            PIP_EXEC_STANZA + ["install", "--upgrade", 'spam'], ANY, env=ANY, shell=False)
+                               "some_extra_index_url", "spam"],
+            cwd=ANY, env=ANY,
+            error_file_name=ANY,
+            outfile_name=ANY,
+            shell=False, no_path_search=True)
 
     @patch("pybuilder.install_utils.open")
     @patch("pybuilder.install_utils.create_constraint_file")
@@ -216,11 +212,14 @@ class InstallDependencyTest(unittest.TestCase):
                                                     _):
         dependency = Dependency("spam", "0.1.2")
 
-        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch",
-                             constraints_file_name="constraint_file")
+        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch")
 
-        exec_command(
-            PIP_EXEC_STANZA + ["install", 'spam>=0.1.2'], ANY, env=ANY, shell=False)
+        exec_command.assert_called_with(
+            PIP_EXEC_STANZA + ["install", "spam>=0.1.2"],
+            cwd=ANY, env=ANY,
+            error_file_name=ANY,
+            outfile_name=ANY,
+            shell=False, no_path_search=True)
 
     @patch("pybuilder.install_utils.open")
     @patch("pybuilder.install_utils.create_constraint_file")
@@ -232,11 +231,14 @@ class InstallDependencyTest(unittest.TestCase):
                                                                  _):
         dependency = Dependency("spam", "==0.1.2")
 
-        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch",
-                             constraints_file_name="constraint_file")
+        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch")
 
-        exec_command(
-            PIP_EXEC_STANZA + ["install", 'spam==0.1.2'], ANY, env=ANY, shell=False)
+        exec_command.assert_called_with(
+            PIP_EXEC_STANZA + ["install", "spam==0.1.2"],
+            cwd=ANY, env=ANY,
+            error_file_name=ANY,
+            outfile_name=ANY,
+            shell=False, no_path_search=True)
 
     def test_should_install_dependency_with_wrong_version_and_operator(self):
         self.assertRaises(ValueError, Dependency, "spam", "~=1")
@@ -251,11 +253,14 @@ class InstallDependencyTest(unittest.TestCase):
                                                 _):
         dependency = Dependency("spam", url="some_url")
 
-        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch",
-                             constraints_file_name="constraint_file")
+        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch")
 
-        exec_command(
-            PIP_EXEC_STANZA + ["install", "--force-reinstall", 'some_url'], ANY, env=ANY, shell=False)
+        exec_command.assert_called_with(
+            PIP_EXEC_STANZA + ["install", "--force-reinstall", "some_url"],
+            cwd=ANY, env=ANY,
+            error_file_name=ANY,
+            outfile_name=ANY,
+            shell=False, no_path_search=True)
 
     @patch("pybuilder.install_utils.open")
     @patch("pybuilder.install_utils.create_constraint_file")
@@ -267,8 +272,11 @@ class InstallDependencyTest(unittest.TestCase):
                                                                          _):
         dependency = Dependency("spam", version="0.1.2", url="some_url")
 
-        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch",
-                             constraints_file_name="constraint_file")
+        install_dependencies(self.logger, self.project, dependency, sys.exec_prefix, "install_batch")
 
-        exec_command(
-            PIP_EXEC_STANZA + ["install", "--force-reinstall", 'some_url'], ANY, env=ANY, shell=False)
+        exec_command.assert_called_with(
+            PIP_EXEC_STANZA + ["install", "--force-reinstall", "some_url"],
+            cwd=ANY, env=ANY,
+            error_file_name=ANY,
+            outfile_name=ANY,
+            shell=False, no_path_search=True)

@@ -159,7 +159,7 @@ def parse_options(args):
     project_group.add_option("--reset-plugins",
                              action="store_true",
                              dest="reset_plugins",
-                             default=True,
+                             default=False,
                              help="Reset plugins directory prior to running the build")
 
     parser.add_option_group(project_group)
@@ -408,8 +408,8 @@ def main(*args):
                                   project_directory=options.project_directory,
                                   exclude_optional_tasks=options.exclude_optional_tasks,
                                   exclude_tasks=options.exclude_tasks,
-                                  exclude_all_optional=options.exclude_all_optional
-                                  )
+                                  exclude_all_optional=options.exclude_all_optional,
+                                  reset_plugins=options.reset_plugins)
 
             if options.verbose or options.debug:
                 logger.debug("Verbose output enabled.\n")

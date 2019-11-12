@@ -18,14 +18,17 @@
 
 import sys
 
-from pybuilder.core import (dependents,
-                            before,
-                            description,
+from pybuilder.core import (before,
                             task,
                             use_plugin,
                             init)
 from pybuilder.install_utils import install_dependencies
-from pybuilder.utils import create_venv, python_specific_dir_name, venv_symlinks, as_list, mkdir, add_env_to_path
+from pybuilder.utils import (as_list,
+                             mkdir,
+                             create_venv,
+                             python_specific_dir_name,
+                             venv_symlinks,
+                             add_env_to_path)
 
 __author__ = "Arcadiy Ivanov"
 
@@ -34,6 +37,7 @@ use_plugin("core")
 
 @init
 def initialize_venv_plugin(project):
+    project.set_property_if_unset("refresh_venvs", False)
     project.set_property_if_unset("pip_verbose", 0)
     project.set_property_if_unset("dir_install_logs", "$dir_logs/install_dependencies")
 
@@ -51,17 +55,9 @@ def initialize_venv_plugin(project):
     project.set_property_if_unset("venv_clean", False)
 
 
-@task
-@dependents("prepare")
-@description("Refreshes/repopulates all target VEnvs")
-def refresh_venvs(logger, project):
-    logger.info("VEnvs will be regenerated")
-    project.set_property("venv_clean", True)
-
-
 @task("prepare", "Creates target VEnvs")
 def create_venvs(logger, project):
-    log_dir = project.expand("$dir_install_logs")
+    log_dir = project.expand_path("$dir_install_logs")
 
     logger.debug("Creating log directory '%s'", log_dir)
     mkdir(log_dir)
@@ -84,10 +80,9 @@ def install_test_venv(logger, project):
 
 def install_venv(project, logger, venv_name):
     venv_dir = _get_venv_dir(project, venv_name)
-    logger.info("Creating target '%s' VEnv in '%s'", venv_name, venv_dir)
-    # venv_builder = EnvBuilder(with_pip=True, symlinks=venv_symlinks, clear=project.get_property("venv_clean"))
-    # venv_builder.create(venv_dir)
-    create_venv(venv_dir, with_pip=True, symlinks=venv_symlinks, clear=project.get_property("venv_clean"))
+    clear = project.get_property("refresh_venvs")
+    logger.info("Creating target '%s' VEnv in '%s'%s", venv_name, venv_dir, " (refreshing)" if clear else "")
+    create_venv(venv_dir, with_pip=True, symlinks=venv_symlinks, clear=clear)
 
 
 def install_venv_dependencies(logger, project, venv_name, dependencies=None):
@@ -106,7 +101,7 @@ def install_venv_dependencies(logger, project, venv_name, dependencies=None):
 
 
 def _get_venv_dir(project, venv_name):
-    return project.expand("$dir_%s_venv" % venv_name)
+    return project.expand_path("$dir_%s_venv" % venv_name)
 
 
 def _get_venv_dirs(project):

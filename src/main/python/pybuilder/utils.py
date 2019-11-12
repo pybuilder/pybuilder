@@ -33,6 +33,8 @@ import tempfile
 import time
 import traceback
 from collections import OrderedDict
+from os.path import normcase as nc, join as jp
+from shutil import rmtree
 from subprocess import Popen, PIPE
 
 from pybuilder.vendor import virtualenv
@@ -113,16 +115,28 @@ def _py2_which(cmd, mode=os.F_OK | os.X_OK, path=None):
     return None
 
 
+def _mp_get_context_win32_py2(context_name):
+    if context_name != "spawn":
+        raise RuntimeError("only spawn is supported")
+
+    return multiprocessing
+
+
 if sys.version_info[0] < 3:  # if major is less than 3
     from .excp_util_2 import raise_exception, is_string
 
     is_string = is_string
 
-    import Queue as queue
+    if sys.platform == "win32":
+        import multiprocessing
+        import multiprocessing.queues
 
-    queue = queue
+        for name in (name for name in dir(multiprocessing.queues) if name[0].isupper()):
+            setattr(multiprocessing, name, getattr(multiprocessing.queues, name))
 
-    _mp_get_context = None  # This will be patched at runtime
+        _mp_get_context = _mp_get_context_win32_py2
+    else:
+        _mp_get_context = None  # This will be patched at runtime
 
     _old_billiard_spawn_passfds = None  # This will be patched at runtime
 
@@ -133,7 +147,6 @@ else:
 
     from multiprocessing import get_context as _mp_get_context
     from shutil import which
-    import queue
 
     is_string = is_string
     makedirs = os.makedirs
@@ -250,7 +263,8 @@ def discover_files_matching(start_dir, file_glob, exclude_file_glob=None):
                 yield os.path.join(root, file_name)
 
 
-def execute_command(command_and_arguments, outfile_name=None, env=None, cwd=None, error_file_name=None, shell=False):
+def execute_command(command_and_arguments, outfile_name=None, env=None, cwd=None, error_file_name=None, shell=False,
+                    no_path_search=False):
     if error_file_name is None and outfile_name:
         error_file_name = outfile_name + ".err"
 
@@ -267,7 +281,7 @@ def execute_command(command_and_arguments, outfile_name=None, env=None, cwd=None
             error_file_created = True
 
         try:
-            if not shell and sys.platform == "win32" and not is_string(command_and_arguments):
+            if not shell and sys.platform == "win32" and not is_string(command_and_arguments) and not no_path_search:
                 which_cmd = which(command_and_arguments[0], path=env.get("PATH", None) if env else None)
                 if which_cmd:
                     command_and_arguments[0] = which_cmd
@@ -523,7 +537,7 @@ def _patch_billiard_spawn_passfds():
 def patch_mp():
     _install_tblib()
 
-    if sys.version_info[0] < 3:
+    if sys.version_info[0] < 3 and sys.platform != "win32":
         from billiard import get_context
 
         global _mp_get_context
@@ -555,7 +569,16 @@ def add_env_to_path(env_dir, sys_path):
 
 def venv_python_executable(env_dir):
     """Binary Python executable for a specific virtual environment"""
-    return os.path.join(env_dir, venv_binname, _venv_python_exename)
+    candidate = jp(env_dir, venv_binname, _venv_python_exename)
+
+    if sys.platform == "win32":
+        # On Windows python.exe could be in PythonXY/ or venv/Scripts/
+        if not os.path.exists(candidate):
+            alternative = jp(env_dir, _venv_python_exename)
+            if os.path.exists(alternative):
+                candidate = alternative
+
+    return nc(candidate)
 
 
 if sys.version_info[0] < 3:
@@ -598,11 +621,14 @@ def create_venv(home_dir,
                 upgrade=False,
                 with_pip=False,
                 prompt=None):
+    if clear:
+        if os.path.exists(home_dir):
+            rmtree(home_dir)
+
     with virtualenv.virtualenv_support_dirs() as search_dirs:
         virtualenv.create_environment(
             home_dir,
             site_packages=system_site_packages,
-            clear=clear,
             prompt=prompt,
             search_dirs=search_dirs,
             download=upgrade,

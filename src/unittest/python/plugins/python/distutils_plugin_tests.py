@@ -828,7 +828,7 @@ class TasksTest(PyBuilderTestCase):
         install_distribution(self.project, MagicMock(Logger))
         execute_command.assert_called_with(PIP_EXEC_STANZA + ["install", "--force-reinstall", nc('/whatever dist')],
                                            cwd=".", env=ANY,
-                                           outfile_name=ANY, error_file_name=ANY, shell=False)
+                                           outfile_name=ANY, error_file_name=ANY, shell=False, no_path_search=True)
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.pip_utils.open", create=True)
@@ -841,7 +841,7 @@ class TasksTest(PyBuilderTestCase):
         execute_command.assert_called_with(
             PIP_EXEC_STANZA + ["install", "--index-url", "index_url", "--extra-index-url", "extra_index_url",
                                "--force-reinstall", nc('/whatever dist')], cwd=".", env=ANY, outfile_name=ANY,
-            error_file_name=ANY, shell=False)
+            error_file_name=ANY, shell=False, no_path_search=True)
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)

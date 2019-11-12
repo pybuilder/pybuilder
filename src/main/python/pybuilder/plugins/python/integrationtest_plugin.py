@@ -24,9 +24,7 @@ from pybuilder.plugins.python.test_plugin_helper import ReportsProcessor
 from pybuilder.terminal import print_text_line, print_file_content, print_text
 from pybuilder.terminal import styled_text, fg, GREEN, MAGENTA, GREY
 from pybuilder.utils import discover_files_matching, execute_command, Timer, read_file
-from pybuilder.utils import queue, mp_get_context
-
-Empty = queue.Empty
+from pybuilder.utils import mp_get_context
 
 use_plugin("core")
 
@@ -104,7 +102,7 @@ def run_integration_tests_in_parallel(project, logger):
                 report_item = run_single_test(
                     logger, project, reports_dir, test, not progress.can_be_displayed)
                 reports.put(report_item)
-            except Empty:
+            except ctx.Empty:
                 break
             except Exception as e:
                 logger.error("Failed to run test %r : %s" % (test, str(e)))
@@ -250,13 +248,14 @@ class ConsumingQueue(object):
     def __init__(self, ctx):
         self._items = []
         self._queue = ctx.Queue()
+        self._ctx = ctx
 
     def consume_available_items(self):
         try:
             while True:
                 item = self.get_nowait()
                 self._items.append(item)
-        except Empty:
+        except self._ctx.Empty:
             pass
 
     def put(self, *args, **kwargs):

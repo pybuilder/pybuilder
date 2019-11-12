@@ -19,13 +19,14 @@
 import os
 import sys
 from collections import namedtuple
+from os.path import normcase as nc
 
 from pybuilder.core import Dependency, RequirementsFile
 from pybuilder.pip_common import canonicalize_name, WorkingSet, SpecifierSet, Version
 from pybuilder.utils import execute_command, as_list, odict
 
 PIP_MODULE_STANZA = ["-m", "pip.__main__"]
-PIP_EXEC_STANZA = [sys.executable] + PIP_MODULE_STANZA
+PIP_EXEC_STANZA = [nc(sys.executable)] + PIP_MODULE_STANZA
 
 
 def build_dependency_version_string(mixed):
@@ -83,17 +84,19 @@ def pip_install_batches(packages, index_url=None, extra_index_url=None, upgrade=
     for opts, pkgs in batches.items():
         cmd_line = list(pip_command_line)
         cmd_line.extend(opts)
-        cmd_line.extend(pkgs)
+        for pkg in pkgs:
+            cmd_line.extend(pkg)
 
         if logger:
-            logger.debug("Invoking pip: %s", cmd_line)
+            logger.debug("Invoking PIP: '%s'", _log_cmd_line(*cmd_line))
 
         results.append(execute_command(cmd_line,
                                        outfile_name=outfile_name,
                                        error_file_name=error_file_name,
                                        env=env,
                                        cwd=cwd,
-                                       shell=False))
+                                       shell=False,
+                                       no_path_search=True))
 
     return results
 
@@ -125,9 +128,15 @@ def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=F
         env = os.environ
 
     if logger:
-        logger.debug("Invoking pip: %s", pip_command_line)
-    return execute_command(pip_command_line, outfile_name=outfile_name, env=env, cwd=cwd,
-                           error_file_name=error_file_name, shell=False)
+        logger.debug("Invoking PIP: '%s'", _log_cmd_line(*pip_command_line))
+
+    return execute_command(pip_command_line,
+                           outfile_name=outfile_name,
+                           error_file_name=error_file_name,
+                           env=env,
+                           cwd=cwd,
+                           shell=False,
+                           no_path_search=True)
 
 
 def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=False, insecure_installs=None,
@@ -308,3 +317,12 @@ def should_update_package(version):
                     return True
 
     return False
+
+
+def _log_cmd_line(*args):
+    result = ""
+    first = False
+    for arg in args:
+        result += first * " " + '"%s"' % arg
+        first = True
+    return result

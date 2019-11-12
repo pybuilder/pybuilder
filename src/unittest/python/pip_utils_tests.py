@@ -106,11 +106,11 @@ class PipUtilsTests(unittest.TestCase):
     def test_pip_install_environ_inherited(self, execute_command):
         pip_utils.pip_install("blah")
         execute_command.assert_called_once_with(ANY, cwd=None, env=os.environ, error_file_name=None, outfile_name=None,
-                                                shell=False)
+                                                shell=False, no_path_search=True)
 
     @patch("pybuilder.pip_utils.execute_command")
     def test_pip_install_environ_overwritten(self, execute_command):
         env_dict = dict()
         pip_utils.pip_install("blah", env=env_dict)
         execute_command.assert_called_once_with(ANY, cwd=None, env=env_dict, error_file_name=None, outfile_name=None,
-                                                shell=False)
+                                                shell=False, no_path_search=True)

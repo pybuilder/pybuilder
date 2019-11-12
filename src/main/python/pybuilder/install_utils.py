@@ -16,7 +16,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
+from os.path import normcase as nc, join as jp
 
 from pybuilder.core import RequirementsFile, Dependency
 from pybuilder.errors import BuildFailedException
@@ -32,7 +32,7 @@ from pybuilder.utils import as_list, tail_log, getsitepaths, venv_python_executa
 def install_dependencies(logger, project, dependencies, venv_dir, log_file_name,
                          local_mapping={},
                          constraints_file_name=None,
-                         log_file_mode="a",
+                         log_file_mode="ab",
                          package_type="dependency",
                          ):
     entry_paths = list(getsitepaths(venv_dir))
@@ -43,13 +43,16 @@ def install_dependencies(logger, project, dependencies, venv_dir, log_file_name,
                                                                                                 entry_paths)
     constraints_file = None
     if constraints_file_name:
-        constraints_file = os.path.join(venv_dir, constraints_file_name)
+        constraints_file = nc(jp(venv_dir, constraints_file_name))
         create_constraint_file(constraints_file, dependency_constraints)
 
     install_batch = []
     for dependency in dependencies_to_install:
         url = getattr(dependency, "url", None)
-        install_options = {"upgrade": True}
+        install_options = {}
+
+        if should_update_package(dependency.version) and not getattr(dependency, "version_not_a_spec", False):
+            install_options["upgrade"] = True
 
         if dependency.name in local_mapping or url:
             install_options["force_reinstall"] = bool(url)
@@ -57,14 +60,14 @@ def install_dependencies(logger, project, dependencies, venv_dir, log_file_name,
         if dependency.name in local_mapping:
             install_options["target_dir"] = local_mapping[dependency.name]
 
-        install_batch.append((as_pip_install_target(dependency)[0], install_options))
+        install_batch.append((as_pip_install_target(dependency), install_options))
 
         logger.info("Processing %s packages '%s%s'%s to be installed with %s", package_type, dependency.name,
                     dependency.version if dependency.version else "",
                     " from %s" % url if url else "", install_options)
 
     if install_batch:
-        with open(log_file_name, log_file_mode) as log_file:
+        with open(nc(log_file_name), log_file_mode) as log_file:
             results = pip_install_batches(install_batch,
                                           index_url=project.get_property("install_dependencies_index_url"),
                                           extra_index_url=project.get_property("install_dependencies_extra_index_url"),

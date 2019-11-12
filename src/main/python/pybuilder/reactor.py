@@ -195,7 +195,7 @@ class Reactor:
 
         self._setup_deferred_plugin_import()
 
-        if sys.version_info[0] < 3:
+        if sys.version_info[0] < 3 and sys.platform != "win32":
             # This is really a way to make sure we can install `billiard` as a dependency
             # before any of the plugins actually initialize
             self.require_plugin("pypi:billiard", plugin_module_name="pybuilder.plugins.billiard_plugin")
@@ -470,7 +470,7 @@ class Reactor:
 
     def _setup_plugin_directory(self, reset_plugins):
         plugin_dir = self.project.plugin_dir
-        self.logger.debug("Setting up plugins VEnv at %s", plugin_dir)
+        self.logger.debug("Setting up plugins VEnv at '%s'%s", plugin_dir, " (resetting)" if reset_plugins else "")
         create_venv(plugin_dir, with_pip=True, symlinks=venv_symlinks, upgrade=True, clear=reset_plugins)
 
         add_env_to_path(plugin_dir, sys.path)

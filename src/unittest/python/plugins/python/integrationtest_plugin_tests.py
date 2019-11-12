@@ -193,7 +193,9 @@ class ConsumingQueueTests(unittest.TestCase):
 
     @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
     def test_should_consume_no_items_when_underlying_queue_empty(self, underlying_nowait_get):
-        queue = ConsumingQueue(Mock())
+        ctx = Mock()
+        ctx.Empty = Empty
+        queue = ConsumingQueue(ctx)
 
         def empty_queue_get_nowait():
             raise Empty()
@@ -206,7 +208,9 @@ class ConsumingQueueTests(unittest.TestCase):
 
     @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
     def test_should_consume_one_item_when_underlying_queue_has_one(self, underlying_nowait_get):
-        queue = ConsumingQueue(Mock())
+        ctx = Mock()
+        ctx.Empty = Empty
+        queue = ConsumingQueue(ctx)
 
         def empty_queue_get_nowait():
             yield "any-item"
@@ -221,7 +225,9 @@ class ConsumingQueueTests(unittest.TestCase):
 
     @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
     def test_should_consume_many_items_when_underlying_queue_has_them(self, underlying_nowait_get):
-        queue = ConsumingQueue(Mock())
+        ctx = Mock()
+        ctx.Empty = Empty
+        queue = ConsumingQueue(ctx)
 
         def empty_queue_get_nowait():
             yield "any-item"
@@ -240,7 +246,9 @@ class ConsumingQueueTests(unittest.TestCase):
 
     @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
     def test_should_give_item_size_of_zero_when_underlying_queue_is_empty(self, underlying_nowait_get):
-        queue = ConsumingQueue(Mock())
+        ctx = Mock()
+        ctx.Empty = Empty
+        queue = ConsumingQueue(ctx)
 
         def empty_queue_get_nowait():
             raise Empty()
@@ -254,7 +262,9 @@ class ConsumingQueueTests(unittest.TestCase):
 
     @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
     def test_should_give_item_size_of_n_when_underlying_queue_has_n_elements(self, underlying_nowait_get):
-        queue = ConsumingQueue(Mock())
+        ctx = Mock()
+        ctx.Empty = Empty
+        queue = ConsumingQueue(ctx)
 
         def empty_queue_get_nowait():
             yield 'first'
