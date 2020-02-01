@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2019 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -179,7 +179,8 @@ class Reactor:
                       exclude_optional_tasks=None,
                       exclude_tasks=None,
                       exclude_all_optional=False,
-                      reset_plugins=False):
+                      reset_plugins=False,
+                      offline=False):
         if not property_overrides:
             property_overrides = {}
         Reactor._set_current_instance(self)
@@ -189,16 +190,15 @@ class Reactor:
 
         self.logger.debug("Loading project module from %s", project_descriptor)
 
-        self.project = Project(basedir=project_directory)
+        self.project = Project(basedir=project_directory, offline=offline)
 
         self._setup_plugin_directory(reset_plugins)
 
         self._setup_deferred_plugin_import()
 
-        if sys.version_info[0] < 3 and sys.platform != "win32":
-            # This is really a way to make sure we can install `billiard` as a dependency
-            # before any of the plugins actually initialize
-            self.require_plugin("pypi:billiard", plugin_module_name="pybuilder.plugins.billiard_plugin")
+        # This is really a way to make sure we can install `billiard` as a dependency
+        # before any of the plugins actually initialize
+        self.require_plugin("pypi:billiard", "~=3.6.0", plugin_module_name="pybuilder.plugins.billiard_plugin")
 
         self.project_module = self.load_project_module(project_descriptor)
 
@@ -471,12 +471,11 @@ class Reactor:
     def _setup_plugin_directory(self, reset_plugins):
         plugin_dir = self.project.plugin_dir
         self.logger.debug("Setting up plugins VEnv at '%s'%s", plugin_dir, " (resetting)" if reset_plugins else "")
-        create_venv(plugin_dir, with_pip=True, symlinks=venv_symlinks, upgrade=True, clear=reset_plugins)
+        create_venv(plugin_dir, with_pip=True, symlinks=venv_symlinks, upgrade=True, clear=reset_plugins,
+                    offline=self.project.offline)
 
         add_env_to_path(plugin_dir, sys.path)
-        if sys.version_info[0] < 3:
-            # This is a horrible hack for Python 2
-            patch_mp_plugin_dir(plugin_dir)
+        patch_mp_plugin_dir(plugin_dir)
 
     def _setup_deferred_plugin_import(self):
         self._old_import = __import__

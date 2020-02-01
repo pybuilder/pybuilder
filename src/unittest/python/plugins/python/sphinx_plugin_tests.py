@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2019 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -337,7 +337,7 @@ from sphinx_pyb_conf import *
         exists.assert_called_with(nc("basedir/dir_target/sphinx_pyb/apidoc"))
         rmtree.assert_called_with(nc("basedir/dir_target/sphinx_pyb/apidoc"))
         mkdir.assert_called_with(nc("basedir/dir_target/sphinx_pyb/apidoc"))
-        print(open().__enter__().write.call_args_list)
+
         open().__enter__().write.assert_has_calls([call("a = 1\n"), call("b = 'foo'\n"), call(
             "\nimport sys\nsys.path.insert(0, %r)\n" % nc("basedir/dir_source"))], any_order=True)
         execute_command.assert_has_calls([

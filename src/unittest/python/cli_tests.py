@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2019 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -221,12 +221,14 @@ class LengthOfLongestStringTests(unittest.TestCase):
     def test_should_return_zero_when_list_is_empty(self):
         self.assertEqual(0, length_of_longest_string([]))
 
+    def test_should_return_one_when_list_contains_string_with_no_characters(self):
+        self.assertEqual(0, length_of_longest_string([""]))
+
     def test_should_return_one_when_list_contains_string_with_single_character(self):
-        self.assertEqual(1, length_of_longest_string(['a']))
+        self.assertEqual(1, length_of_longest_string(["a"]))
 
     def test_should_return_four_when_list_contains_egg_and_spam(self):
-        self.assertEqual(4, length_of_longest_string(['egg', 'spam']))
+        self.assertEqual(4, length_of_longest_string(["egg", "spam"]))
 
     def test_should_return_four_when_list_contains_foo_bar_egg_and_spam(self):
-        self.assertEqual(
-            4, length_of_longest_string(['egg', 'spam', 'foo', 'bar']))
+        self.assertEqual(4, length_of_longest_string(["egg", "spam", "foo", "bar"]))

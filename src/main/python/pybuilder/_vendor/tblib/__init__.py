@@ -15,7 +15,7 @@ except ImportError:
 if not tb_set_next and not tproxy:
     raise ImportError("Cannot use tblib. Runtime not supported.")
 
-__version__ = '1.5.0'
+__version__ = '1.6.0'
 __all__ = 'Traceback',
 
 PY3 = sys.version_info[0] == 3

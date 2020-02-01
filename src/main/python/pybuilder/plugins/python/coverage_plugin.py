@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2019 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@ try:
 except ImportError:
     from io import StringIO
 
-import os
-from distutils import sysconfig
-from pybuilder.core import init, after, use_plugin
-from pybuilder.utils import discover_modules, render_report, fork_process, is_windows
-from pybuilder.coverage_utils import patch_multiprocessing, reverse_patch_multiprocessing
+from pybuilder.core import init, use_plugin, task, depends, dependents, optional
+from pybuilder.utils import discover_modules, render_report
+from pybuilder.execution import ExecutionManager
+
+from pybuilder.plugins.python.mp_tools.coverage_tool import CoverageTool
 from pybuilder.errors import BuildFailedException
 
 use_plugin("python.core")
@@ -36,34 +36,73 @@ use_plugin("analysis")
 
 @init
 def init_coverage_properties(project):
-    project.plugin_depends_on("coverage", "~=4.5")
+    project.plugin_depends_on("coverage", "~=5.0")
 
-    project.set_property_if_unset("coverage_threshold_warn", 70)
-    project.set_property_if_unset("coverage_branch_threshold_warn", 0)
-    project.set_property_if_unset("coverage_branch_partial_threshold_warn", 0)
-    project.set_property_if_unset("coverage_break_build", True)
-    project.set_property_if_unset("coverage_allow_non_imported_modules", True)
-    project.set_property_if_unset("coverage_reload_modules", None)  # deprecated, unused
-    project.set_property_if_unset("coverage_reset_modules", False)
-    project.set_property_if_unset("coverage_exceptions", [])
-    project.set_property_if_unset("coverage_fork", None)  # deprecated, unused
+    project.set_property_if_unset("coverage_tasks", ["run_unit_tests"])
+    project.set_property_if_unset("coverage_task_configs", {"run_unit_tests": "coverage"})
+
+    for task_name in project.get_property("coverage_tasks"):
+        execution_prefix = project.get_property("coverage_task_configs").get(task_name, task_name)
+
+        project.set_property_if_unset("%s_threshold_warn" % execution_prefix, 70)
+        project.set_property_if_unset("%s_branch_threshold_warn" % execution_prefix, 0)
+        project.set_property_if_unset("%s_branch_partial_threshold_warn" % execution_prefix, 0)
+        project.set_property_if_unset("%s_break_build" % execution_prefix, True)
+        project.set_property_if_unset("%s_allow_non_imported_modules" % execution_prefix, True)
+        project.set_property_if_unset("%s_exceptions" % execution_prefix, [])
+        project.set_property_if_unset("%s_concurrency" % execution_prefix, ["thread"])
+
+        project.set_property_if_unset("%s_reset_modules" % execution_prefix, False)  # deprecated, unused
+        project.set_property_if_unset("%s_reload_modules" % execution_prefix, None)  # deprecated, unused
+        project.set_property_if_unset("%s_fork" % execution_prefix, None)  # deprecated, unused
 
 
-@after(("analyze", "verify"), only_once=True)
-def verify_coverage(project, logger, reactor):
-    run_coverage(project, logger, reactor, "coverage", "coverage", "run_unit_tests")
+@task
+def prepare(project, logger, reactor):
+    em = reactor.execution_manager  # type: ExecutionManager
+
+    if not em.is_task_in_current_execution_plan("coverage"):
+        return
+
+    task_names = [task_name for task_name in project.get_property("coverage_tasks")]
+    logger.info("Requested coverage for tasks: %s", ",".join(task_names))
+    for task_name in task_names:
+        if not em.is_task_in_current_execution_plan(task_name):
+            logger.info("Will not run coverage for '%s' as it's not in the current plan", task_name)
+            continue
+        if not em.is_task_before_in_current_execution_plan(task_name, "coverage"):
+            raise BuildFailedException("Unable to run coverage for task '%s' if it isn't executed before 'coverage'",
+                                       task_name)
 
 
-def run_coverage(project, logger, reactor, execution_prefix, execution_name, target_task, shortest_plan=False):
-    logger.info("Collecting coverage information")
+@task
+@depends("verify")
+@dependents(optional("publish"))
+def coverage(project, logger, reactor):
+    em = reactor.execution_manager  # type: ExecutionManager
+
+    task_configs = project.get_property("coverage_task_configs")
+
+    for task_name in project.get_property("coverage_tasks"):
+        if em.is_task_in_current_execution_plan(task_name):
+            run_coverage(project, logger, reactor, task_configs.get(task_name, task_name),
+                         "%s coverage" % task_name, task_name)
+
+
+def run_coverage(project, logger, reactor, execution_prefix, execution_name, target_task):
+    logger.info("Collecting coverage information for %r", target_task)
 
     if project.get_property("%s_fork" % execution_prefix) is not None:
         logger.warn(
-            "%s_fork is deprecated, coverage always runs in its own fork", execution_prefix)
+            "%s_fork is deprecated, coverage always runs in a spawned process", execution_prefix)
 
     if project.get_property("%s_reload_modules" % execution_prefix) is not None:
         logger.warn(
             "%s_reload_modules is deprecated - modules are no longer reloaded", execution_prefix)
+
+    if project.get_property("%s_reset_modules" % execution_prefix) is not None:
+        logger.warn(
+            "%s_reset_modules is deprecated - modules are no longer reset", execution_prefix)
 
     if project.get_property("%s_branch_threshold_warn" % execution_prefix) == 0:
         logger.warn("%s_branch_threshold_warn is 0 and branch coverage will not be checked", execution_prefix)
@@ -72,78 +111,56 @@ def run_coverage(project, logger, reactor, execution_prefix, execution_name, tar
         logger.warn("%s_branch_partial_threshold_warn is 0 and partial branch coverage will not be checked",
                     execution_prefix)
 
-    logger.debug("Forking process to do %s analysis", execution_name)
-    exit_code, _ = fork_process(logger,
-                                target=do_coverage,
-                                args=(project, logger, reactor, execution_prefix, execution_name, target_task,
-                                      shortest_plan))
-
-    if exit_code and project.get_property("%s_break_build" % execution_prefix):
-        raise BuildFailedException(
-            "Forked %s process indicated failure with error code %d" % (execution_name, exit_code))
-
-
-def do_coverage(project, logger, reactor, execution_prefix, execution_name, target_task, shortest_plan):
-    """
-    This function MUST ALWAYS execute in a fork.
-    The sys.modules will be manipulated extensively to stage the tests properly, which may affect execute down the line.
-    It's best to simple let this method exit and the fork die rather than to try to recover.
-    """
     source_tree_path = project.get_property("dir_source_main_python")
-    reset_modules = project.get_property("%s_reset_modules" % execution_prefix)
     allow_non_imported_modules = project.get_property("%s_allow_non_imported_modules" % execution_prefix)
     module_names = _discover_modules_to_cover(project)
 
     for module_name in module_names:
         logger.debug("Module '%s' coverage to be verified", module_name)
 
-    if reset_modules and not is_windows():
-        _delete_non_essential_modules()
-        __import__("pybuilder.plugins.python")  # Reimport self
+    coverage_config = dict(data_file=project.expand_path("$dir_target", "%s.coverage" % target_task),
+                           data_suffix=True,
+                           cover_pylib=False,
+                           config_file=False,
+                           branch=True,
+                           source=[source_tree_path],
+                           context=target_task,
+                           concurrency=project.get_property("%s_concurrency"))
 
-    # Starting fresh
     from coverage import coverage as coverage_factory
 
-    coverage = coverage_factory(cover_pylib=False, branch=True, source=[source_tree_path])
+    cov = coverage_factory(**coverage_config)
+    cov.erase()
 
-    patch_multiprocessing(coverage.config)
-    try:
-        try:
-            _start_coverage(project, coverage)
+    cov_tool = CoverageTool(**coverage_config)
 
-            if shortest_plan:
-                reactor.execute_task_shortest_plan(target_task)
-            else:
-                reactor.execute_task(target_task)
-        finally:
-            _stop_coverage(project, coverage)
-    finally:
-        reverse_patch_multiprocessing()
+    project.add_tool(cov_tool)
+
+    em = reactor.execution_manager
+
+    task = em.get_task(target_task)
+
+    em.execute_task(task,
+                    logger=logger,
+                    project=project,
+                    reactor=reactor)
+
+    project.remove_tool(cov_tool)
+
+    cov.combine()
+    cov.load()
 
     module_exceptions = project.get_property("%s_exceptions" % execution_prefix)
     modules, non_imported_modules = _list_all_covered_modules(logger, module_names, module_exceptions,
                                                               allow_non_imported_modules)
 
-    failure = _build_coverage_report(project, logger, execution_name, execution_prefix, coverage, modules)
+    failure = _build_coverage_report(project, logger, execution_name, execution_prefix, cov, modules)
 
     if non_imported_modules and not allow_non_imported_modules:
         raise BuildFailedException("Some modules have not been imported and have no coverage")
 
     if failure:
         raise failure
-
-
-def _start_coverage(project, coverage):
-    project.set_property('__running_coverage',
-                         True)  # tell other plugins that we are not really unit testing right now
-    coverage.erase()
-    coverage.start()
-
-
-def _stop_coverage(project, coverage):
-    coverage.stop()
-    project.set_property('__running_coverage', False)
-    coverage.combine()
 
 
 def _list_all_covered_modules(logger, module_names, modules_exceptions, allow_non_imported_modules):
@@ -320,93 +337,6 @@ def _write_summary_report(coverage, project, modules, execution_prefix, executio
 
 def _discover_modules_to_cover(project):
     return discover_modules(project.expand_path("$dir_source_main_python"))
-
-
-def _delete_non_essential_modules():
-    sys_packages, sys_modules = _get_system_assets()
-    for module_name in list(sys.modules.keys()):
-        module = sys.modules[module_name]
-        if module:
-            if not _is_module_essential(module.__name__, sys_packages, sys_modules):
-                _delete_module(module_name, module)
-
-
-def _delete_module(module_name, module):
-    del sys.modules[module_name]
-    try:
-        delattr(module, module_name)
-    except AttributeError:
-        pass
-
-
-def _is_module_essential(module_name, sys_packages, sys_modules):
-    if module_name in sys.builtin_module_names:
-        return True
-
-    if module_name in sys_modules:
-        return True
-
-    # Issue 523: Coverage 4.4.2 breaks without this
-    if module_name == "__main__":
-        return True
-
-    # Essential since we're in a fork for communicating exceptions back
-    sys_packages.append("tblib")
-    sys_packages.append("pybuilder.errors")
-
-    for package in sys_packages:
-        if module_name == package or module_name.startswith(package + "."):
-            return True
-
-    return False
-
-
-def _get_system_assets():
-    """
-    Returns all system packages and all modules that should not be touched during module deletion
-
-    @return: tuple(packages, modules) to ignore
-    """
-    canon_sys_path = [os.path.realpath(package_dir) for package_dir in sys.path]
-    std_lib = os.path.realpath(sysconfig.get_python_lib(standard_lib=True))
-    canon_sys_path = [package_dir for package_dir in canon_sys_path if package_dir.startswith(std_lib)]
-
-    packages = []
-    package_dirs = []
-    modules = []
-    module_files = []
-    for top, files, files in os.walk(std_lib):
-        for nm in files:
-            if nm == "__init__.py":
-                init_file = os.path.join(top, nm)
-                package_dirs.append(init_file[:-len("__init__.py") - len(os.sep)])
-            elif nm[-3:] in (".so", ".py") or nm[-4:] in (".pyd", ".dll", ".pyw") or nm[-2:] == ".o":
-                module_file = os.path.join(top, nm)
-                module_files.append(module_file)
-
-    for package_dir in package_dirs:
-        for sys_path_dir in canon_sys_path:
-            if package_dir.startswith(sys_path_dir):
-                package_parts = package_dir[len(sys_path_dir) + len(os.sep):].split(os.sep)
-                for idx, part in enumerate(package_parts):
-                    if part not in packages:
-                        if idx + 1 == len(package_parts):
-                            packages.append(".".join(package_parts))
-                        else:
-                            break
-
-    for module_file in module_files:
-        module_dir = os.path.dirname(module_file)
-        for sys_path_dir in canon_sys_path:
-            if module_dir == sys_path_dir:
-                module_name_parts = os.path.basename(module_file).split(".")
-                module_name = module_name_parts[0]
-                if module_name_parts[1] in ("so", "dll", "o") and module_name_parts[0].endswith("module"):
-                    module_name = module_name[:-6]
-                modules.append(module_name)
-                break
-
-    return packages, modules
 
 
 class ModuleCoverageReport(object):

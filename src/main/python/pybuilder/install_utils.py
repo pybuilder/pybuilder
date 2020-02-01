@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2019 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from os import environ
 from os.path import normcase as nc, join as jp
 
 from pybuilder.core import RequirementsFile, Dependency
@@ -67,6 +68,13 @@ def install_dependencies(logger, project, dependencies, venv_dir, log_file_name,
                     " from %s" % url if url else "", install_options)
 
     if install_batch:
+        pip_env = environ.copy()
+        pip_env["PIP_NO_INPUT"] = "1"
+
+        if project.offline:
+            pip_env["PIP_NO_INDEX"] = "1"
+            logger.warn("PIP will be operating in the offline mode")
+
         with open(nc(log_file_name), log_file_mode) as log_file:
             results = pip_install_batches(install_batch,
                                           index_url=project.get_property("install_dependencies_index_url"),
@@ -79,6 +87,7 @@ def install_dependencies(logger, project, dependencies, venv_dir, log_file_name,
                                           logger=logger,
                                           outfile_name=log_file,
                                           error_file_name=log_file,
+                                          env=pip_env,
                                           python_exec=python_exec)
 
         for result in results:

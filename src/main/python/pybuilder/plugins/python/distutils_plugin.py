@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2019 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -113,6 +113,7 @@ def as_str(value):
 def initialize_distutils_plugin(project):
     project.plugin_depends_on("pypandoc", "~=1.4")
     project.plugin_depends_on("twine", "~=1.10")
+    project.plugin_depends_on("wheel", "~=0.33")
 
     project.set_property_if_unset("distutils_commands", ["sdist", "bdist_wheel"])
     project.set_property_if_unset("distutils_command_options", None)
@@ -308,13 +309,12 @@ def execute_distutils(project, logger, distutils_commands, clean=False):
     setup_script = project.expand_path("$dir_dist", "setup.py")
 
     for command in distutils_commands:
-        logger.debug("Executing distutils command %s", command)
         if is_string(command):
             out_file = os.path.join(reports_dir, safe_log_file_name(command))
         else:
             out_file = os.path.join(reports_dir, safe_log_file_name("__".join(command)))
         with open(out_file, "w") as out_f:
-            commands = [sys.executable, setup_script]
+            commands = [project.plugin_python, setup_script]
             if project.get_property("verbose"):
                 commands.append("-v")
             if clean:
@@ -323,6 +323,7 @@ def execute_distutils(project, logger, distutils_commands, clean=False):
                 commands.extend(command.split())
             else:
                 commands.extend(command)
+            logger.debug("Executing distutils command: %s", commands)
             return_code = _run_process_and_wait(commands, project.expand_path("$dir_dist"), out_f)
             if return_code != 0:
                 raise BuildFailedException(
@@ -351,9 +352,9 @@ def execute_twine(project, logger, command_args, register):
 
 
 def _execute_twine(project, logger, command, work_dir, out_file):
-    logger.debug("Executing Twine %s", command)
     with open(out_file, "w") as out_f:
-        commands = [sys.executable, "-m", "twine"] + command
+        commands = [project.plugin_python, "-m", "twine"] + command
+        logger.debug("Executing Twine: %s", commands)
         return_code = _run_process_and_wait(commands, work_dir, out_f)
         if return_code != 0:
             raise BuildFailedException(

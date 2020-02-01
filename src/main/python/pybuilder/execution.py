@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2019 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -254,7 +254,7 @@ class ExecutionManager(object):
                 self.get_task(name).dependencies.extend(self._dependencies_pending_tasks[name])
                 del self._dependencies_pending_tasks[name]
 
-    def execute_initializers(self, environments=None, **keyword_arguments):
+    def execute_initializers(self, environments=None, **kwargs):
         for initializer in self._initializers:
             if not initializer.is_applicable(environments):
                 message = "Not going to execute initializer '%s' from '%s' as environments do not match."
@@ -263,17 +263,16 @@ class ExecutionManager(object):
             else:
                 self.logger.debug("Executing initializer '%s' from '%s'",
                                   initializer.name, initializer.source)
-                initializer.execute(keyword_arguments)
+                initializer.execute(kwargs)
 
     def assert_dependencies_resolved(self):
         if not self._dependencies_resolved:
             raise DependenciesNotResolvedException()
 
-    def execute_task(self, task, **keyword_arguments):
+    def execute_task(self, task, **kwargs):
         self.assert_dependencies_resolved()
 
-        self.logger.debug("Executing task '%s'",
-                          task.name)
+        self.logger.debug("Executing task '%s'", task.name)
 
         timer = Timer.start()
         number_of_actions = 0
@@ -292,10 +291,10 @@ class ExecutionManager(object):
 
         try:
             for action in self._execute_before[task.name]:
-                if self.execute_action(action, keyword_arguments):
+                if self.execute_action(action, kwargs):
                     number_of_actions += 1
 
-            task.execute(self.logger, keyword_arguments)
+            task.execute(self.logger, kwargs)
         except Exception:
             if not has_teardown_tasks:
                 raise
@@ -305,7 +304,7 @@ class ExecutionManager(object):
         for action in after_actions:
             try:
                 if not task_error or action.teardown:
-                    if self.execute_action(action, keyword_arguments):
+                    if self.execute_action(action, kwargs):
                         number_of_actions += 1
             except Exception:
                 if not has_teardown_tasks:
@@ -341,14 +340,14 @@ class ExecutionManager(object):
         self._actions_executed.append(action)
         return True
 
-    def execute_execution_plan(self, execution_plan, **keyword_arguments):
+    def execute_execution_plan(self, execution_plan, **kwargs):
         self.assert_dependencies_resolved()
 
         summaries = []
         self._current_execution_plan = execution_plan
         try:
             for task in execution_plan:
-                summaries.append(self.execute_task(task, **keyword_arguments))
+                summaries.append(self.execute_task(task, **kwargs))
         finally:
             self._current_execution_plan = None
 
@@ -506,3 +505,19 @@ class ExecutionManager(object):
                 if task.name == task_name:
                     return True
         return False
+
+    def is_task_before_in_current_execution_plan(self, task_name_before, task_name_after):
+        if self._current_execution_plan:
+            task_before = self.get_task(task_name_before)
+            task_after = self.get_task(task_name_after)
+            try:
+                task_before_idx = self._current_execution_plan.index(task_before)
+            except ValueError:
+                return False
+
+            try:
+                task_after_idx = self._current_execution_plan.index(task_after)
+            except ValueError:
+                return False
+
+            return task_before_idx < task_after_idx

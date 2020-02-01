@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2019 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -27,17 +27,24 @@ from pybuilder.utils import discover_files_matching, execute_command, Timer, rea
 from pybuilder.utils import mp_get_context
 
 use_plugin("core")
+use_plugin("python.venv")
 
 
 @init
 def initialize_integrationtest_plugin(project):
     project.set_property_if_unset(
         "dir_source_integrationtest_python", "src/integrationtest/python")
+
+    project.set_property_if_unset("integrationtest_breaks_build", True)
+    project.set_property_if_unset("integrationtest_parallel", False)
     project.set_property_if_unset("integrationtest_file_glob", "*_tests.py")
-    project.set_property_if_unset("integrationtest_file_suffix", None)  # deprecated, use integrationtest_file_glob.
     project.set_property_if_unset("integrationtest_additional_environment", {})
+    project.set_property_if_unset("integrationtest_additional_commandline", "")
     project.set_property_if_unset("integrationtest_inherit_environment", False)
     project.set_property_if_unset("integrationtest_always_verbose", False)
+    project.set_property_if_unset("integrationtest_cpu_scaling_factor", 4)
+
+    project.set_property_if_unset("integrationtest_file_suffix", None)  # deprecated, use integrationtest_file_glob.
 
 
 @task
@@ -79,7 +86,7 @@ def run_integration_tests_in_parallel(project, logger):
     tests = ctx.Queue()
     reports = ConsumingQueue(ctx)
     reports_dir = prepare_reports_directory(project)
-    cpu_scaling_factor = project.get_property('integrationtest_cpu_scaling_factor', 4)
+    cpu_scaling_factor = project.get_property("integrationtest_cpu_scaling_factor")
     cpu_count = ctx.cpu_count()
     worker_pool_size = cpu_count * cpu_scaling_factor
     logger.debug(
@@ -147,8 +154,7 @@ def discover_integration_tests_matching(source_path, file_glob):
 
 
 def discover_integration_tests_for_project(project, logger=None):
-    integrationtest_source_dir = project.expand_path(
-        "$dir_source_integrationtest_python")
+    integrationtest_source_dir = project.expand_path("$dir_source_integrationtest_python")
     integrationtest_suffix = project.get_property("integrationtest_file_suffix")
     if integrationtest_suffix is not None:
         if logger is not None:
@@ -161,8 +167,8 @@ def discover_integration_tests_for_project(project, logger=None):
 
 
 def add_additional_environment_keys(env, project):
-    additional_environment = project.get_property(
-        "integrationtest_additional_environment", {})
+    additional_environment = project.get_property("integrationtest_additional_environment")
+
     if not isinstance(additional_environment, dict):
         raise ValueError("Additional environment %r is not a map." %
                          additional_environment)
@@ -171,7 +177,7 @@ def add_additional_environment_keys(env, project):
 
 
 def inherit_environment(env, project):
-    if project.get_property("integrationtest_inherit_environment", False):
+    if project.get_property("integrationtest_inherit_environment"):
         for key in os.environ:
             if key not in env:
                 env[key] = os.environ[key]
@@ -198,7 +204,7 @@ def prepare_reports_directory(project):
 
 
 def run_single_test(logger, project, reports_dir, test, output_test_names=True):
-    additional_integrationtest_commandline_text = project.get_property("integrationtest_additional_commandline", "")
+    additional_integrationtest_commandline_text = project.get_property("integrationtest_additional_commandline")
 
     if additional_integrationtest_commandline_text:
         additional_integrationtest_commandline = tuple(additional_integrationtest_commandline_text.split(" "))
@@ -234,7 +240,7 @@ def run_single_test(logger, project, reports_dir, test, output_test_names=True):
             print_file_content(report_file_name)
             print_text_line()
             print_file_content(error_file_name)
-            report_item['exception'] = ''.join(read_file(error_file_name)).replace('\'', '')
+            report_item["exception"] = ''.join(read_file(error_file_name)).replace('\'', '')
     elif project.get_property("integrationtest_always_verbose"):
         print_file_content(report_file_name)
         print_text_line()

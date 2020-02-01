@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2019 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ def init(project):
     project.set_property("dir_target", "target")
     project.set_property("dir_reports", jp("$dir_target", "reports"))
     project.set_property("dir_logs", jp("$dir_target", "logs"))
+
+    project.set_property_if_unset("remote_debug", 0)
 
     project.write_report = partial(write_report, project)
 
@@ -96,7 +98,7 @@ def run_integration_tests():
 
 
 @task
-@depends(run_integration_tests)
+@depends(optional(run_integration_tests))
 @description("Verifies the project and possibly integration tests.")
 def verify():
     pass

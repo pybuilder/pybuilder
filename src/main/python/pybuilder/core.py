@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2019 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -357,10 +357,11 @@ class Project(object):
     as well as some convenience methods to access these properties.
     """
 
-    def __init__(self, basedir, version="1.0.dev0", name=None):
+    def __init__(self, basedir, version="1.0.dev0", name=None, offline=False):
         self.name = name
         self._version = None
         self._dist_version = None
+        self.offline = offline
         self.version = version
         self.basedir = basedir
         if not self.name:
@@ -388,6 +389,8 @@ class Project(object):
         self._files_to_install = []
         self._preinstall_script = None
         self._postinstall_script = None
+
+        self._tools = []
 
         self._plugin_dir = jp(nc(self.basedir), ".pybuilder", "plugins", python_specific_dir_name)
         self._plugin_install_log = jp(self._plugin_dir, "install.log")
@@ -668,6 +671,16 @@ class Project(object):
     def plugin_install_log(self):
         """The path to log file containing all plugin installation logs"""
         return self._plugin_install_log
+
+    def add_tool(self, tool):
+        self._tools.append(tool)
+
+    def remove_tool(self, tool):
+        self._tools.remove(tool)
+
+    @property
+    def tools(self):
+        return self._tools
 
 
 class Logger(object):

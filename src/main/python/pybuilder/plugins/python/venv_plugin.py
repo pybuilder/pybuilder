@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2019 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ def install_venv(project, logger, venv_name):
     venv_dir = _get_venv_dir(project, venv_name)
     clear = project.get_property("refresh_venvs")
     logger.info("Creating target '%s' VEnv in '%s'%s", venv_name, venv_dir, " (refreshing)" if clear else "")
-    create_venv(venv_dir, with_pip=True, symlinks=venv_symlinks, clear=clear)
+    create_venv(venv_dir, with_pip=True, symlinks=venv_symlinks, clear=clear, offline=project.offline)
 
 
 def install_venv_dependencies(logger, project, venv_name, dependencies=None):

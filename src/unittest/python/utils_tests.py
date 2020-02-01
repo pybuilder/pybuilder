@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2019 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import datetime
 import os
 import re
 import shutil
-import sys
 import tempfile
 import time
 import unittest
@@ -40,11 +39,7 @@ from pybuilder.utils import (GlobExpression,
                              mkdir,
                              render_report,
                              timedelta_in_millis,
-                             fork_process,
-                             execute_command,
-                             patch_mp,
-                             patch_mp_plugin_dir,
-                             python_specific_dir_name)
+                             execute_command)
 from test_utils import patch, Mock
 
 
@@ -326,78 +321,6 @@ class MkdirTest(unittest.TestCase):
 
         self.assertTrue(os.path.exists(self.any_directory))
         self.assertFalse(os.path.isdir(self.any_directory))
-
-
-class ForkTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        if sys.version_info[0] < 3:
-            patch_mp()
-            basedir = find_project_base_dir()
-            patch_mp_plugin_dir(jp(basedir, ".pybuilder", "plugins", python_specific_dir_name))
-
-    def testForkNoException(self):
-        val = fork_process(Mock(), target=fork_test_func_success)
-
-        self.assertEqual(len(val), 2)
-        self.assertEqual(val[0], 0)
-        self.assertEqual(val[1], "success")
-
-    def testForkArgPassing(self):
-        val = fork_process(Mock(), target=fork_test_func_arg_passing, kwargs={"foo": "foo", "bar": 10})
-        self.assertEqual(len(val), 2)
-        self.assertEqual(val[0], 0)
-        self.assertEqual(val[1], "foo10")
-
-        val = fork_process(Mock(), target=fork_test_func_arg_passing, args=("foo", 20))
-        self.assertEqual(len(val), 2)
-        self.assertEqual(val[0], 0)
-        self.assertEqual(val[1], "foo20")
-
-    def testForkWithException(self):
-        try:
-            val = fork_process(Mock(), target=fork_test_func_exc)
-            self.fail("should not have reached here, returned %s" % val)
-        except Exception:
-            ex_type, ex, tb = sys.exc_info()
-            self.assertEqual(ex_type, PyBuilderException)
-            self.assertEqual(ex.message, "Test failure message")
-            self.assertTrue(tb)
-
-    def testForkWithValuePicklingError(self):
-        try:
-            fork_process(Mock(), target=fork_test_func_return)
-            self.fail("should not have reached here")
-        except Exception:
-            ex_type, ex, tb = sys.exc_info()
-            self.assertEqual(ex_type, Exception)
-            self.assertTrue(str(ex).startswith("Fatal error occurred in the forked process"))
-            self.assertTrue("Can't pickle" in str(ex))
-            self.assertTrue("FooError" in str(ex))
-
-    def testForkWithExceptionPicklingError(self):
-        try:
-            val = fork_process(Mock(), target=fork_test_func_raise)
-            self.fail("should not have reached here, returned %s" % val)
-        except Exception:
-            ex_type, ex, tb = sys.exc_info()
-            self.assertEqual(ex_type, Exception)
-            self.assertTrue(str(ex).startswith("Fatal error occurred in the forked process"))
-            self.assertTrue("Can't pickle" in str(ex))
-            self.assertTrue("FooError" in str(ex))
-
-    def testForkWithSendPicklingError(self):
-        try:
-            val = fork_process(Mock(), target=fork_test_func_send_pickle)
-            self.fail("should not have reached here, returned %s" % val)
-        except Exception:
-            ex_type, ex, tb = sys.exc_info()
-            self.assertEqual(ex_type, Exception)
-            self.assertTrue(str(ex).startswith("Fatal error occurred in the forked process"))
-            self.assertTrue("Can't pickle" in str(ex))
-            self.assertTrue("FooError" in str(ex))
-            self.assertTrue("This error masked the send error '<function" in str(ex))
-            self.assertTrue("raise FooError(Foo.bar)" in str(ex))
 
 
 def fork_test_func_send_pickle():

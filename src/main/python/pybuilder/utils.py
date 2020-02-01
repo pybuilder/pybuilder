@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2019 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -20,139 +20,30 @@
     The PyBuilder utils module.
     Provides generic utilities that can be used by plugins.
 """
-
 import collections
 import fnmatch
 import json
-import os
-import platform
 import re
 import subprocess
-import sys
 import tempfile
 import time
-import traceback
-from collections import OrderedDict
-from os.path import normcase as nc, join as jp
 from shutil import rmtree
 from subprocess import Popen, PIPE
 
-from pybuilder.vendor import virtualenv
-
-try:
-    basestring = basestring
-except NameError:
-    basestring = str
-
 from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
-
-
-def _py2_makedirs(name, mode=0o777, exist_ok=False):
-    return os.makedirs(name, mode)
-
-
-def _py2_which(cmd, mode=os.F_OK | os.X_OK, path=None):
-    """Given a command, mode, and a PATH string, return the path which
-    conforms to the given mode on the PATH, or None if there is no such
-    file.
-
-    `mode` defaults to os.F_OK | os.X_OK. `path` defaults to the result
-    of os.environ.get("PATH"), or can be overridden with a custom search
-    path.
-
-    """
-
-    # Check that a given file can be accessed with the correct mode.
-    # Additionally check that `file` is not a directory, as on Windows
-    # directories pass the os.access check.
-    def _access_check(fn, mode):
-        return (os.path.exists(fn) and os.access(fn, mode)
-                and not os.path.isdir(fn))
-
-    # If we're given a path with a directory part, look it up directly rather
-    # than referring to PATH directories. This includes checking relative to the
-    # current directory, e.g. ./script
-    if os.path.dirname(cmd):
-        if _access_check(cmd, mode):
-            return cmd
-        return None
-
-    if path is None:
-        path = os.environ.get("PATH", os.defpath)
-    if not path:
-        return None
-    path = path.split(os.pathsep)
-
-    if sys.platform == "win32":
-        # The current directory takes precedence on Windows.
-        if os.curdir not in path:
-            path.insert(0, os.curdir)
-
-        # PATHEXT is necessary to check on Windows.
-        pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
-        # See if the given file matches any of the expected path extensions.
-        # This will allow us to short circuit when given "python.exe".
-        # If it does match, only test that one, otherwise we have to try
-        # others.
-        if any(cmd.lower().endswith(ext.lower()) for ext in pathext):
-            files = [cmd]
-        else:
-            files = [cmd + ext for ext in pathext]
-    else:
-        # On other platforms you don't have things like PATHEXT to tell you
-        # what file suffixes are executable, so just pass on cmd as-is.
-        files = [cmd]
-
-    seen = set()
-    for dir in path:
-        normdir = os.path.normcase(dir)
-        if normdir not in seen:
-            seen.add(normdir)
-            for thefile in files:
-                name = os.path.join(dir, thefile)
-                if _access_check(name, mode):
-                    return name
-    return None
-
-
-def _mp_get_context_win32_py2(context_name):
-    if context_name != "spawn":
-        raise RuntimeError("only spawn is supported")
-
-    return multiprocessing
-
-
-if sys.version_info[0] < 3:  # if major is less than 3
-    from .excp_util_2 import raise_exception, is_string
-
-    is_string = is_string
-
-    if sys.platform == "win32":
-        import multiprocessing
-        import multiprocessing.queues
-
-        for name in (name for name in dir(multiprocessing.queues) if name[0].isupper()):
-            setattr(multiprocessing, name, getattr(multiprocessing.queues, name))
-
-        _mp_get_context = _mp_get_context_win32_py2
-    else:
-        _mp_get_context = None  # This will be patched at runtime
-
-    _old_billiard_spawn_passfds = None  # This will be patched at runtime
-
-    makedirs = _py2_makedirs
-    which = _py2_which
-else:
-    from .excp_util_3 import raise_exception, is_string
-
-    from multiprocessing import get_context as _mp_get_context
-    from shutil import which
-
-    is_string = is_string
-    makedirs = os.makedirs
-    which = which
-
-odict = OrderedDict
+from pybuilder.python_utils import (os, sys, is_string, which, makedirs, basestring,
+                                    python_specific_dir_name,
+                                    sys_executable_suffix,
+                                    venv_binname,
+                                    venv_python_executable,
+                                    venv_symlinks,
+                                    add_env_to_path,
+                                    patch_mp_plugin_dir,
+                                    patch_mp,
+                                    mp_get_context,
+                                    odict,
+                                    getsitepaths)
+from pybuilder.vendor import virtualenv
 
 
 def get_all_dependencies_for_task(task):
@@ -411,59 +302,6 @@ def mkdir(directory):
     makedirs(directory, exist_ok=True)
 
 
-def is_windows():
-    return any(win_platform in sys.platform for win_platform in ("win32", "cygwin", "msys"))
-
-
-def fake_windows_fork(group, target, name, args, kwargs):
-    return 0, target(*args, **kwargs)
-
-
-def _instrumented_target(q, target, *args, **kwargs):
-    patch_mp()
-
-    ex = tb = None
-    try:
-        send_value = (target(*args, **kwargs), None, None)
-    except Exception:
-        _, ex, tb = sys.exc_info()
-        send_value = (None, ex, tb)
-
-    try:
-        q.put(send_value)
-    except Exception:
-        _, send_ex, send_tb = sys.exc_info()
-        e_out = Exception(str(send_ex), send_tb, None if ex is None else str(ex), tb)
-        q.put(e_out)
-
-
-def fork_process(logger, group=None, target=None, name=None, args=(), kwargs={}):
-    """
-    Forks a child, making sure that all exceptions from the child are safely sent to the parent
-    If a target raises an exception, the exception is re-raised in the parent process
-    @return tuple consisting of process exit code and target's return value
-    """
-    ctx = mp_get_context("spawn")
-
-    q = ctx.SimpleQueue()
-    p = ctx.Process(group=group, target=_instrumented_target, name=name, args=[q, target] + list(args), kwargs=kwargs)
-    p.start()
-    result = q.get()
-    p.join()
-    if isinstance(result, tuple):
-        if result[1]:
-            raise_exception(result[1], result[2])
-        return p.exitcode, result[0]
-    else:
-        msg = "Fatal error occurred in the forked process %s: %s" % (p, result.args[0])
-        if result.args[2]:
-            chained_message = "This error masked the send error '%s':\n%s" % (
-                result.args[2], "".join(traceback.format_tb(result.args[3])))
-            msg += "\n" + chained_message
-        ex = Exception(msg)
-        raise_exception(ex, result.args[1])
-
-
 def is_notstr_iterable(obj):
     """Checks if obj is iterable, but not a string"""
     return not isinstance(obj, basestring) and isinstance(obj, collections.Iterable)
@@ -479,148 +317,14 @@ def safe_log_file_name(file_name):
     return re.sub(r'\\|/|:|\*|\?|\"|<|>|\|', '_', file_name)
 
 
-_installed_tblib = False
-_mp_billiard_plugin_dir = None
-
-
-def patch_mp_plugin_dir(plugin_dir):
-    global _mp_billiard_plugin_dir
-
-    if not _mp_billiard_plugin_dir:
-        _mp_billiard_plugin_dir = plugin_dir
-
-
-def _install_tblib():
-    global _installed_tblib
-
-    if not _installed_tblib:
-        from pybuilder._vendor.tblib import pickling_support
-
-        pickling_support.install()
-        _installed_tblib = True
-
-
-def _patched_billiard_spawnv_passfds(path, args, passfds):
-    """This is Python 2 only"""
-    global _mp_billiard_plugin_dir
-
-    try:
-        script_index = args.index("-c") + 1
-        script = args[script_index]
-        additional_path = []
-        add_env_to_path(_mp_billiard_plugin_dir, additional_path)
-        args[script_index] = ";".join(("import sys", "sys.path.extend(%r)" % additional_path, script))
-    except ValueError:
-        # We were unable to find the "-c", which means we likely don't care
-        pass
-
-    return _old_billiard_spawn_passfds(path, args, passfds)
-
-
-def _patch_billiard_spawn_passfds():
-    """This is Python 2 only"""
-    global _old_billiard_spawn_passfds
-
-    if not _old_billiard_spawn_passfds:
-        from billiard import compat
-
-        if sys.platform == "win32":
-            from billiard import popen_spawn_win32 as popen_spawn
-        else:
-            from billiard import popen_spawn_posix as popen_spawn
-
-        _old_billiard_spawn_passfds = compat.spawnv_passfds
-        compat.spawnv_passfds = _patched_billiard_spawnv_passfds
-        popen_spawn.spawnv_passfds = _patched_billiard_spawnv_passfds
-
-
-def patch_mp():
-    _install_tblib()
-
-    if sys.version_info[0] < 3 and sys.platform != "win32":
-        from billiard import get_context
-
-        global _mp_get_context
-        _mp_get_context = get_context
-
-        _patch_billiard_spawn_passfds()
-
-
-def mp_get_context(context):
-    return _mp_get_context(context)
-
-
-sys_executable_suffix = sys.executable[len(sys.exec_prefix) + 1:]
-
-python_specific_dir_name = "%s-%s" % (platform.python_implementation().lower(),
-                                      ".".join(str(f) for f in sys.version_info))
-
-venv_symlinks = os.name == "posix"
-_, _venv_python_exename = os.path.split(os.path.abspath(getattr(sys, "_base_executable", sys.executable)))
-venv_binname = "Scripts" if sys.platform == "win32" else "bin"
-
-
-def add_env_to_path(env_dir, sys_path):
-    """Adds venv directories to sys.path-like collection"""
-    for path in getsitepaths(env_dir):
-        if path not in sys_path:
-            sys_path.append(path)
-
-
-def venv_python_executable(env_dir):
-    """Binary Python executable for a specific virtual environment"""
-    candidate = jp(env_dir, venv_binname, _venv_python_exename)
-
-    if sys.platform == "win32":
-        # On Windows python.exe could be in PythonXY/ or venv/Scripts/
-        if not os.path.exists(candidate):
-            alternative = jp(env_dir, _venv_python_exename)
-            if os.path.exists(alternative):
-                candidate = alternative
-
-    return nc(candidate)
-
-
-if sys.version_info[0] < 3:
-    def getsitepaths(prefix):
-        if sys.platform in ('os2emx', 'riscos'):
-            yield os.path.join(prefix, "Lib", "site-packages")
-        elif os.sep == '/':
-            yield os.path.join(prefix, "lib",
-                               "python" + sys.version[:3],
-                               "site-packages")
-            yield os.path.join(prefix, "lib", "site-python")
-        else:
-            yield prefix
-            yield os.path.join(prefix, "lib", "site-packages")
-
-else:
-    def getsitepaths(prefix):
-        if os.sep == '/':
-            yield os.path.join(prefix, "lib",
-                               "python%d.%d" % sys.version_info[:2],
-                               "site-packages")
-        else:
-            yield prefix
-            yield os.path.join(prefix, "lib", "site-packages")
-
-        if sys.platform == "darwin":
-            # for framework builds *only* we add the standard Apple
-            # locations.
-            from sysconfig import get_config_var
-            framework = get_config_var("PYTHONFRAMEWORK")
-            if framework:
-                yield os.path.join("/Library", framework,
-                                   '%d.%d' % sys.version_info[:2], "site-packages")
-
-
 def create_venv(home_dir,
                 system_site_packages=False,
                 clear=False,
                 symlinks=False,
                 upgrade=False,
                 with_pip=False,
-                prompt=None):
+                prompt=None,
+                offline=False):
     if clear:
         if os.path.exists(home_dir):
             rmtree(home_dir)
@@ -631,9 +335,9 @@ def create_venv(home_dir,
             site_packages=system_site_packages,
             prompt=prompt,
             search_dirs=search_dirs,
-            download=upgrade,
+            download=upgrade and (not offline),
             no_setuptools=False,
             no_pip=not with_pip,
             no_wheel=False,
-            symlink=symlinks,
+            symlink=symlinks
         )

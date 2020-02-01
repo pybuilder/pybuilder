@@ -46,7 +46,7 @@ except ImportError:
     # noinspection PyPep8Naming
     import configparser as ConfigParser
 
-__version__ = "16.7.7"
+__version__ = "16.7.9"
 virtualenv_version = __version__  # legacy
 DEBUG = os.environ.get("_VIRTUALENV_DEBUG", None) == "1"
 if sys.version_info < (2, 7):
@@ -990,8 +990,12 @@ def find_wheels(projects, search_dirs):
             # The pattern could be tightened to require -py2.py3-none-any.whl.
             files = glob.glob(os.path.join(dirname, "{}-*.whl".format(project)))
             if files:
-                versions = sorted(
-                    [(tuple(int(i) for i in os.path.basename(f).split("-")[1].split(".")), f) for f in files]
+                versions = list(
+                    reversed(
+                        sorted(
+                            [(tuple(int(i) for i in os.path.basename(f).split("-")[1].split(".")), f) for f in files]
+                        )
+                    )
                 )
                 if project == "pip" and sys.version_info[0:2] == (3, 4):
                     wheel = next(p for v, p in versions if v <= (19, 1, 1))
@@ -1057,6 +1061,8 @@ def _install_wheel_with_search_dir(download, project_names, py_executable, searc
 
         try:
             from pip._internal import main as _main
+            if type(_main) is type(sys):  # <type 'module'>
+                _main = _main.main  # nested starting in Pip 19.3
             cert_data = pkgutil.get_data("pip._vendor.certifi", "cacert.pem")
         except ImportError:
             from pip import main as _main

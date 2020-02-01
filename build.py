@@ -5,7 +5,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2019 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -89,7 +89,6 @@ default_task = ["analyze", "publish"]
 def initialize(project):
     if sys.version_info[0] < 3:
         project.build_depends_on("mock")
-        project.build_depends_on("billiard")
 
     project.build_depends_on("pyfix")  # required test framework
     project.build_depends_on("pyassert")
@@ -98,28 +97,27 @@ def initialize(project):
     project.set_property("verbose", True)
 
     project.set_property("coverage_break_build", False)
-    project.set_property("coverage_reset_modules", True)
-    project.get_property("coverage_exceptions").append("pybuilder.cli")
-    project.get_property("coverage_exceptions").append("pybuilder.plugins.core_plugin")
-    project.get_property("coverage_exceptions").append("pybuilder._backport")
-    project.get_property("coverage_exceptions").append("pybuilder._backport.*")
-    project.get_property("coverage_exceptions").append("pybuilder._vendor")
-    project.get_property("coverage_exceptions").append("pybuilder._vendor.*")
-    project.get_property("coverage_exceptions").append("vendorize_pyb")
+    project.get_property("coverage_exceptions").extend(["pybuilder.cli",
+                                                        "pybuilder.plugins.core_plugin",
+                                                        "pybuilder._backport",
+                                                        "pybuilder._backport.*",
+                                                        "pybuilder._vendor",
+                                                        "pybuilder._vendor.*",
+                                                        "vendorize_pyb"])
 
     # Issue #284
     project.set_property("integrationtest_inherit_environment", True)
 
-    project.set_property('flake8_break_build', True)
-    project.set_property('flake8_include_test_sources', True)
-    project.set_property('flake8_include_scripts', True)
-    project.set_property('flake8_exclude_patterns', ",".join([
+    project.set_property("flake8_break_build", False)
+    project.set_property("flake8_include_test_sources", True)
+    project.set_property("flake8_include_scripts", True)
+    project.set_property("flake8_exclude_patterns", ",".join([
         project.expand_path("$dir_source_main_python", "pybuilder/_vendor/*")
     ]))
-    project.set_property('flake8_max_line_length', 130)
+    project.set_property("flake8_max_line_length", 130)
 
-    project.set_property('frosted_include_test_sources', True)
-    project.set_property('frosted_include_scripts', True)
+    project.set_property("frosted_include_test_sources", True)
+    project.set_property("frosted_include_scripts", True)
 
     project.set_property("copy_resources_target", "$dir_dist/pybuilder")
     project.get_property("copy_resources_glob").append("LICENSE")
@@ -133,9 +131,13 @@ def initialize(project):
 
     project.set_property("pdoc_module_name", "pybuilder")
 
-    project.get_property("source_dist_ignore_patterns").append(".project")
-    project.get_property("source_dist_ignore_patterns").append(".pydevproject")
-    project.get_property("source_dist_ignore_patterns").append(".settings")
+    project.get_property("source_dist_ignore_patterns").extend([".project",
+                                                                ".pydevproject",
+                                                                ".settings",
+                                                                "vendorize.toml",
+                                                                "vendorize_pyb.py"])
+
+    project.set_property("unittest_breaks_build", False)
 
     # enable this to build a bdist on vagrant
     # project.set_property("distutils_issue8876_workaround_enabled", True)
@@ -143,20 +145,20 @@ def initialize(project):
     project.set_property("distutils_description_overwrite", True)
     project.set_property("distutils_console_scripts", ["pyb_ = pybuilder.cli:main"])
     project.set_property("distutils_classifiers", [
-        'Programming Language :: Python',
-        'Programming Language :: Python :: Implementation :: CPython',
-        'Programming Language :: Python :: Implementation :: PyPy',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Development Status :: 4 - Beta',
-        'Environment :: Console',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: Apache Software License',
-        'Topic :: Software Development :: Build Tools',
-        'Topic :: Software Development :: Quality Assurance',
-        'Topic :: Software Development :: Testing'])
+        "Programming Language :: Python",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Development Status :: 4 - Beta",
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: Apache Software License",
+        "Topic :: Software Development :: Build Tools",
+        "Topic :: Software Development :: Quality Assurance",
+        "Topic :: Software Development :: Testing"])
