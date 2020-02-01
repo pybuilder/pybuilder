@@ -198,7 +198,8 @@ class Reactor:
 
         # This is really a way to make sure we can install `billiard` as a dependency
         # before any of the plugins actually initialize
-        self.require_plugin("pypi:billiard", "~=3.6.0", plugin_module_name="pybuilder.plugins.billiard_plugin")
+        if sys.version_info[0] < 3 and sys.platform != "win32":
+            self.require_plugin("pypi:billiard", "~=3.6.0", plugin_module_name="pybuilder.plugins.billiard_plugin")
 
         self.project_module = self.load_project_module(project_descriptor)
 

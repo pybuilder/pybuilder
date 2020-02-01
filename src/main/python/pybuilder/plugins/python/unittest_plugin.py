@@ -143,7 +143,8 @@ def execute_tests_matching(tools, runner_generator, logger, test_source, file_gl
                     try:
                         proc.join()
                     finally:
-                        proc.close()
+                        if sys.version_info[:2] >= (3, 7):
+                            proc.close()
 
             remote_closed_cause = pipe.remote_close_cause()
             if remote_closed_cause is not None:

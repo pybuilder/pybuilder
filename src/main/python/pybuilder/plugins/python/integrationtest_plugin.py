@@ -51,11 +51,9 @@ def initialize_integrationtest_plugin(project):
 @description("Runs integration tests based on Python's unittest module")
 def run_integration_tests(project, logger):
     if not project.get_property("integrationtest_parallel"):
-        reports, total_time = run_integration_tests_sequentially(
-            project, logger)
+        reports, total_time = run_integration_tests_sequentially(project, logger)
     else:
-        reports, total_time = run_integration_tests_in_parallel(
-            project, logger)
+        reports, total_time = run_integration_tests_in_parallel(project, logger)
 
     reports_processor = ReportsProcessor(project, logger)
     reports_processor.process_reports(reports, total_time)
@@ -218,7 +216,7 @@ def run_single_test(logger, project, reports_dir, test, output_test_names=True):
 
     env = prepare_environment(project)
     test_time = Timer.start()
-    command_and_arguments = (sys.executable, test)
+    command_and_arguments = [sys.executable, test]
     command_and_arguments += additional_integrationtest_commandline
 
     report_file_name = os.path.join(reports_dir, name)

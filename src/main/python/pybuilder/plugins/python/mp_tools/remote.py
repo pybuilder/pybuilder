@@ -687,35 +687,74 @@ class _RemoteObjectPipe(RemoteObjectPipe):
         if self._remote_close_cause is None:
             self._remote_close_cause = e
 
-    def _send_obj(self, obj):
-        """Send a (picklable) object"""
-        logger.debug("sending %r", obj)
-        try:
+    if PY2 and sys.platform == "win32":
+        # Python 2 on Windows uses Python multiprocessing
+
+        def _send_obj(self, obj):
+            """Send a (picklable) object"""
+            logger.debug("sending %r", obj)
+            if self.conn.closed:
+                raise OSError("handle is closed")
+            try:
+                self.conn.send_bytes(RemoteObjectPickler.dumps(obj, self))
+            except (ConnectionError, EOFError) as e:
+                logger.debug("failed to send %r", obj, exc_info=e)
+                try:
+                    self._set_remote_close_cause(e)
+                    raise PipeShutdownError()
+                finally:
+                    self._close()
+
+        def _recv_obj(self, suppress_error=False):
+            """Receive a (picklable) object"""
+            if self.conn.closed:
+                raise OSError("handle is closed")
+            try:
+                buf = self.conn.recv_bytes()
+            except (ConnectionError, EOFError) as e:
+                if suppress_error:
+                    return
+
+                logger.debug("receive has failed", exc_info=e)
+                try:
+                    self._set_remote_close_cause(e)
+                    raise PipeShutdownError()
+                finally:
+                    self._close()
+            obj = RemoteObjectUnpickler.loads(buf, self)
+            logger.debug("received %r", obj)
+            return obj
+    else:
+        # Python 2 on Linux uses Billiard that is API-compatible with Python 3
+        def _send_obj(self, obj):
+            """Send a (picklable) object"""
+            logger.debug("sending %r", obj)
             self.conn._check_closed()
-            self.conn._send_bytes(RemoteObjectPickler.dumps(obj, self))
-        except (ConnectionError, EOFError) as e:
-            logger.debug("failed to send %r", obj, exc_info=e)
             try:
-                self._set_remote_close_cause(e)
-                raise PipeShutdownError()
-            finally:
-                self._close()
+                self.conn._send_bytes(RemoteObjectPickler.dumps(obj, self))
+            except (ConnectionError, EOFError) as e:
+                logger.debug("failed to send %r", obj, exc_info=e)
+                try:
+                    self._set_remote_close_cause(e)
+                    raise PipeShutdownError()
+                finally:
+                    self._close()
 
-    def _recv_obj(self, suppress_error=False):
-        """Receive a (picklable) object"""
-        self.conn._check_closed()
-        try:
-            buf = self.conn._recv_bytes()
-        except (ConnectionError, EOFError) as e:
-            if suppress_error:
-                return
-
-            logger.debug("receive has failed", exc_info=e)
+        def _recv_obj(self, suppress_error=False):
+            """Receive a (picklable) object"""
+            self.conn._check_closed()
             try:
-                self._set_remote_close_cause(e)
-                raise PipeShutdownError()
-            finally:
-                self._close()
-        obj = RemoteObjectUnpickler.loads(buf.getvalue(), self)
-        logger.debug("received %r", obj)
-        return obj
+                buf = self.conn._recv_bytes()
+            except (ConnectionError, EOFError) as e:
+                if suppress_error:
+                    return
+
+                logger.debug("receive has failed", exc_info=e)
+                try:
+                    self._set_remote_close_cause(e)
+                    raise PipeShutdownError()
+                finally:
+                    self._close()
+            obj = RemoteObjectUnpickler.loads(buf.getvalue(), self)
+            logger.debug("received %r", obj)
+            return obj

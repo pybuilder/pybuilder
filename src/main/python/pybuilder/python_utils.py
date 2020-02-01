@@ -28,6 +28,8 @@ try:
 except NameError:
     basestring = str
 
+PY2 = sys.version_info[0] < 3
+
 
 def _py2_makedirs(name, mode=0o777, exist_ok=False):
     return os.makedirs(name, mode)
@@ -97,7 +99,7 @@ def _py2_which(cmd, mode=os.F_OK | os.X_OK, path=None):
     return None
 
 
-if sys.version_info[0] < 3:  # if major is less than 3
+if PY2:  # if major is less than 3
     from .excp_util_2 import raise_exception, is_string
 
 
@@ -126,44 +128,42 @@ else:
 
 odict = OrderedDict
 
-# def _mp_get_context_win32_py2(context_name):
-#    if context_name != "spawn":
-#        raise RuntimeError("only spawn is supported")
 
-#    import multiprocessing
-#    return multiprocessing
+def _mp_get_context_win32_py2(context_name):
+    if context_name != "spawn":
+        raise RuntimeError("only spawn is supported")
 
+    import multiprocessing
+    return multiprocessing
 
-# if sys.version_info[0] < 3:  # if major is less than 3
-#    if sys.platform == "win32":
-# Python 2.7 on Windows already only works with spawn
-
-#        import multiprocessing
-#        import multiprocessing.queues
-
-#       from multiprocessing import log_to_stderr as mp_log_to_stderr
-#       from multiprocessing.reduction import ForkingPickler as mp_ForkingPickler
-
-# Need to repatch the mp.queues and bring them into MP
-#       for name in (name for name in dir(multiprocessing.queues) if name[0].isupper()):
-#          setattr(multiprocessing, name, getattr(multiprocessing.queues, name))
-
-#        _mp_get_context = _mp_get_context_win32_py2
-#    else:
-# Python 2.7 on Linux requires Billiard for "spawn" that has to be installed
 
 _mp_get_context = None  # This will be patched at runtime
 mp_ForkingPickler = None  # This will be patched at runtime
 mp_log_to_stderr = None  # This will be patched at runtime
+_mp_billiard_plugin_dir = None  # This will be patched at runtime
 
 _old_billiard_spawn_passfds = None  # This will be patched at runtime
-
-# else:
-#    from multiprocessing import get_context as _mp_get_context, log_to_stderr as mp_log_to_stderr
-#    from multiprocessing.reduction import ForkingPickler as mp_ForkingPickler
-
 _installed_tblib = False
-_mp_billiard_plugin_dir = None
+
+# Billiard doesn't work on Win32
+if PY2:
+    if sys.platform == "win32":
+        # Python 2.7 on Windows already only works with spawn
+
+        import multiprocessing
+        import multiprocessing.queues
+
+        from multiprocessing import log_to_stderr as mp_log_to_stderr
+        from multiprocessing.reduction import ForkingPickler as mp_ForkingPickler
+
+        _mp_get_context = _mp_get_context_win32_py2
+
+    # Python 2 on *nix uses Billiard to be patched later
+else:
+    # On all of Python 3s use multiprocessing
+
+    from multiprocessing import log_to_stderr as mp_log_to_stderr, get_context as _mp_get_context
+    from multiprocessing.reduction import ForkingPickler as mp_ForkingPickler
 
 
 def patch_mp_plugin_dir(plugin_dir):
@@ -205,18 +205,19 @@ def patch_mp():
     global _mp_get_context
 
     if not _mp_get_context:
-        from billiard import get_context, log_to_stderr, compat, popen_spawn_posix as popen_spawn
-        from billiard.reduction import ForkingPickler
+        if PY2 and sys.platform != "win32":
+            from billiard import get_context, log_to_stderr, compat, popen_spawn_posix as popen_spawn
+            from billiard.reduction import ForkingPickler
 
-        global mp_ForkingPickler, mp_log_to_stderr, _old_billiard_spawn_passfds
+            global mp_ForkingPickler, mp_log_to_stderr, _old_billiard_spawn_passfds
 
-        _mp_get_context = get_context
-        mp_ForkingPickler = ForkingPickler
-        mp_log_to_stderr = log_to_stderr
+            _mp_get_context = get_context
+            mp_ForkingPickler = ForkingPickler
+            mp_log_to_stderr = log_to_stderr
 
-        _old_billiard_spawn_passfds = compat.spawnv_passfds
-        compat.spawnv_passfds = _patched_billiard_spawnv_passfds
-        popen_spawn.spawnv_passfds = _patched_billiard_spawnv_passfds
+            _old_billiard_spawn_passfds = compat.spawnv_passfds
+            compat.spawnv_passfds = _patched_billiard_spawnv_passfds
+            popen_spawn.spawnv_passfds = _patched_billiard_spawnv_passfds
 
 
 def mp_get_context(context):
@@ -226,7 +227,7 @@ def mp_get_context(context):
 
 mp_ForkingPickler = mp_ForkingPickler
 mp_log_to_stderr = mp_log_to_stderr
-
+_mp_get_context = _mp_get_context
 
 def _instrumented_target(q, target, *args, **kwargs):
     patch_mp()
