@@ -35,7 +35,7 @@ PY2 = sys.version_info[0] < 3
 PICKLE_PROTOCOL = 2
 
 if PY2:
-    ConnectionError = OSError
+    ConnectionError = EnvironmentError
 
 ctx = mp_get_context("spawn")
 ctx.allow_connection_pickling()

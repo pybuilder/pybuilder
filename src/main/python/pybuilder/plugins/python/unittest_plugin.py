@@ -128,7 +128,7 @@ def execute_tests_matching(tools, runner_generator, logger, test_source, file_gl
                                     _create_runner(runner_generator, output_log_file))
 
         try:
-            proc, pipe = start_unittest_tool(tools, test_modules, test_method_prefix)
+            proc, pipe = start_unittest_tool(tools, test_modules, test_method_prefix, logging=remote_debug)
             try:
                 pipe.register_remote(runner)
                 pipe.register_remote_type(TestResult)

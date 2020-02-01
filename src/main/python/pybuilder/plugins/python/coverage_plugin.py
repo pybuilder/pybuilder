@@ -140,21 +140,29 @@ def run_coverage(project, logger, reactor, execution_prefix, execution_name, tar
 
     task = em.get_task(target_task)
 
-    em.execute_task(task,
-                    logger=logger,
-                    project=project,
-                    reactor=reactor)
+    import gc
+    gc.collect()
+    gc.disable()
 
-    project.remove_tool(cov_tool)
+    try:
+        em.execute_task(task,
+                        logger=logger,
+                        project=project,
+                        reactor=reactor)
 
-    cov.combine()
-    cov.load()
+        project.remove_tool(cov_tool)
 
-    module_exceptions = project.get_property("%s_exceptions" % execution_prefix)
-    modules, non_imported_modules = _list_all_covered_modules(logger, module_names, module_exceptions,
-                                                              allow_non_imported_modules)
+        cov.combine()
+        cov.load()
 
-    failure = _build_coverage_report(project, logger, execution_name, execution_prefix, cov, modules)
+        module_exceptions = project.get_property("%s_exceptions" % execution_prefix)
+        modules, non_imported_modules = _list_all_covered_modules(logger, module_names, module_exceptions,
+                                                                  allow_non_imported_modules)
+
+        failure = _build_coverage_report(project, logger, execution_name, execution_prefix, cov, modules)
+
+    finally:
+        gc.enable()
 
     if non_imported_modules and not allow_non_imported_modules:
         raise BuildFailedException("Some modules have not been imported and have no coverage")
@@ -205,11 +213,11 @@ def _list_all_covered_modules(logger, module_names, modules_exceptions, allow_no
     return modules, non_imported_modules
 
 
-def _build_module_report(coverage, module):
-    return ModuleCoverageReport(coverage._analyze(module))
+def _build_module_report(cov, module):
+    return ModuleCoverageReport(cov._analyze(module))
 
 
-def _build_coverage_report(project, logger, execution_name, execution_prefix, coverage, modules):
+def _build_coverage_report(project, logger, execution_name, execution_prefix, cov, modules):
     coverage_too_low = False
     branch_coverage_too_low = False
     branch_partial_coverage_too_low = False
@@ -230,7 +238,7 @@ def _build_coverage_report(project, logger, execution_name, execution_prefix, co
     for module in modules:
         module_name = module.__name__
 
-        module_report_data = _build_module_report(coverage, module)
+        module_report_data = _build_module_report(cov, module)
 
         sum_lines += module_report_data.n_lines_total
         sum_lines_not_covered += module_report_data.n_lines_missing
@@ -306,7 +314,7 @@ def _build_coverage_report(project, logger, execution_name, execution_prefix, co
 
     project.write_report("%s.json" % execution_prefix, render_report(report))
 
-    _write_summary_report(coverage, project, modules, execution_prefix, execution_name)
+    _write_summary_report(cov, project, modules, execution_prefix, execution_name)
 
     if coverage_too_low and project.get_property("%s_break_build" % execution_prefix):
         return BuildFailedException("Test coverage for at least one module is below %d%%", threshold)
@@ -317,17 +325,17 @@ def _build_coverage_report(project, logger, execution_name, execution_prefix, co
                                     branch_partial_threshold)
 
 
-def _write_summary_report(coverage, project, modules, execution_prefix, execution_name):
+def _write_summary_report(cov, project, modules, execution_prefix, execution_name):
     from coverage import CoverageException
 
     summary = StringIO()
     try:
-        coverage.report(modules, file=summary)
+        cov.report(modules, file=summary)
         try:
-            coverage.xml_report(modules, outfile=project.expand_path("$dir_reports/%s.xml" % execution_prefix))
-            coverage.html_report(modules, directory=project.expand_path("$dir_reports/%s_html" % execution_prefix),
-                                 title=execution_name)
-            coverage.save()
+            cov.xml_report(modules, outfile=project.expand_path("$dir_reports/%s.xml" % execution_prefix))
+            cov.html_report(modules, directory=project.expand_path("$dir_reports/%s_html" % execution_prefix),
+                            title=execution_name)
+            cov.save()
         except CoverageException:
             pass  # coverage raises when there is no data
         project.write_report(execution_prefix, summary.getvalue())

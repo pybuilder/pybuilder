@@ -28,7 +28,8 @@ from pybuilder.utils import (as_list,
                              create_venv,
                              python_specific_dir_name,
                              venv_symlinks,
-                             add_env_to_path)
+                             add_env_to_path,
+                             is_pypy)
 
 __author__ = "Arcadiy Ivanov"
 
@@ -80,7 +81,7 @@ def install_test_venv(logger, project):
 
 def install_venv(project, logger, venv_name):
     venv_dir = _get_venv_dir(project, venv_name)
-    clear = project.get_property("refresh_venvs")
+    clear = project.get_property("refresh_venvs") or is_pypy
     logger.info("Creating target '%s' VEnv in '%s'%s", venv_name, venv_dir, " (refreshing)" if clear else "")
     create_venv(venv_dir, with_pip=True, symlinks=venv_symlinks, clear=clear, offline=project.offline)
 

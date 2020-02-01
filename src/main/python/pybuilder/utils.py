@@ -42,7 +42,8 @@ from pybuilder.python_utils import (os, sys, is_string, which, makedirs, basestr
                                     patch_mp,
                                     mp_get_context,
                                     odict,
-                                    getsitepaths)
+                                    getsitepaths,
+                                    is_pypy)
 from pybuilder.vendor import virtualenv
 
 

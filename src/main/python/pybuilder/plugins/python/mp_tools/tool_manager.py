@@ -40,7 +40,7 @@ def start_tool(tools, group=None, name=None, logging=None):
 
     if logging:
         log_to_stderr()
-        logger.setLevel(logging)
+        logger.setLevel(int(logging))
 
     pipe = get_rom().new_pipe()
     proc = ctx.Process(group=group, target=_instrumented_tool, name=name, args=(tools, pipe))

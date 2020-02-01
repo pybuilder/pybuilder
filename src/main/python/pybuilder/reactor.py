@@ -45,7 +45,8 @@ from pybuilder.utils import (as_list,
                              create_venv,
                              venv_symlinks,
                              add_env_to_path,
-                             patch_mp_plugin_dir)
+                             patch_mp_plugin_dir,
+                             is_pypy)
 
 
 class BuildSummary:
@@ -199,7 +200,7 @@ class Reactor:
         # This is really a way to make sure we can install `billiard` as a dependency
         # before any of the plugins actually initialize
         if sys.version_info[0] < 3 and sys.platform != "win32":
-            self.require_plugin("pypi:billiard", "~=3.6.0", plugin_module_name="pybuilder.plugins.billiard_plugin")
+            self.require_plugin("pypi:billiard", "~=3.6.2", plugin_module_name="pybuilder.plugins.billiard_plugin")
 
         self.project_module = self.load_project_module(project_descriptor)
 
@@ -472,7 +473,10 @@ class Reactor:
     def _setup_plugin_directory(self, reset_plugins):
         plugin_dir = self.project.plugin_dir
         self.logger.debug("Setting up plugins VEnv at '%s'%s", plugin_dir, " (resetting)" if reset_plugins else "")
-        create_venv(plugin_dir, with_pip=True, symlinks=venv_symlinks, upgrade=True, clear=reset_plugins,
+        create_venv(plugin_dir, with_pip=True,
+                    symlinks=venv_symlinks,
+                    upgrade=True,
+                    clear=reset_plugins or is_pypy,
                     offline=self.project.offline)
 
         add_env_to_path(plugin_dir, sys.path)

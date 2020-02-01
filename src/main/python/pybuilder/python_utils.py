@@ -29,6 +29,7 @@ except NameError:
     basestring = str
 
 PY2 = sys.version_info[0] < 3
+is_pypy = '__pypy__' in sys.builtin_module_names
 
 
 def _py2_makedirs(name, mode=0o777, exist_ok=False):
@@ -229,6 +230,7 @@ mp_ForkingPickler = mp_ForkingPickler
 mp_log_to_stderr = mp_log_to_stderr
 _mp_get_context = _mp_get_context
 
+
 def _instrumented_target(q, target, *args, **kwargs):
     patch_mp()
 
@@ -307,7 +309,9 @@ def venv_python_executable(env_dir):
 
 if sys.version_info[0] < 3:
     def getsitepaths(prefix):
-        if sys.platform in ('os2emx', 'riscos'):
+        if is_pypy:
+            yield os.path.join(prefix, "site-packages")
+        elif sys.platform in ('os2emx', 'riscos'):
             yield os.path.join(prefix, "Lib", "site-packages")
         elif os.sep == '/':
             yield os.path.join(prefix, "lib",
@@ -320,7 +324,9 @@ if sys.version_info[0] < 3:
 
 else:
     def getsitepaths(prefix):
-        if os.sep == '/':
+        if is_pypy:
+            yield os.path.join(prefix, "site-packages")
+        elif os.sep == '/':
             yield os.path.join(prefix, "lib",
                                "python%d.%d" % sys.version_info[:2],
                                "site-packages")
