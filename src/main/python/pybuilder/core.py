@@ -307,7 +307,7 @@ class Project(object):
     """
 
     def __init__(self, basedir, version="1.0.dev0", name=None):
-        self.name = name
+        self._name = name
         self._version = None
         self._dist_version = None
         self.version = version
@@ -338,6 +338,14 @@ class Project(object):
         self._preinstall_script = None
         self._postinstall_script = None
 
+    @property
+    def name(self):
+        return self.get_property('name') or self._name
+    
+    @name.setter
+    def name(self, value):
+        self._name = value
+        
     def __str__(self):
         return "[Project name=%s basedir=%s]" % (self.name, self.basedir)
 
