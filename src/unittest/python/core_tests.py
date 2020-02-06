@@ -129,6 +129,11 @@ class ProjectTest(unittest.TestCase):
         self.assertEqual("spam", self.project.dependencies[0].name)
         self.assertEqual(">=0.7", self.project.dependencies[0].version)
 
+    def test_property_overrides_should_be_able_to_override_name(self):
+        overridden_name = "newName"
+        self.project.set_property("name", overridden_name)
+        self.assertEqual(self.project.name, overridden_name)
+
 
 class ProjectManifestTests(unittest.TestCase):
     def setUp(self):
