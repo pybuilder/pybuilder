@@ -51,8 +51,8 @@ def publish(project, logger):
 
 
 def _write_command_report(project, stdout, stderr, command_line, phase, process_return_code):
-        project.write_report('exec_%s' % phase, stdout)
-        project.write_report('exec_%s.err' % phase, stderr)
+    project.write_report('exec_%s' % phase, stdout)
+    project.write_report('exec_%s.err' % phase, stderr)
 
 
 def _log_quoted_output(logger, output_type, output, phase):

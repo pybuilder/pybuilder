@@ -341,11 +341,11 @@ class Project(object):
     @property
     def name(self):
         return self.get_property('name') or self._name
-    
+
     @name.setter
     def name(self, value):
         self._name = value
-        
+
     def __str__(self):
         return "[Project name=%s basedir=%s]" % (self.name, self.basedir)
 
