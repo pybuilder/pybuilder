@@ -340,7 +340,10 @@ class Project(object):
 
     @property
     def name(self):
-        return self.get_property('name') or self._name
+        try:
+            return self.get_property('name') or self._name
+        except AttributeError:  # Sometimes the default doesn't get returned
+            return self._name
 
     @name.setter
     def name(self, value):
