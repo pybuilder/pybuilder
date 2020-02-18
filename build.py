@@ -135,8 +135,6 @@ def initialize(project):
                                                                 "vendorize.toml",
                                                                 "vendorize_pyb.py"])
 
-    project.set_property("unittest_breaks_build", False)
-
     # enable this to build a bdist on vagrant
     # project.set_property("distutils_issue8876_workaround_enabled", True)
     project.set_property("distutils_readme_description", True)

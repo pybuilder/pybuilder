@@ -17,7 +17,7 @@
 #   limitations under the License.
 
 import unittest
-from os.path import normcase as nc
+from os.path import normcase as nc, pathsep
 
 from pybuilder.core import Project
 from pybuilder.errors import BuildFailedException
@@ -97,7 +97,7 @@ class CramPluginTests(unittest.TestCase):
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
             error_file_name='report_file',
-            env={'PYTHONPATH': nc('./python:'), 'PATH': nc('./python/scripts:')}
+            env={'PYTHONPATH': nc('./python' + pathsep), 'PATH': nc('./python/scripts' + pathsep)}
         )
         expected_info_calls = [call('Running Cram command line tests'),
                                call('Cram tests were fine'),
@@ -138,7 +138,7 @@ class CramPluginTests(unittest.TestCase):
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
             error_file_name='report_file',
-            env={'PYTHONPATH': nc('./python:'), 'PATH': nc('./scripts:')}
+            env={'PYTHONPATH': nc('./python' + pathsep), 'PATH': nc('./scripts' + pathsep)}
         )
         expected_info_calls = [call('Running Cram command line tests'),
                                call('Cram tests were fine'),
@@ -182,7 +182,7 @@ class CramPluginTests(unittest.TestCase):
         execute_mock.assert_called_once_with(
             ['cram', 'test1.cram', 'test2.cram'], 'report_file',
             error_file_name='report_file',
-            env={'PYTHONPATH': nc('./python:'), 'PATH': nc('./scripts:')}
+            env={'PYTHONPATH': nc('./python' + pathsep), 'PATH': nc('./scripts' + pathsep)}
         )
         expected_info_calls = [call('Running Cram command line tests'),
                                ]
