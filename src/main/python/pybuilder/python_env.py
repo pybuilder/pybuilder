@@ -59,7 +59,7 @@ class PythonEnv(object):
     def __init__(self, env_dir, reactor, platform=None, install_log_name="install.log"):
         self._env_dir = env_dir
         self._reactor = reactor
-        self._platform = platform
+        self._platform = platform or sys.platform
         self._long_desc = "Unpopulated"
         self._site_paths = None
         self._venv_symlinks = os.name == "posix"
