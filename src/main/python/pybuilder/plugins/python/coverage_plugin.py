@@ -140,6 +140,7 @@ def run_coverage(project, logger, reactor, execution_prefix, execution_name, tar
 
     task = em.get_task(target_task)
 
+    # HACK: Pypy is misbehaving
     import gc
     gc.collect()
     gc.disable()

@@ -146,7 +146,7 @@ def _mp_get_context_win32_py2(context_name):
 _mp_get_context = None  # This will be patched at runtime
 mp_ForkingPickler = None  # This will be patched at runtime
 mp_log_to_stderr = None  # This will be patched at runtime
-_mp_billiard_plugin_dir = None  # This will be patched at runtime
+_mp_billiard_pyb_env = None  # This will be patched at runtime
 
 _old_billiard_spawn_passfds = None  # This will be patched at runtime
 _installed_tblib = False
@@ -169,11 +169,11 @@ else:
     from multiprocessing.reduction import ForkingPickler as mp_ForkingPickler
 
 
-def patch_mp_plugin_dir(plugin_dir):
-    global _mp_billiard_plugin_dir
+def patch_mp_pyb_env(pyb_env):
+    global _mp_billiard_pyb_env
 
-    if not _mp_billiard_plugin_dir:
-        _mp_billiard_plugin_dir = plugin_dir
+    if not _mp_billiard_pyb_env:
+        _mp_billiard_pyb_env = pyb_env
 
 
 def install_tblib():
@@ -193,7 +193,7 @@ def _patched_billiard_spawnv_passfds(path, args, passfds):
         script_index = args.index("-c") + 1
         script = args[script_index]
         additional_path = []
-        add_env_to_path(_mp_billiard_plugin_dir, additional_path)
+        add_env_to_path(_mp_billiard_pyb_env, additional_path)
         args[script_index] = ";".join(("import sys", "sys.path.extend(%r)" % additional_path, script))
     except ValueError:
         # We were unable to find the "-c", which means we likely don't care

@@ -44,6 +44,7 @@ print({
 "_type": platform.python_implementation().lower(),
 "_version": tuple(sys.version_info),
 "_is_pypy": "__pypy__" in sys.builtin_module_names,
+"_is_64bit": (getattr(sys, "maxsize", None) or getattr(sys, "maxint")) > 2 ** 32,
 "_versioned_dir_name": "%s-%s" % (platform.python_implementation().lower(), ".".join(str(f) for f in sys.version_info)),
 "_environ": dict(os.environ),
 "_darwin_python_framework": sysconfig.get_config_var("PYTHONFRAMEWORK")
@@ -51,7 +52,7 @@ print({
 """
 
 _FIELDS = {"platform", "executable", "name", "type", "version", "env_dir", "versioned_dir_name", "os_name",
-           "site_paths", "is_pypy", "environ", "exec_dir"}
+           "site_paths", "is_pypy", "is_64bit", "environ", "exec_dir"}
 
 
 class PythonEnv(object):
@@ -176,6 +177,11 @@ class PythonEnv(object):
         return self._is_pypy
 
     @property
+    def is_64bit(self):
+        self._check_not_populated()
+        return self._is_64bit
+
+    @property
     def environ(self):
         self._check_not_populated()
         return dict(self._environ)
@@ -222,8 +228,9 @@ class PythonEnv(object):
                              log_file_mode=log_file_mode,
                              package_type=package_type)
 
-    def verify_can_execute(self, command_and_arguments, prerequisite, caller, env=None, no_path_search=False):
-        environ = self.environ
+    def verify_can_execute(self, command_and_arguments, prerequisite, caller, env=None, no_path_search=False,
+                           inherit_env=True):
+        environ = self.environ if inherit_env else {}
         if env:
             environ.update(env)
         return assert_can_execute(command_and_arguments, prerequisite, caller, env=environ,
@@ -235,8 +242,9 @@ class PythonEnv(object):
                         cwd=None,
                         error_file_name=None,
                         shell=False,
-                        no_path_search=False):
-        environ = self.environ
+                        no_path_search=False,
+                        inherit_env=True):
+        environ = self.environ if inherit_env else {}
         if env:
             environ.update(env)
 
@@ -262,18 +270,67 @@ class PythonEnv(object):
     def _get_site_paths(self):
         prefix = self.env_dir
         if self.version[0] < 3:
-            if self.is_pypy:
-                yield os.path.join(prefix, "site-packages")
-            elif sys.platform in ("os2emx", "riscos"):
-                yield os.path.join(prefix, "Lib", "site-packages")
+            if self.platform in ("os2emx", "riscos"):
+                sitedirs = [os.path.join(prefix, "Lib", "site-packages")]
+            elif self.is_pypy:
+                sitedirs = [os.path.join(prefix, "site-packages")]
+            elif sys.platform == "darwin":
+                if prefix.startswith("/System/Library/Frameworks/"):  # Apple's Python
+                    sitedirs = [
+                        os.path.join("/Library/Python", "{}.{}".format(*self.version), "site-packages"),
+                        os.path.join(prefix, "Extras", "lib", "python"),
+                    ]
+                else:  # any other Python distros on OSX work this way
+                    sitedirs = [os.path.join(prefix, "lib", "python{}.{}".format(*self.version), "site-packages")]
             elif os.sep == "/":
-                yield os.path.join(prefix, "lib",
-                                   "python" + self.version[:3],
-                                   "site-packages")
-                yield os.path.join(prefix, "lib", "site-python")
+                sitedirs = [
+                    os.path.join(prefix, "lib", "python{}.{}".format(*self.version), "site-packages"),
+                    os.path.join(prefix, "lib", "site-python"),
+                    os.path.join(prefix, "python{}.{}".format(*self.version), "lib-dynload"),
+                ]
+                lib64_dir = os.path.join(prefix, "lib64", "python{}.{}".format(*self.version), "site-packages")
+                if os.path.exists(lib64_dir) and os.path.realpath(lib64_dir) not in [
+                    os.path.realpath(p) for p in sitedirs
+                ]:
+                    if self.is_64bit:
+                        sitedirs.insert(0, lib64_dir)
+                    else:
+                        sitedirs.append(lib64_dir)
+                try:
+                    # sys.getobjects only available in --with-pydebug build
+                    sys.getobjects
+                    sitedirs.insert(0, os.path.join(sitedirs[0], "debug"))
+                except AttributeError:
+                    pass
+                # Debian-specific dist-packages directories:
+                sitedirs.append(
+                    os.path.join(prefix, "local/lib", "python{}.{}".format(*self.version), "dist-packages")
+                )
+                if self.version[0] == 2:
+                    sitedirs.append(
+                        os.path.join(prefix, "lib", "python{}.{}".format(*self.version), "dist-packages")
+                    )
+                else:
+                    sitedirs.append(
+                        os.path.join(prefix, "lib", "python{}".format(self.version[0]), "dist-packages")
+                    )
+                sitedirs.append(os.path.join(prefix, "lib", "dist-python"))
             else:
-                yield prefix
-                yield os.path.join(prefix, "lib", "site-packages")
+                sitedirs = [prefix, os.path.join(prefix, "lib", "site-packages")]
+
+            if self.platform == "darwin":
+                # for framework builds *only* we add the standard Apple
+                # locations. Currently only per-user, but /Library and
+                # /Network/Library could be added too
+                if "Python.framework" in prefix or "Python3.framework" in prefix:
+                    home = self.environ.get("HOME")
+                    if home:
+                        sitedirs.append(
+                            os.path.join(home, "Library", "Python", "{}.{}".format(*self.version), "site-packages")
+                        )
+            for sitedir in sitedirs:
+                if os.path.isdir(sitedir):
+                    yield sitedir
         else:
             if self.is_pypy:
                 yield os.path.join(prefix, "site-packages")

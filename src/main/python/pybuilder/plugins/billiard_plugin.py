@@ -20,6 +20,6 @@
 # and patches the spawn system to get plugin dir venv into Python sys.path
 # to expose billiard early.
 
-from pybuilder import utils
+from pybuilder import python_utils
 
-utils.patch_mp()
+python_utils.patch_mp()

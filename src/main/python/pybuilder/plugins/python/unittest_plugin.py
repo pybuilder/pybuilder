@@ -22,7 +22,7 @@ import unittest
 
 from pybuilder.plugins.python.remote_tools.unittest_tool import start_unittest_tool, PipeShutdownError, \
     logger as tool_logger
-
+from pybuilder.python_utils import PY2
 try:
     from StringIO import StringIO
 except ImportError:
@@ -44,6 +44,8 @@ use_plugin("python.core")
 @init
 def init_test_source_directory(project):
     project.plugin_depends_on("unittest-xml-reporting", "~=2.0")
+    if PY2:
+        project.plugin_depends_on("mock")
 
     project.set_property_if_unset("dir_source_unittest_python", "src/unittest/python")
     project.set_property_if_unset("unittest_breaks_build", True)
@@ -127,6 +129,7 @@ def execute_tests_matching(tools, runner_generator, logger, test_source, file_gl
                                     logger,
                                     _create_runner(runner_generator, output_log_file))
 
+        proc = pipe = None  # noqa
         try:
             proc, pipe = start_unittest_tool(tools, test_modules, test_method_prefix, logging=remote_debug)
             try:

@@ -40,7 +40,7 @@ from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
                                     DownloadingPluginLoader)
 from pybuilder.python_env import PythonEnvRegistry, PythonEnv
-from pybuilder.python_utils import IS_WIN, PY2, odict, patch_mp_plugin_dir, add_env_to_path
+from pybuilder.python_utils import IS_WIN, PY2, odict, patch_mp_pyb_env, add_env_to_path
 from pybuilder.utils import (as_list,
                              get_dist_version_string,
                              basestring)
@@ -510,7 +510,7 @@ class Reactor:
                                                                                 offline=self.project.offline)
 
         add_env_to_path(plugin_env, sys.path)
-        patch_mp_plugin_dir(plugin_dir)
+        patch_mp_pyb_env(plugin_env)
 
     def _setup_deferred_plugin_import(self):
         self._old_import = __import__

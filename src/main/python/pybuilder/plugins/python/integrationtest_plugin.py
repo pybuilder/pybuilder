@@ -31,8 +31,7 @@ use_plugin("core")
 
 @init
 def initialize_integrationtest_plugin(project):
-    project.set_property_if_unset(
-        "dir_source_integrationtest_python", "src/integrationtest/python")
+    project.set_property_if_unset("dir_source_integrationtest_python", "src/integrationtest/python")
 
     project.set_property_if_unset("integrationtest_breaks_build", True)
     project.set_property_if_unset("integrationtest_parallel", False)
