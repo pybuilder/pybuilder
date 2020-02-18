@@ -18,8 +18,6 @@
 
 from __future__ import print_function
 
-import sys
-
 from pybuilder import pip_utils
 from pybuilder.core import (task,
                             description,
@@ -36,6 +34,7 @@ use_plugin("core")
 @init
 def initialize_install_dependencies_plugin(project):
     project.set_property_if_unset("pip_verbose", 0)
+    project.set_property_if_unset("install_env", "system")
     project.set_property_if_unset("dir_install_logs", "$dir_logs/install_dependencies")
     project.set_property_if_unset("install_dependencies_index_url", None)
     project.set_property_if_unset("install_dependencies_local_mapping", {})
@@ -49,30 +48,33 @@ def initialize_install_dependencies_plugin(project):
 
 @task
 @description("Installs all (both runtime and build) dependencies specified in the build descriptor")
-def install_dependencies(logger, project):
+def install_dependencies(logger, project, reactor):
     logger.info("Installing all dependencies")
     install_dependency(logger, project, as_list(project.build_dependencies) + as_list(project.dependencies),
-                       sys.exec_prefix, project.expand_path("$dir_install_logs", "install_batch"),
+                       reactor.python_env_registry[project.get_property("install_env")],
+                       project.expand_path("$dir_install_logs", "install_batch"),
                        project.get_property("install_dependencies_local_mapping"),
                        project.expand_path("$dir_target", "install_dependencies_constraints"))
 
 
 @task
 @description("Installs all build dependencies specified in the build descriptor")
-def install_build_dependencies(logger, project):
+def install_build_dependencies(logger, project, reactor):
     logger.info("Installing build dependencies")
     install_dependency(logger, project, project.build_dependencies,
-                       sys.exec_prefix, project.expand_path("$dir_install_logs", "install_batch"),
+                       reactor.python_env_registry[project.get_property("install_env")],
+                       project.expand_path("$dir_install_logs", "install_batch"),
                        project.get_property("install_dependencies_local_mapping"),
                        project.expand_path("$dir_target", "install_dependencies_constraints"))
 
 
 @task
 @description("Installs all runtime dependencies specified in the build descriptor")
-def install_runtime_dependencies(logger, project):
+def install_runtime_dependencies(logger, project, reactor):
     logger.info("Installing runtime dependencies")
     install_dependency(logger, project, project.dependencies,
-                       sys.exec_prefix, project.expand_path("$dir_install_logs", "install_batch"),
+                       reactor.python_env_registry[project.get_property("install_env")],
+                       project.expand_path("$dir_install_logs", "install_batch"),
                        project.get_property("install_dependencies_local_mapping"),
                        project.expand_path("$dir_target", "install_dependencies_constraints"))
 

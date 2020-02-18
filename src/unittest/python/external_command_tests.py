@@ -20,14 +20,17 @@ import unittest
 
 from pybuilder.core import Project
 from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
-from test_utils import Mock, patch, call, ANY
+from test_utils import Mock, patch, call
 
 
 class ExternalCommandBuilderTests(unittest.TestCase):
 
     def setUp(self):
         self.project = Project('/base/dir')
-        self.command = ExternalCommandBuilder('command-name', self.project)
+        self.reactor = Mock()
+        pyb_env = Mock()
+        self.reactor.python_env_registry = {"pybuilder": pyb_env}
+        self.command = ExternalCommandBuilder('command-name', self.project, self.reactor)
 
     def test_should_only_use_command_name_by_default(self):
         self.assertEqual(self.command.as_string, 'command-name')
@@ -102,18 +105,21 @@ class ExternalCommandExecutionTests(unittest.TestCase):
 
     def setUp(self):
         self.project = Project('/base/dir')
-        self.command = ExternalCommandBuilder('command-name', self.project)
+        self.reactor = Mock()
+        pyb_env = Mock()
+        self.reactor.python_env_registry = {"pybuilder": pyb_env}
+        self.reactor.pybuilder_venv = pyb_env
+
+        self.command = ExternalCommandBuilder('command-name', self.project, self.reactor)
         self.command.use_argument('--foo').use_argument('--bar')
 
-    @patch("pybuilder.pluginhelper.external_command.execute_command")
     @patch("pybuilder.pluginhelper.external_command.read_file")
-    def test_should_execute_external_command(self, _, execute_command):
+    def test_should_execute_external_command(self, _):
         self.command.run("any-outfile-name")
 
-        execute_command.assert_called_with(
+        self.reactor.pybuilder_venv.execute_command.assert_called_with(
             ['command-name', '--foo', '--bar'],
-            'any-outfile-name',
-            env=ANY)
+            'any-outfile-name')
 
     @patch('pybuilder.pluginhelper.external_command.read_file')
     @patch('pybuilder.pluginhelper.external_command.execute_tool_on_source_files')
@@ -123,6 +129,7 @@ class ExternalCommandExecutionTests(unittest.TestCase):
         self.command.run_on_production_source_files(logger, include_dirs_only=True)
 
         execution.assert_called_with(
+            python_env=self.reactor.pybuilder_venv,
             include_dirs_only=True,
             include_test_sources=False,
             include_scripts=False,
@@ -139,6 +146,7 @@ class ExternalCommandExecutionTests(unittest.TestCase):
         self.command.run_on_production_source_files(logger)
 
         execution.assert_called_with(
+            python_env=self.reactor.pybuilder_venv,
             include_dirs_only=False,
             include_test_sources=False,
             include_scripts=False,
@@ -155,6 +163,7 @@ class ExternalCommandExecutionTests(unittest.TestCase):
         self.command.run_on_production_and_test_source_files(logger)
 
         execution.assert_called_with(
+            python_env=self.reactor.pybuilder_venv,
             include_dirs_only=False,
             include_test_sources=True,
             include_scripts=False,

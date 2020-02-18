@@ -16,17 +16,17 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from unittest import TestCase
-from test_utils import Mock, patch, ANY
 from logging import Logger
+from unittest import TestCase
+
 from pybuilder.core import Project
 from pybuilder.plugins.python.snakefood_plugin import (
-    depend_on_snakefood,
     check_snakefood_available,
     check_graphviz_available,
     generate_graph,
     generate_pdf
-    )
+)
+from test_utils import Mock
 
 
 class CheckSnakeFoodAvailableTests(TestCase):
@@ -34,43 +34,42 @@ class CheckSnakeFoodAvailableTests(TestCase):
     def setUp(self):
         self.project = Project("basedir")
 
-    def test_should_set_dependency(self):
-        mock_project = Mock(Project)
-        depend_on_snakefood(mock_project)
-        mock_project.plugin_depends_on.assert_called_with('snakefood')
+        self.reactor = Mock()
+        self.reactor.python_env_registry = {}
+        self.reactor.python_env_registry["pybuilder"] = pyb_env = Mock()
+        pyb_env.environ = {}
+        self.reactor.pybuilder_venv = pyb_env
 
-    @patch('pybuilder.plugins.python.snakefood_plugin.assert_can_execute')
-    def test_should_check_that_snakefood_is_available(self, mock_execute_command):
-
+    def test_should_check_that_snakefood_is_available(self):
         mock_logger = Mock(Logger)
 
-        check_snakefood_available(self.project, mock_logger)
+        check_snakefood_available(self.project, mock_logger, self.reactor)
 
-        mock_execute_command.assert_called_with(
-            ("sfood", "-h"), "sfood", "plugin python.snakefood", env=ANY)
+        self.reactor.pybuilder_venv.verify_can_execute.assert_called_with(
+            ["sfood", "-h"], "sfood", "plugin python.snakefood")
 
-    @patch('pybuilder.plugins.python.snakefood_plugin.assert_can_execute')
-    def test_should_check_that_graphviz_is_available(self, mock_execute_command):
-
+    def test_should_check_that_graphviz_is_available(self):
         mock_logger = Mock(Logger)
 
-        check_graphviz_available(self.project, mock_logger)
+        check_graphviz_available(self.project, mock_logger, self.reactor)
 
-        mock_execute_command.assert_called_with(
-            ('dot', '-V'), 'graphviz', 'plugin python.snakefood', env=ANY)
+        self.reactor.pybuilder_venv.verify_can_execute.assert_called_with(
+            ["dot", "-V"], "graphviz", "plugin python.snakefood")
 
-    @patch('pybuilder.plugins.python.snakefood_plugin.execute_command')
-    def test_should_call_generate_graph(self, mock_execute_command):
+    def test_should_call_generate_graph(self):
         report_file = "foo"
         graph_file = "bar.dot"
-        generate_graph(report_file, graph_file)
-        mock_execute_command.assert_called_with(
+
+        generate_graph(self.reactor.pybuilder_venv, report_file, graph_file)
+
+        self.reactor.pybuilder_venv.execute_command.assert_called_with(
             ["sfood-graph", report_file], graph_file)
 
-    @patch('pybuilder.plugins.python.snakefood_plugin.execute_command')
-    def test_should_call_generate_pdf(self, mock_execute_command):
+    def test_should_call_generate_pdf(self):
         pdf_file = "foo.pdf"
         graph_file = "bar.dot"
-        generate_pdf(graph_file, pdf_file)
-        mock_execute_command.assert_called_with(
+
+        generate_pdf(self.reactor.pybuilder_venv, graph_file, pdf_file)
+
+        self.reactor.pybuilder_venv.execute_command.assert_called_with(
             ["dot", "-Tpdf", graph_file], pdf_file)

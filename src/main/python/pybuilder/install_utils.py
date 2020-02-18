@@ -16,7 +16,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from os import environ
 from os.path import normcase as nc, join as jp
 
 from pybuilder.core import RequirementsFile, Dependency
@@ -27,25 +26,28 @@ from pybuilder.pip_utils import (create_constraint_file,
                                  version_satisfies_spec,
                                  as_pip_install_target,
                                  get_packages_info)
-from pybuilder.utils import as_list, tail_log, getsitepaths, venv_python_executable
+from pybuilder.utils import as_list, tail_log
 
 
-def install_dependencies(logger, project, dependencies, venv_dir, log_file_name,
-                         local_mapping={},
+def install_dependencies(logger, project, dependencies, python_env,
+                         log_file_name,
+                         local_mapping=None,
                          constraints_file_name=None,
                          log_file_mode="ab",
                          package_type="dependency",
                          ):
-    entry_paths = list(getsitepaths(venv_dir))
-    python_exec = venv_python_executable(venv_dir)
+    entry_paths = python_env.site_paths
     dependencies_to_install, orig_installed_pkgs, dependency_constraints = _filter_dependencies(logger,
                                                                                                 project,
                                                                                                 dependencies,
                                                                                                 entry_paths)
     constraints_file = None
     if constraints_file_name:
-        constraints_file = nc(jp(venv_dir, constraints_file_name))
+        constraints_file = nc(jp(python_env.env_dir, constraints_file_name))
         create_constraint_file(constraints_file, dependency_constraints)
+
+    if not local_mapping:
+        local_mapping = {}
 
     install_batch = []
     for dependency in dependencies_to_install:
@@ -68,8 +70,7 @@ def install_dependencies(logger, project, dependencies, venv_dir, log_file_name,
                     " from %s" % url if url else "", install_options)
 
     if install_batch:
-        pip_env = environ.copy()
-        pip_env["PIP_NO_INPUT"] = "1"
+        pip_env = {"PIP_NO_INPUT": "1"}
 
         if project.offline:
             pip_env["PIP_NO_INDEX"] = "1"
@@ -77,6 +78,7 @@ def install_dependencies(logger, project, dependencies, venv_dir, log_file_name,
 
         with open(nc(log_file_name), log_file_mode) as log_file:
             results = pip_install_batches(install_batch,
+                                          python_env,
                                           index_url=project.get_property("install_dependencies_index_url"),
                                           extra_index_url=project.get_property("install_dependencies_extra_index_url"),
                                           trusted_host=project.get_property("install_dependencies_trusted_host"),
@@ -86,16 +88,14 @@ def install_dependencies(logger, project, dependencies, venv_dir, log_file_name,
                                           constraint_file=constraints_file,
                                           logger=logger,
                                           outfile_name=log_file,
-                                          error_file_name=log_file,
-                                          env=pip_env,
-                                          python_exec=python_exec)
+                                          error_file_name=log_file)
 
         for result in results:
             if result:
                 raise BuildFailedException("Unable to install %s packages into %s. "
                                            "Please see '%s' for full details:\n%s",
                                            package_type,
-                                           venv_dir,
+                                           python_env.env_dir,
                                            log_file_name,
                                            tail_log(log_file_name))
     return dependencies_to_install
@@ -109,39 +109,42 @@ def _filter_dependencies(logger, project, dependencies, entry_paths):
 
     for dependency in dependencies:
         logger.debug("Inspecting package '%s'" % dependency)
+        if dependency.declaration_only:
+            logger.info("Dependency '%s' is declaration-only and will not be installed" % dependency)
+            continue
         if isinstance(dependency, RequirementsFile):
             # Always add requirement file-based dependencies
-            logger.debug("Package '%s' is a requirement file and will be included" % dependency)
+            logger.debug("Package '%s' is a requirement file and will be updated" % dependency)
             dependencies_to_install.append(dependency)
             continue
         elif isinstance(dependency, Dependency):
             if dependency.version:
                 dependency_constraints.append(dependency)
-                logger.debug(
-                    "Package '%s' is added to the list of installation constraints" % dependency)
+                logger.debug("Package '%s' is added to the list of installation constraints" % dependency)
 
             if dependency.url:
                 # Always add dependency that is url-based
-                logger.debug("Package '%s' is URL-based and will be included" % dependency)
+                logger.debug("Package '%s' is URL-based and will be updated" % dependency)
                 dependencies_to_install.append(dependency)
                 continue
+
             if should_update_package(dependency.version) and not getattr(dependency, "version_not_a_spec", False):
                 # Always add dependency that has a version specifier indicating desire to always update
-                logger.debug("Package '%s' has a non-exact version specifier and will be included" % dependency)
+                logger.debug("Package '%s' has a non-exact version specifier and will be updated" % dependency)
                 dependencies_to_install.append(dependency)
                 continue
 
         dependency_name = dependency.name.lower()
         if dependency_name not in installed_packages:
             # If dependency not installed at all then install it
-            logger.debug("Package '%s' is not installed and will be included" % dependency)
+            logger.debug("Package '%s' is not installed and will be installed" % dependency)
             dependencies_to_install.append(dependency)
             continue
 
         if dependency.version and not version_satisfies_spec(dependency.version,
                                                              installed_packages[dependency_name].version):
             # If version is specified and version constraint is not satisfied
-            logger.debug("Package '%s' is not satisfied by installed dependency version '%s' and will be included" %
+            logger.debug("Package '%s' is not satisfied by installed dependency version '%s' and will be installed" %
                          (dependency, installed_packages[dependency_name].version))
             dependencies_to_install.append(dependency)
             continue

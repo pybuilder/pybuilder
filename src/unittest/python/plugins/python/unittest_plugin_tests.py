@@ -64,68 +64,45 @@ class ExecuteTestsTests(TestCase):
         self.mock_result = Mock()
         self.mock_logger = Mock()
 
+    @patch('pybuilder.plugins.python.unittest_plugin.start_unittest_tool')
     @patch('unittest.TextTestRunner')
     @patch('pybuilder.plugins.python.unittest_plugin.unittest')
     @patch('pybuilder.plugins.python.unittest_plugin.discover_modules_matching')
-    def test_should_discover_modules_by_suffix(self, mock_discover_modules_matching, mock_unittest, runner):
-        execute_tests(runner, self.mock_logger, '/path/to/test/sources', '_tests.py')
+    def test_should_discover_modules_by_suffix(self, mock_discover_modules_matching, mock_unittest, runner, tool):
+        pipe = Mock()
+        pipe.remote_close_cause.return_value = None
+        tool.return_value = (Mock(), pipe)
+        execute_tests([], runner, self.mock_logger, '/path/to/test/sources', '_tests.py')
 
         mock_discover_modules_matching.assert_called_with('/path/to/test/sources', '*_tests.py')
 
+    @patch('pybuilder.plugins.python.unittest_plugin.start_unittest_tool')
     @patch('unittest.TextTestRunner')
     @patch('pybuilder.plugins.python.unittest_plugin.unittest')
     @patch('pybuilder.plugins.python.unittest_plugin.discover_modules_matching')
-    def test_should_discover_modules_by_glob(self, mock_discover_modules_matching, mock_unittest, runner):
-        execute_tests_matching(runner, self.mock_logger, '/path/to/test/sources', '*_tests.py')
+    def test_should_discover_modules_by_glob(self, mock_discover_modules_matching, mock_unittest, runner, tool):
+        pipe = Mock()
+        pipe.remote_close_cause.return_value = None
+        tool.return_value = (Mock(), pipe)
+        execute_tests_matching([], runner, self.mock_logger, '/path/to/test/sources', '*_tests.py')
 
         mock_discover_modules_matching.assert_called_with('/path/to/test/sources', '*_tests.py')
 
-    @patch('unittest.TextTestRunner')
-    @patch('pybuilder.plugins.python.unittest_plugin.unittest')
-    @patch('pybuilder.plugins.python.unittest_plugin.discover_modules_matching')
-    def test_should_load_tests_from_discovered_modules(self, mock_discover_modules_matching, mock_unittest, runner):
-        mock_modules = Mock()
-        mock_discover_modules_matching.return_value = mock_modules
-
-        execute_tests_matching(runner, self.mock_logger, '/path/to/test/sources', '*_tests.py')
-
-        mock_unittest.defaultTestLoader.loadTestsFromNames.assert_called_with(mock_modules)
-
+    @patch('pybuilder.plugins.python.unittest_plugin.start_unittest_tool')
     @patch('unittest.TextTestRunner')
     @patch('pybuilder.plugins.python.unittest_plugin.unittest')
     @patch('pybuilder.utils.discover_modules')
-    def test_should_run_discovered_and_loaded_tests(self, mock_discover_modules, mock_unittest, runner):
-        mock_tests = Mock()
-        mock_unittest.defaultTestLoader.loadTestsFromNames.return_value = mock_tests
-
-        execute_tests(runner, self.mock_logger, '/path/to/test/sources', '_tests.py')
-
-        runner.return_value.run.assert_called_with(mock_tests)
-
-    @patch('unittest.TextTestRunner')
-    @patch('pybuilder.plugins.python.unittest_plugin.unittest')
-    @patch('pybuilder.utils.discover_modules')
-    def test_should_return_actual_test_results(self, mock_discover_modules, mock_unittest, runner):
+    def test_should_return_actual_test_results(self, mock_discover_modules, mock_unittest, runner, tool):
+        pipe = Mock()
+        pipe.remote_close_cause.return_value = None
+        tool.return_value = (Mock(), pipe)
         mock_tests = Mock()
         mock_unittest.defaultTestLoader.loadTestsFromNames.return_value = mock_tests
         runner.return_value.run.return_value = self.mock_result
 
-        actual, _ = execute_tests(runner, self.mock_logger, '/path/to/test/sources', '_tests.py')
+        actual, _ = execute_tests([], runner, self.mock_logger, '/path/to/test/sources', '_tests.py')
 
         self.assertEqual(self.mock_result, actual)
-
-    @patch('unittest.TextTestRunner')
-    @patch('pybuilder.plugins.python.unittest_plugin.unittest')
-    @patch('pybuilder.utils.discover_modules')
-    def test_should_set_test_method_prefix_when_given(self, mock_discover_modules, mock_unittest, runner):
-        mock_tests = Mock()
-        mock_unittest.defaultTestLoader.loadTestsFromNames.return_value = mock_tests
-        runner.return_value.run.return_value = self.mock_result
-
-        actual, _ = execute_tests(runner, self.mock_logger, '/path/to/test/sources', '_tests.py',
-                                  test_method_prefix='should_')
-
-        self.assertEqual('should_', mock_unittest.defaultTestLoader.testMethodPrefix)
 
 
 class CIServerInteractionTests(TestCase):

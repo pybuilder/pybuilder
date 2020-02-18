@@ -38,7 +38,8 @@ from pybuilder.errors import (CircularTaskDependencyException,
                               NoSuchTaskException,
                               RequiredTaskExclusionException)
 from pybuilder.graph_utils import Graph
-from pybuilder.utils import as_list, Timer, odict
+from pybuilder.python_utils import odict
+from pybuilder.utils import as_list, Timer
 
 if sys.version_info[0] < 3:  # if major is less than 3
     from .excp_util_2 import raise_exception

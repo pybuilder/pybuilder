@@ -16,7 +16,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pybuilder.plugins.python.mp_tools.tool_manager import start_tool, PipeShutdownError, RemoteObjectPipe, Tool, logger
+from pybuilder.plugins.python.remote_tools import start_tool, RemoteObjectPipe, Tool, logger, PipeShutdownError
 
 __all__ = ["start_unittest_tool", "PipeShutdownError", logger]
 

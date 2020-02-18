@@ -31,7 +31,6 @@ bootstrap()
 use_plugin("python.core")
 use_plugin("python.pytddmon")
 use_plugin("python.distutils")
-use_plugin("python.venv")
 
 use_plugin("copy_resources")
 use_plugin("filter_resources")
@@ -90,8 +89,6 @@ def initialize(project):
     if sys.version_info[0] < 3:
         project.build_depends_on("mock")
 
-    project.build_depends_on("pyfix")  # required test framework
-    project.build_depends_on("pyassert")
     project.build_depends_on("pygments")
 
     project.set_property("verbose", True)
@@ -108,7 +105,8 @@ def initialize(project):
     # Issue #284
     project.set_property("integrationtest_inherit_environment", True)
 
-    project.set_property("flake8_break_build", False)
+    project.set_property("flake8_break_build", True)
+    project.set_property("flake8_extend_ignore", "E303")
     project.set_property("flake8_include_test_sources", True)
     project.set_property("flake8_include_scripts", True)
     project.set_property("flake8_exclude_patterns", ",".join([

@@ -20,18 +20,22 @@ from unittest import TestCase
 
 from pybuilder.core import Project, Logger
 from pybuilder.plugins.python.pymetrics_plugin import check_pymetrics_available
-from test_utils import Mock, patch, ANY
+from test_utils import Mock
 
 
 class CheckMyMetricsAvailableTests(TestCase):
 
-    @patch('pybuilder.plugins.python.pymetrics_plugin.assert_can_execute')
-    def test_should_check_that_pymetrics_can_be_executed(self, mock_assert_can_execute):
+    def test_should_check_that_pymetrics_can_be_executed(self):
         mock_project = Mock(Project)
         mock_logger = Mock(Logger)
 
-        check_pymetrics_available(mock_project, mock_logger)
+        reactor = Mock()
+        reactor.python_env_registry = {}
+        reactor.python_env_registry["pybuilder"] = pyb_env = Mock()
+        pyb_env.environ = {}
+        verify_mock = pyb_env.verify_can_execute = Mock()
+        reactor.pybuilder_venv = pyb_env
 
-        expected_command_line = ('pymetrics', '--nosql', '--nocsv')
-        mock_assert_can_execute.assert_called_with(expected_command_line, 'pymetrics', 'plugin python.pymetrics',
-                                                   env=ANY)
+        check_pymetrics_available(mock_project, mock_logger, reactor)
+
+        verify_mock.assert_called_with(["pymetrics", "--nosql", "--nocsv"], "pymetrics", "plugin python.pymetrics")

@@ -30,7 +30,6 @@ from pybuilder.errors import (MissingPluginException,
                               IncompatiblePluginException,
                               BuildFailedException
                               )
-from pybuilder.install_utils import install_dependencies
 from pybuilder.pip_common import Version
 from pybuilder.pip_utils import (version_satisfies_spec
                                  )
@@ -57,10 +56,10 @@ class PluginLoader(object):
 
 
 class BuiltinPluginLoader(PluginLoader):
-    def can_load(self, project, plugin_def):
+    def can_load(self, reactor, plugin_def):
         return ":" not in plugin_def.name
 
-    def load_plugin(self, project, plugin_defs):
+    def load_plugin(self, reactor, plugin_defs):
         builtin_plugin_name = plugin_defs.plugin_module_name or "pybuilder.plugins.%s_plugin" % plugin_defs.name
         self.logger.debug("Trying to load builtin plugin %r, module %r", plugin_defs.name, builtin_plugin_name)
         try:
@@ -76,11 +75,11 @@ class BuiltinPluginLoader(PluginLoader):
 
 
 class DownloadingPluginLoader(PluginLoader):
-    def can_load(self, project, plugin_def):
+    def can_load(self, reactor, plugin_def):
         return (plugin_def.name.startswith(PluginDef.PYPI_PLUGIN_PROTOCOL) or
                 plugin_def.name.startswith(PluginDef.VCS_PLUGIN_PROTOCOL))
 
-    def install_plugin(self, project, plugin_defs):
+    def install_plugin(self, reactor, plugin_defs):
         plugin_defs = as_list(plugin_defs)
         pip_batch = []
 
@@ -93,15 +92,13 @@ class DownloadingPluginLoader(PluginLoader):
             pip_batch.append(plugin_def.dependency)
 
         try:
-            install_dependencies(self.logger, project,
-                                 pip_batch,
-                                 project.plugin_dir,
-                                 project.plugin_install_log,
-                                 package_type="plugin")
+            per = reactor.python_env_registry
+            pyb_env = per["pybuilder"]
+            pyb_env.install_dependencies(pip_batch, package_type="plugin")
         except BuildFailedException as e:
             self.logger.warn(e.message)
 
-    def load_plugin(self, project, plugin_def):
+    def load_plugin(self, reactor, plugin_def):
         plugin_module_name = plugin_def.plugin_module_name or plugin_def.name
         self.logger.debug("Trying to load third party plugin %r, module %r", plugin_def.name, plugin_module_name)
         plugin_module = _load_plugin(plugin_module_name, plugin_def.name)
@@ -121,13 +118,13 @@ class DispatchingPluginLoader(PluginLoader):
         super(DispatchingPluginLoader, self).__init__(logger)
         self._loaders = loaders
 
-    def can_load(self, project, plugin_def):
+    def can_load(self, reactor, plugin_def):
         for loader in self._loaders:
-            if loader.can_load(project, plugin_def):
+            if loader.can_load(reactor, plugin_def):
                 return True
         return False
 
-    def install_plugin(self, project, plugin_defs):
+    def install_plugin(self, reactor, plugin_defs):
         loader_plugins = {}
         plugin_defs = as_list(plugin_defs)
 
@@ -137,7 +134,7 @@ class DispatchingPluginLoader(PluginLoader):
         for plugin_def in plugin_defs:
             loader_found = False
             for loader in self._loaders:
-                if loader.can_load(project, plugin_def):
+                if loader.can_load(reactor, plugin_def):
                     loader_plugins[loader].append(plugin_def)
                     loader_found = True
                     break
@@ -146,7 +143,7 @@ class DispatchingPluginLoader(PluginLoader):
                                              "no plugin loader was able to load the plugin specified")
 
         for loader, plugin_defs in loader_plugins.items():
-            loader.install_plugin(project, plugin_defs)
+            loader.install_plugin(reactor, plugin_defs)
 
     def load_plugin(self, project, plugin_def):
         last_problem = None

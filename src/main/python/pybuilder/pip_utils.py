@@ -16,17 +16,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
-import sys
 from collections import namedtuple
-from os.path import normcase as nc
 
 from pybuilder.core import Dependency, RequirementsFile
 from pybuilder.pip_common import canonicalize_name, WorkingSet, SpecifierSet, Version
-from pybuilder.utils import execute_command, as_list, odict
+from pybuilder.python_utils import odict
+from pybuilder.utils import as_list
 
 PIP_MODULE_STANZA = ["-m", "pip.__main__"]
-PIP_EXEC_STANZA = [nc(sys.executable)] + PIP_MODULE_STANZA
 
 
 def build_dependency_version_string(mixed):
@@ -41,16 +38,17 @@ def build_dependency_version_string(mixed):
     return version
 
 
-def pip_install_batches(packages, index_url=None, extra_index_url=None, upgrade=False, insecure_installs=None,
+def pip_install_batches(packages, python_env, index_url=None, extra_index_url=None, upgrade=False,
+                        insecure_installs=None,
                         force_reinstall=False, target_dir=None, verbose=False, trusted_host=None, constraint_file=None,
                         eager_upgrade=False, ignore_installed=False, prefix_dir=None,
-                        logger=None, outfile_name=None, error_file_name=None, env=None, cwd=None, python_exec=None):
+                        logger=None, outfile_name=None, error_file_name=None, env=None, cwd=None):
     """install_batches is a list of dependencies in a form of a tuple [package_spec, {build options}}]
     The batches will be assembled in a way that ensures that installation of packages with identical options occurs
     together to cut down on the number of round trips.
     """
     pip_command_line = []
-    pip_command_line.extend(PIP_EXEC_STANZA if not python_exec else [python_exec] + PIP_MODULE_STANZA)
+    pip_command_line.extend(python_env.executable + PIP_MODULE_STANZA)
     pip_command_line.append("install")
     pip_command_line.extend(build_pip_install_options(index_url=index_url,
                                                       extra_index_url=extra_index_url,
@@ -65,8 +63,9 @@ def pip_install_batches(packages, index_url=None, extra_index_url=None, upgrade=
                                                       ignore_installed=ignore_installed,
                                                       prefix_dir=prefix_dir,
                                                       ))
-    if env is None:
-        env = os.environ
+    env_environ = python_env.environ
+    if env is not None:
+        env_environ.update(env)
 
     batches = odict()
     for package in packages:
@@ -87,26 +86,24 @@ def pip_install_batches(packages, index_url=None, extra_index_url=None, upgrade=
         for pkg in pkgs:
             cmd_line.extend(pkg)
 
-        if logger:
-            logger.debug("Invoking PIP: '%s'", _log_cmd_line(*cmd_line))
-
-        results.append(execute_command(cmd_line,
-                                       outfile_name=outfile_name,
-                                       error_file_name=error_file_name,
-                                       env=env,
-                                       cwd=cwd,
-                                       shell=False,
-                                       no_path_search=True))
+        results.append(python_env.execute_command(cmd_line,
+                                                  outfile_name=outfile_name,
+                                                  error_file_name=error_file_name,
+                                                  env=env_environ,
+                                                  cwd=cwd,
+                                                  shell=False,
+                                                  no_path_search=True))
 
     return results
 
 
-def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=False, insecure_installs=None,
+def pip_install(install_targets, python_env, index_url=None, extra_index_url=None, upgrade=False,
+                insecure_installs=None,
                 force_reinstall=False, target_dir=None, verbose=False, trusted_host=None, constraint_file=None,
                 eager_upgrade=False, ignore_installed=False, prefix_dir=None,
-                logger=None, outfile_name=None, error_file_name=None, env=None, cwd=None, python_exec=None):
+                logger=None, outfile_name=None, error_file_name=None, env=None, cwd=None):
     pip_command_line = list()
-    pip_command_line.extend(PIP_EXEC_STANZA if not python_exec else [python_exec] + PIP_MODULE_STANZA)
+    pip_command_line.extend(python_env.executable + PIP_MODULE_STANZA)
     pip_command_line.append("install")
     pip_command_line.extend(build_pip_install_options(index_url=index_url,
                                                       extra_index_url=extra_index_url,
@@ -124,19 +121,20 @@ def pip_install(install_targets, index_url=None, extra_index_url=None, upgrade=F
     for install_target in as_list(install_targets):
         pip_command_line.extend(as_pip_install_target(install_target))
 
-    if env is None:
-        env = os.environ
+    env_environ = python_env.environ
+    if env is not None:
+        env_environ.update(env)
 
     if logger:
         logger.debug("Invoking PIP: '%s'", _log_cmd_line(*pip_command_line))
 
-    return execute_command(pip_command_line,
-                           outfile_name=outfile_name,
-                           error_file_name=error_file_name,
-                           env=env,
-                           cwd=cwd,
-                           shell=False,
-                           no_path_search=True)
+    return python_env.execute_command(pip_command_line,
+                                      outfile_name=outfile_name,
+                                      error_file_name=error_file_name,
+                                      env=env_environ,
+                                      cwd=cwd,
+                                      shell=False,
+                                      no_path_search=True)
 
 
 def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=False, insecure_installs=None,

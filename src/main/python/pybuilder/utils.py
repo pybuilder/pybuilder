@@ -23,28 +23,17 @@
 import collections
 import fnmatch
 import json
+import os
 import re
 import subprocess
+import sys
 import tempfile
 import time
-from shutil import rmtree
 from subprocess import Popen, PIPE
 
 from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
-from pybuilder.python_utils import (os, sys, is_string, which, makedirs, basestring,
-                                    python_specific_dir_name,
-                                    sys_executable_suffix,
-                                    venv_binname,
-                                    venv_python_executable,
-                                    venv_symlinks,
-                                    add_env_to_path,
-                                    patch_mp_plugin_dir,
-                                    patch_mp,
-                                    mp_get_context,
-                                    odict,
-                                    getsitepaths,
-                                    is_pypy)
-from pybuilder.vendor import virtualenv
+from pybuilder.python_utils import (is_string, which, makedirs, basestring,
+                                    IS_WIN)
 
 
 def get_all_dependencies_for_task(task):
@@ -155,8 +144,21 @@ def discover_files_matching(start_dir, file_glob, exclude_file_glob=None):
                 yield os.path.join(root, file_name)
 
 
+def assert_can_execute(command_and_arguments, prerequisite, caller, env, no_path_search=False):
+    with tempfile.NamedTemporaryFile() as f:
+        try:
+            if IS_WIN and not is_string(command_and_arguments) and not no_path_search:
+                which_cmd = which(command_and_arguments[0], path=env.get("PATH") if env else None)
+                if which_cmd:
+                    command_and_arguments[0] = which_cmd
+            process = subprocess.Popen(command_and_arguments, stdout=f, stderr=f, shell=False, env=env)
+            process.wait()
+        except OSError:
+            raise MissingPrerequisiteException(prerequisite, caller)
+
+
 def execute_command(command_and_arguments, outfile_name=None, env=None, cwd=None, error_file_name=None, shell=False,
-                    no_path_search=False):
+                    no_path_search=False, logger=None):
     if error_file_name is None and outfile_name:
         error_file_name = outfile_name + ".err"
 
@@ -173,10 +175,12 @@ def execute_command(command_and_arguments, outfile_name=None, env=None, cwd=None
             error_file_created = True
 
         try:
-            if not shell and sys.platform == "win32" and not is_string(command_and_arguments) and not no_path_search:
-                which_cmd = which(command_and_arguments[0], path=env.get("PATH", None) if env else None)
+            if not shell and IS_WIN and not is_string(command_and_arguments) and not no_path_search:
+                which_cmd = which(command_and_arguments[0], path=env.get("PATH") if env else None)
                 if which_cmd:
                     command_and_arguments[0] = which_cmd
+            if logger:
+                logger.debug("Executing command: %s", " ".join(repr(cmd) for cmd in command_and_arguments))
             process = Popen(command_and_arguments,
                             stdout=outfile_name,
                             stderr=error_file_name,
@@ -212,19 +216,6 @@ def tail(file_path, lines=20):
 
 def tail_log(file_path, lines=20):
     return "\n".join("\t" + l for l in tail(file_path, lines))
-
-
-def assert_can_execute(command_and_arguments, prerequisite, caller, env):
-    with tempfile.NamedTemporaryFile() as f:
-        try:
-            if sys.platform == "win32" and not is_string(command_and_arguments):
-                which_cmd = which(command_and_arguments[0], path=env.get("PATH", None) if env else None)
-                if which_cmd:
-                    command_and_arguments[0] = which_cmd
-            process = subprocess.Popen(command_and_arguments, stdout=f, stderr=f, shell=False, env=env)
-            process.wait()
-        except OSError:
-            raise MissingPrerequisiteException(prerequisite, caller)
 
 
 def read_file(file_name):
@@ -316,29 +307,3 @@ def safe_log_file_name(file_name):
     # per https://support.microsoft.com/en-us/kb/177506
     # per https://msdn.microsoft.com/en-us/library/aa365247
     return re.sub(r'\\|/|:|\*|\?|\"|<|>|\|', '_', file_name)
-
-
-def create_venv(home_dir,
-                system_site_packages=False,
-                clear=False,
-                symlinks=False,
-                upgrade=False,
-                with_pip=False,
-                prompt=None,
-                offline=False):
-    if clear:
-        if os.path.exists(home_dir):
-            rmtree(home_dir)
-
-    with virtualenv.virtualenv_support_dirs() as search_dirs:
-        virtualenv.create_environment(
-            home_dir,
-            site_packages=system_site_packages,
-            prompt=prompt,
-            search_dirs=search_dirs,
-            download=upgrade and (not offline),
-            no_setuptools=False,
-            no_pip=not with_pip,
-            no_wheel=False,
-            symlink=symlinks
-        )

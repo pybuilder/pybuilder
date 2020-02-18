@@ -33,7 +33,7 @@ from os.path import sep as PATH_SEPARATOR, normcase as nc, join as jp, isdir, is
 # Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
 from pybuilder import pip_common
 from pybuilder.errors import MissingPropertyException, UnspecifiedPluginNameException
-from pybuilder.utils import as_list, python_specific_dir_name, sys_executable_suffix, venv_binname
+from pybuilder.utils import as_list
 
 PATH_SEP_RE = re.compile("[\\/]")
 
@@ -231,7 +231,7 @@ class Dependency(object):
     method from class Project to add a dependency to a project.
     """
 
-    def __init__(self, name, version=None, url=None):
+    def __init__(self, name, version=None, url=None, declaration_only=False):
         self.name = name
 
         if version:
@@ -246,6 +246,7 @@ class Dependency(object):
 
         self.version = version
         self.url = url
+        self.declaration_only = declaration_only
 
     def __eq__(self, other):
         if not isinstance(other, Dependency):
@@ -270,7 +271,10 @@ class Dependency(object):
         return str(self)
 
     def __repr__(self):
-        return self.name + ("," + self.version if self.version else "") + ("," + self.url if self.url else "")
+        return (self.name +
+                ("," + self.version if self.version else "") +
+                ("," + self.url if self.url else "") +
+                (" (declaration only)" if self.declaration_only else ""))
 
 
 class RequirementsFile(object):
@@ -278,9 +282,10 @@ class RequirementsFile(object):
     Represents all dependencies in a requirements file (requirements.txt).
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename, declaration_only=False):
         self.name = filename
         self.version = None
+        self.declaration_only = declaration_only
 
     def __eq__(self, other):
         if not isinstance(other, RequirementsFile):
@@ -297,6 +302,12 @@ class RequirementsFile(object):
 
     def __hash__(self):
         return 42 * hash(self.name)
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
 
 
 class PluginDef:
@@ -389,15 +400,6 @@ class Project(object):
         self._files_to_install = []
         self._preinstall_script = None
         self._postinstall_script = None
-
-        self._tools = []
-
-        self._plugin_dir = jp(nc(self.basedir), ".pybuilder", "plugins", python_specific_dir_name)
-        self._plugin_install_log = jp(self._plugin_dir, "install.log")
-        self._plugin_python = jp(self._plugin_dir, sys_executable_suffix)
-        self._plugin_env = os.environ.copy()
-        self._plugin_env["PATH"] = os.pathsep.join([jp(self._plugin_dir, venv_binname)] +
-                                                   self._plugin_env.get("PATH", "").split(os.pathsep))
 
     def __str__(self):
         return "[Project name=%s basedir=%s]" % (self.name, self.basedir)
@@ -496,20 +498,20 @@ class Project(object):
     def plugin_dependencies(self):
         return list(sorted(self._plugin_dependencies))
 
-    def depends_on(self, name, version=None, url=None):
-        self._install_dependencies.add(Dependency(name, version, url))
+    def depends_on(self, name, version=None, url=None, declaration_only=False):
+        self._install_dependencies.add(Dependency(name, version, url, declaration_only))
 
-    def build_depends_on(self, name, version=None, url=None):
-        self._build_dependencies.add(Dependency(name, version, url))
+    def build_depends_on(self, name, version=None, url=None, declaration_only=False):
+        self._build_dependencies.add(Dependency(name, version, url, declaration_only))
 
-    def depends_on_requirements(self, file):
-        self._install_dependencies.add(RequirementsFile(file))
+    def depends_on_requirements(self, file, declaration_only=False):
+        self._install_dependencies.add(RequirementsFile(file, declaration_only=declaration_only))
 
     def build_depends_on_requirements(self, file):
         self._build_dependencies.add(RequirementsFile(file))
 
-    def plugin_depends_on(self, name, version=None, url=None):
-        self._plugin_dependencies.add(Dependency(name, version, url))
+    def plugin_depends_on(self, name, version=None, url=None, declaration_only=False):
+        self._plugin_dependencies.add(Dependency(name, version, url, declaration_only))
 
     @property
     def setup_preinstall_script(self):
@@ -651,36 +653,6 @@ class Project(object):
     def set_property_if_unset(self, key, value):
         if not self.has_property(key):
             self.set_property(key, value)
-
-    @property
-    def plugin_dir(self):
-        """Path to project's PyB's plugin directory"""
-        return self._plugin_dir
-
-    @property
-    def plugin_python(self):
-        """Path to plugin VEnv Python executable"""
-        return self._plugin_python
-
-    @property
-    def plugin_env(self):
-        """Plugin ENV dictionary"""
-        return self._plugin_env
-
-    @property
-    def plugin_install_log(self):
-        """The path to log file containing all plugin installation logs"""
-        return self._plugin_install_log
-
-    def add_tool(self, tool):
-        self._tools.append(tool)
-
-    def remove_tool(self, tool):
-        self._tools.remove(tool)
-
-    @property
-    def tools(self):
-        return self._tools
 
 
 class Logger(object):

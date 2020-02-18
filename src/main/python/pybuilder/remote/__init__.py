@@ -21,17 +21,17 @@ from pybuilder.python_utils import patch_mp
 
 patch_mp()
 
-import sys
-from io import BytesIO, StringIO
-from pickle import PickleError, Unpickler, UnpicklingError
-from pickletools import dis
+from io import BytesIO, StringIO  # noqa: E402
+from pickle import PickleError, Unpickler, UnpicklingError  # noqa: E402
+from pickletools import dis  # noqa: E402
 
-from pybuilder.plugins.python.mp_tools._remote_weak import WeakKeyDictionary, WeakSet, WeakValueDictionary
+from pybuilder.remote._remote_weak import WeakKeyDictionary, WeakSet, WeakValueDictionary  # noqa: E402
 from pybuilder.python_utils import (mp_get_context,
                                     mp_ForkingPickler as ForkingPickler,
-                                    mp_log_to_stderr as log_to_stderr)
+                                    mp_log_to_stderr as log_to_stderr,
+                                    PY2,
+                                    IS_WIN)  # noqa: E402
 
-PY2 = sys.version_info[0] < 3
 PICKLE_PROTOCOL = 2
 
 if PY2:
@@ -687,7 +687,7 @@ class _RemoteObjectPipe(RemoteObjectPipe):
         if self._remote_close_cause is None:
             self._remote_close_cause = e
 
-    if PY2 and sys.platform == "win32":
+    if PY2 and IS_WIN:
         # Python 2 on Windows uses Python multiprocessing
 
         def _send_obj(self, obj):

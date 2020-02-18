@@ -31,33 +31,39 @@ from pybuilder.plugins.python.sphinx_plugin import (assert_sphinx_is_available,
                                                     sphinx_pyb_quickstart_generate,
                                                     sphinx_generate,
                                                     generate_sphinx_apidocs)
-from test_utils import Mock, patch, call, ANY
+from test_utils import Mock, patch, call
 
 
 class CheckSphinxAvailableTests(TestCase):
-    @patch('pybuilder.plugins.python.sphinx_plugin.assert_can_execute')
-    def test_should_check_that_sphinx_can_be_executed(self, mock_assert_can_execute):
+    def test_should_check_that_sphinx_can_be_executed(self):
         mock_project = Mock(Project)
         mock_logger = Mock(Logger)
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
-        assert_sphinx_is_available(mock_project, mock_logger)
+        assert_sphinx_is_available(mock_project, mock_logger, reactor)
 
-        mock_assert_can_execute.assert_has_calls(
+        pyb_env.verify_can_execute.assert_has_calls(
             [
-                call(['sphinx-build', '--version'], 'sphinx', 'plugin python.sphinx', env=ANY),
-                call(['sphinx-apidoc', '--version'], 'sphinx', 'plugin python.sphinx', env=ANY)
+                call(['sphinx-build', '--version'], 'sphinx-build', 'plugin python.sphinx'),
+                call(['sphinx-apidoc', '--version'], 'sphinx-apidoc', 'plugin python.sphinx')
             ]
         )
 
-    @patch('pybuilder.plugins.python.sphinx_plugin.assert_can_execute')
-    def test_should_check_that_sphinx_quickstart_can_be_executed(self, mock_assert_can_execute):
+    def test_should_check_that_sphinx_quickstart_can_be_executed(self):
         mock_project = Mock(Project)
         mock_logger = Mock(Logger)
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
-        assert_sphinx_quickstart_is_available(mock_project, mock_logger)
+        assert_sphinx_quickstart_is_available(mock_project, mock_logger, reactor)
 
-        mock_assert_can_execute.assert_called_with(
-            ['sphinx-quickstart', '--version'], 'sphinx', 'plugin python.sphinx', env=ANY)
+        pyb_env.verify_can_execute.assert_called_with(
+            ['sphinx-quickstart', '--version'], 'sphinx-quickstart', 'plugin python.sphinx')
 
 
 class SphinxPluginInitializationTests(TestCase):

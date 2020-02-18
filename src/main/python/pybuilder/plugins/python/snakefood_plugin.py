@@ -17,7 +17,6 @@
 #   limitations under the License.
 
 from pybuilder.core import use_plugin, before, task, init
-from pybuilder.utils import assert_can_execute, execute_command
 
 use_plugin("python.core")
 
@@ -28,26 +27,26 @@ def depend_on_snakefood(project):
 
 
 @before("render_snakefood_report")
-def check_snakefood_available(project, logger):
+def check_snakefood_available(project, logger, reactor):
     logger.debug("Checking availability of snakefood")
-    assert_can_execute(("sfood", "-h"), "sfood", "plugin python.snakefood", env=project.plugin_env)
+    reactor.pybuilder_venv.verify_can_execute(["sfood", "-h"], "sfood", "plugin python.snakefood")
     logger.debug("snakefood has been found")
 
 
 @before("render_snakefood_report")
-def check_graphviz_available(project, logger):
+def check_graphviz_available(project, logger, reactor):
     logger.debug("Checking availability of graphviz")
-    assert_can_execute(("dot", "-V"), "graphviz", "plugin python.snakefood", env=project.plugin_env)
+    reactor.pybuilder_venv.verify_can_execute(["dot", "-V"], "graphviz", "plugin python.snakefood")
     logger.debug("graphviz has been found")
 
 
 @task("render_snakefood_report", description="Renders a snakefood PDF to the reports directory.")
-def render_snakefood_report(project, logger):
+def render_snakefood_report(project, logger, reactor):
     logger.info("Executing snakefood on project sources")
 
     internal_report_file = project.expand_path("$dir_reports/snakefood-internal")
     external_report_file = project.expand_path("$dir_reports/snakefood-external")
-    collect_dependencies(project, internal_report_file, external_report_file)
+    collect_dependencies(project, reactor.pybuilder_venv, internal_report_file, external_report_file)
 
     logger.debug("Transforming snakefood graphs to graphviz")
     internal_graph_file = project.expand_path("$dir_reports/snakefood-internal.dot")
@@ -64,18 +63,18 @@ def render_snakefood_report(project, logger):
     generate_pdf(external_graph_file, external_pdf_file)
 
 
-def collect_dependencies(project, internal_report_file, external_report_file):
+def collect_dependencies(project, python_env, internal_report_file, external_report_file):
     source_dir = project.expand_path("$dir_source_main_python")
     internal_command = ["sfood", "--internal"]
     external_command = ["sfood", "--external"]
 
-    execute_command(internal_command, internal_report_file, cwd=source_dir)
-    execute_command(external_command, external_report_file, cwd=source_dir)
+    python_env.execute_command(internal_command, internal_report_file, cwd=source_dir)
+    python_env.execute_command(external_command, external_report_file, cwd=source_dir)
 
 
-def generate_graph(report_file, graph_file):
-    execute_command(["sfood-graph", report_file], graph_file)
+def generate_graph(python_env, report_file, graph_file):
+    python_env.execute_command(["sfood-graph", report_file], graph_file)
 
 
-def generate_pdf(graph_file, pdf_file):
-    execute_command(["dot", "-Tpdf", graph_file], pdf_file)
+def generate_pdf(python_env, graph_file, pdf_file):
+    python_env.execute_command(["dot", "-Tpdf", graph_file], pdf_file)

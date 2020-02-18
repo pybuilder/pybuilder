@@ -21,7 +21,6 @@ import os
 
 from pybuilder.utils import (discover_modules,
                              discover_files_matching,
-                             execute_command,
                              as_list,
                              read_file)
 
@@ -71,7 +70,7 @@ def _if_property_set_and_dir_exists(property_value):
     return property_value and os.path.isdir(property_value)
 
 
-def execute_tool_on_source_files(project, name, command_and_arguments, logger=None,
+def execute_tool_on_source_files(project, name, python_env, command_and_arguments, logger=None,
                                  include_test_sources=False, include_scripts=False, include_dirs_only=False):
     if include_dirs_only:
         files = discover_affected_dirs(include_test_sources, include_scripts, project)
@@ -82,7 +81,7 @@ def execute_tool_on_source_files(project, name, command_and_arguments, logger=No
 
     report_file = project.expand_path("$dir_reports/{0}".format(name))
 
-    execution_result = execute_command(command, report_file, env=project.plugin_env), report_file
+    execution_result = python_env.execute_command(command, report_file), report_file
 
     report_file = execution_result[1]
     report_lines = read_file(report_file)
@@ -93,14 +92,15 @@ def execute_tool_on_source_files(project, name, command_and_arguments, logger=No
     return execution_result
 
 
-def execute_tool_on_modules(project, name, command_and_arguments, extend_pythonpath=True):
+def execute_tool_on_modules(project, name, python_env, command_and_arguments, extend_pythonpath=True):
     source_dir = project.expand_path("$dir_source_main_python")
     modules = discover_modules(source_dir)
     command = as_list(command_and_arguments) + modules
 
     report_file = project.expand_path("$dir_reports/%s" % name)
 
-    env = dir(project.plugin_env)
+    env = {}
     if extend_pythonpath:
         env["PYTHONPATH"] = source_dir
-    return execute_command(command, report_file, env=env), report_file
+
+    return python_env.execute_command(command, report_file, env=env), report_file

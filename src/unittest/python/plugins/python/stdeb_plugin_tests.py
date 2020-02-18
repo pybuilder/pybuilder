@@ -23,31 +23,35 @@ from pybuilder.plugins.python.stdeb_plugin import (
     assert_py2dsc_deb_is_available,
     get_py2dsc_deb_command,
     assert_dpkg_is_available)
-from test_utils import Mock, patch, ANY
+from test_utils import Mock
 
 
 class CheckStdebAvailableTests(TestCase):
 
-    @patch('pybuilder.plugins.python.stdeb_plugin.assert_can_execute')
-    def test_should_check_that_py2dsc_deb_can_be_executed(self, mock_assert_can_execute):
+    def setUp(self):
+        self.reactor = Mock()
+        self.reactor.python_env_registry = {}
+        self.reactor.python_env_registry["pybuilder"] = pyb_env = Mock()
+        pyb_env.environ = {}
+        self.reactor.pybuilder_venv = pyb_env
+
+    def test_should_check_that_py2dsc_deb_can_be_executed(self):
         mock_project = Mock(Project)
         mock_logger = Mock(Logger)
 
-        assert_py2dsc_deb_is_available(mock_project, mock_logger)
+        assert_py2dsc_deb_is_available(mock_project, mock_logger, self.reactor)
 
-        expected_command_line = ['py2dsc-deb', '-h']
-        mock_assert_can_execute.assert_called_with(expected_command_line, 'py2dsc-deb', 'plugin python.stdeb', env=ANY)
+        self.reactor.pybuilder_venv.verify_can_execute.assert_called_with(
+            ["py2dsc-deb", "-h"], "py2dsc-deb", "plugin python.stdeb")
 
-    @patch('pybuilder.plugins.python.stdeb_plugin.assert_can_execute')
-    def test_should_check_that_dpkg_buildpackage_can_be_executed(self, mock_assert_can_execute):
+    def test_should_check_that_dpkg_buildpackage_can_be_executed(self):
         mock_project = Mock(Project)
         mock_logger = Mock(Logger)
 
-        assert_dpkg_is_available(mock_project, mock_logger)
+        assert_dpkg_is_available(mock_project, mock_logger, self.reactor)
 
-        expected_command_line = ['dpkg-buildpackage', '--help']
-        mock_assert_can_execute.assert_called_with(
-            expected_command_line, 'dpkg-buildpackage', 'plugin python.stdeb', env=ANY)
+        self.reactor.pybuilder_venv.verify_can_execute.assert_called_with(
+            ["dpkg-buildpackage", "--help"], "dpkg-buildpackage", "plugin python.stdeb")
 
 
 class StdebBuildCommandTests(TestCase):
@@ -65,4 +69,4 @@ class StdebBuildCommandTests(TestCase):
 
         self.assertEqual(
             py2dsc_deb_command,
-            "py2dsc-deb --maintainer 'foo <foo@bar.com>' -d '/path/to/final/build' /path/to/source/")
+            ["py2dsc-deb", "--maintainer", "foo <foo@bar.com>", "-d", "/path/to/final/build", "/path/to/source/"])

@@ -18,9 +18,9 @@
 
 from __future__ import unicode_literals
 
-from unittest.result import TestResult
+import unittest
 
-from pybuilder.plugins.python.mp_tools.unittest_tool import start_unittest_tool, PipeShutdownError, \
+from pybuilder.plugins.python.remote_tools.unittest_tool import start_unittest_tool, PipeShutdownError, \
     logger as tool_logger
 
 try:
@@ -57,11 +57,11 @@ def init_test_source_directory(project):
 
 @task
 @description("Runs unit tests based on Python's unittest module")
-def run_unit_tests(project, logger):
-    run_tests(project, logger, "unittest", "unit tests")
+def run_unit_tests(project, logger, reactor):
+    run_tests(project, logger, reactor, "unittest", "unit tests")
 
 
-def run_tests(project, logger, execution_prefix, execution_name):
+def run_tests(project, logger, reactor, execution_prefix, execution_name):
     logger.info("Running %s", execution_name)
     test_dir = _register_test_and_source_path_and_return_test_dir(project, sys.path, execution_prefix)
 
@@ -82,7 +82,7 @@ def run_tests(project, logger, execution_prefix, execution_name):
     try:
         test_method_prefix = project.get_property("%s_test_method_prefix" % execution_prefix)
         runner_generator = project.get_property("%s_runner" % execution_prefix)
-        result, console_out = execute_tests_matching(project.tools, runner_generator, logger, test_dir, module_glob,
+        result, console_out = execute_tests_matching(reactor.tools, runner_generator, logger, test_dir, module_glob,
                                                      test_method_prefix,
                                                      project.get_property("remote_debug"))
 
@@ -131,7 +131,7 @@ def execute_tests_matching(tools, runner_generator, logger, test_source, file_gl
             proc, pipe = start_unittest_tool(tools, test_modules, test_method_prefix, logging=remote_debug)
             try:
                 pipe.register_remote(runner)
-                pipe.register_remote_type(TestResult)
+                pipe.register_remote_type(unittest.result.TestResult)
                 tests = pipe.get_exposed("unittest_tests")
                 result = runner.run(tests)
             except PipeShutdownError:

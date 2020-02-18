@@ -23,7 +23,7 @@ from pybuilder.plugins.python.python_plugin_helper import (log_report,
                                                            discover_affected_dirs,
                                                            execute_tool_on_source_files,
                                                            _if_property_set_and_dir_exists)
-from test_utils import Mock, call, patch, ANY
+from test_utils import Mock, call, patch
 
 
 class LogReportsTest(unittest.TestCase):
@@ -224,43 +224,43 @@ class DiscoverAffectedDirsTest(unittest.TestCase):
 class ExecuteToolOnSourceFilesTest(unittest.TestCase):
     @patch('pybuilder.plugins.python.python_plugin_helper.log_report')
     @patch('pybuilder.plugins.python.python_plugin_helper.read_file')
-    @patch('pybuilder.plugins.python.python_plugin_helper.execute_command')
     @patch('pybuilder.plugins.python.python_plugin_helper.discover_affected_files')
     def test_should_execute_tool_on_source_files(self, affected,
-                                                 execute, read, log):
+                                                 read, log):
         project = Mock()
         project.expand_path.return_value = '/path/to/report'
         affected.return_value = ['file1', 'file2']
+        pyb_env = Mock()
 
-        execute_tool_on_source_files(project, 'name', 'foo --bar')
+        execute_tool_on_source_files(project, 'name', pyb_env, 'foo --bar')
 
-        execute.assert_called_with(['foo --bar', 'file1', 'file2'], '/path/to/report', env=ANY)
+        pyb_env.execute_command.assert_called_with(['foo --bar', 'file1', 'file2'], '/path/to/report')
 
     @patch('pybuilder.plugins.python.python_plugin_helper.log_report')
     @patch('pybuilder.plugins.python.python_plugin_helper.read_file')
-    @patch('pybuilder.plugins.python.python_plugin_helper.execute_command')
     @patch('pybuilder.plugins.python.python_plugin_helper.discover_affected_dirs')
     def test_should_execute_tool_on_source_dirs(self, affected,
-                                                execute, read, log):
+                                                read, log):
         project = Mock()
         project.expand_path.return_value = '/path/to/report'
         affected.return_value = ['/dir1', '/dir2']
+        pyb_env = Mock()
 
-        execute_tool_on_source_files(project, 'name', 'foo --bar', include_dirs_only=True)
+        execute_tool_on_source_files(project, 'name', pyb_env, 'foo --bar', include_dirs_only=True)
 
-        execute.assert_called_with(['foo --bar', '/dir1', '/dir2'], '/path/to/report', env=ANY)
+        pyb_env.execute_command.assert_called_with(['foo --bar', '/dir1', '/dir2'], '/path/to/report')
 
     @patch('pybuilder.plugins.python.python_plugin_helper.log_report')
     @patch('pybuilder.plugins.python.python_plugin_helper.read_file')
-    @patch('pybuilder.plugins.python.python_plugin_helper.execute_command')
     @patch('pybuilder.plugins.python.python_plugin_helper.discover_affected_files')
     def test_should_give_verbose_output(self, affected,
-                                        execute, read, log):
+                                        read, log):
         project = Mock()
         project.get_property.return_value = True  # flake8_verbose_output == True
         logger = Mock()
         read.return_value = ['error', 'warning']
+        pyb_env = Mock()
 
-        execute_tool_on_source_files(project, 'flake8', 'foo --bar', logger)
+        execute_tool_on_source_files(project, 'flake8', pyb_env, 'foo --bar', logger)
 
         log.assert_called_with(logger, 'flake8', ['error', 'warning'])

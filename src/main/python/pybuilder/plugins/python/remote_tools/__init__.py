@@ -16,7 +16,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pybuilder.plugins.python.mp_tools.remote import get_rom, ctx, PipeShutdownError, RemoteObjectPipe, logger, \
+
+from pybuilder.remote import get_rom, ctx, PipeShutdownError, RemoteObjectPipe, logger, \
     log_to_stderr
 
 __all__ = ["get_rom", "RemoteObjectPipe", "start_tool", "Tool", "PipeShutdownError", "logger"]
@@ -33,7 +34,6 @@ class Tool:
 
 
 def start_tool(tools, group=None, name=None, logging=None):
-    # type: (List[Tool], str, str, int) -> Tuple[ctx.Process, RemoteObjectPipe]
     """
     Starts a tool process
     """

@@ -22,7 +22,6 @@ from functools import partial
 from os.path import join as jp
 
 from pybuilder.core import init, task, description, depends, optional
-from pybuilder.install_utils import install_dependencies
 
 
 @init
@@ -51,7 +50,7 @@ def clean(project, logger):
 
 @task
 @description("Prepares the project for building.")
-def prepare(project, logger):
+def prepare(project, logger, reactor):
     target_directory = project.expand_path("$dir_target")
     if not os.path.exists(target_directory):
         logger.debug("Creating target directory %s", target_directory)
@@ -62,11 +61,8 @@ def prepare(project, logger):
         logger.debug("Creating reports directory %s", reports_directory)
         os.mkdir(reports_directory)
 
-    install_dependencies(logger, project,
-                         project.plugin_dependencies,
-                         project.plugin_dir,
-                         project.plugin_install_log,
-                         package_type="plugin")
+    reactor.python_env_registry["pybuilder"].install_dependencies(project.plugin_dependencies,
+                                                                  package_type="plugin")
 
 
 @task

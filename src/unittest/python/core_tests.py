@@ -21,8 +21,6 @@ import types
 import unittest
 from os.path import normcase as nc
 
-from pyassert import assert_that
-
 from pybuilder.core import (Project, Logger, init, INITIALIZER_ATTRIBUTE,
                             ENVIRONMENTS_ATTRIBUTE, task, description,
                             Dependency, RequirementsFile)
@@ -298,35 +296,32 @@ class ProjectValidationTest(unittest.TestCase):
 
     def test_should_validate_empty_project(self):
         validation_messages = self.project.validate()
-        assert_that(validation_messages).is_empty()
+        self.assertFalse(validation_messages)
 
     def test_should_not_validate_project_with_duplicate_dependency_but_different_versions(self):
         self.project.depends_on('spam', version='1')
         self.project.depends_on('spam', version='2')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Runtime dependency 'spam' has been defined multiple times.")
+        self.assertTrue("Runtime dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_dependency_when_version_is_given_for_one(self):
         self.project.depends_on('spam')
         self.project.depends_on('spam', version='2')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Runtime dependency 'spam' has been defined multiple times.")
+        self.assertTrue("Runtime dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_dependency_when_urls_are_different(self):
         self.project.depends_on('spam', url='y')
         self.project.depends_on('spam', url='x')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Runtime dependency 'spam' has been defined multiple times.")
+        self.assertTrue(
+            "Runtime dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_dependency_when_url_is_given_for_one(self):
         self.project.depends_on('spam')
         self.project.depends_on('spam', url='x')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Runtime dependency 'spam' has been defined multiple times.")
+        self.assertTrue("Runtime dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_dependency_for_more_than_two_times(self):
         self.project.depends_on('spam', version='1')
@@ -334,37 +329,33 @@ class ProjectValidationTest(unittest.TestCase):
         self.project.depends_on('spam', version='3')
         validation_messages = self.project.validate()
 
-        assert_that(validation_messages).contains(
-            "Runtime dependency 'spam' has been defined multiple times.")
-        assert_that(len(validation_messages)).equals(1)
+        self.assertTrue("Runtime dependency 'spam' has been defined multiple times." in validation_messages)
+        self.assertEquals(len(validation_messages), 1)
 
     def test_should_not_validate_project_with_duplicate_build_dependency_but_different_versions(self):
         self.project.build_depends_on('spam', version='1')
         self.project.build_depends_on('spam', version='2')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Build dependency 'spam' has been defined multiple times.")
+        self.assertTrue(
+            "Build dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_build_dependency_when_version_is_given_for_one(self):
         self.project.build_depends_on('spam')
         self.project.build_depends_on('spam', version='2')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Build dependency 'spam' has been defined multiple times.")
+        self.assertTrue("Build dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_build_dependency_when_urls_are_different(self):
         self.project.build_depends_on('spam', url='y')
         self.project.build_depends_on('spam', url='x')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Build dependency 'spam' has been defined multiple times.")
+        self.assertTrue("Build dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_build_dependency_when_url_is_given_for_one(self):
         self.project.build_depends_on('spam')
         self.project.build_depends_on('spam', url='x')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Build dependency 'spam' has been defined multiple times.")
+        self.assertTrue("Build dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_build_dependency_for_more_than_two_times(self):
         self.project.build_depends_on('spam', version='1')
@@ -372,18 +363,18 @@ class ProjectValidationTest(unittest.TestCase):
         self.project.build_depends_on('spam', version='3')
         validation_messages = self.project.validate()
 
-        assert_that(validation_messages).contains(
-            "Build dependency 'spam' has been defined multiple times.")
-        assert_that(len(validation_messages)).equals(1)
+        self.assertTrue(
+            "Build dependency 'spam' has been defined multiple times." in validation_messages)
+        self.assertEquals(len(validation_messages), 1)
 
     def test_should_not_validate_project_with_runtime_dependency_being_also_given_as_build_dependency(self):
         self.project.depends_on('spam')
         self.project.build_depends_on('spam')
         validation_messages = self.project.validate()
 
-        assert_that(validation_messages).contains(
-            "Runtime dependency 'spam' has also been given as build dependency.")
-        assert_that(len(validation_messages)).equals(1)
+        self.assertTrue(
+            "Runtime dependency 'spam' has also been given as build dependency." in validation_messages)
+        self.assertEquals(len(validation_messages), 1)
 
 
 class LoggerTest(unittest.TestCase):

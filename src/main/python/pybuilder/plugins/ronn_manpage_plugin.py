@@ -16,11 +16,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
 import errno
+import os
 
 from pybuilder.core import init, task, use_plugin, description, depends, after
-from pybuilder.utils import assert_can_execute, execute_command
+from pybuilder.utils import execute_command
 
 use_plugin("core")
 
@@ -33,29 +33,27 @@ def init_ronn_manpage_plugin(project):
 
 
 @after("prepare")
-def assert_ronn_is_executable(project, logger):
+def assert_ronn_is_executable(project, logger, reactor):
     """
         Asserts that the ronn script is executable.
     """
     logger.debug("Checking if ronn is executable.")
 
-    assert_can_execute(command_and_arguments=["ronn", "--version"],
-                       prerequisite="ronn",
-                       caller="plugin ronn_manpage_plugin",
-                       env=project.plugin_env)
+    reactor.python_env_registry["pybuilder"].verify_can_execute(command_and_arguments=["ronn", "--version"],
+                                                                prerequisite="ronn",
+                                                                caller="plugin ronn_manpage_plugin")
 
 
 @after("prepare")
-def assert_gzip_is_executable(project, logger):
+def assert_gzip_is_executable(project, logger, reactor):
     """
         Asserts that the gzip program is executable.
     """
     logger.debug("Checking if gzip is executable.")
 
-    assert_can_execute(command_and_arguments=["gzip", "--version"],
-                       prerequisite="gzip",
-                       caller="plugin ronn_manpage_plugin",
-                       env=project.plugin_env)
+    reactor.python_env_registry["pybuilder"].verify_can_execute(command_and_arguments=["gzip", "--version"],
+                                                                prerequisite="gzip",
+                                                                caller="plugin ronn_manpage_plugin")
 
 
 @task

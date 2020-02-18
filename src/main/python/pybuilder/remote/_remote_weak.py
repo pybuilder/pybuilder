@@ -16,9 +16,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from weakref import _IterationGuard, ReferenceType, WeakValueDictionary
-
 import collections
+from weakref import _IterationGuard, ReferenceType, WeakValueDictionary
 
 try:
     abc = collections.abc
@@ -87,7 +86,7 @@ class WeakKeyDictionary(abc.MutableMapping):
         # because a dead weakref never compares equal to a live weakref,
         # even if they happened to refer to equal objects.
         # However, it means keys may already have been removed.
-        l = self._pending_removals
+        l = self._pending_removals  # noqa
         d = self.data
         while l:
             try:
@@ -231,7 +230,7 @@ class WeakSet:
             self.update(data)
 
     def _commit_removals(self):
-        l = self._pending_removals
+        l = self._pending_removals  # noqa
         discard = self.data.discard
         while l:
             discard(l.pop())

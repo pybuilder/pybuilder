@@ -17,7 +17,7 @@
 #   limitations under the License.
 
 from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
-from pybuilder.utils import read_file, execute_command
+from pybuilder.utils import read_file
 
 
 class ExternalCommandResult(object):
@@ -30,10 +30,12 @@ class ExternalCommandResult(object):
 
 
 class ExternalCommandBuilder(object):
-    def __init__(self, command_name, project):
+    def __init__(self, command_name, project, reactor, python_env_name="pybuilder"):
         self.command_name = command_name
         self.parts = [command_name]
         self.project = project
+        self.reactor = reactor
+        self._env = self.reactor.python_env_registry[python_env_name]
 
     def use_argument(self, argument):
         self.parts.append(argument)
@@ -63,7 +65,7 @@ class ExternalCommandBuilder(object):
 
     def run(self, outfile_name):
         error_file_name = "{0}.err".format(outfile_name)
-        return_code = execute_command(self.parts, outfile_name, env=self.project.plugin_env)
+        return_code = self._env.execute_command(self.parts, outfile_name)
         error_file_lines = read_file(error_file_name)
         outfile_lines = read_file(outfile_name)
 
@@ -77,6 +79,7 @@ class ExternalCommandBuilder(object):
                                        include_dirs_only=False):
         execution_result = execute_tool_on_source_files(project=self.project,
                                                         name=self.command_name,
+                                                        python_env=self._env,
                                                         command_and_arguments=self.parts,
                                                         include_test_sources=include_test_sources,
                                                         include_scripts=include_scripts,

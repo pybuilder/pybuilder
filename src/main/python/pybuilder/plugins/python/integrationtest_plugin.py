@@ -21,13 +21,12 @@ import sys
 
 from pybuilder.core import init, use_plugin, task, description
 from pybuilder.plugins.python.test_plugin_helper import ReportsProcessor
+from pybuilder.python_utils import mp_get_context
 from pybuilder.terminal import print_text_line, print_file_content, print_text
 from pybuilder.terminal import styled_text, fg, GREEN, MAGENTA, GREY
 from pybuilder.utils import discover_files_matching, execute_command, Timer, read_file
-from pybuilder.utils import mp_get_context
 
 use_plugin("core")
-use_plugin("python.venv")
 
 
 @init

@@ -29,7 +29,6 @@ from pybuilder import scaffolding as SCAFFOLDING
 from pybuilder.core import after, depends, init, task, use_plugin
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import (execute_command,
-                             assert_can_execute,
                              as_list,
                              tail_log)
 
@@ -152,25 +151,25 @@ def initialize_sphinx_plugin(project):
 
 
 @after("prepare")
-def assert_sphinx_is_available(project, logger):
+def assert_sphinx_is_available(project, logger, reactor):
     """Asserts that the sphinx-build script is available.
     """
     logger.debug("Checking if sphinx-build and sphinx-apidoc are available.")
 
-    assert_can_execute(
-        ["sphinx-build", "--version"], "sphinx", "plugin python.sphinx", env=project.plugin_env)
-    assert_can_execute(
-        ["sphinx-apidoc", "--version"], "sphinx", "plugin python.sphinx", env=project.plugin_env)
+    reactor.pybuilder_venv.verify_can_execute(["sphinx-build", "--version"], "sphinx-build",
+                                              "plugin python.sphinx")
+    reactor.pybuilder_venv.verify_can_execute(["sphinx-apidoc", "--version"], "sphinx-apidoc",
+                                              "plugin python.sphinx")
 
 
 @after("prepare")
-def assert_sphinx_quickstart_is_available(project, logger):
+def assert_sphinx_quickstart_is_available(project, logger, reactor):
     """Asserts that the sphinx-quickstart script is available.
     """
     logger.debug("Checking if sphinx-quickstart is available.")
 
-    assert_can_execute(
-        ["sphinx-quickstart", "--version"], "sphinx", "plugin python.sphinx", env=project.plugin_env)
+    reactor.pybuilder_venv.verify_can_execute(["sphinx-quickstart", "--version"], "sphinx-quickstart",
+                                              "plugin python.sphinx")
 
 
 def run_sphinx_build(build_command, task_name, logger, project, builder=None):

@@ -21,7 +21,12 @@ import re
 import shutil
 from functools import partial
 
-from pybuilder.core import init, task, description, use_plugin
+from pybuilder.core import description
+from pybuilder.core import (task,
+                            use_plugin,
+                            init)
+from pybuilder.python_env import PythonEnv
+from pybuilder.utils import (as_list, mkdir)
 
 HIDDEN_FILE_NAME_PATTERN = re.compile(r'^\..*$')
 
@@ -41,9 +46,58 @@ def init_python_directories(project):
     project.set_property_if_unset(DISTRIBUTION_PROPERTY,
                                   "$dir_target/dist/{0}-{1}".format(project.name, project.version))
 
+    project.set_property_if_unset("refresh_venvs", False)
+    project.set_property_if_unset("pip_verbose", 0)
+    project.set_property_if_unset("dir_install_logs", "$dir_logs/install_dependencies")
+
+    project.set_property_if_unset("install_dependencies_index_url", None)
+    project.set_property_if_unset("install_dependencies_extra_index_url", None)
+    project.set_property_if_unset("install_dependencies_trusted_host", None)
+    project.set_property_if_unset("install_dependencies_constraints", "constraints_file")
+    # Deprecated - has no effect
+    project.set_property_if_unset("install_dependencies_upgrade", False)
+    project.set_property_if_unset("install_dependencies_insecure_installation", [])
+
+    project.set_property_if_unset("venv_names", ["build", "test"])
+    project.set_property_if_unset("venv_dependencies", {})
+    project.set_property_if_unset("venv_clean", False)
+
     project.list_packages = partial(list_packages, project)
     project.list_modules = partial(list_modules, project)
     project.list_scripts = partial(list_scripts, project)
+
+
+@task("prepare", "Creates target VEnvs")
+def create_venvs(logger, project, reactor):
+    log_dir = project.expand_path("$dir_install_logs")
+    logger.debug("Creating log directory '%s'", log_dir)
+    mkdir(log_dir)
+
+    venv_dependencies_map = project.get_property("venv_dependencies")
+    if "build" not in venv_dependencies_map:
+        venv_dependencies_map["build"] = as_list(project.build_dependencies) + as_list(project.dependencies)
+    if "test" not in venv_dependencies_map:
+        venv_dependencies_map["test"] = as_list(project.dependencies)
+
+    per = reactor.python_env_registry
+    system_env = per["system"]
+    clear = project.get_property("refresh_venvs") or system_env.is_pypy
+    for venv_name in project.get_property("venv_names"):
+        venv_dir = project.expand_path("$dir_target/venv", venv_name,
+                                       system_env.versioned_dir_name)
+        logger.info("Creating target '%s' VEnv in '%s'%s", venv_name, venv_dir, " (refreshing)" if clear else "")
+        per[venv_name] = current_env = PythonEnv(venv_dir, reactor).create_venv(with_pip=True,
+                                                                                symlinks=system_env.venv_symlinks,
+                                                                                clear=clear,
+                                                                                offline=project.offline)
+        venv_dependencies = venv_dependencies_map.get(venv_name)
+        if venv_dependencies:
+            install_log_path = project.expand_path("$dir_install_logs", "venv_%s_install_logs" % venv_name)
+            constraints_file_name = project.get_property("install_dependencies_constraints")
+            current_env.install_dependencies(venv_dependencies,
+                                             install_log_path=install_log_path,
+                                             local_mapping={},
+                                             constraints_file_name=constraints_file_name)
 
 
 def list_packages(project):

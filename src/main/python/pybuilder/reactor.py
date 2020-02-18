@@ -27,6 +27,7 @@ import os
 import os.path
 import sys
 from collections import deque
+from os.path import normcase as nc, join as jp
 
 from pybuilder.core import (TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE, DEPENDENTS_ATTRIBUTE,
                             DESCRIPTION_ATTRIBUTE, AFTER_ATTRIBUTE,
@@ -38,15 +39,11 @@ from pybuilder.execution import Action, Initializer, Task, TaskDependency
 from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
                                     DownloadingPluginLoader)
+from pybuilder.python_env import PythonEnvRegistry, PythonEnv
+from pybuilder.python_utils import IS_WIN, PY2, odict, patch_mp_plugin_dir, add_env_to_path
 from pybuilder.utils import (as_list,
                              get_dist_version_string,
-                             basestring,
-                             odict,
-                             create_venv,
-                             venv_symlinks,
-                             add_env_to_path,
-                             patch_mp_plugin_dir,
-                             is_pypy)
+                             basestring)
 
 
 class BuildSummary:
@@ -151,6 +148,16 @@ class Reactor:
         self.project = None
         self.project_module = None
 
+        self._tools = []
+
+        python_env_registry = self._python_env_registry = PythonEnvRegistry(self)
+        system_pyenv = PythonEnv(sys.exec_prefix, self).populate()
+        python_env_registry["system"] = system_pyenv
+
+        #        self._plugin_python = jp(self._plugin_dir, sys_executable_suffix)
+        #        self._plugin_env = os.environ.copy()
+        #        self._plugin_env["PATH"] = os.pathsep.join([jp(self._plugin_dir, venv_binname)] +
+        #                                                   self._plugin_env.get("PATH", "").split(os.pathsep))
         self._sys_path_original = list(sys.path)
         self._sys_executable_name = os.path.basename(sys.executable)
 
@@ -199,7 +206,7 @@ class Reactor:
 
         # This is really a way to make sure we can install `billiard` as a dependency
         # before any of the plugins actually initialize
-        if sys.version_info[0] < 3 and sys.platform != "win32":
+        if PY2 and not IS_WIN:
             self.require_plugin("pypi:billiard", "~=3.6.2", plugin_module_name="pybuilder.plugins.billiard_plugin")
 
         self.project_module = self.load_project_module(project_descriptor)
@@ -470,16 +477,39 @@ class Reactor:
 
         return project_directory, project_descriptor_full_path
 
-    def _setup_plugin_directory(self, reset_plugins):
-        plugin_dir = self.project.plugin_dir
-        self.logger.debug("Setting up plugins VEnv at '%s'%s", plugin_dir, " (resetting)" if reset_plugins else "")
-        create_venv(plugin_dir, with_pip=True,
-                    symlinks=venv_symlinks,
-                    upgrade=True,
-                    clear=reset_plugins or is_pypy,
-                    offline=self.project.offline)
+    def add_tool(self, tool):
+        self._tools.append(tool)
 
-        add_env_to_path(plugin_dir, sys.path)
+    def remove_tool(self, tool):
+        self._tools.remove(tool)
+
+    @property
+    def tools(self):
+        return self._tools
+
+    @property
+    def python_env_registry(self):
+        return self._python_env_registry
+
+    @property
+    def pybuilder_venv(self):
+        return self._python_env_registry["pybuilder"]
+
+    def _setup_plugin_directory(self, reset_plugins):
+        per = self.python_env_registry
+        system_env = per["system"]
+        plugin_dir = self._plugin_dir = jp(nc(self.project.basedir), ".pybuilder", "plugins",
+                                           system_env.versioned_dir_name)
+
+        self.logger.debug("Setting up plugins VEnv at '%s'%s", plugin_dir, " (resetting)" if reset_plugins else "")
+        plugin_env = per["pybuilder"] = PythonEnv(plugin_dir, self).create_venv(with_pip=True,
+                                                                                symlinks=system_env.venv_symlinks,
+                                                                                upgrade=True,
+                                                                                clear=(reset_plugins or
+                                                                                       system_env.is_pypy),
+                                                                                offline=self.project.offline)
+
+        add_env_to_path(plugin_env, sys.path)
         patch_mp_plugin_dir(plugin_dir)
 
     def _setup_deferred_plugin_import(self):
@@ -510,7 +540,7 @@ class Reactor:
             self._deferred_import = True
             try:
                 if self._pending_plugin_installs:
-                    self.plugin_loader.install_plugin(self.project, self._pending_plugin_installs)
+                    self.plugin_loader.install_plugin(self, self._pending_plugin_installs)
                     del self._pending_plugin_installs[:]
 
                 while True:

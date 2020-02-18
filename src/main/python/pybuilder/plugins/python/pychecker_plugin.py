@@ -21,13 +21,11 @@ import re
 
 from pybuilder.core import use_plugin, after, init, task
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import assert_can_execute, read_file, render_report
 from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_modules
-
+from pybuilder.utils import read_file, render_report
 
 DEFAULT_PYCHECKER_ARGUMENTS = ["-Q"]
 PYCHECKER_WARNING_PATTERN = re.compile(r'^(.+?):([0-9]+): (.+)$')
-
 
 use_plugin("python.core")
 use_plugin("analysis")
@@ -35,16 +33,15 @@ use_plugin("analysis")
 
 @init
 def init_pychecker(project):
-
     project.plugin_depends_on("pychecker")
     project.set_property_if_unset("pychecker_break_build", True)
     project.set_property_if_unset("pychecker_break_build_threshold", 0)
 
 
 @after("prepare")
-def check_pychecker_available(project, logger):
+def check_pychecker_available(project, logger, reactor):
     logger.debug("Checking availability of pychecker")
-    assert_can_execute(("pychecker", ), "pychecker", "plugin python.pychecker", env=project.plugin_env)
+    reactor.python_env_registry["pybuilder"].verify_can_execute(["pychecker"], "pychecker", "plugin python.pychecker")
 
 
 def build_command_line(project):

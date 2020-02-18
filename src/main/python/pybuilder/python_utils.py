@@ -21,15 +21,20 @@ import platform
 import sys
 import traceback
 from collections import OrderedDict
-from os.path import normcase as nc, join as jp
 
 try:
     basestring = basestring
 except NameError:
     basestring = str
 
+
+def is_windows(platform=sys.platform, win_platforms={"win32", "cygwin", "msys"}):
+    return platform in win_platforms
+
+
 PY2 = sys.version_info[0] < 3
-is_pypy = '__pypy__' in sys.builtin_module_names
+IS_PYPY = '__pypy__' in sys.builtin_module_names
+IS_WIN = is_windows()
 
 
 def _py2_makedirs(name, mode=0o777, exist_ok=False):
@@ -68,7 +73,7 @@ def _py2_which(cmd, mode=os.F_OK | os.X_OK, path=None):
         return None
     path = path.split(os.pathsep)
 
-    if sys.platform == "win32":
+    if IS_WIN:
         # The current directory takes precedence on Windows.
         if os.curdir not in path:
             path.insert(0, os.curdir)
@@ -148,11 +153,8 @@ _installed_tblib = False
 
 # Billiard doesn't work on Win32
 if PY2:
-    if sys.platform == "win32":
+    if IS_WIN:
         # Python 2.7 on Windows already only works with spawn
-
-        import multiprocessing
-        import multiprocessing.queues
 
         from multiprocessing import log_to_stderr as mp_log_to_stderr
         from multiprocessing.reduction import ForkingPickler as mp_ForkingPickler
@@ -206,7 +208,7 @@ def patch_mp():
     global _mp_get_context
 
     if not _mp_get_context:
-        if PY2 and sys.platform != "win32":
+        if PY2 and not IS_WIN:
             from billiard import get_context, log_to_stderr, compat, popen_spawn_posix as popen_spawn
             from billiard.reduction import ForkingPickler
 
@@ -276,73 +278,18 @@ def spawn_process(target=None, args=(), kwargs={}, group=None, name=None):
         raise_exception(ex, result.args[1])
 
 
+def add_env_to_path(python_env, sys_path):
+    """type: (PythonEnv, List(str)) -> None
+    Adds venv directories to sys.path-like collection
+    """
+    for path in python_env.site_paths:
+        if path not in sys_path:
+            sys_path.append(path)
+
+
 sys_executable_suffix = sys.executable[len(sys.exec_prefix) + 1:]
 
 python_specific_dir_name = "%s-%s" % (platform.python_implementation().lower(),
                                       ".".join(str(f) for f in sys.version_info))
 
-venv_symlinks = os.name == "posix"
 _, _venv_python_exename = os.path.split(os.path.abspath(getattr(sys, "_base_executable", sys.executable)))
-venv_binname = "Scripts" if sys.platform == "win32" else "bin"
-
-
-def add_env_to_path(env_dir, sys_path):
-    """Adds venv directories to sys.path-like collection"""
-    for path in getsitepaths(env_dir):
-        if path not in sys_path:
-            sys_path.append(path)
-
-
-def venv_python_executable(env_dir):
-    """Binary Python executable for a specific virtual environment"""
-    candidate = jp(env_dir, venv_binname, _venv_python_exename)
-
-    if sys.platform == "win32":
-        # On Windows python.exe could be in PythonXY/ or venv/Scripts/
-        if not os.path.exists(candidate):
-            alternative = jp(env_dir, _venv_python_exename)
-            if os.path.exists(alternative):
-                candidate = alternative
-
-    return nc(candidate)
-
-
-if sys.version_info[0] < 3:
-    def getsitepaths(prefix):
-        if is_pypy:
-            yield os.path.join(prefix, "site-packages")
-        elif sys.platform in ('os2emx', 'riscos'):
-            yield os.path.join(prefix, "Lib", "site-packages")
-        elif os.sep == '/':
-            yield os.path.join(prefix, "lib",
-                               "python" + sys.version[:3],
-                               "site-packages")
-            yield os.path.join(prefix, "lib", "site-python")
-        else:
-            yield prefix
-            yield os.path.join(prefix, "lib", "site-packages")
-
-else:
-    def getsitepaths(prefix):
-        if is_pypy:
-            yield os.path.join(prefix, "site-packages")
-        elif os.sep == '/':
-            yield os.path.join(prefix, "lib",
-                               "python%d.%d" % sys.version_info[:2],
-                               "site-packages")
-        else:
-            yield prefix
-            yield os.path.join(prefix, "lib", "site-packages")
-
-        if sys.platform == "darwin":
-            # for framework builds *only* we add the standard Apple
-            # locations.
-            from sysconfig import get_config_var
-            framework = get_config_var("PYTHONFRAMEWORK")
-            if framework:
-                yield os.path.join("/Library", framework,
-                                   '%d.%d' % sys.version_info[:2], "site-packages")
-
-
-def is_windows():
-    return any(win_platform in sys.platform for win_platform in ("win32", "cygwin", "msys"))

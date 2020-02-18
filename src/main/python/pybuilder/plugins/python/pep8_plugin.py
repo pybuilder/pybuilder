@@ -17,8 +17,8 @@
 #   limitations under the License.
 
 from pybuilder.core import use_plugin, task, after, init
-from pybuilder.utils import assert_can_execute, read_file
 from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
+from pybuilder.utils import read_file
 
 use_plugin("python.core")
 
@@ -29,9 +29,9 @@ def init_pep8_properties(project):
 
 
 @after("prepare")
-def check_pep8_available(project, logger):
+def check_pep8_available(project, logger, reactor):
     logger.debug("Checking availability of pep8")
-    assert_can_execute(("pep8", ), "pep8", "plugin python.pep8", env=project.plugin_env)
+    reactor.python_env_registry["pybuilder"].verify_can_execute(["pep8"], "pep8", "plugin python.pep8")
 
 
 @task

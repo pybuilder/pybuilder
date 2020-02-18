@@ -27,7 +27,7 @@
 from pybuilder.core import after, task, init, use_plugin, depends
 from pybuilder.errors import BuildFailedException
 from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
-from pybuilder.utils import assert_can_execute, tail_log
+from pybuilder.utils import tail_log
 
 __author__ = "Maximilien Riehl"
 
@@ -44,14 +44,13 @@ def initialize_frosted_plugin(project):
 
 
 @after("prepare")
-def assert_frosted_is_executable(project, logger):
+def assert_frosted_is_executable(project, logger, reactor):
     """ Asserts that the frosted script is executable. """
     logger.debug("Checking if frosted is executable.")
 
-    assert_can_execute(command_and_arguments=["frosted", "--version"],
-                       prerequisite="frosted (PyPI)",
-                       caller="plugin python.frosted",
-                       env=project.plugin_env)
+    reactor.python_env_registry["pybuilder"].verify_can_execute(command_and_arguments=["frosted", "--version"],
+                                                                prerequisite="frosted (PyPI)",
+                                                                caller="plugin python.frosted")
 
 
 @task

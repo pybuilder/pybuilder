@@ -21,14 +21,12 @@ from os.path import join
 from pybuilder.core import task, init, before, depends
 from pybuilder.errors import BuildFailedException
 from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
-from pybuilder.utils import assert_can_execute
 
 
 @before("run_sonar_analysis")
-def check_sonar_scanner_availability(project):
-    assert_can_execute(
-        ("sonar-scanner", "-h"),
-        "sonar-scanner", "plugin python.sonarqube", env=project.plugin_env)
+def check_sonar_scanner_availability(project, reactor):
+    reactor.python_env_registry["pybuilder"].verify_can_execute(["sonar-scanner", "-h"], "sonar-scanner",
+                                                                "plugin python.sonarqube")
 
 
 @init
@@ -39,8 +37,8 @@ def initialize_sonarqube_plugin(project):
 
 @task("run_sonar_analysis", description="Launches sonar-scanner for analysis.")
 @depends("analyze")
-def run_sonar_analysis(project, logger):
-    sonar_scanner = build_sonar_scanner(project)
+def run_sonar_analysis(project, logger, reactor):
+    sonar_scanner = build_sonar_scanner(project, reactor)
 
     result = sonar_scanner.run(project.expand_path("$dir_reports/sonar-scanner"))
 
@@ -57,9 +55,9 @@ def run_sonar_analysis(project, logger):
         raise BuildFailedException("Sonar analysis failed.")
 
 
-def build_sonar_scanner(project):
+def build_sonar_scanner(project, reactor):
     return (
-        SonarCommandBuilder("sonar-scanner", project).set_sonar_key(
+        SonarCommandBuilder("sonar-scanner", project, reactor).set_sonar_key(
             "sonar.projectKey").to_property_value("sonarqube_project_key").set_sonar_key(
             "sonar.projectName").to_property_value("sonarqube_project_name").set_sonar_key(
             "sonar.projectVersion").to(project.version).set_sonar_key(

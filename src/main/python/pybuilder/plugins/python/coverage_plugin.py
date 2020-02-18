@@ -27,7 +27,7 @@ from pybuilder.core import init, use_plugin, task, depends, dependents, optional
 from pybuilder.utils import discover_modules, render_report
 from pybuilder.execution import ExecutionManager
 
-from pybuilder.plugins.python.mp_tools.coverage_tool import CoverageTool
+from pybuilder.plugins.python.remote_tools.coverage_tool import CoverageTool
 from pybuilder.errors import BuildFailedException
 
 use_plugin("python.core")
@@ -134,7 +134,7 @@ def run_coverage(project, logger, reactor, execution_prefix, execution_name, tar
 
     cov_tool = CoverageTool(**coverage_config)
 
-    project.add_tool(cov_tool)
+    reactor.add_tool(cov_tool)
 
     em = reactor.execution_manager
 
@@ -150,7 +150,7 @@ def run_coverage(project, logger, reactor, execution_prefix, execution_name, tar
                         project=project,
                         reactor=reactor)
 
-        project.remove_tool(cov_tool)
+        reactor.remove_tool(cov_tool)
 
         cov.combine()
         cov.load()
