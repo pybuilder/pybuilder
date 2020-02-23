@@ -259,7 +259,7 @@ def _combine_coverage_remapping(cov, data_paths=None, strict=False, aliases=None
 
 def _override_python_env_for_coverage(current_python_env, coverage_config):
     import coverage as cov_module
-    cov_parent_dir = nc(abspath(jp(dirname(cov_module.__file__), "..")))
+    cov_parent_dir = abspath(jp(dirname(cov_module.__file__), ".."))
 
     new_python_env = copy.copy(current_python_env)
     new_python_env.overwrite("executable", tuple(

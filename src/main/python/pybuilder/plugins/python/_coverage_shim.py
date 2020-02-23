@@ -20,17 +20,18 @@ import ast
 import sys
 
 
-# import runpy
-
 class CoverageImporter:
     def __init__(self, coverage_parent_dir):
         self.coverage_parent_dir = coverage_parent_dir
+        self._in_import = False
 
     def find_module(self, fullname, path=None):
         """
         Return self when fullname starts with `coverage`.
         """
-        if fullname == "coverage" or fullname.startswith("coverage."):
+        if self._in_import:
+            return
+        if fullname == "coverage":
             return self
 
     def load_module(self, fullname):
@@ -38,9 +39,11 @@ class CoverageImporter:
         Load coverage only and remove coverage from path thereafter
         """
         sys.path.append(self.coverage_parent_dir)
+        self._in_import = True
         try:
-            __import__(fullname)
+            return __import__(fullname)
         finally:
+            self._in_import = False
             del sys.path[-1]
 
     def install(self):
