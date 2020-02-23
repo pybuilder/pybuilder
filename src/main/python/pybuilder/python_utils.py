@@ -27,6 +27,13 @@ try:
 except NameError:
     basestring = str
 
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
+StringIO = StringIO
+
 
 def is_windows(platform=sys.platform, win_platforms={"win32", "cygwin", "msys"}):
     return platform in win_platforms

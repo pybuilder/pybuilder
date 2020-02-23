@@ -21,15 +21,10 @@ import copy
 import sys
 from os.path import normcase as nc, join as jp, dirname, abspath
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
 from pybuilder.core import init, use_plugin, task, depends, dependents, optional
 from pybuilder.utils import discover_module_files, discover_modules, render_report
 from pybuilder.execution import ExecutionManager
-from pybuilder.python_utils import odict
+from pybuilder.python_utils import odict, StringIO
 from pybuilder.plugins.python.remote_tools.coverage_tool import CoverageTool
 from pybuilder.errors import BuildFailedException
 
@@ -49,7 +44,7 @@ def init_coverage_properties(project):
     project.set_property_if_unset("coverage_exceptions", [])
     project.set_property_if_unset("coverage_concurrency", ["thread"])
     project.set_property_if_unset("coverage_source_path", "$dir_source_main_python")
-    project.set_property_if_unset("coverage_name", None)
+    project.set_property_if_unset("coverage_name", project.name.capitalize())
 
     project.set_property_if_unset("coverage_reset_modules", False)  # deprecated, unused
     project.set_property_if_unset("coverage_reload_modules", None)  # deprecated, unused
@@ -62,6 +57,7 @@ def init_coverage_properties(project):
 
     # Plugin-private
     project.set_property("__covered_tasks", None)
+    project.set_property("__coverage_config", None)
 
 
 @task
@@ -110,6 +106,8 @@ def coverage(project, logger, reactor):
                            branch=True,
                            source=[source_path],
                            context=project.name)
+
+    project.set_property("__coverage_config", coverage_config)
 
     from coverage import coverage as coverage_factory
     from coverage.files import PathAliases

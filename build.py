@@ -43,6 +43,7 @@ if sys.platform != "win32":
 
 use_plugin("python.integrationtest")
 use_plugin("python.coverage")
+use_plugin("python.coveralls")
 use_plugin("python.flake8")
 use_plugin("filter_resources")
 
@@ -95,6 +96,9 @@ def initialize(project):
                                                         "pybuilder._vendor.*",
                                                         "setup"])
 
+    project.set_property("coveralls_dry_run", True)
+    project.set_property("coveralls_report", True)
+
     project.set_property("flake8_break_build", True)
     project.set_property("flake8_extend_ignore", "E303")
     project.set_property("flake8_include_test_sources", True)
@@ -121,11 +125,10 @@ def initialize(project):
 
     project.get_property("source_dist_ignore_patterns").extend([".project",
                                                                 ".pydevproject",
-                                                                ".settings",
-                                                                "vendorize.toml",
-                                                                "vendorize_pyb.py"])
+                                                                ".settings"])
+
     # PyPy distutils needs os.environ['PATH'] not matter what
-    # Also Windows needs a whole bunch of PATH for DLL loading
+    # Also Windows needs PATH for DLL loading in all Pythons
     project.set_property("integrationtest_inherit_environment", True)
 
     # enable this to build a bdist on vagrant
@@ -144,7 +147,7 @@ def initialize(project):
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Stable",
         "Environment :: Console",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",

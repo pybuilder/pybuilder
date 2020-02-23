@@ -23,6 +23,7 @@
 """
 import fnmatch
 import itertools
+import logging
 import os
 import re
 import string
@@ -37,22 +38,23 @@ from pybuilder.utils import as_list
 
 PATH_SEP_RE = re.compile("[\\/]")
 
-INITIALIZER_ATTRIBUTE = "_python_builder_initializer"
+INITIALIZER_ATTRIBUTE = "_pybuilder_initializer"
+FINALIZER_ATTRIBUTE = "_pybuilder_finalizer"
 
-ENVIRONMENTS_ATTRIBUTE = "_python_builder_environments"
+ENVIRONMENTS_ATTRIBUTE = "_pybuilder_environments"
 
-NAME_ATTRIBUTE = "_python_builder_name"
-ACTION_ATTRIBUTE = "_python_builder_action"
-ONLY_ONCE_ATTRIBUTE = "_python_builder_action_only_once"
-TEARDOWN_ATTRIBUTE = "_python_builder_action_teardown"
-BEFORE_ATTRIBUTE = "_python_builder_before"
-AFTER_ATTRIBUTE = "_python_builder_after"
+NAME_ATTRIBUTE = "_pybuilder_name"
+ACTION_ATTRIBUTE = "_pybuilder_action"
+ONLY_ONCE_ATTRIBUTE = "_pybuilder_action_only_once"
+TEARDOWN_ATTRIBUTE = "_pybuilder_action_teardown"
+BEFORE_ATTRIBUTE = "_pybuilder_before"
+AFTER_ATTRIBUTE = "_pybuilder_after"
 
-TASK_ATTRIBUTE = "_python_builder_task"
-DEPENDS_ATTRIBUTE = "_python_builder_depends"
-DEPENDENTS_ATTRIBUTE = "_python_builder_dependents"
+TASK_ATTRIBUTE = "_pybuilder_task"
+DEPENDS_ATTRIBUTE = "_pybuilder_depends"
+DEPENDENTS_ATTRIBUTE = "_pybuilder_dependents"
 
-DESCRIPTION_ATTRIBUTE = "_python_builder_description"
+DESCRIPTION_ATTRIBUTE = "_pybuilder_description"
 
 
 def init(*possible_callable, **additional_arguments):
@@ -81,13 +83,52 @@ def init(*possible_callable, **additional_arguments):
     def some_initializer(): pass
     """
 
-    def do_decoration(callable):
-        setattr(callable, INITIALIZER_ATTRIBUTE, True)
+    def do_decoration(callable_):
+        setattr(callable_, INITIALIZER_ATTRIBUTE, True)
 
         if "environments" in additional_arguments:
-            setattr(callable, ENVIRONMENTS_ATTRIBUTE, as_list(additional_arguments["environments"]))
+            setattr(callable_, ENVIRONMENTS_ATTRIBUTE, as_list(additional_arguments["environments"]))
 
-        return callable
+        return callable_
+
+    if possible_callable:
+        return do_decoration(possible_callable[0])
+
+    return do_decoration
+
+
+def finalize(*possible_callable, **additional_arguments):
+    """
+    Decorator for functions that wish to perform finalization steps.
+    The decorated functions are called "finalizers".
+
+    Finalizers are executed after all tasks have been executed, at the very end of the
+
+    Finalizers may take an additional named argument "environments" which should contain a string or list of strings
+    naming the environments this finalizer applies for.
+
+    Examples:
+
+    @finalize
+    def some_finalizer(): pass
+
+    @finalize()
+    def some_finalizer(): pass
+
+    @finalize(environments="spam")
+    def some_finalizer(): pass
+
+    @finalize(environments=["spam", "eggs"])
+    def some_finalizer(): pass
+    """
+
+    def do_decoration(callable_):
+        setattr(callable_, FINALIZER_ATTRIBUTE, True)
+
+        if "environments" in additional_arguments:
+            setattr(callable_, ENVIRONMENTS_ATTRIBUTE, as_list(additional_arguments["environments"]))
+
+        return callable_
 
     if possible_callable:
         return do_decoration(possible_callable[0])
@@ -103,12 +144,12 @@ def task(callable_or_string=None, description=None):
     a string argument, which overrides the default name.
     """
     if isinstance(callable_or_string, str):
-        def set_name_and_task_attribute(callable):
-            setattr(callable, TASK_ATTRIBUTE, True)
-            setattr(callable, NAME_ATTRIBUTE, callable_or_string)
+        def set_name_and_task_attribute(callable_):
+            setattr(callable_, TASK_ATTRIBUTE, True)
+            setattr(callable_, NAME_ATTRIBUTE, callable_or_string)
             if description:
-                setattr(callable, DESCRIPTION_ATTRIBUTE, description)
-            return callable
+                setattr(callable_, DESCRIPTION_ATTRIBUTE, description)
+            return callable_
 
         return set_name_and_task_attribute
     else:
@@ -118,18 +159,18 @@ def task(callable_or_string=None, description=None):
                 setattr(callable_or_string, NAME_ATTRIBUTE, callable_or_string.__name__)
                 return callable_or_string
             else:
-                def set_task_and_description_attribute(callable):
-                    setattr(callable, TASK_ATTRIBUTE, True)
-                    setattr(callable, NAME_ATTRIBUTE, callable.__name__)
-                    return callable
+                def set_task_and_description_attribute(callable_):
+                    setattr(callable_, TASK_ATTRIBUTE, True)
+                    setattr(callable_, NAME_ATTRIBUTE, callable_.__name__)
+                    return callable_
 
                 return set_task_and_description_attribute
         else:
-            def set_task_and_description_attribute(callable):
-                setattr(callable, TASK_ATTRIBUTE, True)
-                setattr(callable, NAME_ATTRIBUTE, callable.__name__)
-                setattr(callable, DESCRIPTION_ATTRIBUTE, description)
-                return callable
+            def set_task_and_description_attribute(callable_):
+                setattr(callable_, TASK_ATTRIBUTE, True)
+                setattr(callable_, NAME_ATTRIBUTE, callable_.__name__)
+                setattr(callable_, DESCRIPTION_ATTRIBUTE, description)
+                return callable_
 
             return set_task_and_description_attribute
 
@@ -138,27 +179,27 @@ class description(object):
     def __init__(self, description):
         self._description = description
 
-    def __call__(self, callable):
-        setattr(callable, DESCRIPTION_ATTRIBUTE, self._description)
-        return callable
+    def __call__(self, callable_):
+        setattr(callable_, DESCRIPTION_ATTRIBUTE, self._description)
+        return callable_
 
 
 class depends(object):
     def __init__(self, *depends):
         self._depends = depends
 
-    def __call__(self, callable):
-        setattr(callable, DEPENDS_ATTRIBUTE, self._depends)
-        return callable
+    def __call__(self, callable_):
+        setattr(callable_, DEPENDS_ATTRIBUTE, self._depends)
+        return callable_
 
 
 class dependents(object):
     def __init__(self, *dependents):
         self._dependents = dependents
 
-    def __call__(self, callable):
-        setattr(callable, DEPENDENTS_ATTRIBUTE, self._dependents)
-        return callable
+    def __call__(self, callable_):
+        setattr(callable_, DEPENDENTS_ATTRIBUTE, self._dependents)
+        return callable_
 
 
 class optional(object):
@@ -176,14 +217,14 @@ class BaseAction(object):
         self.only_once = only_once
         self.teardown = teardown
 
-    def __call__(self, callable):
-        setattr(callable, ACTION_ATTRIBUTE, True)
-        setattr(callable, self.attribute, self.tasks)
+    def __call__(self, callable_):
+        setattr(callable_, ACTION_ATTRIBUTE, True)
+        setattr(callable_, self.attribute, self.tasks)
         if self.only_once:
-            setattr(callable, ONLY_ONCE_ATTRIBUTE, True)
+            setattr(callable_, ONLY_ONCE_ATTRIBUTE, True)
         if self.teardown:
-            setattr(callable, TEARDOWN_ATTRIBUTE, True)
-        return callable
+            setattr(callable_, TEARDOWN_ATTRIBUTE, True)
+        return callable_
 
 
 class before(BaseAction):
@@ -655,14 +696,20 @@ class Project(object):
             self.set_property(key, value)
 
 
-class Logger(object):
-    DEBUG = 1
-    INFO = 2
-    WARN = 3
-    ERROR = 4
+class Logger(logging.Handler):
+    CRITICAL = 50
+    FATAL = CRITICAL
+    ERROR = 40
+    WARNING = 30
+    WARN = WARNING
+    INFO = 20
+    DEBUG = 10
 
-    def __init__(self, threshold=INFO):
-        self.threshold = threshold
+    def __init__(self, level=INFO):
+        super(Logger, self).__init__(level)
+
+    def emit(self, record):
+        self._do_log(record.levelno, record.getMessage())
 
     def _do_log(self, level, message, *arguments):
         pass
@@ -674,7 +721,7 @@ class Logger(object):
         return message
 
     def log(self, level, message, *arguments):
-        if level >= self.threshold:
+        if level >= self.level:
             self._do_log(level, message, *arguments)
 
     def debug(self, message, *arguments):

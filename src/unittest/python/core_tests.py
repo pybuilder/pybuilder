@@ -477,8 +477,8 @@ class TaskTests(unittest.TestCase):
         def task_without_description():
             pass
 
-        self.assertEqual(task_without_description._python_builder_task, True)
-        self.assertEqual(task_without_description._python_builder_name,
+        self.assertEqual(task_without_description._pybuilder_task, True)
+        self.assertEqual(task_without_description._pybuilder_name,
                          "task_without_description")
 
     def test_should_name_task_when_decorator_called_with_nothing(self):
@@ -486,8 +486,8 @@ class TaskTests(unittest.TestCase):
         def another_task_without_description():
             pass
 
-        self.assertEqual(another_task_without_description._python_builder_task, True)
-        self.assertEqual(another_task_without_description._python_builder_name,
+        self.assertEqual(another_task_without_description._pybuilder_task, True)
+        self.assertEqual(another_task_without_description._pybuilder_name,
                          "another_task_without_description")
 
     def test_should_describe_task_when_description_decorator_is_used(self):
@@ -496,8 +496,8 @@ class TaskTests(unittest.TestCase):
         def task_with_description():
             pass
 
-        self.assertEqual(task_with_description._python_builder_task, True)
-        self.assertEqual(task_with_description._python_builder_description, "any-description")
+        self.assertEqual(task_with_description._pybuilder_task, True)
+        self.assertEqual(task_with_description._pybuilder_description, "any-description")
 
     def test_should_describe_named_task_when_description_decorator_is_used(self):
         @task("any-task-name")
@@ -505,27 +505,27 @@ class TaskTests(unittest.TestCase):
         def task_with_description():
             pass
 
-        self.assertEqual(task_with_description._python_builder_task, True)
-        self.assertEqual(task_with_description._python_builder_name, "any-task-name")
-        self.assertEqual(task_with_description._python_builder_description, "any-description")
+        self.assertEqual(task_with_description._pybuilder_task, True)
+        self.assertEqual(task_with_description._pybuilder_name, "any-task-name")
+        self.assertEqual(task_with_description._pybuilder_description, "any-description")
 
     def test_should_describe_named_task_when_description_kwarg_is_used(self):
         @task("any-task-name", description="any-description")
         def task_with_description():
             pass
 
-        self.assertEqual(task_with_description._python_builder_task, True)
-        self.assertEqual(task_with_description._python_builder_name, "any-task-name")
-        self.assertEqual(task_with_description._python_builder_description, "any-description")
+        self.assertEqual(task_with_description._pybuilder_task, True)
+        self.assertEqual(task_with_description._pybuilder_name, "any-task-name")
+        self.assertEqual(task_with_description._pybuilder_description, "any-description")
 
     def test_should_describe_task_when_description_kwarg_is_used(self):
         @task(description="any-description")
         def task_with_description():
             pass
 
-        self.assertEqual(task_with_description._python_builder_task, True)
-        self.assertEqual(task_with_description._python_builder_name, "task_with_description")
-        self.assertEqual(task_with_description._python_builder_description, "any-description")
+        self.assertEqual(task_with_description._pybuilder_task, True)
+        self.assertEqual(task_with_description._pybuilder_name, "task_with_description")
+        self.assertEqual(task_with_description._pybuilder_description, "any-description")
 
 
 class RequirementsFileTests(unittest.TestCase):

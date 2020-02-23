@@ -22,11 +22,7 @@ import string
 from datetime import datetime
 from textwrap import dedent
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
+from pybuilder import pip_utils
 from pybuilder.core import (after,
                             before,
                             use_plugin,
@@ -35,14 +31,13 @@ from pybuilder.core import (after,
                             RequirementsFile,
                             Dependency)
 from pybuilder.errors import BuildFailedException, MissingPrerequisiteException
+from pybuilder.python_utils import StringIO
 from pybuilder.utils import (as_list,
                              is_string,
                              is_notstr_iterable,
                              get_dist_version_string,
                              safe_log_file_name,
                              tail_log)
-# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
-from pybuilder import pip_utils
 
 use_plugin("python.core")
 

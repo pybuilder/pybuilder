@@ -18,26 +18,19 @@
 
 from __future__ import unicode_literals
 
-import unittest
-
-from pybuilder.plugins.python.remote_tools.unittest_tool import start_unittest_tool, PipeShutdownError, \
-    logger as tool_logger
-from pybuilder.python_utils import PY2
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
 import sys
+import unittest
+from functools import reduce
+from types import MethodType, FunctionType
 
+from pybuilder.ci_server_interaction import test_proxy_for
 from pybuilder.core import init, task, description, use_plugin, before
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import discover_modules_matching, render_report
-from pybuilder.ci_server_interaction import test_proxy_for
+from pybuilder.plugins.python.remote_tools.unittest_tool import start_unittest_tool, PipeShutdownError, \
+    logger as tool_logger
+from pybuilder.python_utils import PY2, StringIO
 from pybuilder.terminal import print_text_line
-from types import MethodType, FunctionType
-from functools import reduce
+from pybuilder.utils import discover_modules_matching, render_report
 
 use_plugin("python.core")
 

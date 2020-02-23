@@ -19,18 +19,14 @@
 import os
 import shutil
 import stat
+import sys
 import tempfile
 import unittest
-import sys
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-from pybuilder.core import Logger
 from pybuilder.cli import StdOutLogger
+from pybuilder.core import Logger
 from pybuilder.execution import ExecutionManager
+from pybuilder.python_utils import StringIO
 from pybuilder.reactor import Reactor
 
 
@@ -124,7 +120,7 @@ class IntegrationTestSupport(unittest.TestCase):
         self.assertEqual(expected_lines, actual_line_number)
 
     def prepare_reactor(self):
-        logger = StdOutLogger(threshold=Logger.DEBUG)
+        logger = StdOutLogger(level=Logger.DEBUG)
         execution_manager = ExecutionManager(logger)
         reactor = Reactor(logger, execution_manager)
         reactor.prepare_build(project_directory=self.tmp_directory)

@@ -31,11 +31,11 @@ from os.path import normcase as nc, join as jp
 
 from pybuilder.core import (TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE, DEPENDENTS_ATTRIBUTE,
                             DESCRIPTION_ATTRIBUTE, AFTER_ATTRIBUTE,
-                            BEFORE_ATTRIBUTE, INITIALIZER_ATTRIBUTE,
+                            BEFORE_ATTRIBUTE, INITIALIZER_ATTRIBUTE, FINALIZER_ATTRIBUTE,
                             ACTION_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, TEARDOWN_ATTRIBUTE,
                             Project, NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE, optional, PluginDef)
 from pybuilder.errors import PyBuilderException, ProjectValidationFailedException
-from pybuilder.execution import Action, Initializer, Task, TaskDependency
+from pybuilder.execution import Action, Initializer, Finalizer, Task, TaskDependency
 from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
                                     DownloadingPluginLoader)
@@ -208,7 +208,7 @@ class Reactor:
 
         self._load_deferred_plugins()
 
-        self._collect_tasks_and_actions_and_initializers()
+        self._collect_project_annotations()
 
         self.apply_project_attributes()
 
@@ -216,7 +216,7 @@ class Reactor:
 
         self.logger.debug("Have loaded plugins %s", ", ".join(self._plugins))
 
-        self.collect_tasks_and_actions_and_initializers(self.project_module)
+        self.collect_project_annotations(self.project_module)
 
         self.execution_manager.resolve_dependencies(exclude_optional_tasks, exclude_tasks, exclude_all_optional)
 
@@ -231,18 +231,20 @@ class Reactor:
             environments = []
 
         execution_plan = self.create_execution_plan(tasks, environments)
-        return self.build_execution_plan(tasks, execution_plan)
+
+        execution_summary = self.build_execution_plan(tasks, execution_plan)
+        self.execution_manager.execute_finalizers(environments, logger=self.logger, project=self.project,
+                                                  reactor=self)
+        return execution_summary
 
     def create_execution_plan(self, tasks, environments):
         Reactor._set_current_instance(self)
 
         if environments:
-            self.logger.info(
-                "Activated environments: %s", ", ".join(environments))
+            self.logger.info("Activated environments: %s", ", ".join(environments))
 
-        self.execution_manager.execute_initializers(
-            environments, logger=self.logger, project=self.project)
-
+        self.execution_manager.execute_initializers(environments, logger=self.logger, project=self.project,
+                                                    reactor=self)
         self.log_project_properties()
 
         self.validate_project()
@@ -309,7 +311,7 @@ class Reactor:
             self._plugins_imported.add(plugin_def)
             self._deferred_plugins.set_module(plugin_module)
 
-    def collect_tasks_and_actions_and_initializers(self, project_module):
+    def collect_project_annotations(self, project_module):
         injected_task_dependencies = {}
 
         def add_task_dependency(names, depends_on, optional):
@@ -380,6 +382,11 @@ class Reactor:
 
                 self.execution_manager.register_initializer(
                     Initializer(name, candidate, environments, description))
+            elif getattr(candidate, FINALIZER_ATTRIBUTE, None):
+                environments = getattr(candidate, ENVIRONMENTS_ATTRIBUTE, [])
+
+                self.execution_manager.register_finalizer(
+                    Finalizer(name, candidate, environments, description))
 
         self.execution_manager.register_late_task_dependencies(injected_task_dependencies)
 
@@ -551,6 +558,6 @@ class Reactor:
             finally:
                 self._deferred_import = False
 
-    def _collect_tasks_and_actions_and_initializers(self):
+    def _collect_project_annotations(self):
         for deferred_plugin in self._deferred_plugins.traverse():
-            self.collect_tasks_and_actions_and_initializers(deferred_plugin[1])
+            self.collect_project_annotations(deferred_plugin[1])

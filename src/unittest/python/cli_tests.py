@@ -93,7 +93,7 @@ class TaskListTests(unittest.TestCase):
 
 class StdOutLoggerTest(unittest.TestCase):
     def setUp(self):
-        self.stdout_logger = StdOutLogger(Logger)
+        self.stdout_logger = StdOutLogger()
 
     def test_should_return_debug_message_when_debug_level_given(self):
         actual_message = self.stdout_logger._level_to_string(Logger.DEBUG)
@@ -114,7 +114,7 @@ class StdOutLoggerTest(unittest.TestCase):
 
 class ColoredStdOutLoggerTest(unittest.TestCase):
     def setUp(self):
-        self.colored_stdout_logger = ColoredStdOutLogger(Logger)
+        self.colored_stdout_logger = ColoredStdOutLogger()
 
     def test_should_return_italic_debug_message_when_debug_level_given(self):
         actual_message = self.colored_stdout_logger._level_to_string(Logger.DEBUG)

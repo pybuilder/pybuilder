@@ -191,9 +191,9 @@ class Task(object):
             self.name, self.executables, self.dependencies, self.description)
 
 
-class Initializer(Executable):
+class LifecycleAction(Executable):
     def __init__(self, name, callable_, environments=None, description=""):
-        super(Initializer, self).__init__(name, callable_, description)
+        super(LifecycleAction, self).__init__(name, callable_, description)
         self.environments = environments
 
     def is_applicable(self, environments=None):
@@ -202,6 +202,14 @@ class Initializer(Executable):
         for environment in as_list(environments):
             if environment in self.environments:
                 return True
+
+
+class Initializer(LifecycleAction):
+    pass
+
+
+class Finalizer(LifecycleAction):
+    pass
 
 
 class TaskExecutionSummary(object):
@@ -224,6 +232,7 @@ class ExecutionManager(object):
         self._execute_after = odict()
 
         self._initializers = []
+        self._finalizers = []
 
         self._dependencies_resolved = False
         self._actions_executed = []
@@ -250,6 +259,10 @@ class ExecutionManager(object):
     def register_initializer(self, initializer):
         self.logger.debug("Registering initializer '%s'", initializer.name)
         self._initializers.append(initializer)
+
+    def register_finalizer(self, finalizer):
+        self.logger.debug("Registering finalizer '%s'", finalizer.name)
+        self._finalizers.append(finalizer)
 
     def register_action(self, action):
         self.logger.debug("Registering action '%s'", action.name)
@@ -290,6 +303,17 @@ class ExecutionManager(object):
                 self.logger.debug("Executing initializer '%s' from '%s'",
                                   initializer.name, initializer.source)
                 initializer.execute(kwargs)
+
+    def execute_finalizers(self, environments=None, **kwargs):
+        for finalizer in reversed(self._finalizers):
+            if not finalizer.is_applicable(environments):
+                message = "Not going to execute finalizer '%s' from '%s' as environments do not match."
+                self.logger.debug(message, finalizer.name, finalizer.source)
+
+            else:
+                self.logger.debug("Executing finalizer '%s' from '%s'",
+                                  finalizer.name, finalizer.source)
+                finalizer.execute(kwargs)
 
     def assert_dependencies_resolved(self):
         if not self._dependencies_resolved:
@@ -371,11 +395,9 @@ class ExecutionManager(object):
 
         summaries = []
         self._current_execution_plan = execution_plan
-        try:
-            for task in execution_plan:
-                summaries.append(self.execute_task(task, **kwargs))
-        finally:
-            self._current_execution_plan = None
+
+        for task in execution_plan:
+            summaries.append(self.execute_task(task, **kwargs))
 
         return summaries
 

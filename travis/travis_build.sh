@@ -1,5 +1,8 @@
 #!/bin/bash
 
+source ~/.bash_profile
+pyenv activate pyb-$PYTHON_VERSION
+
 set -eu
 
 DEPLOY_VERSION=""
