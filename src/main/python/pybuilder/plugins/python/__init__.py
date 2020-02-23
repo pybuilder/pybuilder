@@ -17,7 +17,7 @@
 #   limitations under the License.
 
 """
-    The PyBuilder python plugins package.
+    The PyBuilder Python plugins package.
     This package contains all builtin PyBuilder plugins that are used in
     python projects.
 """

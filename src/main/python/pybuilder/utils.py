@@ -110,6 +110,21 @@ def remove_python_source_suffix(file_name):
     return file_name
 
 
+def discover_module_files(source_path, suffix=".py"):
+    return discover_module_files_matching(source_path, "*{0}".format(suffix))
+
+
+def discover_module_files_matching(source_path, module_glob):
+    result = []
+    if not module_glob.endswith(".py"):
+        module_glob += ".py"
+    for module_file_path in discover_files_matching(source_path, module_glob):
+        relative_module_file_path = module_file_path[len(source_path):]
+        module_file = remove_leading_slash_or_dot_from_path(relative_module_file_path)
+        result.append(module_file)
+    return result
+
+
 def discover_modules(source_path, suffix=".py"):
     return discover_modules_matching(source_path, "*{0}".format(suffix))
 
@@ -144,13 +159,17 @@ def discover_files_matching(start_dir, file_glob, exclude_file_glob=None):
                 yield os.path.join(root, file_name)
 
 
-def assert_can_execute(command_and_arguments, prerequisite, caller, env, no_path_search=False):
+def assert_can_execute(command_and_arguments, prerequisite, caller, env, no_path_search=False, logger=None):
     with tempfile.NamedTemporaryFile() as f:
         try:
             if IS_WIN and not is_string(command_and_arguments) and not no_path_search:
                 which_cmd = which(command_and_arguments[0], path=env.get("PATH") if env else None)
                 if which_cmd:
                     command_and_arguments[0] = which_cmd
+
+            if logger:
+                logger.debug("Verifying command: %s", " ".join(repr(cmd) for cmd in command_and_arguments))
+
             process = subprocess.Popen(command_and_arguments, stdout=f, stderr=f, shell=False, env=env)
             process.wait()
         except OSError:
@@ -179,8 +198,10 @@ def execute_command(command_and_arguments, outfile_name=None, env=None, cwd=None
                 which_cmd = which(command_and_arguments[0], path=env.get("PATH") if env else None)
                 if which_cmd:
                     command_and_arguments[0] = which_cmd
+
             if logger:
                 logger.debug("Executing command: %s", " ".join(repr(cmd) for cmd in command_and_arguments))
+
             process = Popen(command_and_arguments,
                             stdout=outfile_name,
                             stderr=error_file_name,

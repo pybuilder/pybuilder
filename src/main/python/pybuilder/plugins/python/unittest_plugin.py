@@ -23,6 +23,7 @@ import unittest
 from pybuilder.plugins.python.remote_tools.unittest_tool import start_unittest_tool, PipeShutdownError, \
     logger as tool_logger
 from pybuilder.python_utils import PY2
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -30,7 +31,7 @@ except ImportError:
 
 import sys
 
-from pybuilder.core import init, task, description, use_plugin
+from pybuilder.core import init, task, description, use_plugin, before
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import discover_modules_matching, render_report
 from pybuilder.ci_server_interaction import test_proxy_for
@@ -55,6 +56,17 @@ def init_test_source_directory(project):
     project.set_property_if_unset("unittest_runner", (
         lambda stream: __import__("xmlrunner").XMLTestRunner(output=project.expand_path("$dir_target/reports"),
                                                              stream=stream), "_make_result"))
+
+
+@before("prepare")
+def coverage_init(project, logger, reactor):
+    em = reactor.execution_manager
+
+    if em.is_task_in_current_execution_plan("coverage") and em.is_task_in_current_execution_plan("run_unit_tests"):
+        project.get_property("_coverage_tasks").append(run_unit_tests)
+        project.get_property("_coverage_config_prefixes")[run_unit_tests] = "ut"
+        project.set_property("ut_coverage_name", "Python unit test")
+        project.get_property("ut_coverage_source_path", "$dir_source_main_python")
 
 
 @task

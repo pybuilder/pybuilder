@@ -3,5 +3,5 @@ packages = [
     "tblib~=1.5",
     "tailer~=0.4",
     "setuptools<45.0.0",
-    "virtualenv>16.0.0"
+    "virtualenv>16.0.0,<20.0.0"
 ]

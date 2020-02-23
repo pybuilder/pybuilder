@@ -310,7 +310,7 @@ class ExecutionManagerTaskTest(ExecutionManagerTestBase):
 
         self.execution_manager.execute_task(task, a=1)
 
-        task.execute.assert_called_with(ANY, {"a": 1})
+        task.execute.assert_called_with(ANY, {"a": 1}, _executable=None)
 
     def test_ensure_before_action_is_executed_when_task_is_executed(self):
         task = Mock(name="task", dependencies=[])
@@ -323,7 +323,7 @@ class ExecutionManagerTaskTest(ExecutionManagerTestBase):
         self.execution_manager.execute_task(task)
 
         action.execute.assert_called_with({})
-        task.execute.assert_called_with(ANY, {})
+        task.execute.assert_called_with(ANY, {}, _executable=None)
 
     def test_ensure_after_action_is_executed_when_task_is_executed(self):
         task = Mock(name="task", dependencies=[])
@@ -336,7 +336,7 @@ class ExecutionManagerTaskTest(ExecutionManagerTestBase):
         self.execution_manager.execute_task(task)
 
         action.execute.assert_called_with({})
-        task.execute.assert_called_with(ANY, {})
+        task.execute.assert_called_with(ANY, {}, _executable=None)
 
     def test_ensure_after_action_teardown_is_executed_when_task_fails(self):
         task = Mock(name="task", dependencies=[])
@@ -355,7 +355,7 @@ class ExecutionManagerTaskTest(ExecutionManagerTestBase):
             self.assertEqual(str(e), "simulated task error")
 
         action.execute.assert_called_with({})
-        task.execute.assert_called_with(ANY, {})
+        task.execute.assert_called_with(ANY, {}, _executable=None)
 
     def test_ensure_after_action_teardown_is_executed_when_action_fails(self):
         task = Mock(name="task", dependencies=[])
@@ -379,7 +379,7 @@ class ExecutionManagerTaskTest(ExecutionManagerTestBase):
             self.assertEqual(type(e), ValueError)
             self.assertEqual(str(e), "simulated action error")
 
-        task.execute.assert_called_with(ANY, {})
+        task.execute.assert_called_with(ANY, {}, _executable=None)
         action_regular.execute.assert_called_with({})
         action_teardown.execute.assert_called_with({})
         action_after_teardown.execute.assert_not_called()
@@ -406,7 +406,7 @@ class ExecutionManagerTaskTest(ExecutionManagerTestBase):
             self.assertEqual(type(e), ValueError)
             self.assertEqual(str(e), "simulated action error")
 
-        task.execute.assert_called_with(ANY, {})
+        task.execute.assert_called_with(ANY, {}, _executable=None)
         action_regular.execute.assert_called_with({})
         action_teardown.execute.assert_called_with({})
         action_after_teardown.execute.assert_not_called()
@@ -432,7 +432,7 @@ class ExecutionManagerTaskTest(ExecutionManagerTestBase):
             self.assertEqual(type(e), ValueError)
             self.assertEqual(str(e), "simulated task error")
 
-        task.execute.assert_called_with(ANY, {})
+        task.execute.assert_called_with(ANY, {}, _executable=None)
         action_teardown1.execute.assert_called_with({})
         action_teardown2.execute.assert_called_with({})
         self.execution_manager.logger.error.assert_called_with(
@@ -453,7 +453,7 @@ class ExecutionManagerActionTest(ExecutionManagerTestBase):
     def test_ensure_action_is_registered(self):
         action = Mock(name="action")
         self.execution_manager.register_action(action)
-        self.assertEqual({"action": action}, self.execution_manager._actions)
+        self.assertEqual({"action": [action]}, self.execution_manager._actions)
 
     def test_ensure_action_registered_for_two_tasks_is_executed_two_times(self):
         spam = Mock(name="spam", dependencies=[])
@@ -932,8 +932,8 @@ class ExecutionManagerExecuteExecutionPlanTest(ExecutionManagerTestBase):
 
         self.execution_manager.execute_execution_plan([one, two])
 
-        one.execute.assert_called_with(ANY, {})
-        two.execute.assert_called_with(ANY, {})
+        one.execute.assert_called_with(ANY, {}, _executable=None)
+        two.execute.assert_called_with(ANY, {}, _executable=None)
 
     def test_shortest_execution_plan_executed(self):
         one = Mock(name="one", dependencies=[])
@@ -944,16 +944,16 @@ class ExecutionManagerExecuteExecutionPlanTest(ExecutionManagerTestBase):
         self.execution_manager.resolve_dependencies()
 
         self.execution_manager.execute_execution_plan(self.execution_manager.build_execution_plan("two"))
-        one.execute.assert_has_calls([call(ANY, {})])
-        two.execute.assert_has_calls([call(ANY, {})])
+        one.execute.assert_has_calls([call(ANY, {}, _executable=None)])
+        two.execute.assert_has_calls([call(ANY, {}, _executable=None)])
         three.execute.assert_not_called()
 
         self.execution_manager.execute_execution_plan(self.execution_manager.build_shortest_execution_plan("three"))
-        one.execute.assert_has_calls([call(ANY, {})])
-        two.execute.assert_has_calls([call(ANY, {})])
-        three.execute.assert_has_calls([call(ANY, {})])
+        one.execute.assert_has_calls([call(ANY, {}, _executable=None)])
+        two.execute.assert_has_calls([call(ANY, {}, _executable=None)])
+        three.execute.assert_has_calls([call(ANY, {}, _executable=None)])
 
         self.execution_manager.execute_execution_plan(self.execution_manager.build_shortest_execution_plan("three"))
-        one.execute.assert_has_calls([call(ANY, {})])
-        two.execute.assert_has_calls([call(ANY, {})])
-        three.execute.assert_has_calls([call(ANY, {}), call(ANY, {})])
+        one.execute.assert_has_calls([call(ANY, {}, _executable=None)])
+        two.execute.assert_has_calls([call(ANY, {}, _executable=None)])
+        three.execute.assert_has_calls([call(ANY, {}, _executable=None), call(ANY, {}, _executable=None)])

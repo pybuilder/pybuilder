@@ -34,14 +34,14 @@ class CramPluginTests(unittest.TestCase):
     def test_command_respects_no_verbose(self):
         project = Project('.')
         project.set_property('verbose', False)
-        expected = ['cram', '-E']
+        expected = ['-m', 'cram', '-E']
         received = _cram_command_for(project)
         self.assertEqual(expected, received)
 
     def test_command_respects_verbose(self):
         project = Project('.')
         project.set_property('verbose', True)
-        expected = ['cram', '-E', '--verbose']
+        expected = ['-m', 'cram', '-E', '--verbose']
         received = _cram_command_for(project)
         self.assertEqual(expected, received)
 
@@ -84,7 +84,9 @@ class CramPluginTests(unittest.TestCase):
         reactor = Mock()
         reactor.python_env_registry = {}
         reactor.python_env_registry["pybuilder"] = pyb_env = Mock()
+        reactor.pybuilder_venv = pyb_env
         pyb_env.environ = {}
+        pyb_env.executable = ["a/b"]
         execute_mock = pyb_env.execute_command = Mock()
 
         command_mock.return_value = ['cram']
@@ -95,7 +97,7 @@ class CramPluginTests(unittest.TestCase):
 
         run_cram_tests(project, logger, reactor)
         execute_mock.assert_called_once_with(
-            ['cram', 'test1.cram', 'test2.cram'], 'report_file',
+            ['a/b', 'cram', 'test1.cram', 'test2.cram'], 'report_file',
             error_file_name='report_file',
             env={'PYTHONPATH': nc('./python' + pathsep), 'PATH': nc('./python/scripts' + pathsep)}
         )
@@ -125,7 +127,9 @@ class CramPluginTests(unittest.TestCase):
         reactor = Mock()
         reactor.python_env_registry = {}
         reactor.python_env_registry["pybuilder"] = pyb_env = Mock()
+        reactor.pybuilder_venv = pyb_env
         pyb_env.environ = {}
+        pyb_env.executable = ["a/b"]
         execute_mock = pyb_env.execute_command = Mock()
 
         command_mock.return_value = ['cram']
@@ -136,7 +140,7 @@ class CramPluginTests(unittest.TestCase):
 
         run_cram_tests(project, logger, reactor)
         execute_mock.assert_called_once_with(
-            ['cram', 'test1.cram', 'test2.cram'], 'report_file',
+            ['a/b', 'cram', 'test1.cram', 'test2.cram'], 'report_file',
             error_file_name='report_file',
             env={'PYTHONPATH': nc('./python' + pathsep), 'PATH': nc('./scripts' + pathsep)}
         )
@@ -162,12 +166,14 @@ class CramPluginTests(unittest.TestCase):
         project.set_property('verbose', False)
         project.set_property('dir_source_main_python', 'python')
         project.set_property('dir_source_main_scripts', 'scripts')
-        project._plugin_env = {}
+
         logger = Mock()
         reactor = Mock()
         reactor.python_env_registry = {}
         reactor.python_env_registry["pybuilder"] = pyb_env = Mock()
+        reactor.pybuilder_venv = pyb_env
         pyb_env.environ = {}
+        pyb_env.executable = ["a/b"]
         execute_mock = pyb_env.execute_command = Mock()
 
         command_mock.return_value = ['cram']
@@ -180,7 +186,7 @@ class CramPluginTests(unittest.TestCase):
         self.assertRaises(
             BuildFailedException, run_cram_tests, project, logger, reactor)
         execute_mock.assert_called_once_with(
-            ['cram', 'test1.cram', 'test2.cram'], 'report_file',
+            ['a/b', 'cram', 'test1.cram', 'test2.cram'], 'report_file',
             error_file_name='report_file',
             env={'PYTHONPATH': nc('./python' + pathsep), 'PATH': nc('./scripts' + pathsep)}
         )
@@ -211,7 +217,9 @@ class CramPluginTests(unittest.TestCase):
         reactor = Mock()
         reactor.python_env_registry = {}
         reactor.python_env_registry["pybuilder"] = pyb_env = Mock()
+        reactor.pybuilder_venv = pyb_env
         pyb_env.environ = {}
+        pyb_env.executable = ["a/b"]
         execute_mock = pyb_env.execute_command = Mock()
 
         command_mock.return_value = ['cram']

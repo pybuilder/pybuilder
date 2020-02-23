@@ -23,18 +23,19 @@ from os.path import dirname, realpath, join, isdir
 from shutil import rmtree
 from subprocess import check_call as call
 
-CLEANUP_GLOBS = ["bin", "setuptools*", "*.dist-info", "easy_install.py"]
+CLEANUP_GLOBS = ["bin", "setuptools*", "*.dist-info", "*.egg-info", "easy_install.py"]
 
 
 def vendorize():
     script_dir = realpath(dirname(__file__))
-    vendor_dir = join(script_dir, "pybuilder/_vendor")
+    vendor_dir = join(script_dir, "..", "python", "pybuilder", "_vendor")
     chdir(script_dir)
     call(["pip", "install", "-U", "vendorize"], env=environ)
     rmtree(vendor_dir, ignore_errors=True)
     makedirs(vendor_dir, exist_ok=True)
     call("python-vendorize")
 
+    vendor_dir = realpath(vendor_dir)
     for g in CLEANUP_GLOBS:
         for p in glob(join(vendor_dir, g)):
             if isdir(p):

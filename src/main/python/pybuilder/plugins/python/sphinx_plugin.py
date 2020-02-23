@@ -28,8 +28,7 @@ from shutil import rmtree
 from pybuilder import scaffolding as SCAFFOLDING
 from pybuilder.core import after, depends, init, task, use_plugin
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import (execute_command,
-                             as_list,
+from pybuilder.utils import (as_list,
                              tail_log)
 
 try:
@@ -40,6 +39,7 @@ except ImportError:
     csl = ctypes.windll.kernel32.CreateSymbolicLinkW
     csl.argtypes = (ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32)
     csl.restype = ctypes.c_ubyte
+
 
     def symlink(source, link_name):
         flags = 1 if isdir(source) else 0
@@ -172,7 +172,7 @@ def assert_sphinx_quickstart_is_available(project, logger, reactor):
                                               "plugin python.sphinx")
 
 
-def run_sphinx_build(build_command, task_name, logger, project, builder=None):
+def run_sphinx_build(build_command, task_name, logger, project, reactor, builder=None):
     logger.info("Running %s" % task_name)
     log_file = project.expand_path("$dir_target", "reports", task_name)
 
@@ -180,7 +180,7 @@ def run_sphinx_build(build_command, task_name, logger, project, builder=None):
     if project.get_property("verbose"):
         logger.debug(build_command)
 
-    exit_code = execute_command(build_command, log_file, shell=False)
+    exit_code = reactor.pybuilder_venv.execute_command(build_command, log_file, shell=False)
     if exit_code != 0:
         raise BuildFailedException("Sphinx build command failed. See %s for full details:\n%s",
                                    log_file,
@@ -189,7 +189,7 @@ def run_sphinx_build(build_command, task_name, logger, project, builder=None):
 
 @task("sphinx_generate_documentation", "Generates documentation with sphinx")
 @depends("prepare")
-def sphinx_generate(project, logger):
+def sphinx_generate(project, logger, reactor):
     """Runs sphinx-build against rst sources for the given project.
     """
     sphinx_pyb_dir = project.expand_path(*SPHINX_PYB_RUNTIME_DIR)
@@ -201,31 +201,31 @@ def sphinx_generate(project, logger):
 
     generate_sphinx_pyb_runtime_config(project, logger)
 
-    generate_sphinx_apidocs(project, logger)
+    generate_sphinx_apidocs(project, logger, reactor)
 
     builders = as_list(project.get_property("sphinx_doc_builder"))
     for builder in builders:
         build_command = get_sphinx_build_command(project, logger, builder)
-        run_sphinx_build(build_command, "sphinx_%s" % builder, logger, project, builder=builder)
+        run_sphinx_build(build_command, "sphinx_%s" % builder, logger, project, reactor, builder=builder)
 
 
 @task("sphinx_quickstart", "starts a new sphinx project")
 @depends("prepare")
-def sphinx_quickstart_generate(project, logger):
+def sphinx_quickstart_generate(project, logger, reactor):
     """Runs sphinx-build against rst sources for the given project.
     """
     build_command = get_sphinx_quickstart_command(project)
-    run_sphinx_build(build_command, "sphinx-quickstart", logger, project)
+    run_sphinx_build(build_command, "sphinx-quickstart", logger, project, reactor)
 
 
 @task("sphinx_pyb_quickstart", "starts a new PyB-specific Sphinx project")
 @depends("prepare")
-def sphinx_pyb_quickstart_generate(project, logger):
+def sphinx_pyb_quickstart_generate(project, logger, reactor):
     """Generates PyB-specific quickstart
 
     Actually sticks the PyB-specific paths and generated stub into the configuration.
     """
-    sphinx_quickstart_generate(project, logger)  # If this fails we won't touch the config directory further
+    sphinx_quickstart_generate(project, logger, reactor)  # If this fails we won't touch the config directory further
 
     sphinx_config_path = project.get_property("sphinx_config_path")
     sphinx_pyb_config_path = project.expand_path(*SPHINX_PYB_CONFIG_FILE_PATH)
@@ -344,7 +344,7 @@ def generate_sphinx_pyb_runtime_config(project, logger):
         sphinx_pyb_conf.write("\nimport sys\nsys.path.insert(0, %r)\n" % project.expand_path("$dir_source_main_python"))
 
 
-def generate_sphinx_apidocs(project, logger):
+def generate_sphinx_apidocs(project, logger, reactor):
     if not project.get_property("sphinx_run_apidoc"):
         logger.debug("Sphinx API Doc is turned off - skipping")
         return
@@ -358,4 +358,4 @@ def generate_sphinx_apidocs(project, logger):
 
     build_command = get_sphinx_apidoc_command(project)
     logger.debug("Generating Sphinx API Doc")
-    run_sphinx_build(build_command, "sphinx-apidoc", logger, project)
+    run_sphinx_build(build_command, "sphinx-apidoc", logger, project, reactor)

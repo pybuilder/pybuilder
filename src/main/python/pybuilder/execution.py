@@ -70,22 +70,22 @@ def as_task_name_list(mixed):
 class Executable(object):
     NAME_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]+$")
 
-    def __init__(self, name, callable, description=""):
+    def __init__(self, name, callable_, description=""):
         if not Executable.NAME_PATTERN.match(name):
             raise InvalidNameException(name)
 
         self._name = name
         self.description = description
-        self.callable = callable
-        if hasattr(callable, "__module__"):
-            self.source = callable.__module__
+        self.callable = callable_
+        if hasattr(callable_, "__module__"):
+            self.source = callable_.__module__
         else:
             self.source = "n/a"
 
         if isinstance(self.callable, types.FunctionType):
             self.parameters = getargspec(self.callable).args
         else:
-            raise TypeError("Don't know how to handle callable %s" % callable)
+            raise TypeError("Don't know how to handle callable %s" % callable_)
 
     @property
     def name(self):
@@ -100,14 +100,23 @@ class Executable(object):
 
         self.callable(*arguments)
 
+    def __repr__(self):
+        return "Executable[name=%r, callable=%r, source=%r, description=%r]" % (
+            self._name, self.callable, self.source, self.description)
+
 
 class Action(Executable):
-    def __init__(self, name, callable, before=None, after=None, description="", only_once=False, teardown=False):
-        super(Action, self).__init__(name, callable, description)
+    def __init__(self, name, callable_, before=None, after=None, description="", only_once=False, teardown=False):
+        super(Action, self).__init__(name, callable_, description)
         self.execute_before = as_task_name_list(before)
         self.execute_after = as_task_name_list(after)
         self.only_once = only_once
         self.teardown = teardown
+
+    def __repr__(self):
+        return "Action[name=%r, callable=%r, source=%r, before=%r, after=%r, only_once=%r, teardown=%r, " \
+               "description=%r]" % (self._name, self.callable, self.source, self.execute_before, self.execute_after,
+                                    self.only_once, self.teardown, self.description)
 
 
 class TaskDependency(object):
@@ -137,9 +146,9 @@ class TaskDependency(object):
 
 
 class Task(object):
-    def __init__(self, name, callable, dependencies=None, description=""):
+    def __init__(self, name, callable_, dependencies=None, description=""):
         self.name = name
-        self.executables = [Executable(name, callable, description)]
+        self.executables = [Executable(name, callable_, description)]
         self.dependencies = as_list(dependencies)
         self.description = [description]
 
@@ -159,20 +168,32 @@ class Task(object):
             return self.name < other.name
         return self.name < other
 
+    def executable(self, callable_):
+        return [executable for executable in self.executables if executable.callable is callable_][0]
+
     def extend(self, task):
         self.executables += task.executables
         self.dependencies += task.dependencies
         self.description += task.description
 
-    def execute(self, logger, argument_dict):
+    def execute(self, logger, argument_dict, _executable=None):
         for executable in self.executables:
-            logger.debug("Executing subtask from %s", executable.source)
+            if _executable is not None:
+                if executable is not _executable:
+                    logger.debug("Skipping subtask %r from %r", self.name, executable.source)
+                    continue
+
+            logger.debug("Executing subtask of %r from %r", self.name, executable.source)
             executable.execute(argument_dict)
+
+    def __repr__(self):
+        return "Task[name=%r, executables=%r, dependencies=%r, description=%r]" % (
+            self.name, self.executables, self.dependencies, self.description)
 
 
 class Initializer(Executable):
-    def __init__(self, name, callable, environments=None, description=""):
-        super(Initializer, self).__init__(name, callable, description)
+    def __init__(self, name, callable_, environments=None, description=""):
+        super(Initializer, self).__init__(name, callable_, description)
         self.environments = environments
 
     def is_applicable(self, environments=None):
@@ -232,7 +253,11 @@ class ExecutionManager(object):
 
     def register_action(self, action):
         self.logger.debug("Registering action '%s'", action.name)
-        self._actions[action.name] = action
+
+        if action.name not in self._actions:
+            self._actions[action.name] = []
+
+        self._actions[action.name].append(action)
 
     def register_task(self, *tasks):
         for task in tasks:
@@ -270,7 +295,7 @@ class ExecutionManager(object):
         if not self._dependencies_resolved:
             raise DependenciesNotResolvedException()
 
-    def execute_task(self, task, **kwargs):
+    def execute_task(self, task, _executable=None, **kwargs):
         self.assert_dependencies_resolved()
 
         self.logger.debug("Executing task '%s'", task.name)
@@ -295,7 +320,7 @@ class ExecutionManager(object):
                 if self.execute_action(action, kwargs):
                     number_of_actions += 1
 
-            task.execute(self.logger, kwargs)
+            task.execute(self.logger, kwargs, _executable=_executable)
         except Exception:
             if not has_teardown_tasks:
                 raise
@@ -485,18 +510,19 @@ class ExecutionManager(object):
                     self._task_dependencies[task.name].append(TaskDependency(self.get_task(d), d.optional))
                     self.logger.debug("Adding '%s' as a dependency of task '%s'", d, task.name)
 
-        for action in self._actions.values():
-            for task in action.execute_before:
-                if not self.has_task(task):
-                    raise MissingActionDependencyException(action.name, task)
-                self._execute_before[task].append(action)
-                self.logger.debug("Adding before action '%s' for task '%s'", action.name, task)
+        for actions in self._actions.values():
+            for action in actions:
+                for task in action.execute_before:
+                    if not self.has_task(task):
+                        raise MissingActionDependencyException(action.name, task)
+                    self._execute_before[task].append(action)
+                    self.logger.debug("Adding before action '%s' for task '%s'", action.name, task)
 
-            for task in action.execute_after:
-                if not self.has_task(task):
-                    raise MissingActionDependencyException(action.name, task)
-                self._execute_after[task].append(action)
-                self.logger.debug("Adding after action '%s' for task '%s'", action.name, task)
+                for task in reversed(action.execute_after):
+                    if not self.has_task(task):
+                        raise MissingActionDependencyException(action.name, task)
+                    self._execute_after[task].append(action)
+                    self.logger.debug("Adding after action '%s' for task '%s'", action.name, task)
 
         self._dependencies_resolved = True
 

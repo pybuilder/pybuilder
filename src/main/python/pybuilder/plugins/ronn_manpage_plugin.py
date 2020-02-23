@@ -20,7 +20,6 @@ import errno
 import os
 
 from pybuilder.core import init, task, use_plugin, description, depends, after
-from pybuilder.utils import execute_command
 
 use_plugin("core")
 
@@ -39,9 +38,9 @@ def assert_ronn_is_executable(project, logger, reactor):
     """
     logger.debug("Checking if ronn is executable.")
 
-    reactor.python_env_registry["pybuilder"].verify_can_execute(command_and_arguments=["ronn", "--version"],
-                                                                prerequisite="ronn",
-                                                                caller="plugin ronn_manpage_plugin")
+    reactor.pybuilder_venv.verify_can_execute(command_and_arguments=["ronn", "--version"],
+                                              prerequisite="ronn",
+                                              caller="plugin ronn_manpage_plugin")
 
 
 @after("prepare")
@@ -51,15 +50,15 @@ def assert_gzip_is_executable(project, logger, reactor):
     """
     logger.debug("Checking if gzip is executable.")
 
-    reactor.python_env_registry["pybuilder"].verify_can_execute(command_and_arguments=["gzip", "--version"],
-                                                                prerequisite="gzip",
-                                                                caller="plugin ronn_manpage_plugin")
+    reactor.pybuilder_venv.verify_can_execute(command_and_arguments=["gzip", "--version"],
+                                              prerequisite="gzip",
+                                              caller="plugin ronn_manpage_plugin")
 
 
 @task
 @depends("prepare")
 @description("Generates manpages using ronn.")
-def generate_manpages(project, logger):
+def generate_manpages(project, logger, reactor):
     """
         Uses the ronn script to convert a markdown source to a gzipped manpage.
     """
@@ -71,7 +70,7 @@ def generate_manpages(project, logger):
             raise
     ronn_report_file = project.expand_path("$dir_reports/{0}".format('generate_manpage'))
     generate_manpages_command = build_generate_manpages_command(project)
-    execute_command(generate_manpages_command, ronn_report_file, shell=True)
+    reactor.pybuilder_venv.execute_command(generate_manpages_command, ronn_report_file, shell=True)
 
 
 def build_generate_manpages_command(project):

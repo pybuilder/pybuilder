@@ -19,12 +19,12 @@
 import os
 import sys
 
-from pybuilder.core import init, use_plugin, task, description
+from pybuilder.core import init, use_plugin, task, description, before
 from pybuilder.plugins.python.test_plugin_helper import ReportsProcessor
 from pybuilder.python_utils import mp_get_context
 from pybuilder.terminal import print_text_line, print_file_content, print_text
 from pybuilder.terminal import styled_text, fg, GREEN, MAGENTA, GREY
-from pybuilder.utils import discover_files_matching, execute_command, Timer, read_file
+from pybuilder.utils import discover_files_matching, Timer, read_file
 
 use_plugin("core")
 
@@ -41,17 +41,35 @@ def initialize_integrationtest_plugin(project):
     project.set_property_if_unset("integrationtest_inherit_environment", False)
     project.set_property_if_unset("integrationtest_always_verbose", False)
     project.set_property_if_unset("integrationtest_cpu_scaling_factor", 4)
+    project.set_property_if_unset("integrationtest_python_env", "test")
 
     project.set_property_if_unset("integrationtest_file_suffix", None)  # deprecated, use integrationtest_file_glob.
 
 
+@before("prepare")
+def coverage_init(project, logger, reactor):
+    em = reactor.execution_manager
+
+    if em.is_task_in_current_execution_plan("coverage") and em.is_task_in_current_execution_plan(
+            "run_integration_tests"):
+        project.get_property("_coverage_tasks").append(run_integration_tests)
+        project.get_property("_coverage_config_prefixes")[run_integration_tests] = "it"
+        project.set_property("it_coverage_name", "Python integration test")
+        project.set_property("it_coverage_python_env", project.get_property("integrationtest_python_env"))
+        # This needs to be in sync with `prepare_environment`
+        project.set_property("it_coverage_source_path", "$dir_dist")
+
+
 @task
 @description("Runs integration tests based on Python's unittest module")
-def run_integration_tests(project, logger):
-    if not project.get_property("integrationtest_parallel"):
-        reports, total_time = run_integration_tests_sequentially(project, logger)
-    else:
-        reports, total_time = run_integration_tests_in_parallel(project, logger)
+def run_integration_tests(project, logger, reactor):
+    if project.get_property("integrationtest_parallel"):
+        logger.warn("Parallel integration test execution is temporarily disabled")
+
+    # if not project.get_property("integrationtest_parallel"):
+    reports, total_time = run_integration_tests_sequentially(project, logger, reactor)
+    # else:
+    #    reports, total_time = run_integration_tests_in_parallel(project, logger)
 
     reports_processor = ReportsProcessor(project, logger)
     reports_processor.process_reports(reports, total_time)
@@ -59,7 +77,7 @@ def run_integration_tests(project, logger):
     reports_processor.write_report_and_ensure_all_tests_passed()
 
 
-def run_integration_tests_sequentially(project, logger):
+def run_integration_tests_sequentially(project, logger, reactor):
     logger.debug("Running integration tests sequentially")
     reports_dir = prepare_reports_directory(project)
 
@@ -68,7 +86,7 @@ def run_integration_tests_sequentially(project, logger):
     total_time = Timer.start()
 
     for test in discover_integration_tests_for_project(project, logger):
-        report_item = run_single_test(logger, project, reports_dir, test)
+        report_item = run_single_test(logger, project, reactor, reports_dir, test)
         report_items.append(report_item)
 
     total_time.stop()
@@ -172,20 +190,11 @@ def add_additional_environment_keys(env, project):
         env[key] = additional_environment[key]
 
 
-def inherit_environment(env, project):
-    if project.get_property("integrationtest_inherit_environment"):
-        for key in os.environ:
-            if key not in env:
-                env[key] = os.environ[key]
-
-
 def prepare_environment(project):
     env = {
         "PYTHONPATH": os.pathsep.join((project.expand_path("$dir_dist"),
                                        project.expand_path("$dir_source_integrationtest_python")))
     }
-
-    inherit_environment(env, project)
 
     add_additional_environment_keys(env, project)
 
@@ -199,7 +208,7 @@ def prepare_reports_directory(project):
     return reports_dir
 
 
-def run_single_test(logger, project, reports_dir, test, output_test_names=True):
+def run_single_test(logger, project, reactor, reports_dir, test, output_test_names=True):
     additional_integrationtest_commandline_text = project.get_property("integrationtest_additional_commandline")
 
     if additional_integrationtest_commandline_text:
@@ -212,15 +221,18 @@ def run_single_test(logger, project, reports_dir, test, output_test_names=True):
     if output_test_names:
         logger.info("Running integration test %s", name)
 
+    python_env = reactor.python_env_registry[project.get_property("integrationtest_python_env")]
     env = prepare_environment(project)
-    test_time = Timer.start()
-    command_and_arguments = [sys.executable, test]
+    command_and_arguments = python_env.executable + [test]
     command_and_arguments += additional_integrationtest_commandline
 
     report_file_name = os.path.join(reports_dir, name)
     error_file_name = report_file_name + ".err"
-    return_code = execute_command(
-        command_and_arguments, report_file_name, env, error_file_name=error_file_name)
+
+    test_time = Timer.start()
+    return_code = python_env.execute_command(command_and_arguments, report_file_name, env,
+                                             error_file_name=error_file_name,
+                                             inherit_env=project.get_property("integrationtest_inherit_environment"))
     test_time.stop()
     report_item = {
         "test": name,

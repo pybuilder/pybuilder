@@ -154,12 +154,7 @@ class Reactor:
         system_pyenv = PythonEnv(sys.exec_prefix, self).populate()
         python_env_registry["system"] = system_pyenv
 
-        #        self._plugin_python = jp(self._plugin_dir, sys_executable_suffix)
-        #        self._plugin_env = os.environ.copy()
-        #        self._plugin_env["PATH"] = os.pathsep.join([jp(self._plugin_dir, venv_binname)] +
-        #                                                   self._plugin_env.get("PATH", "").split(os.pathsep))
         self._sys_path_original = list(sys.path)
-        self._sys_executable_name = os.path.basename(sys.executable)
 
     def require_plugin(self, plugin, version=None, plugin_module_name=None):
         if plugin not in self._plugins:
@@ -317,20 +312,17 @@ class Reactor:
     def collect_tasks_and_actions_and_initializers(self, project_module):
         injected_task_dependencies = {}
 
-        def normalize_candidate_name(candidate):
-            return getattr(candidate, NAME_ATTRIBUTE, candidate.__name__ if hasattr(candidate, "__name__") else None)
-
         def add_task_dependency(names, depends_on, optional):
             for name in as_list(names):
                 if not isinstance(name, basestring):
-                    name = normalize_candidate_name(name)
+                    name = self.normalize_candidate_name(name)
                 if name not in injected_task_dependencies:
                     injected_task_dependencies[name] = list()
                 injected_task_dependencies[name].append(TaskDependency(depends_on, optional))
 
         for name in dir(project_module):
             candidate = getattr(project_module, name)
-            name = normalize_candidate_name(candidate)
+            name = self.normalize_candidate_name(candidate)
 
             if getattr(candidate, TASK_ATTRIBUTE, None):
                 dependents = getattr(candidate, DEPENDENTS_ATTRIBUTE, None)
@@ -346,7 +338,7 @@ class Reactor:
 
         for name in dir(project_module):
             candidate = getattr(project_module, name)
-            name = normalize_candidate_name(candidate)
+            name = self.normalize_candidate_name(candidate)
 
             description = getattr(candidate, DESCRIPTION_ATTRIBUTE, "")
 
@@ -442,6 +434,10 @@ class Reactor:
                         pass
 
         return tasks
+
+    @staticmethod
+    def normalize_candidate_name(candidate):
+        return getattr(candidate, NAME_ATTRIBUTE, candidate.__name__ if hasattr(candidate, "__name__") else None)
 
     @staticmethod
     def load_project_module(project_descriptor):

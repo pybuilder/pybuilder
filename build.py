@@ -94,16 +94,9 @@ def initialize(project):
     project.set_property("verbose", True)
 
     project.set_property("coverage_break_build", False)
-    project.get_property("coverage_exceptions").extend(["pybuilder.cli",
-                                                        "pybuilder.plugins.core_plugin",
-                                                        "pybuilder._backport",
-                                                        "pybuilder._backport.*",
-                                                        "pybuilder._vendor",
+    project.get_property("coverage_exceptions").extend(["pybuilder._vendor",
                                                         "pybuilder._vendor.*",
-                                                        "vendorize_pyb"])
-
-    # Issue #284
-    project.set_property("integrationtest_inherit_environment", True)
+                                                        "setup"])
 
     project.set_property("flake8_break_build", True)
     project.set_property("flake8_extend_ignore", "E303")

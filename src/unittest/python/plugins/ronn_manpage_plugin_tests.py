@@ -46,6 +46,11 @@ class RonnPluginInitializationTests(TestCase):
 
     def setUp(self):
         self.project = Project("basedir")
+        self.logger = Mock(Logger)
+        self.reactor = Mock()
+        self.pyb_env = pyb_env = Mock()
+        self.reactor.python_env_registry = {"pybuilder": pyb_env}
+        self.reactor.pybuilder_venv = pyb_env
 
     def test_should_leave_user_specified_properties_when_initializing_plugin(self):
 
@@ -64,29 +69,15 @@ class RonnPluginInitializationTests(TestCase):
             self.assertEqual(self.project.get_property(property_name), property_value)
 
     def test_should_check_that_ronn_is_executable(self):
-
-        mock_logger = Mock(Logger)
-        mock_project = Mock(Project)
-        mock_reactor = Mock()
-        pyb_env = Mock()
-        mock_reactor.python_env_registry = {"pybuilder": pyb_env}
-
-        assert_ronn_is_executable(mock_project, mock_logger, mock_reactor)
-        pyb_env.verify_can_execute.assert_called_with(
+        assert_ronn_is_executable(self.project, self.logger, self.reactor)
+        self.pyb_env.verify_can_execute.assert_called_with(
             caller='plugin ronn_manpage_plugin',
             command_and_arguments=['ronn', '--version'],
             prerequisite='ronn')
 
     def test_should_check_that_gzip_is_executable(self):
-
-        mock_logger = Mock(Logger)
-        mock_project = Mock(Project)
-        mock_reactor = Mock()
-        pyb_env = Mock()
-        mock_reactor.python_env_registry = {"pybuilder": pyb_env}
-
-        assert_gzip_is_executable(mock_project, mock_logger, mock_reactor)
-        pyb_env.verify_can_execute.assert_called_with(
+        assert_gzip_is_executable(self.project, self.logger, self.reactor)
+        self.pyb_env.verify_can_execute.assert_called_with(
             caller="plugin ronn_manpage_plugin",
             command_and_arguments=["gzip", "--version"],
             prerequisite="gzip")

@@ -25,7 +25,7 @@
 
 import os
 
-from pybuilder.core import after, task, init, use_plugin, depends, description
+from pybuilder.core import after, task, init, use_plugin, depends, description, before
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import discover_files_matching, read_file, tail_log
 
@@ -37,10 +37,23 @@ use_plugin("python.core")
 @init
 def initialize_cram_plugin(project):
     project.plugin_depends_on("cram")
+
     project.set_property_if_unset("dir_source_cmdlinetest", "src/cmdlinetest")
     project.set_property_if_unset("cram_test_file_glob", "*.t")
     project.set_property_if_unset("cram_fail_if_no_tests", True)
     project.set_property_if_unset("cram_run_test_from_target", True)
+
+
+@before("prepare")
+def coverage_init(project, logger, reactor):
+    em = reactor.execution_manager
+
+    if em.is_task_in_current_execution_plan("coverage") and em.is_task_in_current_execution_plan(
+            "run_integration_tests"):
+        project.get_property("_coverage_tasks").append(run_integration_tests)
+        project.get_property("_coverage_config_prefixes")[run_integration_tests] = "cram"
+        project.set_property("cram_coverage_name", "Python Cram test")
+        project.set_property("cram_coverage_python_env", "pybuilder")
 
 
 @after("prepare")
@@ -48,12 +61,13 @@ def assert_cram_is_executable(project, logger, reactor):
     """ Asserts that the cram script is executable. """
     logger.debug("Checking if cram is executable.")
 
-    reactor.python_env_registry["pybuilder"].verify_can_execute(command_and_arguments=["cram", "--version"],
-                                                                prerequisite="cram", caller="plugin python.cram")
+    reactor.pybuilder_venv.verify_can_execute(
+        command_and_arguments=reactor.pybuilder_venv.executable + ["-m", "cram", "--version"],
+        prerequisite="cram", caller="plugin python.cram")
 
 
 def _cram_command_for(project):
-    command_and_arguments = ["cram", '-E']
+    command_and_arguments = ["-m", "cram", '-E']
     if project.get_property("verbose"):
         command_and_arguments.append("--verbose")
     return command_and_arguments
@@ -87,11 +101,12 @@ def run_cram_tests(project, logger, reactor):
         else:
             return
 
-    command_and_arguments = _cram_command_for(project)
+    pyb_venv = reactor.pybuilder_venv
+
+    command_and_arguments = pyb_venv.executable + _cram_command_for(project)
     command_and_arguments.extend(cram_tests)
     report_file = _report_file(project)
 
-    pyb_venv = reactor.python_env_registry["pybuilder"]
     pyb_environ = pyb_venv.environ
     if project.get_property("cram_run_test_from_target"):
         dist_dir = project.expand_path("$dir_dist")

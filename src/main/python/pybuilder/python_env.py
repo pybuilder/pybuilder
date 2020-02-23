@@ -31,7 +31,7 @@ from pybuilder.vendor import virtualenv
 __all__ = ["PythonEnv", "PythonEnvRegistry"]
 
 _PYTHON_INFO_SCRIPT = """import platform, sys, os, sysconfig
-_executable = os.path.abspath(getattr(sys, "_base_executable", sys.executable))
+_executable = os.path.normcase(os.path.abspath(getattr(sys, "_base_executable", sys.executable)))
 _platform = sys.platform
 if _platform == "linux2":
     _platform = "linux"
@@ -39,7 +39,7 @@ print({
 "_platform": _platform,
 "_os_name": os.name,
 "_executable": (_executable, ),
-"_exec_dir": os.path.dirname(_executable),
+"_exec_dir": os.path.normcase(os.path.abspath(os.path.dirname(_executable))),
 "_name": platform.python_implementation(),
 "_type": platform.python_implementation().lower(),
 "_version": tuple(sys.version_info),
@@ -88,16 +88,16 @@ class PythonEnv(object):
         # Python data is all uploaded
         self._populated = True
 
+        self._recalculate_derived()
+        return self
+
+    def _recalculate_derived(self):
         self._site_paths = tuple(self._get_site_paths())
 
         environ_path = self._environ.get("PATH")
         if environ_path:
             self._environ["PATH"] = pathsep.join([self._exec_dir] + environ_path.split(pathsep))
 
-        self._reset_descriptions()
-        return self
-
-    def _reset_descriptions(self):
         self._long_desc = "%s version %s on %s in %s" % (self.name,
                                                          ".".join(str(v) for v in self.version),
                                                          self.platform,
@@ -191,6 +191,8 @@ class PythonEnv(object):
             raise KeyError("'%s' is not a property that can be overwritten" % prop)
         setattr(self, "_%s" % prop, value)
 
+        self._recalculate_derived()
+
     def create_venv(self, system_site_packages=False,
                     clear=False,
                     symlinks=False,
@@ -234,7 +236,7 @@ class PythonEnv(object):
         if env:
             environ.update(env)
         return assert_can_execute(command_and_arguments, prerequisite, caller, env=environ,
-                                  no_path_search=no_path_search)
+                                  no_path_search=no_path_search, logger=self.logger)
 
     def execute_command(self, command_and_arguments,
                         outfile_name=None,
