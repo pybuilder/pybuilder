@@ -86,9 +86,6 @@ default_task = ["analyze", "publish"]
 
 @init
 def initialize(project):
-    if sys.version_info[0] < 3:
-        project.build_depends_on("mock")
-
     project.build_depends_on("pygments")
 
     project.set_property("verbose", True)
@@ -127,6 +124,9 @@ def initialize(project):
                                                                 ".settings",
                                                                 "vendorize.toml",
                                                                 "vendorize_pyb.py"])
+    # PyPy distutils needs os.environ['PATH'] not matter what
+    # Also Windows needs a whole bunch of PATH for DLL loading
+    project.set_property("integrationtest_inherit_environment", True)
 
     # enable this to build a bdist on vagrant
     # project.set_property("distutils_issue8876_workaround_enabled", True)
