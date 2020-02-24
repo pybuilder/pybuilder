@@ -16,6 +16,16 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from unittest import TestCase
+from unittest.mock import Mock
 
-def helloworld(out):
-    out.write("Hello world of Python\n")
+from helloworld import helloworld
+
+
+class HelloWorldTest(TestCase):
+    def test_should_issue_hello_world_message(self):
+        out = Mock()
+
+        helloworld(out)
+
+        out.write.assert_called_with("Hello world of Python\n")

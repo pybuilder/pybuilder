@@ -70,7 +70,7 @@ def prepare(project, logger, reactor):
     covered_tasks = CoveredTask.covered_tasks(project, reactor)
     project.set_property("__covered_tasks", covered_tasks)
 
-    logger.info("Requested coverage for tasks: %s", ",".join(str(covered_task) for covered_task in covered_tasks))
+    logger.info("Requested coverage for tasks: %s", ", ".join(str(covered_task) for covered_task in covered_tasks))
     for covered_task in covered_tasks:
         if not em.is_task_in_current_execution_plan(covered_task.name):
             logger.info("Will not run coverage for %r as it's not in the current plan", covered_task)

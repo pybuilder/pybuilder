@@ -96,9 +96,6 @@ def initialize(project):
                                                         "pybuilder._vendor.*",
                                                         "setup"])
 
-    project.set_property("coveralls_dry_run", True)
-    project.set_property("coveralls_report", True)
-
     project.set_property("flake8_break_build", True)
     project.set_property("flake8_extend_ignore", "E303")
     project.set_property("flake8_include_test_sources", True)
@@ -147,6 +144,10 @@ def initialize(project):
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: POSIX :: Linux",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: OS Independent",
         "Development Status :: 5 - Stable",
         "Environment :: Console",
         "Intended Audience :: Developers",

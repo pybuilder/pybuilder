@@ -119,7 +119,7 @@ def discover_module_files_matching(source_path, module_glob):
     if not module_glob.endswith(".py"):
         module_glob += ".py"
     for module_file_path in discover_files_matching(source_path, module_glob):
-        relative_module_file_path = module_file_path[len(source_path):]
+        relative_module_file_path = os.path.relpath(module_file_path, source_path)
         module_file = remove_leading_slash_or_dot_from_path(relative_module_file_path)
         result.append(module_file)
     return result
@@ -134,7 +134,7 @@ def discover_modules_matching(source_path, module_glob):
     if not module_glob.endswith(".py"):
         module_glob += ".py"
     for module_file_path in discover_files_matching(source_path, module_glob):
-        relative_module_file_path = module_file_path.replace(source_path, "")
+        relative_module_file_path = os.path.relpath(module_file_path, source_path)
         relative_module_file_path = relative_module_file_path.replace(os.sep, ".")
         module_file = remove_leading_slash_or_dot_from_path(relative_module_file_path)
         module_name = remove_python_source_suffix(module_file)
