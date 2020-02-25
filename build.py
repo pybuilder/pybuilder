@@ -20,8 +20,10 @@
 #   limitations under the License.
 
 import sys
+from os.path import dirname, join as jp
 
-sys.path.insert(0, "src/main/python")  # This is only necessary in PyBuilder sources for bootstrap
+# This is only necessary in PyBuilder sources for bootstrap
+sys.path.insert(0, jp(dirname(__file__), "src/main/python"))
 
 from pybuilder import bootstrap
 from pybuilder.core import Author, init, use_plugin
@@ -112,6 +114,7 @@ def initialize(project):
     project.get_property("copy_resources_glob").append("LICENSE")
     project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
     project.include_file("pybuilder", "LICENSE")
+    project.include_file("", "*.whl")  # All included binary wheels from vendors
 
     project.set_property("sphinx_doc_author", "PyBuilder Team")
     project.set_property("sphinx_doc_builder", "html")

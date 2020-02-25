@@ -179,16 +179,9 @@ class ProjectPackageDataTests(unittest.TestCase):
     def setUp(self):
         self.project = Project(basedir="/imaginary", name="Unittest")
 
-    def test_should_raise_exception_when_package_name_not_given(self):
-        self.assertRaises(ValueError, self.project.include_file, None, "spam")
-
     def test_should_raise_exception_when_filename_not_given(self):
         self.assertRaises(
             ValueError, self.project.include_file, "my_package", None)
-
-    def test_should_raise_exception_when_package_name_is_empty_string(self):
-        self.assertRaises(
-            ValueError, self.project.include_file, "    \n", "spam")
 
     def test_should_raise_exception_when_filename_is_empty_string(self):
         self.assertRaises(

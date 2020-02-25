@@ -303,6 +303,10 @@ class Reactor:
         self.logger.debug("Project properties: %s", formatted)
 
     def import_plugin(self, plugin_def):
+        if self._pending_plugin_installs:
+            self.plugin_loader.install_plugin(self, self._pending_plugin_installs)
+            del self._pending_plugin_installs[:]
+
         if plugin_def not in self._plugins_imported:
             self.logger.debug("Loading plugin '%s'%s", plugin_def.name,
                               " version %s" % plugin_def.version if plugin_def.version else "")
@@ -542,10 +546,6 @@ class Reactor:
         if not self._deferred_import:
             self._deferred_import = True
             try:
-                if self._pending_plugin_installs:
-                    self.plugin_loader.install_plugin(self, self._pending_plugin_installs)
-                    del self._pending_plugin_installs[:]
-
                 while True:
                     mods = self._deferred_plugins.get_mods()
                     for deferred_plugin in self._deferred_plugins.traverse():

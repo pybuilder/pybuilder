@@ -165,7 +165,7 @@ except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
 
 try:
-    subprocess.check_call(["pyb", "clean", "install_build_dependencies", "package", "-o"])
+    subprocess.check_call(["pyb", "clean", "package", "-o"])
     dist_dir = glob.glob(os.path.join(script_dir, "target", "dist", "*"))[0]
     for src_file in glob.glob(os.path.join(dist_dir, "*")):
         file_name = os.path.basename(src_file)

@@ -27,7 +27,7 @@ use_plugin("analysis")
 use_plugin("python.coverage")
 
 
-@init
+@init(environments="ci")
 def init_coveralls_properties(project):
     project.plugin_depends_on("coveralls", "~=1.11")
 

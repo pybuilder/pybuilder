@@ -60,18 +60,28 @@ class BuiltinPluginLoader(PluginLoader):
         return ":" not in plugin_def.name
 
     def load_plugin(self, reactor, plugin_defs):
-        builtin_plugin_name = plugin_defs.plugin_module_name or "pybuilder.plugins.%s_plugin" % plugin_defs.name
-        self.logger.debug("Trying to load builtin plugin %r, module %r", plugin_defs.name, builtin_plugin_name)
-        try:
-            plugin_module = _load_plugin(builtin_plugin_name, plugin_defs.name)
-        except MissingPluginException as e:
-            self.logger.debug("Builtin plugin %r, module %r failed to load: %s", plugin_defs.name,
-                              builtin_plugin_name,
-                              e.message)
-            raise
+        candidates = []
+        if plugin_defs.plugin_module_name:
+            candidates.append(plugin_defs.plugin_module_name)
+        else:
+            candidates.append("pybuilder.plugins.%s_plugin" % plugin_defs.name)
+            candidates.append(plugin_defs.name)
 
-        self.logger.debug("Found builtin plugin %r, module %r", plugin_defs.name, builtin_plugin_name)
-        return plugin_module
+        last_problem = None
+        for candidate in candidates:
+            self.logger.debug("Trying to load direct plugin %r, module %r", plugin_defs.name, candidate)
+            try:
+                plugin_module = _load_plugin(candidate, plugin_defs.name)
+                self.logger.debug("Found direct plugin %r, module %r", plugin_defs.name, candidate)
+                return plugin_module
+            except MissingPluginException as e:
+                self.logger.debug("Direct plugin %r, module %r failed to load: %s", plugin_defs.name,
+                                  candidate,
+                                  e.message)
+                last_problem = e
+
+        if last_problem:
+            raise last_problem
 
 
 class DownloadingPluginLoader(PluginLoader):
@@ -87,14 +97,12 @@ class DownloadingPluginLoader(PluginLoader):
             self._check_plugin_def_type(plugin_def)
             display_name = str(plugin_def)
 
-            self.logger.info("Installing or updating plugin {0}".format(display_name))
+            self.logger.info("Installing or updating plugin %r", display_name)
 
             pip_batch.append(plugin_def.dependency)
 
         try:
-            per = reactor.python_env_registry
-            pyb_env = per["pybuilder"]
-            pyb_env.install_dependencies(pip_batch, package_type="plugin")
+            reactor.pybuilder_venv.install_dependencies(pip_batch, package_type="plugin")
         except BuildFailedException as e:
             self.logger.warn(e.message)
 

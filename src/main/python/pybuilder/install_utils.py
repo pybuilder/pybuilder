@@ -108,36 +108,36 @@ def _filter_dependencies(logger, project, dependencies, entry_paths):
     dependency_constraints = []
 
     for dependency in dependencies:
-        logger.debug("Inspecting package '%s'" % dependency)
+        logger.debug("Inspecting package %s", dependency)
         if dependency.declaration_only:
-            logger.info("Dependency '%s' is declaration-only and will not be installed" % dependency)
+            logger.info("Package %s is declaration-only and will not be installed", dependency)
             continue
         if isinstance(dependency, RequirementsFile):
             # Always add requirement file-based dependencies
-            logger.debug("Package '%s' is a requirement file and will be updated" % dependency)
+            logger.debug("Package %s is a requirement file and will be updated", dependency)
             dependencies_to_install.append(dependency)
             continue
         elif isinstance(dependency, Dependency):
             if dependency.version:
                 dependency_constraints.append(dependency)
-                logger.debug("Package '%s' is added to the list of installation constraints" % dependency)
+                logger.debug("Package %s is added to the list of installation constraints", dependency)
 
             if dependency.url:
                 # Always add dependency that is url-based
-                logger.debug("Package '%s' is URL-based and will be updated" % dependency)
+                logger.debug("Package %s is URL-based and will be updated", dependency)
                 dependencies_to_install.append(dependency)
                 continue
 
             if should_update_package(dependency.version) and not getattr(dependency, "version_not_a_spec", False):
                 # Always add dependency that has a version specifier indicating desire to always update
-                logger.debug("Package '%s' has a non-exact version specifier and will be updated" % dependency)
+                logger.debug("Package %s has a non-exact version specifier and will be updated", dependency)
                 dependencies_to_install.append(dependency)
                 continue
 
         dependency_name = dependency.name.lower()
         if dependency_name not in installed_packages:
             # If dependency not installed at all then install it
-            logger.debug("Package '%s' is not installed and will be installed" % dependency)
+            logger.debug("Package %s is not installed and will be installed", dependency)
             dependencies_to_install.append(dependency)
             continue
 

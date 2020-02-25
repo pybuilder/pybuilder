@@ -26,7 +26,7 @@ from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
                                     DownloadingPluginLoader,
                                     _check_plugin_version)
-from test_utils import patch, Mock
+from test_utils import patch, Mock, call
 
 
 class PluginVersionCheckTest(unittest.TestCase):
@@ -69,6 +69,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         reactor = Mock()
         pyb_env = Mock()
         reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
         pd = PluginDef("pypi:external_plugin")
         pl = DownloadingPluginLoader(logger)
@@ -83,6 +84,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         reactor = Mock()
         pyb_env = Mock()
         reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
         downloader = DownloadingPluginLoader(logger)
         pd = PluginDef("pypi:external_plugin")
@@ -97,6 +99,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         reactor = Mock()
         pyb_env = Mock()
         reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
         pyb_env.install_dependencies.side_effect = MissingPluginException("PyPI Install Boom")
         load.side_effect = MissingPluginException("PyPI Load Boom")
@@ -112,6 +115,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         reactor = Mock()
         pyb_env = Mock()
         reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
         pyb_env.install_dependencies.side_effect = MissingPluginException("VCS Install BOOM")
         load.side_effect = MissingPluginException("VCS Load Boom")
@@ -126,6 +130,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         reactor = Mock()
         pyb_env = Mock()
         reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
         downloader = DownloadingPluginLoader(logger)
         pd = PluginDef("vcs:external_plugin URL", plugin_module_name="external_plugin_module")
@@ -151,6 +156,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         reactor = Mock()
         pyb_env = Mock()
         reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
         load.return_value = Mock()
 
         downloader = DownloadingPluginLoader(logger)
@@ -164,6 +170,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         reactor = Mock()
         pyb_env = Mock()
         reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
         downloader = DownloadingPluginLoader(logger)
 
         self.assertRaises(MissingPluginException, downloader.install_plugin, reactor, PluginDef("some-plugin"))
@@ -173,6 +180,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         reactor = Mock()
         pyb_env = Mock()
         reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
         pd = PluginDef("pypi:some-plugin")
         downloader = DownloadingPluginLoader(logger)
@@ -186,6 +194,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         reactor = Mock()
         pyb_env = Mock()
         reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
         pd = PluginDef("pypi:some-plugin", "===1.2.3")
         downloader = DownloadingPluginLoader(logger)
@@ -199,6 +208,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         reactor = Mock()
         pyb_env = Mock()
         reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
         pd = PluginDef("pypi:some-plugin", "~=1.2.3")
         downloader = DownloadingPluginLoader(logger)
@@ -212,6 +222,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         reactor = Mock()
         pyb_env = Mock()
         reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
         pd = PluginDef("vcs:some-plugin URL", plugin_module_name="module_name")
         downloader = DownloadingPluginLoader(logger)
@@ -225,6 +236,7 @@ class DownloadingPluginLoaderTest(unittest.TestCase):
         reactor = Mock()
         pyb_env = Mock()
         reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
         pd = PluginDef("vcs:some-plugin URL", "===1.2.3", "module_name")
         downloader = DownloadingPluginLoader(logger)
@@ -245,7 +257,7 @@ class BuiltinPluginLoaderTest(unittest.TestCase):
 
         self.assertRaises(MissingPluginException, self.loader.load_plugin, self.project, PluginDef("spam"))
 
-        load.assert_called_with("pybuilder.plugins.spam_plugin", "spam")
+        load.assert_has_calls([call("pybuilder.plugins.spam_plugin", "spam"), call("spam", "spam")])
 
     @patch("pybuilder.pluginloader._load_plugin")
     def test_should_import_plugin_when_requiring_plugin_and_plugin_is_found_as_builtin(self, load):

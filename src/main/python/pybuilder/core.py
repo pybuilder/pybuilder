@@ -367,8 +367,11 @@ class PluginDef:
             pip_package_url = name.replace(PluginDef.VCS_PLUGIN_PROTOCOL, "")
             if not plugin_module_name:
                 raise UnspecifiedPluginNameException(name)
+            pip_package = pip_package_url
 
-        self._dep = Dependency(pip_package, pip_package_version, pip_package_url)
+        self._dep = None
+        if pip_package or pip_package_version or pip_package_url:
+            self._dep = Dependency(pip_package, pip_package_version, pip_package_url)
         self._val = (name, version, plugin_module_name)
 
     @property
@@ -599,8 +602,7 @@ class Project(object):
         return self._package_data
 
     def include_file(self, package_name, filename):
-        if not package_name or package_name.strip() == "":
-            raise ValueError("Missing argument package name.")
+        package_name = package_name or ""
 
         if not filename or filename.strip() == "":
             raise ValueError("Missing argument filename.")

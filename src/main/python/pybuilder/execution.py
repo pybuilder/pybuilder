@@ -296,9 +296,8 @@ class ExecutionManager(object):
     def execute_initializers(self, environments=None, **kwargs):
         for initializer in self._initializers:
             if not initializer.is_applicable(environments):
-                message = "Not going to execute initializer '%s' from '%s' as environments do not match."
-                self.logger.debug(message, initializer.name, initializer.source)
-
+                message = "Not going to execute initializer %r from %r as %r environments don't match %r."
+                self.logger.debug(message, initializer.name, initializer.source, environments, initializer.environments)
             else:
                 self.logger.debug("Executing initializer '%s' from '%s'",
                                   initializer.name, initializer.source)
@@ -307,8 +306,8 @@ class ExecutionManager(object):
     def execute_finalizers(self, environments=None, **kwargs):
         for finalizer in reversed(self._finalizers):
             if not finalizer.is_applicable(environments):
-                message = "Not going to execute finalizer '%s' from '%s' as environments do not match."
-                self.logger.debug(message, finalizer.name, finalizer.source)
+                message = "Not going to execute finalizer %r from %r as %r environments don't match %r."
+                self.logger.debug(message, finalizer.name, finalizer.source, environments, finalizer.environments)
 
             else:
                 self.logger.debug("Executing finalizer '%s' from '%s'",

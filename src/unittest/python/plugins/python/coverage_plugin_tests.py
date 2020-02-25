@@ -17,21 +17,21 @@
 #   limitations under the License.
 
 import sys
+from os.path import join as jp
 from unittest import TestCase
 
 from pybuilder.core import Project, Logger
 from pybuilder.plugins.python.coverage_plugin import (init_coverage_properties,
                                                       _build_module_report,
                                                       _build_coverage_report,
+                                                      _optimize_omit_module_files,
                                                       )
 from test_utils import patch, MagicMock, Mock
 
 if sys.version_info[0] < 3:  # if major is less than 3
-    import_patch = '__builtin__.__import__'
+    import_patch = "__builtin__.__import__"
 else:
-    import_patch = 'builtins.__import__'
-
-TestCase = TestCase
+    import_patch = "builtins.__import__"
 
 
 class CoveragePluginTests(TestCase):
@@ -64,8 +64,8 @@ class CoveragePluginTests(TestCase):
             self.assertEqual(self.project.get_property("coverage_exceptions"), ["foo"])
             self.assertEqual(self.project.get_property("coverage_fork"), True)
 
-    @patch('coverage.results.Analysis')
-    @patch('coverage.coverage')
+    @patch("coverage.results.Analysis")
+    @patch("coverage.coverage")
     def test_build_module_report_zero_content(self, coverage, analysis):
         coverage._analyze.return_value = analysis
         n = analysis.numbers
@@ -81,8 +81,8 @@ class CoveragePluginTests(TestCase):
         self.assertEqual(report.branch_coverage, 100)
         self.assertEqual(report.branch_partial_coverage, 100)
 
-    @patch('coverage.results.Analysis')
-    @patch('coverage.coverage')
+    @patch("coverage.results.Analysis")
+    @patch("coverage.coverage")
     def test_build_module_report_zero_coverage(self, coverage, analysis):
         coverage._analyze.return_value = analysis
         n = analysis.numbers
@@ -98,8 +98,8 @@ class CoveragePluginTests(TestCase):
         self.assertEqual(report.branch_coverage, 0)
         self.assertEqual(report.branch_partial_coverage, 0)
 
-    @patch('coverage.results.Analysis')
-    @patch('coverage.coverage')
+    @patch("coverage.results.Analysis")
+    @patch("coverage.coverage")
     def test_build_module_report_half_coverage(self, coverage, analysis):
         coverage._analyze.return_value = analysis
         n = analysis.numbers
@@ -115,7 +115,7 @@ class CoveragePluginTests(TestCase):
         self.assertEqual(report.branch_coverage, 50)
         self.assertEqual(report.branch_partial_coverage, 50)
 
-    @patch('coverage.coverage')
+    @patch("coverage.coverage")
     def test_build_coverage_report_no_modules(self, coverage):
         execution_name = "mock"
         execution_description = "mock coverage"
@@ -127,15 +127,15 @@ class CoveragePluginTests(TestCase):
         self.assertTrue(_build_coverage_report(project, MagicMock(Logger), execution_description, execution_name,
                                                config_prefix, coverage, module_names, module_files) is None)
 
-    @patch('pybuilder.plugins.python.coverage_plugin.render_report')
-    @patch('coverage.coverage')
+    @patch("pybuilder.plugins.python.coverage_plugin.render_report")
+    @patch("coverage.coverage")
     def test_build_coverage_report_two_module(self, coverage, render_report):
         execution_name = "mock"
         execution_description = "mock coverage"
         config_prefix = "mock_coverage"
         project = Mock()
-        module_names = ['module_a', 'module_b']
-        module_files = ['module_a.py', 'module_b.py']
+        module_names = ["module_a", "module_b"]
+        module_files = ["module_a.py", "module_b.py"]
 
         project.get_property.side_effect = [70, 70, 70, False, False, False]
 
@@ -167,6 +167,24 @@ class CoveragePluginTests(TestCase):
         self.assertTrue(_build_coverage_report(project, MagicMock(Logger), execution_description, execution_name,
                                                config_prefix, coverage, module_names, module_files) is None)
         report = render_report.call_args[0][0]
-        self.assertEqual(report['overall_coverage'], 50)
-        self.assertEqual(report['overall_branch_coverage'], 50)
-        self.assertEqual(report['overall_branch_partial_coverage'], 50)
+        self.assertEqual(report["overall_coverage"], 50)
+        self.assertEqual(report["overall_branch_coverage"], 50)
+        self.assertEqual(report["overall_branch_partial_coverage"], 50)
+
+    def test__optimize_omit_module_files(self):
+        module_files = ["/a/b/c/d/x.py",
+                        "/a/b/c/d/y.py",
+                        "/a/x/z.py",
+                        "/a/b/o.py"
+                        ]
+
+        self.assertEqual(_optimize_omit_module_files(module_files, ["/a/b/c/d/x.py",
+                                                                    "/a/b/c/d/y.py"]),
+                         [jp("/a/b/c", "*")])
+
+        self.assertEqual(_optimize_omit_module_files(module_files, ["/a/z.py",
+                                                                    "/a/b/o.py"]),
+                         ["/a/z.py", "/a/b/o.py"])
+
+        self.assertEqual(_optimize_omit_module_files(module_files, ["/a/b/c/d/x.py"]),
+                         ["/a/b/c/d/x.py"])

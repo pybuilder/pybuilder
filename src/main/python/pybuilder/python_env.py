@@ -24,7 +24,7 @@ from os.path import normcase as nc, join as jp, pathsep
 from shutil import rmtree
 
 from pybuilder.install_utils import install_dependencies
-from pybuilder.python_utils import is_windows, IS_WIN, which
+from pybuilder.python_utils import is_windows, which
 from pybuilder.utils import assert_can_execute, execute_command
 from pybuilder.vendor import virtualenv
 
@@ -255,7 +255,7 @@ class PythonEnv(object):
                                logger=self.logger)
 
     def run_process_and_wait(self, commands, cwd, stdout, stderr=None, no_path_search=True):
-        if IS_WIN and not no_path_search:
+        if is_windows(self.platform) and not no_path_search:
             which_cmd = which(commands[0], path=self.environ.get("PATH"))
             if which_cmd:
                 commands[0] = which_cmd

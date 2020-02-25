@@ -19,14 +19,15 @@
 import ast
 import copy
 import sys
+from fnmatch import fnmatch
 from os.path import normcase as nc, join as jp, dirname, abspath
 
 from pybuilder.core import init, use_plugin, task, depends, dependents, optional
-from pybuilder.utils import discover_module_files, discover_modules, render_report
-from pybuilder.execution import ExecutionManager
-from pybuilder.python_utils import odict, StringIO
-from pybuilder.plugins.python.remote_tools.coverage_tool import CoverageTool
 from pybuilder.errors import BuildFailedException
+from pybuilder.execution import ExecutionManager
+from pybuilder.plugins.python.remote_tools.coverage_tool import CoverageTool
+from pybuilder.python_utils import odict, StringIO
+from pybuilder.utils import discover_module_files, discover_modules, render_report, as_list
 
 use_plugin("python.core")
 use_plugin("analysis")
@@ -171,14 +172,14 @@ def run_coverage(project, logger, reactor, covered_task):
     source_path = nc(abspath(project.expand_path(project.get_property("%scoverage_source_path" % config_prefix) or
                                                  project.get_property("coverage_source_path"))))
 
-    module_exceptions = (project.get_property("%scoverage_exceptions" % config_prefix) or
-                         project.get_property("coverage_exceptions"))
+    module_exceptions = as_list((project.get_property("%scoverage_exceptions" % config_prefix) or
+                                 project.get_property("coverage_exceptions")))
 
     module_names = discover_modules(source_path)
     module_file_suffixes = discover_module_files(source_path)
 
-    module_names, module_files = _filter_covered_modules(logger, module_names, module_file_suffixes,
-                                                         module_exceptions, source_path)
+    module_names, module_files, omit_patterns = _filter_covered_modules(logger, module_names, module_file_suffixes,
+                                                                        module_exceptions, source_path)
 
     for idx, module_name in enumerate(module_names):
         logger.debug("Module %r (file %r) coverage to be verified", module_name, module_files[idx])
@@ -189,6 +190,7 @@ def run_coverage(project, logger, reactor, covered_task):
                            config_file=False,
                            branch=True,
                            source=[source_path],
+                           omit=omit_patterns,
                            context=str(covered_task),
                            concurrency=project.get_property("%scoverage_concurrency" % config_prefix))
 
@@ -273,8 +275,12 @@ def _override_python_env_for_coverage(current_python_env, coverage_config):
 def _filter_covered_modules(logger, module_names, module_file_suffixes, modules_exceptions, source_path):
     result_module_names = []
     result_module_files = []
+    omit_module_files = []
+    module_files = []
+
     for idx, module_name in enumerate(module_names):
         module_file = jp(source_path, module_file_suffixes[idx])
+        module_files.append(module_file)
 
         skip_module = False
         for module_exception in modules_exceptions:
@@ -287,21 +293,56 @@ def _filter_covered_modules(logger, module_names, module_file_suffixes, modules_
                     skip_module = True
                     break
 
-        with open(module_file, "rb") as f:
-            try:
-                ast.parse(f.read(), module_file)
-            except SyntaxError:
-                logger.warn("Unable to parse module %r (file %r) due to syntax error and will be skipped" % (
-                    module_name, module_file))
-                continue
+        if not skip_module:
+            with open(module_file, "rb") as f:
+                try:
+                    ast.parse(f.read(), module_file)
+                except SyntaxError:
+                    logger.warn("Unable to parse module %r (file %r) due to syntax error and will be excluded" % (
+                        module_name, module_file))
+                    skip_module = True
 
         if skip_module:
             logger.debug("Module %r (file %r) was excluded", module_name, module_file)
+            omit_module_files.append(module_file)
         else:
             result_module_names.append(module_name)
             result_module_files.append(module_file)
 
-    return result_module_names, result_module_files
+    omit_module_files = _optimize_omit_module_files(module_files, omit_module_files)
+    return result_module_names, result_module_files, omit_module_files
+
+
+def _optimize_omit_module_files(module_files, omit_module_files):
+    # This is a stupid implementation but given the number of entries it'll do (until it won't)
+
+    omf_lookup = set(omit_module_files)
+    result_omit = []
+
+    def has_modules_in_dir_not_omitted(od):
+        for mf in module_files:
+            if mf.startswith(od) and mf not in omf_lookup:
+                return True
+
+    for omit in omit_module_files:
+        already_omitted = False
+        for ro in result_omit:
+            if fnmatch(omit, ro):
+                already_omitted = True
+                break
+        if already_omitted:
+            continue
+
+        prev_omit = omit
+        omit_dir = dirname(omit)
+        while prev_omit != omit_dir:
+            if has_modules_in_dir_not_omitted(omit_dir):
+                result_omit.append(jp(prev_omit, "*") if prev_omit != omit else prev_omit)
+                break
+            prev_omit = omit_dir
+            omit_dir = dirname(omit_dir)
+
+    return result_omit
 
 
 def _build_module_report(cov, module_file):

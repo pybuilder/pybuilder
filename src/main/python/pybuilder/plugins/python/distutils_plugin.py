@@ -137,7 +137,7 @@ def initialize_distutils_plugin(project):
 def set_description(project, logger, reactor):
     if project.get_property("distutils_readme_description"):
         try:
-            reactor.python_env_registry["pybuilder"].verify_can_execute(["pandoc", "--version"], "pandoc", "distutils")
+            reactor.pybuilder_venv.verify_can_execute(["pandoc", "--version"], "pandoc", "distutils")
             doc_convert(project, logger)
         except (MissingPrerequisiteException, ImportError):
             logger.warn("Was unable to find pandoc or pypandoc and did not convert the documentation")
