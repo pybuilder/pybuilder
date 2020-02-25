@@ -37,7 +37,7 @@ use_plugin("python.core")
 
 @init
 def init_test_source_directory(project):
-    project.plugin_depends_on("unittest-xml-reporting", "~=2.0")
+    project.plugin_depends_on("unittest-xml-reporting", "~=2.5.2")
     if PY2:
         project.plugin_depends_on("mock")
 

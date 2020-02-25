@@ -56,13 +56,15 @@ def get_rom():
 
 
 class ProxyDef:
-    def __init__(self, remote_id, methods, fields):
+    def __init__(self, remote_id, type_name, methods, fields):
         self.remote_id = remote_id
+        self.type_name = type_name
         self.methods = methods
         self.fields = fields
 
     def __repr__(self):
-        return "ProxyDef[remote_id=%r, methods=%r, fields=%r]" % (self.remote_id, self.methods, self.fields)
+        return "ProxyDef[remote_id=%r, type_name=%r, methods=%r, fields=%r]" % (self.remote_id, self.type_name,
+                                                                                self.methods, self.fields)
 
 
 PICKLE_PID_TYPE_REMOTE_OBJ = 0
@@ -287,7 +289,8 @@ class _RemoteObjectManager(RemoteObjectManager):
             if fields is None:
                 fields = obj_fields
 
-        proxy = ProxyDef(remote_id, methods, fields)
+        obj_type = type(obj)
+        proxy = ProxyDef(remote_id, obj_type.__module__ + "." + obj_type.__name__, methods, fields)
 
         self._remote_objs[obj] = proxy
         self._remote_objs_ids[remote_id] = obj
@@ -354,7 +357,7 @@ class _BaseProxy:
         self.__proxy_def = __proxy_def
 
 
-def _make_proxy_type(name, proxy_def):
+def _make_proxy_type(proxy_def):
     '''
     Return a proxy type whose methods are given by `exposed`
     '''
@@ -377,7 +380,7 @@ def %s_setter(self, value):
 
 %s = property(%s_getter, %s_setter)""" % (field, remote_id, field, field, remote_id, field, field, field, field), dic)
 
-    proxy_type = type(name, (_BaseProxy, object), dic)
+    proxy_type = type(proxy_def.type_name, (_BaseProxy, object), dic)
     proxy_type.__methods__ = methods
     proxy_type.__fields__ = fields
     return proxy_type
@@ -438,8 +441,7 @@ class _RemoteObjectPipe(RemoteObjectPipe):
         remote_proxies = self._remote_proxies
         remote_proxy = remote_proxies.get(remote_id, None)
         if remote_proxy is None:
-            remote_proxy_type = _make_proxy_type("Proxy_%s_%d" % (self.id[1], remote_id),
-                                                 proxy_def)
+            remote_proxy_type = _make_proxy_type(proxy_def)
             remote_proxy = remote_proxy_type(self._rom, self, proxy_def)
             remote_proxies[remote_id] = remote_proxy
             logger.debug("registered local proxy for remote ID %d: %r", remote_id, remote_proxy)
