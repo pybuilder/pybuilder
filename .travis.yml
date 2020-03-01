@@ -21,6 +21,7 @@ env:
   global:
     - DEPLOY_BRANCHES: "'master 0.11'"
     - DEPLOY_PYTHONS: "'2.7.17 3.8.1'"
+    - DEPLOY_OSES: "'linux'"
     - PYB_ARGS: "'-E ci -v -X analyze install'"
     - TWINE_USERNAME: pybuilder-travis2
     - secure: D49QJr9Z4v9yz9VObFw0q44o2fy3YBjI48b6+Vb1qr2RNMF5GpVj+xWFTr9j1qMw7ilfwWCEKlHytKmh/OSOStUcd1vTlasGz8YefBCP8iIbvp9M6qcBKqMlp8f/6uxwUxak+OMvj5WuKwtyIUy8L9JwDxd02Q12MUW6SNtu2Lo=

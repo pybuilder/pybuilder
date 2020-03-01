@@ -7,8 +7,17 @@ set -eu
 
 DEPLOY_VERSION=""
 DEPLOY_BRANCH=""
+DEPLOY_OS=""
 if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
     echo "Running Production Build"
+
+    for os in $DEPLOY_OSES; do
+        if [ "$TRAVIS_OS_NAME" = "$os" ]; then
+            DEPLOY_OS=1
+            break
+        fi
+    done
+
     for v in $DEPLOY_PYTHONS; do
         if [ "$TRAVIS_PYTHON_VERSION" = "$v" ]; then
             DEPLOY_VERSION=1
@@ -23,7 +32,7 @@ if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
         fi
     done
 
-    if [ "$DEPLOY_BRANCH$DEPLOY_VERSION" = "11" ]; then
+    if [ "$DEPLOY_OS$DEPLOY_VERSION$DEPLOY_BRANCH" = "111" ]; then
         echo "This build will be deployed!"
         PYB_ARGS="$PYB_ARGS upload"
     fi
