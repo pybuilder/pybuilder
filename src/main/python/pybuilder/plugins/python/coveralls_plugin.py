@@ -85,10 +85,8 @@ def finalize_coveralls(project, logger, reactor):
 
             result = pyb_coveralls.wear()
 
-            logger.info("Coveralls coverage submitted!")
-            logger.debug(result)
-            logger.info(result["message"])
-            logger.info(result["url"])
+            logger.debug("Coveralls result: %r", result)
+            logger.info("Coveralls coverage successfully submitted! %s @ %s", result["message"], result["url"])
         except CoverallsException as e:
             raise BuildFailedException("Failed to upload Coveralls coverage: %s", e)
 
