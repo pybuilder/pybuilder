@@ -19,7 +19,7 @@ if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
     done
 
     for v in $DEPLOY_PYTHONS; do
-        if [ "$TRAVIS_PYTHON_VERSION" = "$v" ]; then
+        if [ "$PYTHON_VERSION" = "$v" ]; then
             DEPLOY_VERSION=1
             break
         fi
