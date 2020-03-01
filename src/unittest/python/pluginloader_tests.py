@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -18,16 +18,15 @@
 
 import unittest
 
-from pybuilder import pluginloader
-from pybuilder.errors import MissingPluginException, IncompatiblePluginException, UnspecifiedPluginNameException
 from pybuilder import pip_common
-from pybuilder.pip_utils import PIP_EXEC_STANZA
+from pybuilder import pluginloader
+from pybuilder.core import PluginDef, Dependency
+from pybuilder.errors import MissingPluginException, IncompatiblePluginException
 from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
                                     DownloadingPluginLoader,
-                                    _install_external_plugin,
                                     _check_plugin_version)
-from test_utils import patch, Mock, ANY
+from test_utils import patch, Mock, call
 
 
 class PluginVersionCheckTest(unittest.TestCase):
@@ -63,231 +62,188 @@ class PluginVersionCheckTest(unittest.TestCase):
 
 
 class DownloadingPluginLoaderTest(unittest.TestCase):
+
     @patch("pybuilder.pluginloader._load_plugin")
-    @patch("pybuilder.pluginloader._install_external_plugin")
-    def test_should_download_module_from_pypi(self, install, load):
+    def test_should_download_module_from_pypi(self, load):
         logger = Mock()
-        project = Mock()
-        project.get_property.side_effect = lambda x: "index_url" if x == "install_dependencies_index_url" \
-            else "extra_index_url" if x == "install_dependencies_extra_index_url" else None
-        load.side_effect = (MissingPluginException("external_plugin"), Mock())
-        DownloadingPluginLoader(logger).load_plugin(project, "pypi:external_plugin")
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
-        install.assert_called_with(project, "pypi:external_plugin", None, logger, None)
+        pd = PluginDef("pypi:external_plugin")
+        pl = DownloadingPluginLoader(logger)
+        pl.install_plugin(reactor, pd)
+
+        pyb_env.install_dependencies.assert_called_with([Dependency("external_plugin")],
+                                                        package_type="plugin")
 
     @patch("pybuilder.pluginloader._load_plugin")
-    @patch("pybuilder.pluginloader._install_external_plugin")
-    def test_should_load_module_after_downloading_with_pypi_when_download_succeeds(self, _, load):
-        project = Mock()
-        downloader = DownloadingPluginLoader(Mock())
-        plugin = downloader.load_plugin(project, "pypi:external_plugin")
+    def test_should_load_module_after_downloading_with_pypi_when_download_succeeds(self, load):
+        logger = Mock()
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
-        load.assert_called_with("external_plugin", "pypi:external_plugin")
+        downloader = DownloadingPluginLoader(logger)
+        pd = PluginDef("pypi:external_plugin")
+        plugin = downloader.load_plugin(reactor, pd)
+
+        load.assert_called_with("external_plugin", pd.name)
         self.assertEqual(plugin, load.return_value)
 
     @patch("pybuilder.pluginloader._load_plugin")
-    @patch("pybuilder.pluginloader._install_external_plugin")
-    def test_should_not_load_module_twice_after_downloading_when_pypi_download_fails(self, install, load):
-        install.side_effect = MissingPluginException("PyPI Install Boom")
+    def test_should_not_load_module_twice_after_downloading_when_pypi_download_fails(self, load):
+        logger = Mock()
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
+
+        pyb_env.install_dependencies.side_effect = MissingPluginException("PyPI Install Boom")
         load.side_effect = MissingPluginException("PyPI Load Boom")
-        downloader = DownloadingPluginLoader(Mock())
-        self.assertRaises(MissingPluginException, downloader.load_plugin, Mock(), "pypi:external_plugin")
+        downloader = DownloadingPluginLoader(logger)
+        pd = PluginDef("pypi:external_plugin")
+        self.assertRaises(MissingPluginException, downloader.load_plugin, Mock(), pd)
 
         self.assertEqual(load.call_count, 1)
 
     @patch("pybuilder.pluginloader._load_plugin")
-    @patch("pybuilder.pluginloader._install_external_plugin")
-    def test_should_not_load_module_twice_after_downloading_when_vcs_download_fails(self, install, load):
-        install.side_effect = MissingPluginException("VCS Install BOOM")
+    def test_should_not_load_module_twice_after_downloading_when_vcs_download_fails(self, load):
+        logger = Mock()
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
+
+        pyb_env.install_dependencies.side_effect = MissingPluginException("VCS Install BOOM")
         load.side_effect = MissingPluginException("VCS Load Boom")
-        downloader = DownloadingPluginLoader(Mock())
-        self.assertRaises(MissingPluginException, downloader.load_plugin, Mock(), "vcs:external_plugin URL",
-                          plugin_module_name="vcs_module_name")
+        downloader = DownloadingPluginLoader(logger)
+        pd = PluginDef("vcs:external_plugin URL", plugin_module_name="vcs_module_name")
+        self.assertRaises(MissingPluginException, downloader.load_plugin, Mock(), pd)
         self.assertEqual(load.call_count, 1)
 
     @patch("pybuilder.pluginloader._load_plugin")
-    @patch("pybuilder.pluginloader._install_external_plugin")
-    def test_should_fail_with_vcs_and_no_module_name(self, install, load):
-        install.side_effect = MissingPluginException("VCS BOOM")
-        downloader = DownloadingPluginLoader(Mock())
-        self.assertRaises(UnspecifiedPluginNameException, downloader.load_plugin, Mock(), "vcs:external_plugin URL")
+    def test_should_load_module_after_downloading_with_vcs_when_download_succeeds(self, load):
+        logger = Mock()
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
-    @patch("pybuilder.pluginloader._load_plugin")
-    @patch("pybuilder.pluginloader._install_external_plugin")
-    def test_should_fail_with_vcs_when_no_plugin_module_specified(self, _, load):
-        project = Mock()
-        downloader = DownloadingPluginLoader(Mock())
-
-        self.assertRaises(UnspecifiedPluginNameException, downloader.load_plugin, project, "vcs:external_plugin URL")
-
-    @patch("pybuilder.pluginloader._load_plugin")
-    @patch("pybuilder.pluginloader._install_external_plugin")
-    def test_should_load_module_after_downloading_with_vcs_when_download_succeeds(self, _, load):
-        project = Mock()
-        downloader = DownloadingPluginLoader(Mock())
-        plugin = downloader.load_plugin(project, "vcs:external_plugin URL", plugin_module_name="external_plugin_module")
+        downloader = DownloadingPluginLoader(logger)
+        pd = PluginDef("vcs:external_plugin URL", plugin_module_name="external_plugin_module")
+        plugin = downloader.load_plugin(reactor, pd)
 
         load.assert_called_with("external_plugin_module", "vcs:external_plugin URL")
         self.assertEqual(plugin, load.return_value)
 
     @patch("pybuilder.pluginloader._load_plugin")
-    @patch("pybuilder.pluginloader._install_external_plugin")
-    def test_should_raise_exception_when_requiring_plugin_and_plugin_is_not_found(self, _, load):
+    def test_should_raise_exception_when_requiring_plugin_and_plugin_is_not_found(self, load):
+        logger = Mock()
         project = Mock()
-        downloader = DownloadingPluginLoader(Mock())
+        downloader = DownloadingPluginLoader(logger)
         load.side_effect = MissingPluginException("Load boom")
 
-        self.assertRaises(MissingPluginException, downloader.load_plugin, project, "spam")
+        self.assertRaises(MissingPluginException, downloader.load_plugin, project, PluginDef("spam"))
 
         load.assert_called_with("spam", "spam")
 
     @patch("pybuilder.pluginloader._load_plugin")
-    @patch("pybuilder.pluginloader._install_external_plugin")
-    def test_should_import_plugin_when_requiring_plugin_and_plugin_is_found_as_third_party(self, install, load):
-        project = Mock()
-        downloader = DownloadingPluginLoader(Mock())
+    def test_should_import_plugin_when_requiring_plugin_and_plugin_is_found_as_third_party(self, load):
+        logger = Mock()
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
         load.return_value = Mock()
 
-        self.assertEqual(load.return_value, downloader.load_plugin(project, "spam"))
+        downloader = DownloadingPluginLoader(logger)
 
-        install.assert_not_called()
-        self.assertEqual(install.call_count, 0)
+        self.assertEqual(load.return_value, downloader.load_plugin(reactor, PluginDef("spam")))
+        pyb_env.install_dependencies.assert_not_called()
+        self.assertEqual(pyb_env.install_dependencies.call_count, 0)
 
-    @patch("pybuilder.pluginloader._load_plugin")
-    @patch("pybuilder.pluginloader._install_external_plugin")
-    def test_should_force_reinstall_vcs_plugin_before_first_loading_attempt(self, install, load):
-        project = Mock()
-        downloader = DownloadingPluginLoader(Mock())
-        load.return_value = Mock()
-
-        self.assertEqual(load.return_value, downloader.load_plugin(project, "vcs:spam", plugin_module_name="spam"))
-
-        install.assert_called_with(project, "vcs:spam", None, downloader.logger, "spam", False, True)
-        self.assertEqual(install.call_count, 1)
-
-    @patch("pybuilder.pluginloader._load_plugin")
-    @patch("pybuilder.pluginloader._install_external_plugin")
-    def test_should_update_pypi_plugin_with_non_exact_version_before_first_loading_attempt(self, install, load):
-        project = Mock()
-        downloader = DownloadingPluginLoader(Mock())
-        load.return_value = Mock()
-
-        self.assertEqual(load.return_value, downloader.load_plugin(project, "pypi:spam", ">1.2"))
-
-        install.assert_called_with(project, "pypi:spam", ">1.2", downloader.logger, None, True, False)
-        self.assertEqual(install.call_count, 1)
-
-    @patch("pybuilder.pluginloader._load_plugin")
-    @patch("pybuilder.pluginloader._install_external_plugin")
-    def test_should_update_pypi_plugin_with_compound_non_exact_version_before_first_loading_attempt(self, install,
-                                                                                                    load):
-        project = Mock()
-        downloader = DownloadingPluginLoader(Mock())
-        load.return_value = Mock()
-
-        self.assertEqual(load.return_value, downloader.load_plugin(project, "pypi:spam", ">1.2,==1.4"))
-
-        install.assert_called_with(project, "pypi:spam", ">1.2,==1.4", downloader.logger, None, True, False)
-        self.assertEqual(install.call_count, 1)
-
-    @patch("pybuilder.pluginloader._load_plugin")
-    @patch("pybuilder.pluginloader._install_external_plugin")
-    def test_should_not_update_pypi_plugin_with_exact_version_before_first_loading_attempt(self, install, load):
-        project = Mock()
-        downloader = DownloadingPluginLoader(Mock())
-        plugin = Mock()
-        load.side_effect = (MissingPluginException("no spam installed"), plugin)
-
-        self.assertEqual(plugin, downloader.load_plugin(project, "pypi:spam", "===1.4"))
-
-        install.assert_called_with(project, "pypi:spam", "===1.4", downloader.logger, None)
-        self.assertEqual(install.call_count, 1)
-
-
-class InstallExternalPluginTests(unittest.TestCase):
     def test_should_raise_error_when_protocol_is_invalid(self):
-        self.assertRaises(MissingPluginException, _install_external_plugin, Mock(), "some-plugin", None, Mock(), None)
+        logger = Mock()
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
+        downloader = DownloadingPluginLoader(logger)
 
-    @patch("pybuilder.pluginloader.read_file")
-    @patch("pybuilder.pluginloader.tempfile")
-    @patch("pybuilder.pip_utils.execute_command")
-    def test_should_install_plugin(self, execute, tempfile, read_file):
-        read_file.return_value = ["no problems", "so far"]
-        execute.return_value = 0
-        tempfile.NamedTemporaryFile().__enter__().name.__eq__.return_value = True
+        self.assertRaises(MissingPluginException, downloader.install_plugin, reactor, PluginDef("some-plugin"))
 
-        _install_external_plugin(Mock(), "pypi:some-plugin", None, Mock(), None)
+    def test_should_install_plugin(self):
+        logger = Mock()
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
-        execute.assert_called_with(
-            PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
-                               'some-plugin'], shell=False, outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
+        pd = PluginDef("pypi:some-plugin")
+        downloader = DownloadingPluginLoader(logger)
+        downloader.install_plugin(reactor, pd)
 
-    @patch("pybuilder.pluginloader.read_file")
-    @patch("pybuilder.pluginloader.tempfile")
-    @patch("pybuilder.pip_utils.execute_command")
-    def test_should_install_plugin_with_version(self, execute, tempfile, read_file):
-        read_file.return_value = ["no problems", "so far"]
-        execute.return_value = 0
-        tempfile.NamedTemporaryFile().__enter__().name.__eq__.return_value = True
+        pyb_env.install_dependencies.assert_called_with([pd.dependency],
+                                                        package_type="plugin")
 
-        _install_external_plugin(Mock(), "pypi:some-plugin", "===1.2.3", Mock(), None)
+    def test_should_install_plugin_with_version(self):
+        logger = Mock()
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
-        execute.assert_called_with(
-            PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY] +
-            (["--upgrade"] if pip_common.pip_version < "9.0" else ["--upgrade", "--upgrade-strategy", "only-if-needed"])
-            + ['some-plugin===1.2.3'], shell=False, outfile_name=ANY, error_file_name=ANY, cwd=".", env=ANY)
+        pd = PluginDef("pypi:some-plugin", "===1.2.3")
+        downloader = DownloadingPluginLoader(logger)
+        downloader.install_plugin(reactor, pd)
 
-    @patch("pybuilder.pluginloader.read_file")
-    @patch("pybuilder.pluginloader.tempfile")
-    @patch("pybuilder.pip_utils.execute_command")
-    def test_should_install_plugin_with_vcs(self, execute, tempfile, read_file):
-        read_file.return_value = ["no problems", "so far"]
-        execute.return_value = 0
-        tempfile.NamedTemporaryFile().__enter__().name.__eq__.return_value = True
+        pyb_env.install_dependencies.assert_called_with([pd.dependency],
+                                                        package_type="plugin")
 
-        _install_external_plugin(Mock(), "vcs:some-plugin URL", None, Mock(), None)
+    def test_should_install_upgrade_plugin_with_non_exact_version(self):
+        logger = Mock()
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
-        execute.assert_called_with(
-            PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
-                               '--force-reinstall', 'some-plugin URL'], shell=False, outfile_name=ANY,
-            error_file_name=ANY, cwd=".", env=ANY)
+        pd = PluginDef("pypi:some-plugin", "~=1.2.3")
+        downloader = DownloadingPluginLoader(logger)
+        downloader.install_plugin(reactor, pd)
 
-    @patch("pybuilder.pluginloader.read_file")
-    @patch("pybuilder.pluginloader.tempfile")
-    @patch("pybuilder.pip_utils.execute_command")
-    def test_should_install_plugin_with_vcs_and_version(self, execute, tempfile, read_file):
-        read_file.return_value = ["no problems", "so far"]
-        execute.return_value = 0
-        tempfile.NamedTemporaryFile().__enter__().name.__eq__.return_value = True
+        pyb_env.install_dependencies.assert_called_with([pd.dependency],
+                                                        package_type="plugin")
 
-        _install_external_plugin(Mock(), "vcs:some-plugin URL", "===1.2.3", Mock(), None)
+    def test_should_install_plugin_with_vcs(self):
+        logger = Mock()
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
-        execute.assert_called_with(
-            PIP_EXEC_STANZA + ['install', '--index-url', ANY, '--extra-index-url', ANY, '--trusted-host', ANY,
-                               '--force-reinstall', 'some-plugin URL'], shell=False, outfile_name=ANY,
-            error_file_name=ANY, cwd=".", env=ANY)
+        pd = PluginDef("vcs:some-plugin URL", plugin_module_name="module_name")
+        downloader = DownloadingPluginLoader(logger)
+        downloader.install_plugin(reactor, pd)
 
-    @patch("pybuilder.pluginloader.read_file")
-    @patch("pybuilder.pluginloader.tempfile")
-    @patch("pybuilder.pip_utils.execute_command")
-    def test_should_raise_error_when_install_from_pypi_fails(self, execute, tempfile, read_file):
-        read_file.return_value = ["something", "went wrong"]
-        execute.return_value = 1
-        tempfile.NamedTemporaryFile().__enter__().name.__eq__.return_value = True
+        pyb_env.install_dependencies.assert_called_with([pd.dependency],
+                                                        package_type="plugin")
 
-        self.assertRaises(MissingPluginException, _install_external_plugin, Mock(), "pypi:some-plugin", None, Mock(),
-                          None)
+    def test_should_install_plugin_with_vcs_and_version(self):
+        logger = Mock()
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
-    @patch("pybuilder.pluginloader.read_file")
-    @patch("pybuilder.pluginloader.tempfile")
-    @patch("pybuilder.pip_utils.execute_command")
-    def test_should_raise_error_when_install_from_vcs_fails(self, execute, tempfile, read_file):
-        read_file.return_value = ["something", "went wrong"]
-        execute.return_value = 1
-        tempfile.NamedTemporaryFile().__enter__().name.__eq__.return_value = True
+        pd = PluginDef("vcs:some-plugin URL", "===1.2.3", "module_name")
+        downloader = DownloadingPluginLoader(logger)
+        downloader.install_plugin(reactor, pd)
 
-        self.assertRaises(MissingPluginException, _install_external_plugin, Mock(), "vcs:some VCS URL", None, Mock(),
-                          None)
+        pyb_env.install_dependencies.assert_called_with([pd.dependency],
+                                                        package_type="plugin")
 
 
 class BuiltinPluginLoaderTest(unittest.TestCase):
@@ -299,15 +255,15 @@ class BuiltinPluginLoaderTest(unittest.TestCase):
     def test_should_raise_exception_when_requiring_plugin_and_plugin_is_not_found(self, load):
         load.side_effect = MissingPluginException("pybuilder.plugins.spam_plugin")
 
-        self.assertRaises(MissingPluginException, self.loader.load_plugin, self.project, "spam")
+        self.assertRaises(MissingPluginException, self.loader.load_plugin, self.project, PluginDef("spam"))
 
-        load.assert_called_with("pybuilder.plugins.spam_plugin", "spam")
+        load.assert_has_calls([call("pybuilder.plugins.spam_plugin", "spam"), call("spam", "spam")])
 
     @patch("pybuilder.pluginloader._load_plugin")
     def test_should_import_plugin_when_requiring_plugin_and_plugin_is_found_as_builtin(self, load):
         load.return_value = Mock()
 
-        plugin_module = self.loader.load_plugin(self.project, "spam")
+        plugin_module = self.loader.load_plugin(self.project, PluginDef("spam"))
 
         load.assert_called_with("pybuilder.plugins.spam_plugin", "spam")
         self.assertEqual(load.return_value, plugin_module)
@@ -326,27 +282,31 @@ class DispatchingPluginLoaderTest(unittest.TestCase):
         self.first_delegatee.load_plugin.side_effect = MissingPluginException("spam")
         self.second_delegatee.load_plugin.side_effect = MissingPluginException("spam")
 
-        self.assertRaises(
-            MissingPluginException, self.loader.load_plugin, self.project, "spam")
+        pd = PluginDef("spam")
 
-        self.first_delegatee.load_plugin.assert_called_with(self.project, "spam", None, None)
-        self.second_delegatee.load_plugin.assert_called_with(self.project, "spam", None, None)
+        self.assertRaises(
+            MissingPluginException, self.loader.load_plugin, self.project, pd)
+
+        self.first_delegatee.load_plugin.assert_called_with(self.project, pd)
+        self.second_delegatee.load_plugin.assert_called_with(self.project, pd)
 
     def test_should_return_module_returned_by_second_loader_when_first_delegatee_raises_exception(self):
         result = "result"
         self.first_delegatee.load_plugin.side_effect = MissingPluginException("spam")
         self.second_delegatee.load_plugin.return_value = result
 
-        self.assertEqual(result, self.loader.load_plugin(self.project, "spam"))
+        pd = PluginDef("spam")
+        self.assertEqual(result, self.loader.load_plugin(self.project, pd))
 
-        self.first_delegatee.load_plugin.assert_called_with(self.project, "spam", None, None)
-        self.second_delegatee.load_plugin.assert_called_with(self.project, "spam", None, None)
+        self.first_delegatee.load_plugin.assert_called_with(self.project, pd)
+        self.second_delegatee.load_plugin.assert_called_with(self.project, pd)
 
     def test_ensure_second_delegatee_will_not_try_when_first_delegatee_loads_plugin(self):
         result = "result"
         self.first_delegatee.load_plugin.return_value = result
 
-        self.assertEqual(result, self.loader.load_plugin(self.project, "spam"))
+        pd = PluginDef("spam")
+        self.assertEqual(result, self.loader.load_plugin(self.project, pd))
 
-        self.first_delegatee.load_plugin.assert_called_with(self.project, "spam", None, None)
+        self.first_delegatee.load_plugin.assert_called_with(self.project, pd)
         self.second_delegatee.load_plugin.assert_not_called()

@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ from pybuilder.core import (ENVIRONMENTS_ATTRIBUTE,
                             NAME_ATTRIBUTE,
                             TASK_ATTRIBUTE,
                             Project,
+                            PluginDef,
                             task,
                             depends,
                             dependents,
@@ -57,9 +58,9 @@ class ReactorTest(unittest.TestCase):
         self.plugin_loader_mock.load_plugin.side_effect = MissingPluginException("not_found")
 
         self.assertRaises(
-            MissingPluginException, self.reactor.import_plugin, "not_found")
+            MissingPluginException, self.reactor.import_plugin, PluginDef("not_found"))
 
-        self.plugin_loader_mock.load_plugin.assert_called_with(ANY, "not_found", None, None)
+        self.plugin_loader_mock.load_plugin.assert_called_with(ANY, PluginDef("not_found"))
 
     def test_should_collect_single_task(self):
         def task():
@@ -70,7 +71,7 @@ class ReactorTest(unittest.TestCase):
         module = ModuleType("mock_module")
         module.task = task
 
-        self.reactor.collect_tasks_and_actions_and_initializers(module)
+        self.reactor.collect_project_annotations(module)
 
         self.assertEqual(len(self.execution_manager.register_task.call_args_list), 1)
         self.assertTrue(isinstance(self.execution_manager.register_task.call_args[0][0], Task) and len(
@@ -87,7 +88,7 @@ class ReactorTest(unittest.TestCase):
         module = ModuleType("mock_module")
         module.task = task
 
-        self.reactor.collect_tasks_and_actions_and_initializers(module)
+        self.reactor.collect_project_annotations(module)
 
         self.assertEqual(len(self.execution_manager.register_task.call_args_list), 1)
         self.assertTrue(isinstance(self.execution_manager.register_task.call_args[0][0], Task) and len(
@@ -109,7 +110,7 @@ class ReactorTest(unittest.TestCase):
         module.task = task
         module.task2 = task2
 
-        self.reactor.collect_tasks_and_actions_and_initializers(module)
+        self.reactor.collect_project_annotations(module)
 
         self.assertEqual(len(self.execution_manager.register_task.call_args_list), 2)
         for call_args in self.execution_manager.register_task.call_args_list:
@@ -156,7 +157,7 @@ class ReactorTest(unittest.TestCase):
             module.task5 = task5
             module.task6 = task6
 
-            self.reactor.collect_tasks_and_actions_and_initializers(module)
+            self.reactor.collect_project_annotations(module)
 
             pybuilder.reactor.Task.assert_has_calls([call("task1", task1, [], ''),
                                                      call("task2", task2, [TaskDependency(task1)], ''),
@@ -193,11 +194,11 @@ class ReactorTest(unittest.TestCase):
             module2 = ModuleType("mock_module_two")
             module2.task3 = task3
 
-            self.reactor.collect_tasks_and_actions_and_initializers(module1)
+            self.reactor.collect_project_annotations(module1)
             pybuilder.reactor.Task.assert_has_calls([call("task1", task1, [], ''),
                                                      call("task2", task2, [TaskDependency(task1)], '')])
 
-            self.reactor.collect_tasks_and_actions_and_initializers(module2)
+            self.reactor.collect_project_annotations(module2)
             pybuilder.reactor.Task.assert_has_calls([call("task3", task3, [TaskDependency(task1)], '')])
             self.execution_manager.register_late_task_dependencies.assert_has_calls(
                 [call({}), call({"task2": [TaskDependency(task3)]})])
@@ -228,11 +229,11 @@ class ReactorTest(unittest.TestCase):
             module2 = ModuleType("mock_module_two")
             module2.task3 = task3
 
-            self.reactor.collect_tasks_and_actions_and_initializers(module1)
+            self.reactor.collect_project_annotations(module1)
             pybuilder.reactor.Task.assert_has_calls([call("task1", task1, [], ''),
                                                      call("task2", task2, [TaskDependency(task1)], '')])
 
-            self.reactor.collect_tasks_and_actions_and_initializers(module2)
+            self.reactor.collect_project_annotations(module2)
             pybuilder.reactor.Task.assert_has_calls([call("task_3", task3, [TaskDependency(task1)], '')])
             self.execution_manager.register_late_task_dependencies.assert_has_calls(
                 [call({}), call({"task2": [TaskDependency("task_3")]})])
@@ -245,7 +246,7 @@ class ReactorTest(unittest.TestCase):
         module = ModuleType("mock_module")
         module.task = action
 
-        self.reactor.collect_tasks_and_actions_and_initializers(module)
+        self.reactor.collect_project_annotations(module)
 
         self.assertEqual(self.execution_manager.register_action.call_count, 1)
         self.assertTrue(isinstance(self.execution_manager.register_action.call_args[0][0], Action) and
@@ -259,7 +260,7 @@ class ReactorTest(unittest.TestCase):
         module = ModuleType("mock_module")
         module.task = action
 
-        self.reactor.collect_tasks_and_actions_and_initializers(module)
+        self.reactor.collect_project_annotations(module)
 
         self.assertEqual(self.execution_manager.register_action.call_count, 1)
         self.assertTrue(isinstance(self.execution_manager.register_action.call_args[0][0], Action) and
@@ -279,7 +280,7 @@ class ReactorTest(unittest.TestCase):
 
         self.execution_manager.register_action = register_action
 
-        self.reactor.collect_tasks_and_actions_and_initializers(module)
+        self.reactor.collect_project_annotations(module)
 
     def test_should_collect_single_after_action_with_teardown_flag(self):
         @after("spam", teardown=True)
@@ -289,7 +290,7 @@ class ReactorTest(unittest.TestCase):
         module = ModuleType("mock_module")
         module.task = action
 
-        self.reactor.collect_tasks_and_actions_and_initializers(module)
+        self.reactor.collect_project_annotations(module)
 
     def test_should_collect_single_initializer(self):
         def init():
@@ -300,7 +301,7 @@ class ReactorTest(unittest.TestCase):
         module = ModuleType("mock_module")
         module.task = init
 
-        self.reactor.collect_tasks_and_actions_and_initializers(module)
+        self.reactor.collect_project_annotations(module)
 
         self.assertEqual(self.execution_manager.register_initializer.call_count, 1)
         self.assertTrue(isinstance(self.execution_manager.register_initializer.call_args[0][0], Initializer) and
@@ -326,7 +327,7 @@ class ReactorTest(unittest.TestCase):
         execution_manager_mock = ExecutionManagerMock()
         self.reactor.execution_manager = execution_manager_mock
 
-        self.reactor.collect_tasks_and_actions_and_initializers(module)
+        self.reactor.collect_project_annotations(module)
 
         self.assertEqual(
             execution_manager_mock.initializer.environments, ["any_environment"])
@@ -469,9 +470,11 @@ class ReactorTest(unittest.TestCase):
         self.reactor.require_plugin("spam")
         self.reactor.require_plugin("spam")
 
+        self.reactor._load_deferred_plugins()
+
         self.assertEqual(["spam"], self.reactor.get_plugins())
 
-        self.plugin_loader_mock.load_plugin.assert_called_with(ANY, "spam", None, None)
+        self.plugin_loader_mock.load_plugin.assert_called_with(ANY, PluginDef("spam"))
 
     def test_ensure_project_properties_are_logged_when_calling_log_project_properties(self):
         project = Project("spam")

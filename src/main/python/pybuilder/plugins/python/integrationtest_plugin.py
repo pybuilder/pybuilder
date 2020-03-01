@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -16,45 +16,60 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import multiprocessing
 import os
 import sys
 
-try:
-    from queue import Empty
-except ImportError:
-    from Queue import Empty
-
-
-from pybuilder.core import init, use_plugin, task, description
-from pybuilder.utils import discover_files_matching, execute_command, Timer, read_file
-from pybuilder.terminal import print_text_line, print_file_content, print_text
+from pybuilder.core import init, use_plugin, task, description, before
 from pybuilder.plugins.python.test_plugin_helper import ReportsProcessor
+from pybuilder.python_utils import mp_get_context
+from pybuilder.terminal import print_text_line, print_file_content, print_text
 from pybuilder.terminal import styled_text, fg, GREEN, MAGENTA, GREY
+from pybuilder.utils import discover_files_matching, Timer, read_file
 
-use_plugin("python.core")
+use_plugin("core")
 
 
 @init
 def initialize_integrationtest_plugin(project):
-    project.set_property_if_unset(
-        "dir_source_integrationtest_python", "src/integrationtest/python")
+    project.set_property_if_unset("dir_source_integrationtest_python", "src/integrationtest/python")
+
+    project.set_property_if_unset("integrationtest_breaks_build", True)
+    project.set_property_if_unset("integrationtest_parallel", False)
     project.set_property_if_unset("integrationtest_file_glob", "*_tests.py")
-    project.set_property_if_unset("integrationtest_file_suffix", None)  # deprecated, use integrationtest_file_glob.
     project.set_property_if_unset("integrationtest_additional_environment", {})
+    project.set_property_if_unset("integrationtest_additional_commandline", "")
     project.set_property_if_unset("integrationtest_inherit_environment", False)
     project.set_property_if_unset("integrationtest_always_verbose", False)
+    project.set_property_if_unset("integrationtest_cpu_scaling_factor", 4)
+    project.set_property_if_unset("integrationtest_python_env", "test")
+
+    project.set_property_if_unset("integrationtest_file_suffix", None)  # deprecated, use integrationtest_file_glob.
+
+
+@before("prepare")
+def coverage_init(project, logger, reactor):
+    em = reactor.execution_manager
+
+    if em.is_task_in_current_execution_plan("coverage") and em.is_task_in_current_execution_plan(
+            "run_integration_tests"):
+        project.get_property("_coverage_tasks").append(run_integration_tests)
+        project.get_property("_coverage_config_prefixes")[run_integration_tests] = "it"
+        project.set_property("it_coverage_name", "Python integration test")
+        project.set_property("it_coverage_python_env", project.get_property("integrationtest_python_env"))
+        # This needs to be in sync with `prepare_environment`
+        project.set_property("it_coverage_source_path", "$dir_dist")
 
 
 @task
 @description("Runs integration tests based on Python's unittest module")
-def run_integration_tests(project, logger):
-    if not project.get_property("integrationtest_parallel"):
-        reports, total_time = run_integration_tests_sequentially(
-            project, logger)
-    else:
-        reports, total_time = run_integration_tests_in_parallel(
-            project, logger)
+def run_integration_tests(project, logger, reactor):
+    if project.get_property("integrationtest_parallel"):
+        logger.warn("Parallel integration test execution is temporarily disabled")
+
+    # if not project.get_property("integrationtest_parallel"):
+    reports, total_time = run_integration_tests_sequentially(project, logger, reactor)
+    # else:
+    #    reports, total_time = run_integration_tests_in_parallel(project, logger)
 
     reports_processor = ReportsProcessor(project, logger)
     reports_processor.process_reports(reports, total_time)
@@ -62,7 +77,7 @@ def run_integration_tests(project, logger):
     reports_processor.write_report_and_ensure_all_tests_passed()
 
 
-def run_integration_tests_sequentially(project, logger):
+def run_integration_tests_sequentially(project, logger, reactor):
     logger.debug("Running integration tests sequentially")
     reports_dir = prepare_reports_directory(project)
 
@@ -71,7 +86,7 @@ def run_integration_tests_sequentially(project, logger):
     total_time = Timer.start()
 
     for test in discover_integration_tests_for_project(project, logger):
-        report_item = run_single_test(logger, project, reports_dir, test)
+        report_item = run_single_test(logger, project, reactor, reports_dir, test)
         report_items.append(report_item)
 
     total_time.stop()
@@ -81,12 +96,12 @@ def run_integration_tests_sequentially(project, logger):
 
 def run_integration_tests_in_parallel(project, logger):
     logger.info("Running integration tests in parallel")
-    tests = multiprocessing.Queue()
-    reports = ConsumingQueue()
+    ctx = mp_get_context("spawn")
+    tests = ctx.Queue()
+    reports = ConsumingQueue(ctx)
     reports_dir = prepare_reports_directory(project)
-    cpu_scaling_factor = project.get_property(
-        'integrationtest_cpu_scaling_factor', 4)
-    cpu_count = multiprocessing.cpu_count()
+    cpu_scaling_factor = project.get_property("integrationtest_cpu_scaling_factor")
+    cpu_count = ctx.cpu_count()
     worker_pool_size = cpu_count * cpu_scaling_factor
     logger.debug(
         "Running integration tests in parallel with {0} processes ({1} cpus found)".format(
@@ -108,7 +123,7 @@ def run_integration_tests_in_parallel(project, logger):
                 report_item = run_single_test(
                     logger, project, reports_dir, test, not progress.can_be_displayed)
                 reports.put(report_item)
-            except Empty:
+            except ctx.Empty:
                 break
             except Exception as e:
                 logger.error("Failed to run test %r : %s" % (test, str(e)))
@@ -124,8 +139,8 @@ def run_integration_tests_in_parallel(project, logger):
 
     pool = []
     for i in range(worker_pool_size):
-        p = multiprocessing.Process(
-            target=pick_and_run_tests_then_report, args=(tests, reports, reports_dir, logger, project))
+        p = ctx.Process(target=pick_and_run_tests_then_report,
+                        args=(tests, reports, reports_dir, logger, project))
         pool.append(p)
         p.start()
 
@@ -153,8 +168,7 @@ def discover_integration_tests_matching(source_path, file_glob):
 
 
 def discover_integration_tests_for_project(project, logger=None):
-    integrationtest_source_dir = project.expand_path(
-        "$dir_source_integrationtest_python")
+    integrationtest_source_dir = project.expand_path("$dir_source_integrationtest_python")
     integrationtest_suffix = project.get_property("integrationtest_file_suffix")
     if integrationtest_suffix is not None:
         if logger is not None:
@@ -167,8 +181,8 @@ def discover_integration_tests_for_project(project, logger=None):
 
 
 def add_additional_environment_keys(env, project):
-    additional_environment = project.get_property(
-        "integrationtest_additional_environment", {})
+    additional_environment = project.get_property("integrationtest_additional_environment")
+
     if not isinstance(additional_environment, dict):
         raise ValueError("Additional environment %r is not a map." %
                          additional_environment)
@@ -176,20 +190,11 @@ def add_additional_environment_keys(env, project):
         env[key] = additional_environment[key]
 
 
-def inherit_environment(env, project):
-    if project.get_property("integrationtest_inherit_environment", False):
-        for key in os.environ:
-            if key not in env:
-                env[key] = os.environ[key]
-
-
 def prepare_environment(project):
     env = {
         "PYTHONPATH": os.pathsep.join((project.expand_path("$dir_dist"),
                                        project.expand_path("$dir_source_integrationtest_python")))
     }
-
-    inherit_environment(env, project)
 
     add_additional_environment_keys(env, project)
 
@@ -203,8 +208,8 @@ def prepare_reports_directory(project):
     return reports_dir
 
 
-def run_single_test(logger, project, reports_dir, test, output_test_names=True):
-    additional_integrationtest_commandline_text = project.get_property("integrationtest_additional_commandline", "")
+def run_single_test(logger, project, reactor, reports_dir, test, output_test_names=True):
+    additional_integrationtest_commandline_text = project.get_property("integrationtest_additional_commandline")
 
     if additional_integrationtest_commandline_text:
         additional_integrationtest_commandline = tuple(additional_integrationtest_commandline_text.split(" "))
@@ -216,15 +221,18 @@ def run_single_test(logger, project, reports_dir, test, output_test_names=True):
     if output_test_names:
         logger.info("Running integration test %s", name)
 
+    python_env = reactor.python_env_registry[project.get_property("integrationtest_python_env")]
     env = prepare_environment(project)
-    test_time = Timer.start()
-    command_and_arguments = (sys.executable, test)
+    command_and_arguments = python_env.executable + [test]
     command_and_arguments += additional_integrationtest_commandline
 
     report_file_name = os.path.join(reports_dir, name)
     error_file_name = report_file_name + ".err"
-    return_code = execute_command(
-        command_and_arguments, report_file_name, env, error_file_name=error_file_name)
+
+    test_time = Timer.start()
+    return_code = python_env.execute_command(command_and_arguments, report_file_name, env,
+                                             error_file_name=error_file_name,
+                                             inherit_env=project.get_property("integrationtest_inherit_environment"))
     test_time.stop()
     report_item = {
         "test": name,
@@ -240,7 +248,7 @@ def run_single_test(logger, project, reports_dir, test, output_test_names=True):
             print_file_content(report_file_name)
             print_text_line()
             print_file_content(error_file_name)
-            report_item['exception'] = ''.join(read_file(error_file_name)).replace('\'', '')
+            report_item["exception"] = ''.join(read_file(error_file_name)).replace('\'', '')
     elif project.get_property("integrationtest_always_verbose"):
         print_file_content(report_file_name)
         print_text_line()
@@ -251,16 +259,17 @@ def run_single_test(logger, project, reports_dir, test, output_test_names=True):
 
 class ConsumingQueue(object):
 
-    def __init__(self):
+    def __init__(self, ctx):
         self._items = []
-        self._queue = multiprocessing.Queue()
+        self._queue = ctx.Queue()
+        self._ctx = ctx
 
     def consume_available_items(self):
         try:
             while True:
                 item = self.get_nowait()
                 self._items.append(item)
-        except Empty:
+        except self._ctx.Empty:
             pass
 
     def put(self, *args, **kwargs):
@@ -279,7 +288,6 @@ class ConsumingQueue(object):
 
 
 class TaskPoolProgress(object):
-
     """
     Class that renders progress for a set of tasks run in parallel.
     The progress is based on
@@ -317,7 +325,8 @@ class TaskPoolProgress(object):
             self.WAITING_SYMBOL * waiting_tasks_count, fg(GREY))
         trailing_space = ' ' if not pacman else ''
 
-        return "[%s%s%s%s]%s" % (finished_tests_progress, pacman, running_tests_progress, waiting_tasks_progress, trailing_space)
+        return "[%s%s%s%s]%s" % (
+            finished_tests_progress, pacman, running_tests_progress, waiting_tasks_progress, trailing_space)
 
     def render_to_terminal(self):
         if self.can_be_displayed:

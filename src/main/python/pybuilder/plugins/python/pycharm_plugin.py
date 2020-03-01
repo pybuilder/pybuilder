@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ PROJECT_TEMPLATE = string.Template("""<?xml version="1.0" encoding="UTF-8"?>
   <component name="NewModuleRootManager">
     <content url="file://$$MODULE_DIR$$">
       <sourceFolder url="file://$$MODULE_DIR$$/${source_dir}" isTestSource="false" />${unit_tests}${integration_tests}
+      <excludeFolder url="file://$$MODULE_DIR$$/.pybuilder" />
       ${output_directory}
     </content>
     <orderEntry type="inheritedJdk" />

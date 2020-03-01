@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from pybuilder.ci_server_interaction import test_proxy_for
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import render_report
-from pybuilder.ci_server_interaction import test_proxy_for
 
 
 class ReportsProcessor(object):

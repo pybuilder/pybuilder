@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ class MissingActionDependencyException(PyBuilderException):
 class MissingPluginException(PyBuilderException):
     def __init__(self, plugin, message=""):
         super(MissingPluginException, self).__init__(
-            "Missing plugin '%s': %s", plugin, message)
+            "Missing plugin %s: %s", plugin, message)
 
 
 class UnspecifiedPluginNameException(PyBuilderException):

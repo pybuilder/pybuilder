@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
 import errno
+import os
 
 from pybuilder.core import init, task, use_plugin, description, depends, after
-from pybuilder.utils import assert_can_execute, execute_command
 
 use_plugin("core")
 
@@ -33,33 +32,33 @@ def init_ronn_manpage_plugin(project):
 
 
 @after("prepare")
-def assert_ronn_is_executable(logger):
+def assert_ronn_is_executable(project, logger, reactor):
     """
         Asserts that the ronn script is executable.
     """
     logger.debug("Checking if ronn is executable.")
 
-    assert_can_execute(command_and_arguments=["ronn", "--version"],
-                       prerequisite="ronn",
-                       caller="plugin ronn_manpage_plugin")
+    reactor.pybuilder_venv.verify_can_execute(command_and_arguments=["ronn", "--version"],
+                                              prerequisite="ronn",
+                                              caller="plugin ronn_manpage_plugin")
 
 
 @after("prepare")
-def assert_gzip_is_executable(logger):
+def assert_gzip_is_executable(project, logger, reactor):
     """
         Asserts that the gzip program is executable.
     """
     logger.debug("Checking if gzip is executable.")
 
-    assert_can_execute(command_and_arguments=["gzip", "--version"],
-                       prerequisite="gzip",
-                       caller="plugin ronn_manpage_plugin")
+    reactor.pybuilder_venv.verify_can_execute(command_and_arguments=["gzip", "--version"],
+                                              prerequisite="gzip",
+                                              caller="plugin ronn_manpage_plugin")
 
 
 @task
 @depends("prepare")
 @description("Generates manpages using ronn.")
-def generate_manpages(project, logger):
+def generate_manpages(project, logger, reactor):
     """
         Uses the ronn script to convert a markdown source to a gzipped manpage.
     """
@@ -71,7 +70,7 @@ def generate_manpages(project, logger):
             raise
     ronn_report_file = project.expand_path("$dir_reports/{0}".format('generate_manpage'))
     generate_manpages_command = build_generate_manpages_command(project)
-    execute_command(generate_manpages_command, ronn_report_file, shell=True)
+    reactor.pybuilder_venv.execute_command(generate_manpages_command, ronn_report_file, shell=True)
 
 
 def build_generate_manpages_command(project):

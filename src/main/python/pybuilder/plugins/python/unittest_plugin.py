@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -18,30 +18,31 @@
 
 from __future__ import unicode_literals
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
 import sys
 import unittest
-
-from pybuilder.core import init, task, description, use_plugin
-from pybuilder.errors import BuildFailedException
-from pybuilder.utils import discover_modules_matching, render_report, fork_process
-from pybuilder.ci_server_interaction import test_proxy_for
-from pybuilder.terminal import print_text_line
-from types import MethodType, FunctionType
 from functools import reduce
+from types import MethodType, FunctionType
+
+from pybuilder.ci_server_interaction import test_proxy_for
+from pybuilder.core import init, task, description, use_plugin, before
+from pybuilder.errors import BuildFailedException
+from pybuilder.plugins.python.remote_tools.unittest_tool import start_unittest_tool, PipeShutdownError, \
+    logger as tool_logger
+from pybuilder.python_utils import PY2, StringIO
+from pybuilder.terminal import print_text_line
+from pybuilder.utils import discover_modules_matching, render_report
 
 use_plugin("python.core")
 
 
 @init
 def init_test_source_directory(project):
-    project.plugin_depends_on("unittest-xml-reporting", "~=2.0")
+    project.plugin_depends_on("unittest-xml-reporting", "~=2.5.2")
+    if PY2:
+        project.plugin_depends_on("mock")
 
     project.set_property_if_unset("dir_source_unittest_python", "src/unittest/python")
+    project.set_property_if_unset("unittest_breaks_build", True)
     project.set_property_if_unset("unittest_module_glob", "*_tests")
     project.set_property_if_unset("unittest_file_suffix", None)  # deprecated, use unittest_module_glob.
     project.set_property_if_unset("unittest_test_method_prefix", None)
@@ -50,28 +51,25 @@ def init_test_source_directory(project):
                                                              stream=stream), "_make_result"))
 
 
+@before("prepare")
+def coverage_init(project, logger, reactor):
+    em = reactor.execution_manager
+
+    if em.is_task_in_current_execution_plan("coverage") and em.is_task_in_current_execution_plan("run_unit_tests"):
+        project.get_property("_coverage_tasks").append(run_unit_tests)
+        project.get_property("_coverage_config_prefixes")[run_unit_tests] = "ut"
+        project.set_property("ut_coverage_name", "Python unit test")
+        project.get_property("ut_coverage_source_path", "$dir_source_main_python")
+
+
 @task
 @description("Runs unit tests based on Python's unittest module")
-def run_unit_tests(project, logger):
-    run_tests(project, logger, "unittest", "unit tests")
+def run_unit_tests(project, logger, reactor):
+    run_tests(project, logger, reactor, "unittest", "unit tests")
 
 
-def run_tests(project, logger, execution_prefix, execution_name):
+def run_tests(project, logger, reactor, execution_prefix, execution_name):
     logger.info("Running %s", execution_name)
-    if not project.get_property('__running_coverage'):
-        logger.debug("Forking process to run %s", execution_name)
-        exit_code, _ = fork_process(logger,
-                                    target=do_run_tests,
-                                    args=(
-                                        project, logger, execution_prefix, execution_name))
-        if exit_code:
-            raise BuildFailedException(
-                "Forked %s process indicated failure with error code %d" % (execution_name, exit_code))
-    else:
-        do_run_tests(project, logger, execution_prefix, execution_name)
-
-
-def do_run_tests(project, logger, execution_prefix, execution_name):
     test_dir = _register_test_and_source_path_and_return_test_dir(project, sys.path, execution_prefix)
 
     file_suffix = project.get_property("%s_file_suffix" % execution_prefix)
@@ -80,8 +78,7 @@ def do_run_tests(project, logger, execution_prefix, execution_name):
             "%(prefix)s_file_suffix is deprecated, please use %(prefix)s_module_glob" % {"prefix": execution_prefix})
         module_glob = "*{0}".format(file_suffix)
         if module_glob.endswith(".py"):
-            WITHOUT_DOT_PY = slice(0, -3)
-            module_glob = module_glob[WITHOUT_DOT_PY]
+            module_glob = module_glob[:-3]
         project.set_property("%s_module_glob" % execution_prefix, module_glob)
     else:
         module_glob = project.get_property("%s_module_glob" % execution_prefix)
@@ -92,8 +89,9 @@ def do_run_tests(project, logger, execution_prefix, execution_name):
     try:
         test_method_prefix = project.get_property("%s_test_method_prefix" % execution_prefix)
         runner_generator = project.get_property("%s_runner" % execution_prefix)
-        result, console_out = execute_tests_matching(runner_generator, logger, test_dir, module_glob,
-                                                     test_method_prefix)
+        result, console_out = execute_tests_matching(reactor.tools, runner_generator, logger, test_dir, module_glob,
+                                                     test_method_prefix,
+                                                     project.get_property("remote_debug"))
 
         if result.testsRun == 0:
             logger.warn("No %s executed.", execution_name)
@@ -102,9 +100,14 @@ def do_run_tests(project, logger, execution_prefix, execution_name):
 
         write_report(execution_prefix, project, logger, result, console_out)
 
+        break_build = project.get_property("%s_breaks_build" % execution_prefix)
         if not result.wasSuccessful():
-            raise BuildFailedException("There were %d error(s) and %d failure(s) in %s"
-                                       % (len(result.errors), len(result.failures), execution_name))
+            msg = "There were %d error(s) and %d failure(s) in %s" % (
+                len(result.errors), len(result.failures), execution_name)
+            if break_build:
+                raise BuildFailedException(msg)
+            else:
+                logger.warn(msg)
         logger.info("All %s passed.", execution_name)
     except ImportError as e:
         import traceback
@@ -117,20 +120,48 @@ def do_run_tests(project, logger, execution_prefix, execution_name):
         raise BuildFailedException("Unable to execute %s." % execution_name)
 
 
-def execute_tests(runner_generator, logger, test_source, suffix, test_method_prefix=None):
-    return execute_tests_matching(runner_generator, logger, test_source, "*{0}".format(suffix), test_method_prefix)
+def execute_tests(tools, runner_generator, logger, test_source, suffix, test_method_prefix=None, remote_debug=0):
+    return execute_tests_matching(tools, runner_generator, logger, test_source, "*{0}".format(suffix),
+                                  test_method_prefix, remote_debug=remote_debug)
 
 
-def execute_tests_matching(runner_generator, logger, test_source, file_glob, test_method_prefix=None):
+def execute_tests_matching(tools, runner_generator, logger, test_source, file_glob, test_method_prefix=None,
+                           remote_debug=0):
     output_log_file = StringIO()
     try:
         test_modules = discover_modules_matching(test_source, file_glob)
-        loader = unittest.defaultTestLoader
-        if test_method_prefix:
-            loader.testMethodPrefix = test_method_prefix
-        tests = loader.loadTestsFromNames(test_modules)
-        result = _instrument_runner(runner_generator, logger, _create_runner(runner_generator, output_log_file)).run(
-            tests)
+        runner = _instrument_runner(runner_generator,
+                                    logger,
+                                    _create_runner(runner_generator, output_log_file))
+
+        proc = pipe = None  # noqa
+        try:
+            proc, pipe = start_unittest_tool(tools, test_modules, test_method_prefix, logging=remote_debug)
+            try:
+                pipe.register_remote(runner)
+                pipe.register_remote_type(unittest.result.TestResult)
+                tests = pipe.get_exposed("unittest_tests")
+                result = runner.run(tests)
+            except PipeShutdownError:
+                pass
+            finally:
+                try:
+                    pipe.close()
+                finally:
+                    try:
+                        proc.join()
+                    finally:
+                        if sys.version_info[:2] >= (3, 7):
+                            proc.close()
+
+            remote_closed_cause = pipe.remote_close_cause()
+            if remote_closed_cause is not None:
+                raise remote_closed_cause
+        finally:
+            del pipe
+            del proc
+            del tool_logger.handlers[:]
+
         return result, output_log_file.getvalue()
     finally:
         output_log_file.close()
@@ -141,7 +172,7 @@ def _create_runner(runner_generator, output_log_file=None):
         runner_generator = runner_generator[0]
     if not hasattr(runner_generator, '__call__'):
         runner_generator = reduce(getattr, runner_generator.split("."), sys.modules[__name__])
-    return runner_generator(stream=output_log_file)
+    return runner_generator(output_log_file)
 
 
 def _get_make_result_method_name(runner_generator):

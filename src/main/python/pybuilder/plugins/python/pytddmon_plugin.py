@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -42,4 +42,5 @@ def pytddmon(project, logger):
     python_interpreter = subprocess.check_output('which python', shell=True).rstrip('\n')
     pytddmon_script = subprocess.check_output('which pytddmon.py', shell=True).rstrip('\n')
 
-    subprocess.Popen([python_interpreter, pytddmon_script, '--no-pulse'], shell=False, cwd=unittest_directory, env=environment)
+    subprocess.Popen([python_interpreter, pytddmon_script, '--no-pulse'], shell=False, cwd=unittest_directory,
+                     env=environment)

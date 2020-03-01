@@ -5,7 +5,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -20,8 +20,10 @@
 #   limitations under the License.
 
 import sys
+from os.path import dirname, join as jp
 
-sys.path.insert(0, 'src/main/python')  # This is only necessary in PyBuilder sources for bootstrap
+# This is only necessary in PyBuilder sources for bootstrap
+sys.path.insert(0, jp(dirname(__file__), "src/main/python"))
 
 from pybuilder import bootstrap
 from pybuilder.core import Author, init, use_plugin
@@ -31,7 +33,6 @@ bootstrap()
 use_plugin("python.core")
 use_plugin("python.pytddmon")
 use_plugin("python.distutils")
-use_plugin("python.install_dependencies")
 
 use_plugin("copy_resources")
 use_plugin("filter_resources")
@@ -44,8 +45,9 @@ if sys.platform != "win32":
 
 use_plugin("python.integrationtest")
 use_plugin("python.coverage")
+use_plugin("python.coveralls")
 use_plugin("python.flake8")
-use_plugin('filter_resources')
+use_plugin("filter_resources")
 
 if not sys.version_info[0] == 3:
     use_plugin("python.snakefood")
@@ -80,48 +82,39 @@ url = "http://pybuilder.github.io"
 license = "Apache License"
 version = "0.12.0.dev"
 
-requires_python = ">=2.7,!=3.0,!=3.1,!=3.2,!=3.3,<3.8"
+requires_python = ">=2.7,!=3.0,!=3.1,!=3.2,!=3.3,!=3.4,<3.9"
 
-default_task = ["install_dependencies", "analyze", "publish"]
+default_task = ["analyze", "publish"]
 
 
 @init
 def initialize(project):
-    if sys.version_info[0] == 2:
-        project.build_depends_on("mock")
-
-    project.build_depends_on("pyfix")  # required test framework
-    project.build_depends_on("pyassert")
     project.build_depends_on("pygments")
-
-    project.depends_on("tblib")
-    project.depends_on("pip", "~=9.0")
-    project.depends_on("setuptools", "~=39.0")
-    project.depends_on("wheel", "~=0.31")
-    project.depends_on("tailer", "~=0.4")
 
     project.set_property("verbose", True)
 
     project.set_property("coverage_break_build", False)
-    project.set_property("coverage_reset_modules", True)
-    project.get_property("coverage_exceptions").append("pybuilder.cli")
-    project.get_property("coverage_exceptions").append("pybuilder.plugins.core_plugin")
+    project.get_property("coverage_exceptions").extend(["pybuilder._vendor",
+                                                        "pybuilder._vendor.*",
+                                                        "setup"])
 
-    # Issue #284
-    project.set_property("integrationtest_inherit_environment", True)
+    project.set_property("flake8_break_build", True)
+    project.set_property("flake8_extend_ignore", "E303")
+    project.set_property("flake8_include_test_sources", True)
+    project.set_property("flake8_include_scripts", True)
+    project.set_property("flake8_exclude_patterns", ",".join([
+        project.expand_path("$dir_source_main_python", "pybuilder/_vendor/*")
+    ]))
+    project.set_property("flake8_max_line_length", 130)
 
-    project.set_property('flake8_break_build', True)
-    project.set_property('flake8_include_test_sources', True)
-    project.set_property('flake8_include_scripts', True)
-    project.set_property('flake8_max_line_length', 130)
-
-    project.set_property('frosted_include_test_sources', True)
-    project.set_property('frosted_include_scripts', True)
+    project.set_property("frosted_include_test_sources", True)
+    project.set_property("frosted_include_scripts", True)
 
     project.set_property("copy_resources_target", "$dir_dist/pybuilder")
     project.get_property("copy_resources_glob").append("LICENSE")
     project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
     project.include_file("pybuilder", "LICENSE")
+    project.include_file("", "*.whl")  # All included binary wheels from vendors
 
     project.set_property("sphinx_doc_author", "PyBuilder Team")
     project.set_property("sphinx_doc_builder", "html")
@@ -130,9 +123,13 @@ def initialize(project):
 
     project.set_property("pdoc_module_name", "pybuilder")
 
-    project.get_property("source_dist_ignore_patterns").append(".project")
-    project.get_property("source_dist_ignore_patterns").append(".pydevproject")
-    project.get_property("source_dist_ignore_patterns").append(".settings")
+    project.get_property("source_dist_ignore_patterns").extend([".project",
+                                                                ".pydevproject",
+                                                                ".settings"])
+
+    # PyPy distutils needs os.environ['PATH'] not matter what
+    # Also Windows needs PATH for DLL loading in all Pythons
+    project.set_property("integrationtest_inherit_environment", True)
 
     # enable this to build a bdist on vagrant
     # project.set_property("distutils_issue8876_workaround_enabled", True)
@@ -140,20 +137,24 @@ def initialize(project):
     project.set_property("distutils_description_overwrite", True)
     project.set_property("distutils_console_scripts", ["pyb_ = pybuilder.cli:main"])
     project.set_property("distutils_classifiers", [
-        'Programming Language :: Python',
-        'Programming Language :: Python :: Implementation :: CPython',
-        'Programming Language :: Python :: Implementation :: PyPy',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Development Status :: 4 - Beta',
-        'Environment :: Console',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: Apache Software License',
-        'Topic :: Software Development :: Build Tools',
-        'Topic :: Software Development :: Quality Assurance',
-        'Topic :: Software Development :: Testing'])
+        "Programming Language :: Python",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: POSIX :: Linux",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: OS Independent",
+        "Development Status :: 5 - Stable",
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: Apache Software License",
+        "Topic :: Software Development :: Build Tools",
+        "Topic :: Software Development :: Quality Assurance",
+        "Topic :: Software Development :: Testing"])

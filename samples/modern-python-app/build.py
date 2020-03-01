@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -15,10 +15,11 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+
 from pybuilder.core import use_plugin
 
 use_plugin("python.core")
-use_plugin("python.pyfix_unittest")
+use_plugin("python.unittest")
 use_plugin("python.coverage")
 use_plugin("python.distutils")
 

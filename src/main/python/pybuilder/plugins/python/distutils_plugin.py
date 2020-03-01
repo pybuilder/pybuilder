@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -19,16 +19,10 @@
 import os
 import re
 import string
-import subprocess
-import sys
 from datetime import datetime
 from textwrap import dedent
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
+from pybuilder import pip_utils
 from pybuilder.core import (after,
                             before,
                             use_plugin,
@@ -37,15 +31,13 @@ from pybuilder.core import (after,
                             RequirementsFile,
                             Dependency)
 from pybuilder.errors import BuildFailedException, MissingPrerequisiteException
+from pybuilder.python_utils import StringIO
 from pybuilder.utils import (as_list,
                              is_string,
                              is_notstr_iterable,
                              get_dist_version_string,
                              safe_log_file_name,
-                             assert_can_execute,
                              tail_log)
-# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
-from pybuilder import pip_utils
 
 use_plugin("python.core")
 
@@ -113,6 +105,7 @@ def as_str(value):
 def initialize_distutils_plugin(project):
     project.plugin_depends_on("pypandoc", "~=1.4")
     project.plugin_depends_on("twine", "~=1.10")
+    project.plugin_depends_on("wheel", "~=0.33")
 
     project.set_property_if_unset("distutils_commands", ["sdist", "bdist_wheel"])
     project.set_property_if_unset("distutils_command_options", None)
@@ -141,10 +134,10 @@ def initialize_distutils_plugin(project):
 
 
 @after("prepare")
-def set_description(project, logger):
+def set_description(project, logger, reactor):
     if project.get_property("distutils_readme_description"):
         try:
-            assert_can_execute(["pandoc", "--version"], "pandoc", "distutils")
+            reactor.pybuilder_venv.verify_can_execute(["pandoc", "--version"], "pandoc", "distutils")
             doc_convert(project, logger)
         except (MissingPrerequisiteException, ImportError):
             logger.warn("Was unable to find pandoc or pypandoc and did not convert the documentation")
@@ -218,17 +211,17 @@ def write_manifest_file(project, logger):
 
 
 @before("publish")
-def build_binary_distribution(project, logger):
+def build_binary_distribution(project, logger, reactor):
     logger.info("Building binary distribution in %s",
                 project.expand_path("$dir_dist"))
 
     commands = [build_command_with_options(cmd, project.get_property("distutils_command_options"))
                 for cmd in as_list(project.get_property("distutils_commands"))]
-    execute_distutils(project, logger, commands, True)
+    execute_distutils(project, logger, reactor.pybuilder_venv, commands, True)
 
 
 @task("install")
-def install_distribution(project, logger):
+def install_distribution(project, logger, reactor):
     logger.info("Installing project %s-%s", project.name, project.version)
 
     _prepare_reports_dir(project)
@@ -236,18 +229,19 @@ def install_distribution(project, logger):
                                        "pip_install_%s" % datetime.utcnow().strftime("%Y%m%d%H%M%S"))
     pip_utils.pip_install(
         install_targets=project.expand_path("$dir_dist"),
+        python_env=reactor.python_env_registry["system"],
         index_url=project.get_property("install_dependencies_index_url"),
         extra_index_url=project.get_property("install_dependencies_extra_index_url"),
         force_reinstall=True,
         logger=logger,
-        verbose=project.get_property("verbose"),
+        verbose=project.get_property("pip_verbose"),
         cwd=".",
         outfile_name=outfile_name,
         error_file_name=outfile_name)
 
 
 @task("upload", description="Upload a project to PyPi.")
-def upload(project, logger):
+def upload(project, logger, reactor):
     repository = project.get_property("distutils_upload_repository")
     repository_args = []
     if repository:
@@ -258,17 +252,17 @@ def upload(project, logger):
             repository_args = ["--repository", repository_key]
 
     upload_sign = project.get_property("distutils_upload_sign")
+    sign_identity = project.get_property("distutils_upload_sign_identity")
     upload_sign_args = []
     if upload_sign:
         upload_sign_args = ["--sign"]
-        sign_identity = project.get_property("distutils_upload_sign_identity")
         if sign_identity:
             upload_sign_args += ["--identity", sign_identity]
 
     if project.get_property("distutils_upload_register"):
         logger.info("Registering project %s-%s%s", project.name, project.version,
                     (" into repository '%s'" % repository) if repository else "")
-        execute_twine(project, logger, repository_args, True)
+        execute_twine(project, logger, reactor.pybuilder_venv, repository_args, True)
 
     logger.info("Uploading project %s-%s%s%s%s", project.name, project.version,
                 (" to repository '%s'" % repository) if repository else "",
@@ -276,7 +270,7 @@ def upload(project, logger):
                 (" signing%s" % (" with %s" % sign_identity if sign_identity else "")) if upload_sign else "")
 
     upload_cmd_args = repository_args + upload_sign_args
-    execute_twine(project, logger, upload_cmd_args, False)
+    execute_twine(project, logger, reactor.pybuilder_venv, upload_cmd_args, False)
 
 
 def render_manifest_file(project):
@@ -303,18 +297,17 @@ def build_command_with_options(command, distutils_command_options=None):
     return commands
 
 
-def execute_distutils(project, logger, distutils_commands, clean=False):
+def execute_distutils(project, logger, python_env, distutils_commands, clean=False):
     reports_dir = _prepare_reports_dir(project)
     setup_script = project.expand_path("$dir_dist", "setup.py")
 
     for command in distutils_commands:
-        logger.debug("Executing distutils command %s", command)
         if is_string(command):
             out_file = os.path.join(reports_dir, safe_log_file_name(command))
         else:
             out_file = os.path.join(reports_dir, safe_log_file_name("__".join(command)))
         with open(out_file, "w") as out_f:
-            commands = [sys.executable, setup_script]
+            commands = python_env.executable + [setup_script]
             if project.get_property("verbose"):
                 commands.append("-v")
             if clean:
@@ -323,14 +316,15 @@ def execute_distutils(project, logger, distutils_commands, clean=False):
                 commands.extend(command.split())
             else:
                 commands.extend(command)
-            return_code = _run_process_and_wait(commands, project.expand_path("$dir_dist"), out_f)
+            logger.debug("Executing distutils command: %s", commands)
+            return_code = python_env.run_process_and_wait(commands, project.expand_path("$dir_dist"), out_f)
             if return_code != 0:
                 raise BuildFailedException(
                     "Error while executing setup command %s. See %s for full details:\n%s",
                     command, out_file, tail_log(out_file))
 
 
-def execute_twine(project, logger, command_args, register):
+def execute_twine(project, logger, python_env, command_args, register):
     reports_dir = _prepare_reports_dir(project)
     dist_artifact_dir = project.expand_path("$dir_dist", "dist")
 
@@ -344,17 +338,19 @@ def execute_twine(project, logger, command_args, register):
         for artifact in artifacts:
             out_file = os.path.join(reports_dir,
                                     safe_log_file_name("twine_%s_%s.log" % (command, os.path.basename(artifact))))
-            _execute_twine(project, logger, [command] + command_args + [artifact], dist_artifact_dir, out_file)
+            _execute_twine(project, logger, python_env,
+                           [command] + command_args + [artifact], dist_artifact_dir, out_file)
     else:
         out_file = os.path.join(reports_dir, safe_log_file_name("twine_%s.log" % command))
-        _execute_twine(project, logger, [command] + command_args + artifacts, dist_artifact_dir, out_file)
+        _execute_twine(project, logger, python_env,
+                       [command] + command_args + artifacts, dist_artifact_dir, out_file)
 
 
-def _execute_twine(project, logger, command, work_dir, out_file):
-    logger.debug("Executing Twine %s", command)
+def _execute_twine(project, logger, python_env, command, work_dir, out_file):
     with open(out_file, "w") as out_f:
-        commands = [sys.executable, "-m", "twine"] + command
-        return_code = _run_process_and_wait(commands, work_dir, out_f)
+        commands = python_env.executable + ["-m", "twine"] + command
+        logger.debug("Executing Twine: %s", commands)
+        return_code = python_env.run_process_and_wait(commands, work_dir, out_f)
         if return_code != 0:
             raise BuildFailedException(
                 "Error while executing Twine %s. See %s for full details:\n%s", command, out_file, tail_log(out_file))
@@ -629,17 +625,6 @@ def _normalize_setup_post_pre_script(s, indent=8):
     indent_str = " " * indent
     return "".join([indent_str + line if len(str.rstrip(line)) > 0 else line for line in
                     dedent(_expand_leading_tabs(s)).splitlines(True)])
-
-
-def _run_process_and_wait(commands, cwd, stdout, stderr=None):
-    with open(os.devnull) as devnull:
-        process = subprocess.Popen(commands,
-                                   cwd=cwd,
-                                   stdin=devnull,
-                                   stdout=stdout,
-                                   stderr=stderr or stdout,
-                                   shell=False)
-        return process.wait()
 
 
 def _prepare_reports_dir(project):

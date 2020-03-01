@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
 import unittest
 
 from pybuilder import core
 from pybuilder import pip_utils
-from pybuilder.pip_common import pip_version
-from test_utils import patch, ANY
+from test_utils import ANY, Mock
 
 
 class PipVersionTests(unittest.TestCase):
@@ -51,9 +49,9 @@ class PipVersionTests(unittest.TestCase):
 
         # Multiple different items
         multiple_different_items = pip_utils.get_package_version(
-            ["pip", core.Dependency("wheel"), core.RequirementsFile("blah")])
+            ["pip", core.Dependency("setuptools"), core.RequirementsFile("blah")])
         self.assertTrue("pip" in multiple_different_items)
-        self.assertTrue("wheel" in multiple_different_items)
+        self.assertTrue("setuptools" in multiple_different_items)
         self.assertTrue("blah" not in multiple_different_items)
 
         # Multiple identical items
@@ -81,12 +79,14 @@ class PipVersionTests(unittest.TestCase):
         self.assertEqual(pip_utils.build_pip_install_options(trusted_host=("foo", "bar")),
                          ["--trusted-host", "foo", "--trusted-host", "bar"])
         self.assertEqual(pip_utils.build_pip_install_options(upgrade=True),
-                         ["--upgrade"] if pip_version < "9.0" else
                          ["--upgrade", "--upgrade-strategy", "only-if-needed"])
         self.assertEqual(pip_utils.build_pip_install_options(upgrade=True, eager_upgrade=True),
-                         ["--upgrade"] if pip_version < "9.0" else
                          ["--upgrade", "--upgrade-strategy", "eager"])
-        self.assertEqual(pip_utils.build_pip_install_options(verbose=True), ["--verbose"])
+        self.assertEqual(pip_utils.build_pip_install_options(verbose=True), ["-v"])
+        self.assertEqual(pip_utils.build_pip_install_options(verbose=1), ["-v"])
+        self.assertEqual(pip_utils.build_pip_install_options(verbose=2), ["-vv"])
+        self.assertEqual(pip_utils.build_pip_install_options(verbose=3), ["-vvv"])
+        self.assertEqual(pip_utils.build_pip_install_options(verbose=4), ["-vvv"])
         self.assertEqual(pip_utils.build_pip_install_options(force_reinstall=True), ["--force-reinstall"])
         self.assertEqual(pip_utils.build_pip_install_options(target_dir="target dir"), ["-t", "target dir"])
         self.assertEqual(pip_utils.build_pip_install_options(target_dir="target dir"), ["-t", "target dir"])
@@ -101,15 +101,22 @@ class PipVersionTests(unittest.TestCase):
 
 
 class PipUtilsTests(unittest.TestCase):
-    @patch("pybuilder.pip_utils.execute_command")
-    def test_pip_install_environ_inherited(self, execute_command):
-        pip_utils.pip_install("blah")
-        execute_command.assert_called_once_with(ANY, cwd=None, env=os.environ, error_file_name=None, outfile_name=None,
-                                                shell=False)
+    def test_pip_install_environ_inherited(self):
+        python_env = Mock()
+        python_env.executable = []
+        python_env.environ = {}
+        pip_utils.pip_install("blah", python_env)
+        python_env.execute_command.assert_called_once_with(ANY, cwd=None, env=python_env.environ,
+                                                           error_file_name=None,
+                                                           outfile_name=None,
+                                                           shell=False, no_path_search=True)
 
-    @patch("pybuilder.pip_utils.execute_command")
-    def test_pip_install_environ_overwritten(self, execute_command):
-        env_dict = dict()
-        pip_utils.pip_install("blah", env=env_dict)
-        execute_command.assert_called_once_with(ANY, cwd=None, env=env_dict, error_file_name=None, outfile_name=None,
-                                                shell=False)
+    def test_pip_install_environ_overwritten(self):
+        env_dict = {"a": "b"}
+        python_env = Mock()
+        python_env.executable = []
+        python_env.environ = {}
+        pip_utils.pip_install("blah", python_env, env=env_dict)
+        python_env.execute_command.assert_called_once_with(ANY, cwd=None, env=env_dict, error_file_name=None,
+                                                           outfile_name=None,
+                                                           shell=False, no_path_search=True)
