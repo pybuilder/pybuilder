@@ -60,7 +60,8 @@ class StdOutLogger(Logger):
     def _do_log(self, level, message, *arguments):
         formatted_message = self._format_message(message, *arguments)
         log_level = self._level_to_string(level)
-        print_text_line("{0} {1}".format(log_level, formatted_message))
+        timestamp = (datetime.datetime.now().strftime(self.log_format) + ' ') if self.log_format is not None else ''
+        print_text_line("{0}{1} {2}".format(timestamp, log_level, formatted_message))
 
 
 class ColoredStdOutLogger(StdOutLogger):
@@ -205,6 +206,31 @@ def parse_options(args):
                             default=False,
                             help="Disable colored output")
 
+    def check_if_timestamp_passed(option, opt_str, value, parser):
+        assert value is None
+        value = '[%Y-%m-%d %H:%M:%S]'
+
+        for arg in parser.rargs:
+            # stop on --foo like options
+            if arg[:2] == "--" and len(arg) > 2:
+                break
+            # stop on -foo like options
+            elif arg[:1] == "-" and len(arg) > 1:
+                break
+            else:
+                value = arg.rstrip()
+                del parser.rargs[0]
+                break  # Only consume 1 argument
+
+        setattr(parser.values, option.dest, value)
+
+    output_group.add_option("-f", "--log-format",
+                            action='callback',
+                            callback=check_if_timestamp_passed,
+                            dest="log_format",
+                            help="Define the format of timestamp in the log (default: no timestamps)",
+                            default=None)
+
     parser.add_option_group(output_group)
 
     options, arguments = parser.parse_args(args=list(args))
@@ -247,9 +273,9 @@ def init_logger(options):
         threshold = Logger.WARN
 
     if not should_colorize(options):
-        logger = StdOutLogger(threshold)
+        logger = StdOutLogger(threshold, options.log_format)
     else:
-        logger = ColoredStdOutLogger(threshold)
+        logger = ColoredStdOutLogger(threshold, options.log_format)
 
     return logger
 
