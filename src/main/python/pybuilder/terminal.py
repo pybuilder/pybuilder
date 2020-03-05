@@ -31,6 +31,11 @@
 """
 
 import sys
+try:
+    from colorama import init
+    init()
+except ImportError:
+    pass
 
 _ESCAPE_SEQUENCE_PATTERN = "\033[%sm"
 _ESCAPE_SEQUENCE_SEPARATOR = ";"
