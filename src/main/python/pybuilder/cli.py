@@ -39,6 +39,7 @@ from pybuilder.terminal import (BOLD, BROWN, RED, GREEN, bold, styled_text,
 from pybuilder.utils import format_timestamp, get_dist_version_string
 
 PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
+DEFAULT_LOG_FORMAT = '[%Y-%m-%d %H:%M:%S]'
 
 
 class CommandLineUsageException(PyBuilderException):
@@ -75,7 +76,6 @@ class ColoredStdOutLogger(StdOutLogger):
         return styled_text("[ERROR]", BOLD, fg(RED))
 
 
-DEFAULT_LOG_FORMAT = '[%Y-%m-%d %H:%M:%S]'
 def _log_format_argument__check_if_timestamp_passed(option, opt_str, value, parser):
     assert value is None
     value = DEFAULT_LOG_FORMAT
