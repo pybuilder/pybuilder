@@ -75,6 +75,26 @@ class ColoredStdOutLogger(StdOutLogger):
         return styled_text("[ERROR]", BOLD, fg(RED))
 
 
+DEFAULT_LOG_FORMAT = '[%Y-%m-%d %H:%M:%S]'
+def _log_format_argument__check_if_timestamp_passed(option, opt_str, value, parser):
+    assert value is None
+    value = DEFAULT_LOG_FORMAT
+
+    for arg in parser.rargs:
+        # stop on --foo like options
+        if arg[:2] == "--" and len(arg) > 2:
+            break
+        # stop on -foo like options
+        elif arg[:1] == "-" and len(arg) > 1:
+            break
+        else:
+            value = arg.rstrip()
+            del parser.rargs[0]
+            break  # Only consume 1 argument
+
+    setattr(parser.values, option.dest, value)
+
+
 def parse_options(args):
     parser = optparse.OptionParser(usage="%prog [options] [+|^]task1 [[[+|^]task2] ...]",
                                    version="%prog " + __version__)
@@ -206,27 +226,9 @@ def parse_options(args):
                             default=False,
                             help="Disable colored output")
 
-    def check_if_timestamp_passed(option, opt_str, value, parser):
-        assert value is None
-        value = '[%Y-%m-%d %H:%M:%S]'
-
-        for arg in parser.rargs:
-            # stop on --foo like options
-            if arg[:2] == "--" and len(arg) > 2:
-                break
-            # stop on -foo like options
-            elif arg[:1] == "-" and len(arg) > 1:
-                break
-            else:
-                value = arg.rstrip()
-                del parser.rargs[0]
-                break  # Only consume 1 argument
-
-        setattr(parser.values, option.dest, value)
-
     output_group.add_option("-f", "--log-format",
                             action='callback',
-                            callback=check_if_timestamp_passed,
+                            callback=_log_format_argument__check_if_timestamp_passed,
                             dest="log_format",
                             help="Define the format of timestamp in the log (default: no timestamps)",
                             default=None)
