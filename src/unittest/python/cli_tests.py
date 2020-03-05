@@ -113,12 +113,12 @@ class FormattedTimestampLoggerTest(unittest.TestCase):
     def test_if_log_line_contains_log_format(self):
         import sys
 
+        original = sys.stdout
         try:
-            original = sys.stdout
             sys.stdout = self.StreamWrapper(sys.stdout)
 
             self.stdout_logger.info("Test")
-            self.assertRegex(sys.stdout.text, "^" + self.DEFAULT_LOG_FORMAT)
+            self.assertRegexpMatches(sys.stdout.text, "^" + self.DEFAULT_LOG_FORMAT)
         finally:
             sys.stdout = original
 
