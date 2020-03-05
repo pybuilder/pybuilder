@@ -91,6 +91,38 @@ class TaskListTests(unittest.TestCase):
                                           call('    task-2 - any description for task 2')])
 
 
+
+class FormattedTimestampLoggerTest(unittest.TestCase):
+    DEFAULT_LOG_FORMAT = "some_fixed_test"
+
+    class StreamWrapper(object):
+        def __init__(self, wrapped):
+            self.text = ''
+            self.__wrapped = wrapped
+
+        def __getattr__(self, name):
+            # 'write' is overridden but for every other function, like 'flush', use the original wrapped stream
+            return getattr(self.__wrapped, name)
+
+        def write(self, text):
+            self.text += text
+
+    def setUp(self):
+        self.stdout_logger = StdOutLogger(log_format=FormattedTimestampLoggerTest.DEFAULT_LOG_FORMAT)
+
+    def test_if_log_line_contains_log_format(self):
+        import sys
+
+        try:
+            original = sys.stdout
+            sys.stdout = self.StreamWrapper(sys.stdout)
+
+            self.stdout_logger.info("Test")
+            self.assertRegex(sys.stdout.text, "^" + self.DEFAULT_LOG_FORMAT)
+        finally:
+            sys.stdout = original
+
+
 class StdOutLoggerTest(unittest.TestCase):
     def setUp(self):
         self.stdout_logger = StdOutLogger()
