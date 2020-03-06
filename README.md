@@ -1,7 +1,7 @@
 PyBuilder
 =========
 
-[PyBuilder](https://pybuilder.github.io)
+[PyBuilder](https://pybuilder.io)
 
 
 [![Gitter](https://badges.gitter.im/pybuilder/pybuilder.svg)](https://gitter.im/pybuilder/pybuilder)
@@ -49,13 +49,13 @@ use_plugin("python.distutils")
 default_task = "publish"
 ```
 
-See the [PyBuilder homepage](https://pybuilder.github.io) for more details and
+See the [PyBuilder homepage](https://pybuilder.io) for more details and
 a list of plugins.
 
 ## Release Notes
 
-The release notes can be found [here](https://pybuilder.github.com/releasenotes/).
+The release notes can be found [here](https://pybuilder.io/release-notes/).
 There will also be a git tag with each release. Please note that we do not currently promote tags to GitHub "releases".
 
 ## Development
-See [developing PyBuilder](https://pybuilder.github.io/documentation/developing_pybuilder.html)
+See [Developing PyBuilder](https://pybuilder.io/documentation/developing-pybuilder.html)
