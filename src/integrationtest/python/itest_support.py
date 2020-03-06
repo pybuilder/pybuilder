@@ -16,27 +16,17 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import unittest
-
-from itest_support import IntegrationTestSupport
-from pybuilder.errors import ProjectValidationFailedException
-
-
-class Test(IntegrationTestSupport):
-    def test(self):
-        self.write_build_file("""
-from pybuilder.core import init
-
-@init
-def init (project):
-    project.depends_on("spam")
-    project.build_depends_on("spam")
-        """)
-        reactor = self.prepare_reactor()
-
-        self.assertRaises(
-            ProjectValidationFailedException, reactor.build, ["clean"])
+from base_itest_support import BaseIntegrationTestSupport
+from pybuilder.cli import StdOutLogger
+from pybuilder.core import Logger
+from pybuilder.execution import ExecutionManager
+from pybuilder.reactor import Reactor
 
 
-if __name__ == "__main__":
-    unittest.main()
+class IntegrationTestSupport(BaseIntegrationTestSupport):
+    def prepare_reactor(self):
+        logger = StdOutLogger(level=Logger.DEBUG)
+        execution_manager = ExecutionManager(logger)
+        reactor = Reactor(logger, execution_manager)
+        reactor.prepare_build(project_directory=self.tmp_directory)
+        return reactor
