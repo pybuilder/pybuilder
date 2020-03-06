@@ -16,7 +16,7 @@
 
 import unittest
 
-from integrationtest_support import IntegrationTestSupport
+from itest_support import IntegrationTestSupport
 from pybuilder.errors import MissingPluginException
 
 
