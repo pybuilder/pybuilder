@@ -204,9 +204,9 @@ def run_coverage(project, logger, reactor, covered_task):
     em = reactor.execution_manager
 
     # HACK: PyPy 2.x is misbehaving
-    import gc
-    gc.collect()
-    gc.disable()
+    # import gc
+    # gc.collect()
+    # gc.disable()
 
     try:
         reactor.add_tool(cov_tool)
@@ -238,7 +238,8 @@ def run_coverage(project, logger, reactor, covered_task):
                                          covered_task.coverage_name, covered_task.filename, config_prefix,
                                          cov, module_names, module_files)
     finally:
-        gc.enable()
+        # gc.enable()
+        pass
 
     if failure:
         raise failure

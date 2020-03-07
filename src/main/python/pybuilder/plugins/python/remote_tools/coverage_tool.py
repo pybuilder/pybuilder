@@ -16,9 +16,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pybuilder.plugins.python.remote_tools import RemoteObjectPipe, Tool, get_rom
+from pybuilder.plugins.python.remote_tools import RemoteObjectPipe, Tool
 
-__all__ = ["CoverageTool", "get_rom"]
+__all__ = ["CoverageTool"]
 
 
 class CoverageTool(Tool):

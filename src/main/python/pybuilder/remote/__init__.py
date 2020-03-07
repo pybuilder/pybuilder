@@ -22,17 +22,17 @@ from pybuilder.python_utils import patch_mp
 patch_mp()
 
 from io import BytesIO, StringIO  # noqa: E402
-from pickle import PickleError, Unpickler, UnpicklingError  # noqa: E402
+from pickle import PickleError, Unpickler, UnpicklingError, HIGHEST_PROTOCOL  # noqa: E402
 from pickletools import dis  # noqa: E402
 
-from pybuilder.remote._remote_weak import WeakKeyDictionary, WeakSet, WeakValueDictionary  # noqa: E402
 from pybuilder.python_utils import (mp_get_context,
                                     mp_ForkingPickler as ForkingPickler,
                                     mp_log_to_stderr as log_to_stderr,
                                     PY2,
                                     IS_WIN)  # noqa: E402
 
-PICKLE_PROTOCOL = 2
+PICKLE_PROTOCOL_MIN = 2
+PICKLE_PROTOCOL_MAX = HIGHEST_PROTOCOL
 
 if PY2:
     ConnectionError = EnvironmentError
@@ -41,18 +41,8 @@ ctx = mp_get_context("spawn")
 ctx.allow_connection_pickling()
 logger = ctx.get_logger()
 
-__all__ = ["RemoteObjectManager", "RemoteObjectPipe", "RemoteObjectError",
-           "get_rom", "ctx", "proxy_members", "PipeShutdownError", "log_to_stderr"]
-
-
-def get_rom():
-    # type: () -> RemoteObjectManager
-    cp = ctx.current_process()
-    cp_rom = getattr(cp, "_rom", None)
-    if not cp_rom:
-        cp_rom = _RemoteObjectManager()
-        setattr(cp, "_rom", cp_rom)
-    return cp_rom
+__all__ = ["RemoteObjectPipe", "RemoteObjectError",
+           "ctx", "proxy_members", "PipeShutdownError", "log_to_stderr"]
 
 
 class ProxyDef:
@@ -101,7 +91,7 @@ class RemoteObjectUnpickler(Unpickler, object):
         return cls(file, *args, _rop=_rop, **kwargs).load()
 
 
-_PICKLE_SKIP_PID_CHECK_TYPES = {type(None), bool, int, float, str, bytes, bytearray, list, tuple, dict, set}
+_PICKLE_SKIP_PID_CHECK_TYPES = {type(None), type, bool, int, float, str, bytes, bytearray, list, tuple, dict, set}
 
 
 class RemoteObjectPickler(ForkingPickler, object):
@@ -109,10 +99,10 @@ class RemoteObjectPickler(ForkingPickler, object):
     def __init__(self, *args, **kwargs):
         self._rop = kwargs.pop("_rop")  # type: _RemoteObjectPipe
         if PY2:
-            kwargs["protocol"] = PICKLE_PROTOCOL  # This is for full backwards compatibility with Python 2
+            kwargs["protocol"] = self._rop.pickle_version  # This is for full backwards compatibility with Python 2
             super(RemoteObjectPickler, self).__init__(*args, **kwargs)
         else:
-            super(RemoteObjectPickler, self).__init__(args[0], PICKLE_PROTOCOL, *args[1:])
+            super(RemoteObjectPickler, self).__init__(args[0], self._rop.pickle_version, *args[1:])
 
     def persistent_id(self, obj, exc_persisted=[]):  # Mutable default is intentional here
         if type(obj) in _PICKLE_SKIP_PID_CHECK_TYPES:
@@ -186,31 +176,8 @@ def proxy_members(obj, public=True, protected=True, add_callable=True, add_str=T
     return methods, fields
 
 
-class RemoteObjectManager:
-    def new_pipe(self):
-        """Creates new remote object pipe that can expose remote objects"""
-        raise NotImplementedError
-
-    def expose(self, name, obj, methods=None, fields=None, remote=True):
-        """Exposes the object as a remote under the specified name
-        If `remote` is False, the object will be pickled but will not be a remote.
-        """
-        raise NotImplementedError
-
-    def hide(self, name):
-        """Stops exposing remote object"""
-        raise NotImplementedError
-
-    def register_remote(self, obj, methods=None, fields=None):
-        """Registers an object as a remote but doesn't expose it"""
-        raise NotImplementedError
-
-    def register_remote_type(self, t):
-        """Registers all objects of this type (isinstance) as remote"""
-        raise NotImplementedError
-
-
 class RemoteObjectPipe:
+
     def expose(self, name, obj, methods=None, fields=None, remote=True):
         """Same as `RemoteObjectManager.expose`"""
         raise NotImplementedError
@@ -239,12 +206,57 @@ class RemoteObjectPipe:
     def remote_close_cause(self):
         raise NotImplementedError
 
+    @classmethod
+    def new_pipe(cls):
+        return _RemoteObjectSession().new_pipe()
+
 
 def obj_id(obj):
     return type(obj), id(obj)
 
 
-class _RemoteObjectManager(RemoteObjectManager):
+class id_dict(dict):
+    def __getitem__(self, key):
+        key = id(key)
+        return super(id_dict, self).__getitem__(key)[1]
+
+    def get(self, key, default=None):
+        key = id(key)
+        val = super(id_dict, self).get(key, default)
+        if val is default:
+            return val
+        return val[1]
+
+    def __setitem__(self, key, value):
+        obj = key
+        key = id(key)
+        return super(id_dict, self).__setitem__(key, (obj, value))
+
+    def __delitem__(self, key):
+        key = id(key)
+        return super(id_dict, self).__delitem__(key)
+
+    def __contains__(self, key):
+        return super(id_dict, self).__contains__(id(key))
+
+    def keys(self):
+        for k, v in super(id_dict, self).items():
+            yield v[0]
+
+    def values(self):
+        for k, v in super(id_dict, self).items():
+            yield v[1]
+
+    def items(self):
+        for k, v in super(id_dict, self).items():
+            yield v[0], v[1]
+
+    def __iter__(self):
+        for k, v in super(id_dict, self).items():
+            yield v[0]
+
+
+class _RemoteObjectSession:
     def __init__(self):
         self._remote_id = 0
 
@@ -252,13 +264,13 @@ class _RemoteObjectManager(RemoteObjectManager):
         self._exposed_objs = dict()
 
         # Mapping remote ID (int): object
-        self._remote_objs_ids = WeakValueDictionary()
+        self._remote_objs_ids = dict()
 
         # Mapping object: ProxyDef
-        self._remote_objs = WeakKeyDictionary()  # instances to be proxied
+        self._remote_objs = id_dict()  # instances to be proxied
 
         # All types to be always proxied
-        self._remote_types = WeakSet()  # classes to be proxied
+        self._remote_types = set()  # classes to be proxied
 
     def new_pipe(self):
         # type:(object) -> _RemoteObjectPipe
@@ -337,7 +349,7 @@ class _RemoteObjectManager(RemoteObjectManager):
 
         for remote_type in self._remote_types:
             if isinstance(obj, remote_type):
-                logger.debug("%r is instance of type %r, which will register as remote", obj_id(obj), t_obj)
+                logger.debug("%r is instance of type %r, which will register as remote", obj_id(obj), remote_type)
                 return self.register_remote(obj)
 
 
@@ -389,6 +401,8 @@ def %s_setter(self, value):
 ROP_CLOSE = 0
 ROP_CLOSE_CLOSED = 1
 
+ROP_PICKLE_VERSION = 2
+
 ROP_GET_EXPOSED = 5
 ROP_GET_EXPOSED_RESULT = 6
 
@@ -405,11 +419,11 @@ ROP_REMOTE_ACTION_EXCEPTION = 16
 
 
 class _RemoteObjectPipe(RemoteObjectPipe):
-    def __init__(self, rom):
+    def __init__(self, ros):
         self._returns_pending = 0
         self._remote_close_cause = None
 
-        self._rom = rom  # type: _RemoteObjectManager
+        self._ros = ros  # type: _RemoteObjectSession
 
         self._conn_c = self._conn_p = None
         self._remote_proxy_defs = {}
@@ -417,6 +431,7 @@ class _RemoteObjectPipe(RemoteObjectPipe):
 
         self.id = None
         self.conn = None  # type: ctx.Connection
+        self.pickle_version = PICKLE_PROTOCOL_MIN
 
     def __del__(self):  # noqa
         # DO NOT REMOVE
@@ -442,28 +457,28 @@ class _RemoteObjectPipe(RemoteObjectPipe):
         remote_proxy = remote_proxies.get(remote_id, None)
         if remote_proxy is None:
             remote_proxy_type = _make_proxy_type(proxy_def)
-            remote_proxy = remote_proxy_type(self._rom, self, proxy_def)
+            remote_proxy = remote_proxy_type(self._ros, self, proxy_def)
             remote_proxies[remote_id] = remote_proxy
             logger.debug("registered local proxy for remote ID %d: %r", remote_id, remote_proxy)
         return remote_proxy
 
     def get_remote(self, obj):
-        return self._rom.get_remote(obj)
+        return self._ros.get_remote(obj)
 
     def get_remote_obj_by_id(self, remote_id):
-        return self._rom.get_remote_obj_by_id(remote_id)
+        return self._ros.get_remote_obj_by_id(remote_id)
 
     def expose(self, name, obj, remote=True, methods=None, fields=None):
-        return self._rom.expose(name, obj, remote, methods, fields)
+        return self._ros.expose(name, obj, remote, methods, fields)
 
     def hide(self, name):
-        self._rom.hide(name)
+        self._ros.hide(name)
 
     def register_remote(self, obj, methods=None, fields=None):
-        return self._rom.register_remote(obj, methods, fields)
+        return self._ros.register_remote(obj, methods, fields)
 
     def register_remote_type(self, t):
-        return self._rom.register_remote_type(t)
+        return self._ros.register_remote_type(t)
 
     def close_client_side(self):
         """Ensures that after the child process is spawned the parent relinquishes FD of the child's side pipe"""
@@ -504,22 +519,33 @@ class _RemoteObjectPipe(RemoteObjectPipe):
         pipe_id = id(conn_p)
         self.id = ("s", pipe_id)
 
-        return ("r", pipe_id), conn_c
+        return ("r", pipe_id), conn_c, PICKLE_PROTOCOL_MAX
 
     def __setstate__(self, state):
         self.id = state[0]
 
         conn = state[1]
+
+        pickle_max = max(PICKLE_PROTOCOL_MAX, state[2])
+
         self._conn_c = conn
         self._conn_p = None
 
         self.conn = conn
 
-        self._rom = get_rom()
+        self._ros = _RemoteObjectSession()
 
         self._remote_proxy_defs = {}
         self._remote_proxies = {}
         self._remote_close_cause = None
+
+        # Not an error. We HAVE to make sure the first send uses minimally-supported Pickle version
+
+        self.pickle_version = PICKLE_PROTOCOL_MIN
+        self._send_obj((ROP_PICKLE_VERSION, pickle_max))
+        self.pickle_version = pickle_max
+
+        logger.debug("selected pickle protocol v%r", pickle_max)
 
     def __repr__(self):
         return "RemoteObjectPipe [id=%r, type=%r, conn=%r, conn_fd=%r]" % (
@@ -540,7 +566,7 @@ class _RemoteObjectPipe(RemoteObjectPipe):
             action_type = data[0]
             if action_type == ROP_REMOTE_ACTION:
                 remote_id = data[1]
-                obj = self._rom.get_remote_obj_by_id(remote_id)
+                obj = self._ros.get_remote_obj_by_id(remote_id)
                 if obj is None:
                     self._send_obj(
                         (ROP_REMOTE_ACTION_REMOTE_ERROR, remote_id, "Remote object %r is gone", (remote_id,)))
@@ -627,7 +653,7 @@ class _RemoteObjectPipe(RemoteObjectPipe):
 
             if action_type == ROP_GET_EXPOSED:
                 exposed_name = data[1]
-                exposed = self._rom.get_exposed_by_name(exposed_name)
+                exposed = self._ros.get_exposed_by_name(exposed_name)
                 self._send_obj((ROP_GET_EXPOSED_RESULT, exposed))
                 continue
 
@@ -636,7 +662,7 @@ class _RemoteObjectPipe(RemoteObjectPipe):
 
             if action_type == ROP_GET_PROXY_DEF:
                 remote_id = data[1]
-                proxy_def = self._rom.get_proxy_by_id(remote_id)  # type: ProxyDef
+                proxy_def = self._ros.get_proxy_by_id(remote_id)  # type: ProxyDef
                 logger.debug("request for proxy with remote ID %d is returning %r", remote_id, proxy_def)
                 self._send_obj((ROP_GET_PROXY_DEF_RESULT, proxy_def))
                 continue
@@ -655,6 +681,11 @@ class _RemoteObjectPipe(RemoteObjectPipe):
                         self._close()
                     finally:
                         raise PipeShutdownError()
+
+            if action_type == ROP_PICKLE_VERSION:
+                self.pickle_version = data[1]
+                logger.debug("selected pickle protocol v%r", self.pickle_version)
+                return
 
             raise RuntimeError("received data I can't understand: %r" % (data,))
 

@@ -134,7 +134,6 @@ def execute_tests_matching(tools, runner_generator, logger, test_source, file_gl
                                     logger,
                                     _create_runner(runner_generator, output_log_file))
 
-        proc = pipe = None  # noqa
         try:
             proc, pipe = start_unittest_tool(tools, test_modules, test_method_prefix, logging=remote_debug)
             try:
@@ -158,8 +157,6 @@ def execute_tests_matching(tools, runner_generator, logger, test_source, file_gl
             if remote_closed_cause is not None:
                 raise remote_closed_cause
         finally:
-            del pipe
-            del proc
             del tool_logger.handlers[:]
 
         return result, output_log_file.getvalue()
