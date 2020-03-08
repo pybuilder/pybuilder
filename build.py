@@ -63,12 +63,13 @@ if sys.platform != "win32":
     use_plugin("python.pdoc")
 
 name = "pybuilder"
-summary = "An extensible, easy to use continuous build tool for Python"
-description = """PyBuilder is a build automation tool for python.
+summary = "An extensible, easy-to-use build automation tool for Python"
+description = """PyBuilder &#x2014; an easy-to-use build automation tool for Python.
 
-PyBuilder is a software build tool written in pure Python which mainly targets Python applications.
-It is based on the concept of dependency based programming but also comes along with powerful plugin mechanism that
-allows the construction of build life cycles similar to those known from other famous build tools like Apache Maven.
+PyBuilder is a software build automation tool written in pure Python mainly targeting Python ecosystem. 
+It is based on the concept of dependency-based programming but also comes along with powerful plugin mechanism that 
+allows the construction of build life-cycles similar to those known from other famous build tools like 
+Apache Maven and Gradle.
 """
 
 authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
