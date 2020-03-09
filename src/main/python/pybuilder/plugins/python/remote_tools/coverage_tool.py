@@ -22,13 +22,18 @@ __all__ = ["CoverageTool"]
 
 
 class CoverageTool(Tool):
-    def __init__(self, *cov_args, **cov_kwargs):
+    def __init__(self, source_path, omit_patterns, *cov_args, **cov_kwargs):
+        self.source_path = source_path
+        self.omit_patterns = omit_patterns
         self.cov_args = cov_args
         self.cov_kwargs = cov_kwargs
         self.coverage = None
 
     def start(self, pipe):
         # type: (RemoteObjectPipe) -> None
+        from .._coverage_util import patch_coverage
+
+        patch_coverage()
 
         from coverage import coverage as coverage_factory
 
@@ -38,6 +43,7 @@ class CoverageTool(Tool):
 
     def stop(self, pipe):
         # type: (RemoteObjectPipe) -> None
+        from .._coverage_util import save_normalized_coverage
 
         self.coverage.stop()
-        self.coverage.save()
+        save_normalized_coverage(self.coverage, self.source_path, self.omit_patterns)

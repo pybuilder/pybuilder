@@ -23,7 +23,9 @@ import sys
 from os.path import dirname, join as jp
 
 # This is only necessary in PyBuilder sources for bootstrap
-sys.path.insert(0, jp(dirname(__file__), "src/main/python"))
+build_sources = jp(dirname(__file__), "src/main/python")
+if build_sources not in sys.path:
+    sys.path.insert(0, build_sources)
 
 from pybuilder import bootstrap
 from pybuilder.core import Author, init, use_plugin

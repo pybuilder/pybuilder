@@ -56,8 +56,6 @@ def coverage_init(project, logger, reactor):
         project.get_property("_coverage_config_prefixes")[run_integration_tests] = "it"
         project.set_property("it_coverage_name", "Python integration test")
         project.set_property("it_coverage_python_env", project.get_property("integrationtest_python_env"))
-        # This needs to be in sync with `prepare_environment`
-        project.set_property("it_coverage_source_path", "$dir_dist")
 
 
 @task
