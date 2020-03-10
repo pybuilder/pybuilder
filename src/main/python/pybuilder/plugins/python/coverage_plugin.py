@@ -19,15 +19,20 @@
 import ast
 import copy
 import sys
-from fnmatch import fnmatch
-from os.path import normcase as nc, join as jp, dirname, abspath
+from os.path import join as jp, dirname, abspath, normcase as nc
 
 from pybuilder.core import init, use_plugin, task, depends, dependents, optional
 from pybuilder.errors import BuildFailedException
 from pybuilder.execution import ExecutionManager
+from pybuilder.plugins.python._coverage_util import patch_coverage
 from pybuilder.plugins.python.remote_tools.coverage_tool import CoverageTool
-from pybuilder.python_utils import odict, StringIO
+from pybuilder.python_utils import StringIO, IS_WIN
 from pybuilder.utils import discover_module_files, discover_modules, render_report, as_list
+
+if IS_WIN:
+    from fnmatch import fnmatch
+else:
+    from fnmatch import fnmatchcase as fnmatch
 
 use_plugin("python.core")
 use_plugin("analysis")
@@ -86,10 +91,8 @@ def prepare(project, logger, reactor):
         project.set_property_if_unset("%scoverage_branch_threshold_warn" % config_prefix, 0)
         project.set_property_if_unset("%scoverage_branch_partial_threshold_warn" % config_prefix, 0)
         project.set_property_if_unset("%scoverage_break_build" % config_prefix, False)
-        project.set_property_if_unset("%scoverage_exceptions" % config_prefix, [])
         project.set_property_if_unset("%scoverage_concurrency" % config_prefix, ["thread"])
         project.set_property_if_unset("%scoverage_python_env" % config_prefix, "pybuilder")
-        project.set_property_if_unset("%scoverage_source_path" % config_prefix, "")
         project.set_property_if_unset("%scoverage_name" % config_prefix, None)
 
 
@@ -99,54 +102,56 @@ def prepare(project, logger, reactor):
 def coverage(project, logger, reactor):
     em = reactor.execution_manager  # type: ExecutionManager
 
-    source_path = nc(abspath(project.expand_path(project.get_property("coverage_source_path"))))
+    source_path = nc(project.expand_path(project.get_property("coverage_source_path")))
+
+    module_names = discover_modules(source_path)
+    module_file_suffixes = discover_module_files(source_path)
+
+    module_exceptions = as_list(project.get_property("coverage_exceptions"))
+    module_names, module_files, omit_patterns = _filter_covered_modules(logger, module_names, module_file_suffixes,
+                                                                        module_exceptions, source_path)
+
+    for idx, module_name in enumerate(module_names):
+        logger.debug("Module %r (file %r) coverage to be verified", module_name, module_files[idx])
+
     coverage_config = dict(data_file=project.expand_path("$dir_target", "%s.coverage" % project.name),
                            data_suffix=False,
                            cover_pylib=False,
                            config_file=False,
                            branch=True,
-                           source=[source_path],
                            context=project.name)
 
     project.set_property("__coverage_config", coverage_config)
 
+    patch_coverage()
+
     from coverage import coverage as coverage_factory
-    from coverage.files import PathAliases
+
     cov = coverage_factory(**coverage_config)
     cov.erase()
     cov.save()
 
-    module_names = odict()
-    module_files = odict()
-
     for covered_task in project.get_property("__covered_tasks"):  # type: CoveredTask
         if em.is_task_in_current_execution_plan(covered_task.name):
-            task_cov, task_module_names, task_module_files = run_coverage(project, logger, reactor,
-                                                                          covered_task)
+            task_cov = run_coverage(project, logger, reactor,
+                                    covered_task,
+                                    source_path,
+                                    module_names,
+                                    module_files,
+                                    omit_patterns)
 
-            path_aliases = PathAliases()
-            for source in task_cov.config.source:
-                path_aliases.add(source, source_path)
-
-            for idx, task_module_name in enumerate(task_module_names):
-                module_names[task_module_name] = 1
-                module_files[path_aliases.map(task_module_files[idx])] = 1
-
-            cov._data.update(task_cov._data, path_aliases)
+            cov._data.update(task_cov._data)
 
     cov.save()
 
-    from coverage import files
-    files.RELATIVE_DIR = source_path
-
     failure = _build_coverage_report(project, logger, "%s coverage" % project.name, project.name, "", cov,
-                                     list(module_names.keys()), list(module_files.keys()))
+                                     source_path, module_names, module_files)
 
     if failure:
         raise failure
 
 
-def run_coverage(project, logger, reactor, covered_task):
+def run_coverage(project, logger, reactor, covered_task, source_path, module_names, module_files, omit_patterns):
     config_prefix = covered_task.config_prefix
     logger.info("Collecting coverage information for %r", str(covered_task))
 
@@ -169,28 +174,11 @@ def run_coverage(project, logger, reactor, covered_task):
         logger.warn("%scoverage_branch_partial_threshold_warn is 0 and partial branch coverage will not be checked",
                     config_prefix)
 
-    source_path = nc(abspath(project.expand_path(project.get_property("%scoverage_source_path" % config_prefix) or
-                                                 project.get_property("coverage_source_path"))))
-
-    module_exceptions = as_list((project.get_property("%scoverage_exceptions" % config_prefix) or
-                                 project.get_property("coverage_exceptions")))
-
-    module_names = discover_modules(source_path)
-    module_file_suffixes = discover_module_files(source_path)
-
-    module_names, module_files, omit_patterns = _filter_covered_modules(logger, module_names, module_file_suffixes,
-                                                                        module_exceptions, source_path)
-
-    for idx, module_name in enumerate(module_names):
-        logger.debug("Module %r (file %r) coverage to be verified", module_name, module_files[idx])
-
     coverage_config = dict(data_file=project.expand_path("$dir_target", "%s.coverage" % covered_task.filename),
                            data_suffix=True,
                            cover_pylib=False,
                            config_file=False,
                            branch=True,
-                           source=[source_path],
-                           omit=omit_patterns,
                            context=str(covered_task),
                            concurrency=project.get_property("%scoverage_concurrency" % config_prefix))
 
@@ -199,66 +187,46 @@ def run_coverage(project, logger, reactor, covered_task):
     cov = coverage_factory(**coverage_config)
     cov.erase()
 
-    cov_tool = CoverageTool(**coverage_config)
+    cov_tool = CoverageTool(source_path, omit_patterns, **coverage_config)
 
     em = reactor.execution_manager
 
-    # HACK: PyPy 2.x is misbehaving
-    # import gc
-    # gc.collect()
-    # gc.disable()
-
+    reactor.add_tool(cov_tool)
     try:
-        reactor.add_tool(cov_tool)
+        coverage_env_name = project.get_property("%scoverage_python_env" % config_prefix)
+        if coverage_env_name:
+            current_python_env = reactor.python_env_registry[coverage_env_name]
+            reactor.python_env_registry.push_override(coverage_env_name,
+                                                      _override_python_env_for_coverage(current_python_env,
+                                                                                        coverage_config,
+                                                                                        source_path,
+                                                                                        omit_patterns))
         try:
-            coverage_env_name = project.get_property("%scoverage_python_env" % config_prefix)
-            if coverage_env_name:
-                current_python_env = reactor.python_env_registry[coverage_env_name]
-                reactor.python_env_registry.push_override(coverage_env_name,
-                                                          _override_python_env_for_coverage(current_python_env,
-                                                                                            coverage_config))
-            try:
-                em.execute_task(covered_task.task,
-                                logger=logger,
-                                project=project,
-                                reactor=reactor,
-                                _executable=covered_task.executable)
-            finally:
-                if coverage_env_name:
-                    reactor.python_env_registry.pop_override(coverage_env_name)
+            em.execute_task(covered_task.task,
+                            logger=logger,
+                            project=project,
+                            reactor=reactor,
+                            _executable=covered_task.executable)
         finally:
-            reactor.remove_tool(cov_tool)
-
-        cov.combine()
-        cov.save()
-
-        from coverage import files
-        files.RELATIVE_DIR = source_path
-        failure = _build_coverage_report(project, logger,
-                                         covered_task.coverage_name, covered_task.filename, config_prefix,
-                                         cov, module_names, module_files)
+            if coverage_env_name:
+                reactor.python_env_registry.pop_override(coverage_env_name)
     finally:
-        # gc.enable()
-        pass
+        reactor.remove_tool(cov_tool)
+
+    cov.combine()
+    cov.save()
+
+    failure = _build_coverage_report(project, logger,
+                                     covered_task.coverage_name, covered_task.filename, config_prefix,
+                                     cov, source_path, module_names, module_files)
 
     if failure:
         raise failure
 
-    return cov, module_names, module_files
+    return cov
 
 
-def _combine_coverage_remapping(cov, data_paths=None, strict=False, aliases=None):
-    from coverage.data import combine_parallel_data
-    cov._init()
-    cov._init_data(suffix=None)
-    cov._post_init()
-    cov.get_data()
-
-    combine_parallel_data(cov._data, aliases=aliases, data_paths=data_paths, strict=strict)
-    cov.save()
-
-
-def _override_python_env_for_coverage(current_python_env, coverage_config):
+def _override_python_env_for_coverage(current_python_env, coverage_config, source_path, omit_patterns):
     import coverage as cov_module
     cov_parent_dir = abspath(jp(dirname(cov_module.__file__), ".."))
 
@@ -268,7 +236,11 @@ def _override_python_env_for_coverage(current_python_env, coverage_config):
         [nc(abspath(jp(dirname(sys.modules[_override_python_env_for_coverage.__module__].__file__),
                        "_coverage_shim.py"))),
          repr({"cov_parent_dir": cov_parent_dir,
-               "cov_kwargs": coverage_config})],
+               "cov_kwargs": coverage_config,
+               "cov_source_path": source_path,
+               "cov_omit_patterns": omit_patterns,
+               },
+              )],
     ))
     return new_python_env
 
@@ -280,7 +252,7 @@ def _filter_covered_modules(logger, module_names, module_file_suffixes, modules_
     module_files = []
 
     for idx, module_name in enumerate(module_names):
-        module_file = jp(source_path, module_file_suffixes[idx])
+        module_file = nc(jp(source_path, module_file_suffixes[idx]))
         module_files.append(module_file)
 
         skip_module = False
@@ -318,7 +290,7 @@ def _optimize_omit_module_files(module_files, omit_module_files):
     # This is a stupid implementation but given the number of entries it'll do (until it won't)
 
     omf_lookup = set(omit_module_files)
-    result_omit = []
+    result_omit = set()
 
     def has_modules_in_dir_not_omitted(od):
         for mf in module_files:
@@ -338,12 +310,12 @@ def _optimize_omit_module_files(module_files, omit_module_files):
         omit_dir = dirname(omit)
         while prev_omit != omit_dir:
             if has_modules_in_dir_not_omitted(omit_dir):
-                result_omit.append(jp(prev_omit, "*") if prev_omit != omit else prev_omit)
+                result_omit.add(jp(prev_omit, "*") if prev_omit != omit else prev_omit)
                 break
             prev_omit = omit_dir
             omit_dir = dirname(omit_dir)
 
-    return result_omit
+    return sorted(result_omit)
 
 
 def _build_module_report(cov, module_file):
@@ -352,7 +324,7 @@ def _build_module_report(cov, module_file):
 
 def _build_coverage_report(project, logger,
                            coverage_description, coverage_name, config_prefix,
-                           cov, module_names, module_files):
+                           cov, source_path, module_names, module_files):
     coverage_too_low = False
     branch_coverage_too_low = False
     branch_partial_coverage_too_low = False
@@ -370,94 +342,102 @@ def _build_coverage_report(project, logger,
     sum_branches_missing = 0
     sum_branches_partial = 0
 
-    for idx, module_name in enumerate(module_names):
-        module_file = module_files[idx]
-        module_report_data = _build_module_report(cov, module_file)
+    from coverage import files
+    old_relative_dir = files.RELATIVE_DIR
+    files.RELATIVE_DIR = source_path
+    try:
+        for idx, module_name in enumerate(module_names):
+            module_file = module_files[idx]
+            module_report_data = _build_module_report(cov, module_file)
 
-        sum_lines += module_report_data.n_lines_total
-        sum_lines_not_covered += module_report_data.n_lines_missing
-        sum_branches += module_report_data.n_branches
-        sum_branches_missing += module_report_data.n_branches_missing
-        sum_branches_partial += module_report_data.n_branches_partial
+            sum_lines += module_report_data.n_lines_total
+            sum_lines_not_covered += module_report_data.n_lines_missing
+            sum_branches += module_report_data.n_branches
+            sum_branches_missing += module_report_data.n_branches_missing
+            sum_branches_partial += module_report_data.n_branches_partial
 
-        module_report = {
-            "module": module_name,
-            "coverage": module_report_data.code_coverage,
-            "sum_lines": module_report_data.n_lines_total,
-            "lines": module_report_data.lines_total,
-            "sum_lines_not_covered": module_report_data.n_lines_missing,
-            "lines_not_covered": module_report_data.lines_missing,
-            "branches": module_report_data.n_branches,
-            "branches_partial": module_report_data.n_branches_partial,
-            "branches_missing": module_report_data.n_branches_missing
-        }
+            module_report = {
+                "module": module_name,
+                "coverage": module_report_data.code_coverage,
+                "sum_lines": module_report_data.n_lines_total,
+                "lines": module_report_data.lines_total,
+                "sum_lines_not_covered": module_report_data.n_lines_missing,
+                "lines_not_covered": module_report_data.lines_missing,
+                "branches": module_report_data.n_branches,
+                "branches_partial": module_report_data.n_branches_partial,
+                "branches_missing": module_report_data.n_branches_missing
+            }
 
-        logger.debug("Module coverage report: %s", module_report)
-        report["module_names"].append(module_report)
-        if module_report_data.code_coverage < threshold:
-            msg = "Test coverage below %2d%% for %s: %2d%%" % (threshold, module_name, module_report_data.code_coverage)
-            logger.warn(msg)
+            logger.debug("Module coverage report: %s", module_report)
+            report["module_names"].append(module_report)
+            if module_report_data.code_coverage < threshold:
+                msg = "Test coverage below %2d%% for %s: %2d%%" % (
+                    threshold, module_name, module_report_data.code_coverage)
+                logger.warn(msg)
+                coverage_too_low = True
+            if module_report_data.branch_coverage < branch_threshold:
+                msg = "Branch coverage below %2d%% for %s: %2d%%" % (
+                    branch_threshold, module_name, module_report_data.branch_coverage)
+                logger.warn(msg)
+                branch_coverage_too_low = True
+
+            if module_report_data.branch_partial_coverage < branch_partial_threshold:
+                msg = "Partial branch coverage below %2d%% for %s: %2d%%" % (
+                    branch_partial_threshold, module_name, module_report_data.branch_partial_coverage)
+                logger.warn(msg)
+                branch_partial_coverage_too_low = True
+
+        if sum_lines == 0:
+            overall_coverage = 100
+        else:
+            overall_coverage = (sum_lines - sum_lines_not_covered) * 100 / sum_lines
+
+        if sum_branches == 0:
+            overall_branch_coverage = 100
+            overall_branch_partial_coverage = 100
+        else:
+            overall_branch_coverage = (sum_branches - sum_branches_missing) * 100 / sum_branches
+            overall_branch_partial_coverage = (sum_branches - sum_branches_partial) * 100 / sum_branches
+
+        report["overall_coverage"] = overall_coverage
+        report["overall_branch_coverage"] = overall_branch_coverage
+        report["overall_branch_partial_coverage"] = overall_branch_partial_coverage
+
+        if overall_coverage < threshold:
+            logger.warn("Overall %s coverage is below %2d%%: %2d%%", coverage_name, threshold, overall_coverage)
             coverage_too_low = True
-        if module_report_data.branch_coverage < branch_threshold:
-            msg = "Branch coverage below %2d%% for %s: %2d%%" % (
-                branch_threshold, module_name, module_report_data.branch_coverage)
-            logger.warn(msg)
+        else:
+            logger.info("Overall %s coverage is %2d%%", coverage_name, overall_coverage)
+
+        if overall_branch_coverage < branch_threshold:
+            logger.warn("Overall %s branch coverage is below %2d%%: %2d%%", coverage_name, branch_threshold,
+                        overall_branch_coverage)
             branch_coverage_too_low = True
+        else:
+            logger.info("Overall %s branch coverage is %2d%%", coverage_name, overall_branch_coverage)
 
-        if module_report_data.branch_partial_coverage < branch_partial_threshold:
-            msg = "Partial branch coverage below %2d%% for %s: %2d%%" % (
-                branch_partial_threshold, module_name, module_report_data.branch_partial_coverage)
-            logger.warn(msg)
+        if overall_branch_partial_coverage < branch_partial_threshold:
+            logger.warn("Overall %s partial branch coverage is below %2d%%: %2d%%", coverage_name,
+                        branch_partial_threshold, overall_branch_partial_coverage)
             branch_partial_coverage_too_low = True
+        else:
+            logger.info("Overall %s partial branch coverage is %2d%%", coverage_name, overall_branch_partial_coverage)
 
-    if sum_lines == 0:
-        overall_coverage = 100
-    else:
-        overall_coverage = (sum_lines - sum_lines_not_covered) * 100 / sum_lines
+        project.write_report("%s_coverage.json" % coverage_name, render_report(report))
 
-    if sum_branches == 0:
-        overall_branch_coverage = 100
-        overall_branch_partial_coverage = 100
-    else:
-        overall_branch_coverage = (sum_branches - sum_branches_missing) * 100 / sum_branches
-        overall_branch_partial_coverage = (sum_branches - sum_branches_partial) * 100 / sum_branches
+        _write_summary_report(cov, project, module_names, module_files,
+                              config_prefix, coverage_description, coverage_name)
 
-    report["overall_coverage"] = overall_coverage
-    report["overall_branch_coverage"] = overall_branch_coverage
-    report["overall_branch_partial_coverage"] = overall_branch_partial_coverage
+        if coverage_too_low and project.get_property("%scoverage_break_build" % config_prefix):
+            return BuildFailedException("Test coverage for at least one module is below %d%%", threshold)
+        if branch_coverage_too_low and project.get_property("%scoverage_break_build" % config_prefix):
+            return BuildFailedException("Test branch coverage for at least one module is below %d%%", branch_threshold)
+        if branch_partial_coverage_too_low and project.get_property("%scoverage_break_build" % config_prefix):
+            return BuildFailedException("Test partial branch coverage for at least one module is below %d%%",
+                                        branch_partial_threshold)
 
-    if overall_coverage < threshold:
-        logger.warn("Overall %s coverage is below %2d%%: %2d%%", coverage_name, threshold, overall_coverage)
-        coverage_too_low = True
-    else:
-        logger.info("Overall %s coverage is %2d%%", coverage_name, overall_coverage)
-
-    if overall_branch_coverage < branch_threshold:
-        logger.warn("Overall %s branch coverage is below %2d%%: %2d%%", coverage_name, branch_threshold,
-                    overall_branch_coverage)
-        branch_coverage_too_low = True
-    else:
-        logger.info("Overall %s branch coverage is %2d%%", coverage_name, overall_branch_coverage)
-
-    if overall_branch_partial_coverage < branch_partial_threshold:
-        logger.warn("Overall %s partial branch coverage is below %2d%%: %2d%%", coverage_name,
-                    branch_partial_threshold, overall_branch_partial_coverage)
-        branch_partial_coverage_too_low = True
-    else:
-        logger.info("Overall %s partial branch coverage is %2d%%", coverage_name, overall_branch_partial_coverage)
-
-    project.write_report("%s_coverage.json" % coverage_name, render_report(report))
-
-    _write_summary_report(cov, project, module_names, module_files,
-                          config_prefix, coverage_description, coverage_name)
-
-    if coverage_too_low and project.get_property("%scoverage_break_build" % config_prefix):
-        return BuildFailedException("Test coverage for at least one module is below %d%%", threshold)
-    if branch_coverage_too_low and project.get_property("%scoverage_break_build" % config_prefix):
-        return BuildFailedException("Test branch coverage for at least one module is below %d%%", branch_threshold)
-    if branch_partial_coverage_too_low and project.get_property("%scoverage_break_build" % config_prefix):
-        return BuildFailedException("Test partial branch coverage for at least one module is below %d%%",
-                                    branch_partial_threshold)
+    finally:
+        files.RELATIVE_DIR = old_relative_dir
 
 
 def _write_summary_report(cov, project, module_names, module_files, config_prefix, execution_description,
@@ -521,7 +501,7 @@ class CoveredTask(object):
             raise BuildFailedException("Task %r in %r registered for coverage but did not specify its config prefix",
                                        self.name, self.executable.source)
         self.config_prefix = config_prefixes[callable_] + "_"
-        self.filename = "%s.%s" % (self.name, self.executable.source)
+        self.filename = "%s.%s" % (self.executable.source, self.name)
         self.coverage_name = "%s coverage" % project.get_property("%scoverage_name" % self.config_prefix, self)
 
     @staticmethod
@@ -531,7 +511,7 @@ class CoveredTask(object):
         return [CoveredTask(project, reactor, em, callable_) for callable_ in project.get_property("_coverage_tasks")]
 
     def __str__(self):
-        return "%s:%s" % (self.name, self.executable.source)
+        return "%s:%s" % (self.executable.source, self.name)
 
     def __repr__(self):
         return "CoveredTask{name: %r, task: %r, executable: %r, config_prefix: %r, callable: %r}" % (self.name,

@@ -59,7 +59,6 @@ def coverage_init(project, logger, reactor):
         project.get_property("_coverage_tasks").append(run_unit_tests)
         project.get_property("_coverage_config_prefixes")[run_unit_tests] = "ut"
         project.set_property("ut_coverage_name", "Python unit test")
-        project.get_property("ut_coverage_source_path", "$dir_source_main_python")
 
 
 @task
