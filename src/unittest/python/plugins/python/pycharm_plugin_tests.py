@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -75,6 +75,7 @@ class PycharmPluginTests(unittest.TestCase):
       <sourceFolder url="file://$MODULE_DIR$/src/main/python" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/unittest/python" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/integrationtest/python" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/.pybuilder" />
       <excludeFolder url="file://$MODULE_DIR$/build" />
     </content>
     <orderEntry type="inheritedJdk" />

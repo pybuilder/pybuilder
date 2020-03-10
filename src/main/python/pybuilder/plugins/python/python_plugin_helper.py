@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -17,12 +17,10 @@
 #   limitations under the License.
 
 import itertools
-
 import os
 
 from pybuilder.utils import (discover_modules,
                              discover_files_matching,
-                             execute_command,
                              as_list,
                              read_file)
 
@@ -34,8 +32,8 @@ def log_report(logger, name, report_lines):
             logger.warn(name + ': ' + report_line[:-1])
 
 
-def discover_python_files(directory):
-    return discover_files_matching(directory, "*.py")
+def discover_python_files(directory, exclude_glob=None):
+    return discover_files_matching(directory, "*.py", exclude_glob)
 
 
 def discover_affected_files(include_test_sources, include_scripts, project):
@@ -72,7 +70,7 @@ def _if_property_set_and_dir_exists(property_value):
     return property_value and os.path.isdir(property_value)
 
 
-def execute_tool_on_source_files(project, name, command_and_arguments, logger=None,
+def execute_tool_on_source_files(project, name, python_env, command_and_arguments, logger=None,
                                  include_test_sources=False, include_scripts=False, include_dirs_only=False):
     if include_dirs_only:
         files = discover_affected_dirs(include_test_sources, include_scripts, project)
@@ -83,7 +81,7 @@ def execute_tool_on_source_files(project, name, command_and_arguments, logger=No
 
     report_file = project.expand_path("$dir_reports/{0}".format(name))
 
-    execution_result = execute_command(command, report_file), report_file
+    execution_result = python_env.execute_command(command, report_file), report_file
 
     report_file = execution_result[1]
     report_lines = read_file(report_file)
@@ -94,14 +92,15 @@ def execute_tool_on_source_files(project, name, command_and_arguments, logger=No
     return execution_result
 
 
-def execute_tool_on_modules(project, name, command_and_arguments, extend_pythonpath=True):
+def execute_tool_on_modules(project, name, python_env, command_and_arguments, extend_pythonpath=True):
     source_dir = project.expand_path("$dir_source_main_python")
     modules = discover_modules(source_dir)
     command = as_list(command_and_arguments) + modules
 
     report_file = project.expand_path("$dir_reports/%s" % name)
 
-    env = os.environ
+    env = {}
     if extend_pythonpath:
         env["PYTHONPATH"] = source_dir
-    return execute_command(command, report_file, env=env), report_file
+
+    return python_env.execute_command(command, report_file, env=env), report_file

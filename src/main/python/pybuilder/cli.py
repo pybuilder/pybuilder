@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 
 import datetime
 import optparse
+import os
 import re
 import sys
 import traceback
@@ -31,6 +32,7 @@ from pybuilder import __version__
 from pybuilder.core import Logger
 from pybuilder.errors import PyBuilderException
 from pybuilder.execution import ExecutionManager
+from pybuilder.python_utils import IS_WIN
 from pybuilder.reactor import Reactor
 from pybuilder.scaffolding import start_project, update_project
 from pybuilder.terminal import (BOLD, BROWN, RED, GREEN, bold, styled_text,
@@ -88,31 +90,25 @@ def parse_options(args):
                                           action="store_true",
                                           dest="list_tasks",
                                           default=False,
-                                          help="List tasks")
+                                          help="List all tasks that can be run in the current build configuration")
 
     list_plan_tasks_option = parser.add_option("-T", "--list-plan-tasks",
                                                action="store_true",
                                                dest="list_plan_tasks",
                                                default=False,
-                                               help="List execution plan tasks")
+                                               help="List tasks that will be run with current execution plan")
 
     start_project_option = parser.add_option("--start-project",
                                              action="store_true",
                                              dest="start_project",
                                              default=False,
-                                             help="Initialize build descriptors and python project structure")
+                                             help="Initialize build descriptors and Python project structure")
 
     update_project_option = parser.add_option("--update-project",
                                               action="store_true",
                                               dest="update_project",
                                               default=False,
-                                              help="Update build descriptors and python project structure")
-
-    parser.add_option("-v", "--verbose",
-                      action="store_true",
-                      dest="verbose",
-                      default=False,
-                      help="Enable verbose output")
+                                              help="Update build descriptors and Python project structure")
 
     project_group = optparse.OptionGroup(
         parser, "Project Options", "Customizes the project to build.")
@@ -122,12 +118,20 @@ def parse_options(args):
                              help="Root directory to execute in",
                              metavar="<project directory>",
                              default=".")
+
+    project_group.add_option("-O", "--offline",
+                             dest="offline",
+                             help="Attempt to execute the build without network connectivity (may cause build failure)",
+                             default=False,
+                             action="store_true")
+
     project_group.add_option("-E", "--environment",
                              dest="environments",
                              help="Activate the given environment for this build. Can be used multiple times",
                              metavar="<environment>",
                              action="append",
                              default=[])
+
     project_group.add_option("-P",
                              action="append",
                              dest="property_overrides",
@@ -156,6 +160,12 @@ def parse_options(args):
                              help="Exclude any task dependencies "
                                   "(dangerous, may break the build in unexpected ways)")
 
+    project_group.add_option("--reset-plugins",
+                             action="store_true",
+                             dest="reset_plugins",
+                             default=False,
+                             help="Reset plugins directory prior to running the build")
+
     parser.add_option_group(project_group)
 
     output_group = optparse.OptionGroup(
@@ -166,21 +176,31 @@ def parse_options(args):
                             dest="debug",
                             default=False,
                             help="Print debug messages")
+
+    output_group.add_option("-v", "--verbose",
+                            action="store_true",
+                            dest="verbose",
+                            default=False,
+                            help="Enable verbose output")
+
     output_group.add_option("-q", "--quiet",
                             action="store_true",
                             dest="quiet",
                             default=False,
                             help="Quiet mode; print only warnings and errors")
+
     output_group.add_option("-Q", "--very-quiet",
                             action="store_true",
                             dest="very_quiet",
                             default=False,
                             help="Very quiet mode; print only errors")
+
     output_group.add_option("-c", "--color",
                             action="store_true",
                             dest="force_color",
                             default=False,
                             help="Force colored output")
+
     output_group.add_option("-C", "--no-color",
                             action="store_true",
                             dest="no_color",
@@ -359,6 +379,11 @@ def main(*args):
 
     start = datetime.datetime.now()
 
+    if IS_WIN:
+        if os.isatty(sys.stdout.fileno()):
+            import pybuilder._vendor.colorama as colorama
+            colorama.init()
+
     logger = init_logger(options)
     reactor = init_reactor(logger)
 
@@ -374,7 +399,8 @@ def main(*args):
                                   project_directory=options.project_directory,
                                   exclude_optional_tasks=options.exclude_optional_tasks,
                                   exclude_tasks=options.exclude_tasks,
-                                  exclude_all_optional=options.exclude_all_optional
+                                  exclude_all_optional=options.exclude_all_optional,
+                                  offline=options.offline
                                   )
             if options.list_tasks:
                 print_list_of_tasks(reactor, quiet=options.very_quiet)
@@ -402,7 +428,9 @@ def main(*args):
                                   project_directory=options.project_directory,
                                   exclude_optional_tasks=options.exclude_optional_tasks,
                                   exclude_tasks=options.exclude_tasks,
-                                  exclude_all_optional=options.exclude_all_optional
+                                  exclude_all_optional=options.exclude_all_optional,
+                                  reset_plugins=options.reset_plugins,
+                                  offline=options.offline
                                   )
 
             if options.verbose or options.debug:

@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 #   limitations under the License.
 
 import sys
-from logging import Logger
-from unittest import TestCase
 from os.path import normcase as nc
-from pybuilder.core import Project, Author
+from unittest import TestCase
+
+from pybuilder.core import Project, Author, Logger
 from pybuilder.plugins.python.sphinx_plugin import (assert_sphinx_is_available,
                                                     assert_sphinx_quickstart_is_available,
                                                     get_sphinx_build_command,
@@ -35,26 +35,35 @@ from test_utils import Mock, patch, call
 
 
 class CheckSphinxAvailableTests(TestCase):
-    @patch('pybuilder.plugins.python.sphinx_plugin.assert_can_execute')
-    def test_should_check_that_sphinx_can_be_executed(self, mock_assert_can_execute):
+    def test_should_check_that_sphinx_can_be_executed(self):
+        mock_project = Mock(Project)
         mock_logger = Mock(Logger)
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
-        assert_sphinx_is_available(mock_logger)
+        assert_sphinx_is_available(mock_project, mock_logger, reactor)
 
-        mock_assert_can_execute.assert_has_calls(
+        pyb_env.verify_can_execute.assert_has_calls(
             [
-                call(['sphinx-build', '--version'], 'sphinx', 'plugin python.sphinx'),
-                call(['sphinx-apidoc', '--version'], 'sphinx', 'plugin python.sphinx')
+                call(['sphinx-build', '--version'], 'sphinx-build', 'plugin python.sphinx'),
+                call(['sphinx-apidoc', '--version'], 'sphinx-apidoc', 'plugin python.sphinx')
             ]
         )
 
-    @patch('pybuilder.plugins.python.sphinx_plugin.assert_can_execute')
-    def test_should_check_that_sphinx_quickstart_can_be_executed(self, mock_assert_can_execute):
+    def test_should_check_that_sphinx_quickstart_can_be_executed(self):
+        mock_project = Mock(Project)
         mock_logger = Mock(Logger)
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
-        assert_sphinx_quickstart_is_available(mock_logger)
-        mock_assert_can_execute.assert_called_with(
-            ['sphinx-quickstart', '--version'], 'sphinx', 'plugin python.sphinx')
+        assert_sphinx_quickstart_is_available(mock_project, mock_logger, reactor)
+
+        pyb_env.verify_can_execute.assert_called_with(
+            ['sphinx-quickstart', '--version'], 'sphinx-quickstart', 'plugin python.sphinx')
 
 
 class SphinxPluginInitializationTests(TestCase):
@@ -112,6 +121,12 @@ class SphinxPluginInitializationTests(TestCase):
 class SphinxBuildCommandTests(TestCase):
     def setUp(self):
         self.project = Project("basedir")
+        self.logger = Mock(Logger)
+        self.reactor = Mock()
+        self.pyb_env = pyb_env = Mock()
+        self.reactor.python_env_registry = {"pybuilder": pyb_env}
+        self.reactor.pybuilder_venv = pyb_env
+        pyb_env.execute_command.return_value = 0
 
     def test_should_generate_sphinx_build_command_per_project_properties(self):
         self.project.set_property("sphinx_config_path", "docs/")
@@ -185,14 +200,13 @@ class SphinxBuildCommandTests(TestCase):
         self.assertEqual(sphinx_quickstart_command,
                          ["sphinx.quickstart", "-q", "-p", "foo", "-a", "bar", "-v", "3", nc("basedir/docs/")])
 
-    @patch('pybuilder.plugins.python.sphinx_plugin.execute_command', return_value=0)
-    def test_should_execute_command_regardless_of_verbose(self, exec_command):
+    def test_should_execute_command_regardless_of_verbose(self):
         self.project.set_property("verbose", True)
         self.project.set_property("dir_target", "spam")
         initialize_sphinx_plugin(self.project)
 
-        run_sphinx_build(["foo"], "bar", Mock(), self.project)
-        self.assertEqual(exec_command.call_count, 1)
+        run_sphinx_build(["foo"], "bar", Mock(), self.project, self.reactor)
+        self.assertEqual(self.pyb_env.execute_command.call_count, 1)
 
     def test_get_sphinx_apidoc_command_enabled(self):
         sphinx_mock = Mock()
@@ -254,16 +268,13 @@ class SphinxBuildCommandTests(TestCase):
     @patch("pybuilder.plugins.python.sphinx_plugin.exists")
     @patch("pybuilder.plugins.python.sphinx_plugin.mkdir")
     @patch("pybuilder.plugins.python.sphinx_plugin.symlink")
-    @patch("pybuilder.plugins.python.sphinx_plugin.execute_command")
     def test_sphinx_pyb_quickstart_generate(self,
-                                            execute_command,
                                             symlink,
                                             mkdir,
                                             exists,
                                             rmtree,
                                             open
                                             ):
-        execute_command.return_value = 0
         exists.return_value = False
 
         self.project.set_property("sphinx_source_dir", "sphinx_source_dir")
@@ -272,7 +283,7 @@ class SphinxBuildCommandTests(TestCase):
         self.project.set_property("dir_source_main_python", "dir_source")
         self.project.set_property("sphinx_project_name", "project_name")
 
-        sphinx_pyb_quickstart_generate(self.project, Mock())
+        sphinx_pyb_quickstart_generate(self.project, Mock(), self.reactor)
 
         open().__enter__().write.assert_called_with("""\
 # Automatically generated by PyB
@@ -300,15 +311,12 @@ from sphinx_pyb_conf import *
     @patch("pybuilder.plugins.python.sphinx_plugin.rmtree")
     @patch("pybuilder.plugins.python.sphinx_plugin.exists")
     @patch("pybuilder.plugins.python.sphinx_plugin.mkdir")
-    @patch("pybuilder.plugins.python.sphinx_plugin.execute_command")
     def test_sphinx_generate(self,
-                             execute_command,
                              mkdir,
                              exists,
                              rmtree,
                              open
                              ):
-        execute_command.return_value = 0
         exists.return_value = True
 
         sphinx_mock = Mock()
@@ -327,37 +335,35 @@ from sphinx_pyb_conf import *
             self.project.set_property("sphinx_run_apidoc", True)
             self.project.set_property("sphinx_doc_builder", ['JSONx', 'pdf'])
 
-            sphinx_generate(self.project, Mock())
+            sphinx_generate(self.project, Mock(), self.reactor)
         finally:
             del sys.modules["sphinx"]
 
         exists.assert_called_with(nc("basedir/dir_target/sphinx_pyb/apidoc"))
         rmtree.assert_called_with(nc("basedir/dir_target/sphinx_pyb/apidoc"))
         mkdir.assert_called_with(nc("basedir/dir_target/sphinx_pyb/apidoc"))
-        print(open().__enter__().write.call_args_list)
+
         open().__enter__().write.assert_has_calls([call("a = 1\n"), call("b = 'foo'\n"), call(
             "\nimport sys\nsys.path.insert(0, %r)\n" % nc("basedir/dir_source"))], any_order=True)
-        execute_command.assert_has_calls([
+        self.pyb_env.execute_command.assert_has_calls([
             call([sys.executable, '-m', 'sphinx.apidoc', '-H', 'project_name', '-o',
                   nc('basedir/dir_target/sphinx_pyb/apidoc'), nc('basedir/dir_source')]
                  if sys.version_info[:2] < (3, 3) else
                  [sys.executable, '-m', 'sphinx.apidoc', '-H', 'project_name', '--implicit-namespaces', '-o',
-                 nc('basedir/dir_target/sphinx_pyb/apidoc'), nc('basedir/dir_source')],
+                  nc('basedir/dir_target/sphinx_pyb/apidoc'), nc('basedir/dir_source')],
                  nc('basedir/dir_target/reports/sphinx-apidoc'), shell=False),
             call([sys.executable, '-m', 'sphinx', '-b', 'JSONx', nc('basedir/sphinx_config_path'),
-                 nc('basedir/sphinx_output_dir/JSONx')],
+                  nc('basedir/sphinx_output_dir/JSONx')],
                  nc('basedir/dir_target/reports/sphinx_JSONx'), shell=False),
             call([sys.executable, '-m', 'sphinx', '-b', 'pdf', nc('basedir/sphinx_config_path'),
-                 nc('basedir/sphinx_output_dir/pdf')],
+                  nc('basedir/sphinx_output_dir/pdf')],
                  nc('basedir/dir_target/reports/sphinx_pdf'), shell=False)])
 
     @patch("pybuilder.plugins.python.sphinx_plugin.open", create=True)
     @patch("pybuilder.plugins.python.sphinx_plugin.rmtree")
     @patch("pybuilder.plugins.python.sphinx_plugin.exists")
     @patch("pybuilder.plugins.python.sphinx_plugin.mkdir")
-    @patch("pybuilder.plugins.python.sphinx_plugin.execute_command")
     def test_apidoc_does_not_run_when_off(self,
-                                          execute_command,
                                           mkdir,
                                           exists,
                                           rmtree,
@@ -365,5 +371,5 @@ from sphinx_pyb_conf import *
                                           ):
         self.project.set_property("sphinx_run_apidoc", False)
 
-        generate_sphinx_apidocs(self.project, Mock())
+        generate_sphinx_apidocs(self.project, Mock(), self.reactor)
         exists.assert_not_called()

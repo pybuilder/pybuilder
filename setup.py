@@ -5,7 +5,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 build_script = os.path.join(script_dir, "build.py")
 exit_code = 0
 try:
-    subprocess.check_call([sys.executable, build_script, "clean", "install_dependencies", "package", "-o"])
+    subprocess.check_call([sys.executable, build_script, "clean", "package", "-o"])
     dist_dir = glob.glob(os.path.join(script_dir, "target", "dist", "*"))[0]
     for src_file in glob.glob(os.path.join(dist_dir, "*")):
         file_name = os.path.basename(src_file)

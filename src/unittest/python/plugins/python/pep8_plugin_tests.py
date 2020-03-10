@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -17,27 +17,29 @@
 #   limitations under the License.
 
 from unittest import TestCase
-from pybuilder.core import Project
-from test_utils import Mock, patch
-from logging import Logger
 
-from pybuilder.plugins.python.pep8_plugin import (
-    check_pep8_available,
-    init_pep8_properties
-    )
+from pybuilder.core import Project, Logger
+from pybuilder.plugins.python.pep8_plugin import (check_pep8_available,
+                                                  init_pep8_properties,
+                                                  )
+from test_utils import Mock
 
 
 class CheckPep8AvailableTests(TestCase):
 
-    @patch('pybuilder.plugins.python.pep8_plugin.assert_can_execute')
-    def test_should_check_that_pylint_can_be_executed(self, mock_assert_can_execute):
-
+    def test_should_check_that_pylint_can_be_executed(self):
+        mock_project = Mock(Project)
         mock_logger = Mock(Logger)
 
-        check_pep8_available(mock_logger)
+        reactor = Mock()
+        pyb_env = Mock()
+        reactor.python_env_registry = {"pybuilder": pyb_env}
+        reactor.pybuilder_venv = pyb_env
 
-        expected_command_line = ('pep8',)
-        mock_assert_can_execute.assert_called_with(expected_command_line, 'pep8', 'plugin python.pep8')
+        check_pep8_available(mock_project, mock_logger, reactor)
+
+        expected_command_line = ['pep8', ]
+        pyb_env.verify_can_execute.assert_called_with(expected_command_line, 'pep8', 'plugin python.pep8')
 
     def test_should_set_dependency(self):
         mock_project = Mock(Project)

@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@
 import os
 
 from pybuilder.core import use_plugin, after, task, init
-from pybuilder.utils import assert_can_execute, execute_command
 
 use_plugin("python.core")
 use_plugin("analysis")
@@ -31,14 +30,15 @@ def init_pylint(project):
 
 
 @after("prepare")
-def check_pymetrics_available(logger):
+def check_pymetrics_available(project, logger, reactor):
     logger.debug("Checking availability of pymetrics")
-    assert_can_execute(("pymetrics", "--nosql", "--nocsv"), "pymetrics", "plugin python.pymetrics")
+    reactor.pybuilder_venv.verify_can_execute(["pymetrics", "--nosql", "--nocsv"], "pymetrics",
+                                              "plugin python.pymetrics")
     logger.debug("pymetrics has been found")
 
 
 @task("analyze")
-def execute_pymetrics(project, logger):
+def execute_pymetrics(project, logger, reactor):
     logger.info("Executing pymetrics on project sources")
     source_dir = project.expand_path("$dir_source_main_python")
 
@@ -54,5 +54,6 @@ def execute_pymetrics(project, logger):
 
     report_file = project.expand_path("$dir_reports/pymetrics")
 
-    env = {"PYTHONPATH": source_dir}
-    execute_command(command, report_file, env=env)
+    env = project.pluginenv.copy()
+    env.update({"PYTHONPATH": source_dir})
+    reactor.pybuilder_venv.execute_command(command, report_file, env=env)
