@@ -445,6 +445,7 @@ if __name__ == '__main__':
         package_data = {
             'spam': ['eggs']
         },
+        include_package_data = False,
         install_requires = ['sometool'],
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,
@@ -519,6 +520,7 @@ if __name__ == '__main__':
         package_data = {
             'spam': ['eggs']
         },
+        include_package_data = False,
         install_requires = ['sometool'],
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,

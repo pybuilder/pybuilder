@@ -92,6 +92,7 @@ if __name__ == '__main__':
         entry_points = $entry_points,
         data_files = $data_files,
         package_data = $package_data,
+        include_package_data = $include_package_data,
         install_requires = $dependencies,
         dependency_links = $dependency_links,
         zip_safe = True,
@@ -193,6 +194,7 @@ def render_setup_script(project):
         "entry_points": build_entry_points_string(project),
         "data_files": build_data_files_string(project),
         "package_data": build_package_data_string(project),
+        "include_package_data": project.get_property("include_package_data", False),
         "dependencies": build_install_dependencies_string(project),
         "dependency_links": build_dependency_links_string(project),
         "remove_hardlink_capabilities_for_shared_filesystems": (

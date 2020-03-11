@@ -106,6 +106,7 @@ if __name__ == '__main__':
         entry_points = {},
         data_files = [],
         package_data = {},
+        include_package_data = False,
         install_requires = [
             'eggs==0.2.3',
             'spam'
