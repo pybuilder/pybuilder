@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ from pybuilder.plugins.ronn_manpage_plugin import (
     assert_ronn_is_executable,
     assert_gzip_is_executable
 )
-from test_utils import Mock, patch
+from test_utils import Mock
 
 
 class RonnManpagePluginTests(TestCase):
@@ -46,6 +46,11 @@ class RonnPluginInitializationTests(TestCase):
 
     def setUp(self):
         self.project = Project("basedir")
+        self.logger = Mock(Logger)
+        self.reactor = Mock()
+        self.pyb_env = pyb_env = Mock()
+        self.reactor.python_env_registry = {"pybuilder": pyb_env}
+        self.reactor.pybuilder_venv = pyb_env
 
     def test_should_leave_user_specified_properties_when_initializing_plugin(self):
 
@@ -61,29 +66,18 @@ class RonnPluginInitializationTests(TestCase):
             init_ronn_manpage_plugin(self.project)
 
         for property_name, property_value in expected_properties.items():
-            self.assertEqual(
+            self.assertEqual(self.project.get_property(property_name), property_value)
 
-                self.project.get_property(property_name),
-                property_value)
-
-    @patch('pybuilder.plugins.ronn_manpage_plugin.assert_can_execute')
-    def test_should_check_that_ronn_is_executable(self, mock_assert_can_execute):
-
-        mock_logger = Mock(Logger)
-
-        assert_ronn_is_executable(mock_logger)
-        mock_assert_can_execute.assert_called_with(
+    def test_should_check_that_ronn_is_executable(self):
+        assert_ronn_is_executable(self.project, self.logger, self.reactor)
+        self.pyb_env.verify_can_execute.assert_called_with(
             caller='plugin ronn_manpage_plugin',
             command_and_arguments=['ronn', '--version'],
             prerequisite='ronn')
 
-    @patch('pybuilder.plugins.ronn_manpage_plugin.assert_can_execute')
-    def test_should_check_that_gzip_is_executable(self, mock_assert_can_execute):
-
-        mock_logger = Mock(Logger)
-
-        assert_gzip_is_executable(mock_logger)
-        mock_assert_can_execute.assert_called_with(
+    def test_should_check_that_gzip_is_executable(self):
+        assert_gzip_is_executable(self.project, self.logger, self.reactor)
+        self.pyb_env.verify_can_execute.assert_called_with(
             caller="plugin ronn_manpage_plugin",
             command_and_arguments=["gzip", "--version"],
             prerequisite="gzip")

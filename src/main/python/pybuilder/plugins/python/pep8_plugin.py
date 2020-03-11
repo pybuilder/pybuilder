@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 #   limitations under the License.
 
 from pybuilder.core import use_plugin, task, after, init
-from pybuilder.utils import assert_can_execute, read_file
 from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
+from pybuilder.utils import read_file
 
 use_plugin("python.core")
 
@@ -29,9 +29,9 @@ def init_pep8_properties(project):
 
 
 @after("prepare")
-def check_pep8_available(logger):
+def check_pep8_available(project, logger, reactor):
     logger.debug("Checking availability of pep8")
-    assert_can_execute(("pep8", ), "pep8", "plugin python.pep8")
+    reactor.python_env_registry["pybuilder"].verify_can_execute(["pep8"], "pep8", "plugin python.pep8")
 
 
 @task

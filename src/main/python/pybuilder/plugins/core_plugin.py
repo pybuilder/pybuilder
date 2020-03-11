@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -18,25 +18,26 @@
 
 import os
 import shutil
-from os.path import join
+from functools import partial
+from os.path import join as jp
 
 from pybuilder.core import init, task, description, depends, optional
-from pybuilder.utils import safe_log_file_name
-# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
-from pybuilder import pip_utils
 
 
 @init
 def init(project):
     project.set_property("dir_target", "target")
-    project.set_property("dir_reports", join("$dir_target", "reports"))
-    project.set_property("dir_logs", join("$dir_target", "logs"))
+    project.set_property("dir_reports", jp("$dir_target", "reports"))
+    project.set_property("dir_logs", jp("$dir_target", "logs"))
 
-    def write_report(file, *content):
-        with open(project.expand_path("$dir_reports", file), "w") as report_file:
-            report_file.writelines(content)
+    project.set_property_if_unset("remote_debug", 0)
 
-    project.write_report = write_report
+    project.write_report = partial(write_report, project)
+
+
+def write_report(project, file, *content):
+    with open(project.expand_path("$dir_reports", file), "w") as report_file:
+        report_file.writelines(content)
 
 
 @task
@@ -49,7 +50,7 @@ def clean(project, logger):
 
 @task
 @description("Prepares the project for building.")
-def prepare(project, logger):
+def prepare(project, logger, reactor):
     target_directory = project.expand_path("$dir_target")
     if not os.path.exists(target_directory):
         logger.debug("Creating target directory %s", target_directory)
@@ -60,24 +61,8 @@ def prepare(project, logger):
         logger.debug("Creating reports directory %s", reports_directory)
         os.mkdir(reports_directory)
 
-    plugin_dependency_versions = pip_utils.get_package_version(project.plugin_dependencies, logger)
-    for plugin_dependency in project.plugin_dependencies:
-        logger.debug("Processing plugin dependency %s" % plugin_dependency)
-        if plugin_dependency.name.lower() not in plugin_dependency_versions \
-                or not pip_utils.version_satisfies_spec(plugin_dependency.version,
-                                                        plugin_dependency_versions[plugin_dependency.name.lower()]):
-            logger.info("Installing plugin dependency %s" % plugin_dependency)
-            log_file = project.expand_path("$dir_reports",
-                                           safe_log_file_name("dependency_%s_install.log" % plugin_dependency))
-            pip_utils.pip_install(
-                install_targets=pip_utils.as_pip_install_target(plugin_dependency),
-                index_url=project.get_property("install_dependencies_index_url"),
-                extra_index_url=project.get_property("install_dependencies_extra_index_url"),
-                verbose=project.get_property("verbose"),
-                logger=logger,
-                force_reinstall=plugin_dependency.url is not None,
-                outfile_name=log_file,
-                error_file_name=log_file)
+    reactor.python_env_registry["pybuilder"].install_dependencies(project.plugin_dependencies,
+                                                                  package_type="plugin")
 
 
 @task
@@ -109,7 +94,7 @@ def run_integration_tests():
 
 
 @task
-@depends(run_integration_tests)
+@depends(optional(run_integration_tests))
 @description("Verifies the project and possibly integration tests.")
 def verify():
     pass

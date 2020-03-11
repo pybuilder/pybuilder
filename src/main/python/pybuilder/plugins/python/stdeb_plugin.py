@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -24,9 +24,7 @@ from pybuilder.core import (after,
                             use_plugin,
                             depends)
 from pybuilder.errors import BuildFailedException
-from pybuilder.utils import (assert_can_execute,
-                             execute_command,
-                             tail_log
+from pybuilder.utils import (tail_log
                              )
 
 __author__ = 'Marcel Wolf'
@@ -54,33 +52,33 @@ def initialize_make_deb_plugin(project):
 
 
 @after("prepare")
-def assert_py2dsc_deb_is_available(logger):
+def assert_py2dsc_deb_is_available(project, logger, reactor):
     """Asserts that the py2dsc-deb is available.
     """
     logger.debug("Checking if py2dsc-deb is available.")
 
-    assert_can_execute(
-        ["py2dsc-deb", "-h"], "py2dsc-deb", "plugin python.stdeb")
+    reactor.pybuilder_venv.verify_can_execute(["py2dsc-deb", "-h"], "py2dsc-deb",
+                                              "plugin python.stdeb")
 
 
 @after("prepare")
-def assert_dpkg_is_available(logger):
+def assert_dpkg_is_available(project, logger, reactor):
     """Asserts that the dpkg-buildpackage is available.
     """
     logger.debug("Checking if dpkg-buildpackage is available")
 
-    assert_can_execute(
-        ["dpkg-buildpackage", "--help"], "dpkg-buildpackage", "plugin python.stdeb")
+    reactor.pybuilder_venv.verify_can_execute(["dpkg-buildpackage", "--help"], "dpkg-buildpackage",
+                                              "plugin python.stdeb")
 
 
 @task("make_deb", "converts a source tarball into a Debian source package and build a .deb package")
 @depends("publish")
-def py2dsc_deb(project, logger):
+def py2dsc_deb(project, logger, reactor):
     """Runs py2dsc-deb against the setup.py for the given project.
     """
     task_name = getattr(py2dsc_deb, NAME_ATTRIBUTE)
     build_command = get_py2dsc_deb_command(project)
-    run_py2dsc_deb_build(build_command, task_name, logger, project)
+    run_py2dsc_deb_build(reactor.pybuilder_venv, build_command, task_name, logger, project)
 
 
 def get_py2dsc_deb_command(project):
@@ -89,18 +87,18 @@ def get_py2dsc_deb_command(project):
         :param --maintainer: maintainer name and email to use.
         :param -d: directory to put final built.
     """
-    options = ["--maintainer '%s'" % project.get_property("deb_package_maintainer"),
-               "-d '%s'" % project.get_property("path_final_build"),
-               project.get_property("path_to_source_tarball")]
-    return "py2dsc-deb %s" % " ".join(options)
+
+    return ["py2dsc-deb", "--maintainer", project.get_property("deb_package_maintainer"),
+            "-d", project.get_property("path_final_build"),
+            project.get_property("path_to_source_tarball")]
 
 
-def run_py2dsc_deb_build(build_command, task_name, logger, project):
+def run_py2dsc_deb_build(python_env, build_command, task_name, logger, project):
     logger.info("Running %s" % task_name)
     log_file = project.expand_path("$dir_target", "reports", task_name)
     if project.get_property("verbose"):
         logger.info(build_command)
-        exit_code = execute_command(build_command, log_file, shell=True)
+        exit_code = python_env.execute_command(build_command, log_file, shell=True)
         if exit_code != 0:
             raise BuildFailedException(
                 "py2dsc_deb build command failed. See %s for full details:\n%s", log_file, tail_log(log_file))

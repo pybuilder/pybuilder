@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@
     The PyBuilder utils module.
     Provides generic utilities that can be used by plugins.
 """
-
 import collections
 import fnmatch
 import json
@@ -30,33 +29,11 @@ import subprocess
 import sys
 import tempfile
 import time
-import traceback
-from collections import OrderedDict
-from multiprocessing import Process
 from subprocess import Popen, PIPE
 
-try:
-    from multiprocessing import SimpleQueue
-except ImportError:
-    from multiprocessing.queues import SimpleQueue
-
-try:
-    basestring = basestring
-except NameError:
-    basestring = str
-
 from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
-
-if sys.version_info[0] < 3:  # if major is less than 3
-    from .excp_util_2 import raise_exception, is_string
-
-    is_string = is_string
-else:
-    from .excp_util_3 import raise_exception, is_string
-
-    is_string = is_string
-
-odict = OrderedDict
+from pybuilder.python_utils import (is_string, which, makedirs, basestring,
+                                    IS_WIN)
 
 
 def get_all_dependencies_for_task(task):
@@ -133,6 +110,21 @@ def remove_python_source_suffix(file_name):
     return file_name
 
 
+def discover_module_files(source_path, suffix=".py"):
+    return discover_module_files_matching(source_path, "*{0}".format(suffix))
+
+
+def discover_module_files_matching(source_path, module_glob):
+    result = []
+    if not module_glob.endswith(".py"):
+        module_glob += ".py"
+    for module_file_path in discover_files_matching(source_path, module_glob):
+        relative_module_file_path = os.path.relpath(module_file_path, source_path)
+        module_file = remove_leading_slash_or_dot_from_path(relative_module_file_path)
+        result.append(module_file)
+    return result
+
+
 def discover_modules(source_path, suffix=".py"):
     return discover_modules_matching(source_path, "*{0}".format(suffix))
 
@@ -142,7 +134,7 @@ def discover_modules_matching(source_path, module_glob):
     if not module_glob.endswith(".py"):
         module_glob += ".py"
     for module_file_path in discover_files_matching(source_path, module_glob):
-        relative_module_file_path = module_file_path.replace(source_path, "")
+        relative_module_file_path = os.path.relpath(module_file_path, source_path)
         relative_module_file_path = relative_module_file_path.replace(os.sep, ".")
         module_file = remove_leading_slash_or_dot_from_path(relative_module_file_path)
         module_name = remove_python_source_suffix(module_file)
@@ -156,14 +148,36 @@ def discover_files(start_dir, suffix):
     return discover_files_matching(start_dir, "*{0}".format(suffix))
 
 
-def discover_files_matching(start_dir, file_glob):
+def discover_files_matching(start_dir, file_glob, exclude_file_glob=None):
     for root, _, files in os.walk(start_dir):
         for file_name in files:
+            if exclude_file_glob:
+                for exclude_pat in as_list(exclude_file_glob):
+                    if fnmatch.fnmatch(file_name, exclude_pat):
+                        continue
             if fnmatch.fnmatch(file_name, file_glob):
                 yield os.path.join(root, file_name)
 
 
-def execute_command(command_and_arguments, outfile_name=None, env=None, cwd=None, error_file_name=None, shell=False):
+def assert_can_execute(command_and_arguments, prerequisite, caller, env, no_path_search=False, logger=None):
+    with tempfile.NamedTemporaryFile() as f:
+        try:
+            if IS_WIN and not is_string(command_and_arguments) and not no_path_search:
+                which_cmd = which(command_and_arguments[0], path=env.get("PATH") if env else None)
+                if which_cmd:
+                    command_and_arguments[0] = which_cmd
+
+            if logger:
+                logger.debug("Verifying command: %s", " ".join(repr(cmd) for cmd in command_and_arguments))
+
+            process = subprocess.Popen(command_and_arguments, stdout=f, stderr=f, shell=False, env=env)
+            process.wait()
+        except OSError:
+            raise MissingPrerequisiteException(prerequisite, caller)
+
+
+def execute_command(command_and_arguments, outfile_name=None, env=None, cwd=None, error_file_name=None, shell=False,
+                    no_path_search=False, logger=None):
     if error_file_name is None and outfile_name:
         error_file_name = outfile_name + ".err"
 
@@ -180,6 +194,14 @@ def execute_command(command_and_arguments, outfile_name=None, env=None, cwd=None
             error_file_created = True
 
         try:
+            if not shell and IS_WIN and not is_string(command_and_arguments) and not no_path_search:
+                which_cmd = which(command_and_arguments[0], path=env.get("PATH") if env else None)
+                if which_cmd:
+                    command_and_arguments[0] = which_cmd
+
+            if logger:
+                logger.debug("Executing command: %s", " ".join(repr(cmd) for cmd in command_and_arguments))
+
             process = Popen(command_and_arguments,
                             stdout=outfile_name,
                             stderr=error_file_name,
@@ -205,7 +227,7 @@ def execute_command_and_capture_output(*command_and_arguments):
 
 def tail(file_path, lines=20):
     try:
-        import tailer
+        import pybuilder._vendor.tailer as tailer
     except ImportError:
         return read_file(file_path)
 
@@ -215,15 +237,6 @@ def tail(file_path, lines=20):
 
 def tail_log(file_path, lines=20):
     return "\n".join("\t" + l for l in tail(file_path, lines))
-
-
-def assert_can_execute(command_and_arguments, prerequisite, caller):
-    with tempfile.NamedTemporaryFile() as f:
-        try:
-            process = subprocess.Popen(command_and_arguments, stdout=f, stderr=f, shell=False)
-            process.wait()
-        except OSError:
-            raise MissingPrerequisiteException(prerequisite, caller)
 
 
 def read_file(file_name):
@@ -299,68 +312,7 @@ def mkdir(directory):
             message = "Unable to created directory '%s': A file with that name already exists"
             raise PyBuilderException(message, directory)
         return
-    os.makedirs(directory)
-
-
-def is_windows():
-    return any(win_platform in sys.platform for win_platform in ("win32", "cygwin", "msys"))
-
-
-def fake_windows_fork(group, target, name, args, kwargs):
-    return 0, target(*args, **kwargs)
-
-
-def fork_process(logger, group=None, target=None, name=None, args=(), kwargs={}):
-    """
-    Forks a child, making sure that all exceptions from the child are safely sent to the parent
-    If a target raises an exception, the exception is re-raised in the parent process
-    @return tuple consisting of process exit code and target's return value
-    """
-    if is_windows():
-        logger.warn(
-            "Not forking for %s due to Windows incompatibilities (see #184). "
-            "Measurements (coverage, etc.) might be biased." % target)
-        return fake_windows_fork(group, target, name, args, kwargs)
-    try:
-        sys.modules["tblib.pickling_support"]
-    except KeyError:
-        import tblib.pickling_support
-
-        tblib.pickling_support.install()
-
-    q = SimpleQueue()
-
-    def instrumented_target(*args, **kwargs):
-        ex = tb = None
-        try:
-            send_value = (target(*args, **kwargs), None, None)
-        except Exception:
-            _, ex, tb = sys.exc_info()
-            send_value = (None, ex, tb)
-
-        try:
-            q.put(send_value)
-        except Exception:
-            _, send_ex, send_tb = sys.exc_info()
-            e_out = Exception(str(send_ex), send_tb, None if ex is None else str(ex), tb)
-            q.put(e_out)
-
-    p = Process(group=group, target=instrumented_target, name=name, args=args, kwargs=kwargs)
-    p.start()
-    result = q.get()
-    p.join()
-    if isinstance(result, tuple):
-        if result[1]:
-            raise_exception(result[1], result[2])
-        return p.exitcode, result[0]
-    else:
-        msg = "Fatal error occurred in the forked process %s: %s" % (p, result.args[0])
-        if result.args[2]:
-            chained_message = "This error masked the send error '%s':\n%s" % (
-                result.args[2], "".join(traceback.format_tb(result.args[3])))
-            msg += "\n" + chained_message
-        ex = Exception(msg)
-        raise_exception(ex, result.args[1])
+    makedirs(directory, exist_ok=True)
 
 
 def is_notstr_iterable(obj):

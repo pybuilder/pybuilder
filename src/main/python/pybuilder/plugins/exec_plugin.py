@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import sys
+from subprocess import PIPE, Popen
+
 from pybuilder.core import task, use_plugin
 from pybuilder.errors import BuildFailedException
-
-from subprocess import PIPE, Popen
-import sys
 
 use_plugin("core")
 

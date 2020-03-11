@@ -1,23 +1,25 @@
-#  This file is part of PyBuilder
+#   -*- coding: utf-8 -*-
 #
-#  Copyright 2011 The PyBuilder Team
+#   This file is part of PyBuilder
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
+#   Copyright 2011-2020 PyBuilder Team
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
 #
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
 
 import unittest
 from os.path import join
 
-from integrationtest_support import IntegrationTestSupport
+from itest_support import IntegrationTestSupport
 
 
 class Test(IntegrationTestSupport):
@@ -34,11 +36,12 @@ default_task = "publish"
 
 @init
 def init (project):
-    project.depends_on("spam")
-    project.depends_on_requirements(%r)
-    project.depends_on("pyassert", url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz")
-    project.depends_on("eggs", "==0.2.3")
-    project.build_depends_on("eggy")
+    project.depends_on("spam", declaration_only=True)
+    project.depends_on_requirements(%r, declaration_only=True)
+    project.depends_on("pyassert", url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz",
+        declaration_only=True)
+    project.depends_on("eggs", "==0.2.3", declaration_only=True)
+    project.build_depends_on("eggy", declaration_only=True)
 """ % requirements)
         self.create_directory("src/main/python/spam")
         self.write_file("requirements.txt", """
