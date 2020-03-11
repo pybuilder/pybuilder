@@ -116,7 +116,7 @@ class VCSRevision(object):
 
 
 def count_travis():
-    """ Version number dervived from commit count and travis build number. """
+    """ Version number derived from commit count and travis build number. """
     return '{0}.{1}'.format(VCSRevision().count,
                             os.environ.get('TRAVIS_BUILD_NUMBER', 0))
 
