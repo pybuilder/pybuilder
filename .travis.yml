@@ -42,5 +42,10 @@ jobs:
 cache:
   directories:
     - $HOME/.pyenv
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/3e07f25a6c20d8c6c172
+    on_cancel:  never # default: always
 install: python travis/travis_shim.py install
 script: python travis/travis_shim.py build
