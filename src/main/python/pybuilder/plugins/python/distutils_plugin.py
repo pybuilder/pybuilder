@@ -483,7 +483,7 @@ def build_package_data_string(project):
         result += " " * (indent + 4)
         result += "'%s': " % pkgType
         result += "['"
-        result += "', '".join(package_data[pkgType])
+        result += "', '".join(package_data[pkgType]).replace(os.path.sep, '/')
         result += "'],\n"
 
     result = result[:-2] + "\n"

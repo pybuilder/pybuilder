@@ -622,6 +622,7 @@ class Project(object):
         if not patterns_list:
             raise ValueError("Missing argument patterns_list.")
 
+        package_path = package_path.replace(os.path.altsep, PATH_SEPARATOR)
         package_name = package_path.replace(PATH_SEPARATOR, '.')
         self._manifest_include_directory(package_path, patterns_list)
 
