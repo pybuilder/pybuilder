@@ -23,6 +23,7 @@
 
 import datetime
 import optparse
+import os
 import re
 import sys
 import traceback
@@ -31,6 +32,7 @@ from pybuilder import __version__
 from pybuilder.core import Logger
 from pybuilder.errors import PyBuilderException
 from pybuilder.execution import ExecutionManager
+from pybuilder.python_utils import IS_WIN
 from pybuilder.reactor import Reactor
 from pybuilder.scaffolding import start_project, update_project
 from pybuilder.terminal import (BOLD, BROWN, RED, GREEN, bold, styled_text,
@@ -404,6 +406,11 @@ def main(*args):
         return 1
 
     start = datetime.datetime.now()
+
+    if IS_WIN:
+        if os.isatty(sys.stdout.fileno()):
+            import pybuilder._vendor.colorama as colorama
+            colorama.init()
 
     logger = init_logger(options)
     reactor = init_reactor(logger)

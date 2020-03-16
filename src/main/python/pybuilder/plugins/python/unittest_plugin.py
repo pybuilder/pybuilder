@@ -59,7 +59,6 @@ def coverage_init(project, logger, reactor):
         project.get_property("_coverage_tasks").append(run_unit_tests)
         project.get_property("_coverage_config_prefixes")[run_unit_tests] = "ut"
         project.set_property("ut_coverage_name", "Python unit test")
-        project.get_property("ut_coverage_source_path", "$dir_source_main_python")
 
 
 @task
@@ -134,7 +133,6 @@ def execute_tests_matching(tools, runner_generator, logger, test_source, file_gl
                                     logger,
                                     _create_runner(runner_generator, output_log_file))
 
-        proc = pipe = None  # noqa
         try:
             proc, pipe = start_unittest_tool(tools, test_modules, test_method_prefix, logging=remote_debug)
             try:
@@ -158,8 +156,6 @@ def execute_tests_matching(tools, runner_generator, logger, test_source, file_gl
             if remote_closed_cause is not None:
                 raise remote_closed_cause
         finally:
-            del pipe
-            del proc
             del tool_logger.handlers[:]
 
         return result, output_log_file.getvalue()

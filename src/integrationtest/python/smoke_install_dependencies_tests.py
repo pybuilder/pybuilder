@@ -18,31 +18,12 @@
 
 import unittest
 
-from itest_support import IntegrationTestSupport
+from smoke_itest_support import SmokeIntegrationTestSupport
 
 
-class Test(IntegrationTestSupport):
-    def test(self):
-        self.write_build_file("""
-from pybuilder.core import use_plugin, init
-
-use_plugin("copy_resources")
-use_plugin("filter_resources")
-
-@init
-def init (project):
-    project.get_property("copy_resources_glob").append("*")
-    project.get_property("filter_resources_glob").append("spam")
-        """)
-
-        self.write_file("spam", "${version}")
-        self.write_file("eggs", "${version}")
-
-        reactor = self.prepare_reactor()
-        reactor.build("package")
-
-        self.assert_file_content("target/spam", "1.0.dev0")
-        self.assert_file_content("target/eggs", "${version}")
+class CleanSmokeTest(SmokeIntegrationTestSupport):
+    def test_clean(self):
+        self.smoke_test("-v", "-X", "install_dependencies")
 
 
 if __name__ == "__main__":

@@ -17,10 +17,12 @@
 #   limitations under the License.
 
 import logging
+from os.path import normcase as nc
 
 from pybuilder.core import init, use_plugin, finalize
 from pybuilder.errors import BuildFailedException
 from pybuilder.execution import ExecutionManager
+from pybuilder.plugins.python._coverage_util import patch_coverage
 
 use_plugin("python.core")
 use_plugin("analysis")
@@ -43,12 +45,15 @@ def finalize_coveralls(project, logger, reactor):
     if not em.is_task_in_current_execution_plan("coverage"):
         return
 
+    patch_coverage()
+
     from coveralls.api import Coveralls, CoverallReporter, CoverallsException
-    from coverage import coverage
+    from coverage import coverage, files
 
     class PybCoveralls(Coveralls):
         def get_coverage(self):
             coverage_config = project.get_property("__coverage_config")
+
             workman = coverage(**coverage_config)
             workman.load()
 
@@ -66,29 +71,34 @@ def finalize_coveralls(project, logger, reactor):
         dry_run = project.get_property("coveralls_dry_run")
         report = project.get_property("coveralls_report")
         token_required = project.get_property("coveralls_token_required") and not dry_run and not report
-        pyb_coveralls = PybCoveralls(token_required=token_required)
+
+        old_relative_dir = files.RELATIVE_DIR
+        files.RELATIVE_DIR = nc(project.expand_path(project.get_property("coverage_source_path")))
         try:
-            staging = False
-            if report:
-                report_file = project.expand_path("$dir_reports", "%s.coveralls.json" % project.name)
-                pyb_coveralls.save_report(report_file)
-                logger.info("Written Coveralls report into %r", report_file)
-                staging = True
+            pyb_coveralls = PybCoveralls(token_required=token_required)
+            try:
+                staging = False
+                if report:
+                    report_file = project.expand_path("$dir_reports", "%s.coveralls.json" % project.name)
+                    pyb_coveralls.save_report(report_file)
+                    logger.info("Written Coveralls report into %r", report_file)
+                    staging = True
 
-            if dry_run:
-                pyb_coveralls.wear(dry_run=True)
-                logger.info("Coveralls dry-run coverage test has been completed!")
-                staging = True
+                if dry_run:
+                    pyb_coveralls.wear(dry_run=True)
+                    logger.info("Coveralls dry-run coverage test has been completed!")
+                    staging = True
 
-            if staging:
-                return
+                if staging:
+                    return
 
-            result = pyb_coveralls.wear()
+                result = pyb_coveralls.wear()
 
-            logger.debug("Coveralls result: %r", result)
-            logger.info("Coveralls coverage successfully submitted! %s @ %s", result["message"], result["url"])
-        except CoverallsException as e:
-            raise BuildFailedException("Failed to upload Coveralls coverage: %s", e)
-
+                logger.debug("Coveralls result: %r", result)
+                logger.info("Coveralls coverage successfully submitted! %s @ %s", result["message"], result["url"])
+            except CoverallsException as e:
+                raise BuildFailedException("Failed to upload Coveralls coverage: %s", e)
+        finally:
+            files.RELATIVE_DIR = old_relative_dir
     finally:
         coveralls_logger.removeHandler(logger)

@@ -10,7 +10,7 @@ branches:
     - 0.11
 env:
   jobs:
-    - PYTHON_VERSION="3.8.1"
+    - PYTHON_VERSION="3.8.2"
     - PYTHON_VERSION="2.7.17"
     - PYTHON_VERSION="3.7.6"
     - PYTHON_VERSION="3.6.8"
@@ -20,7 +20,7 @@ env:
     - PYTHON_VERSION="pypy3.5-7.0.0"
   global:
     - DEPLOY_BRANCHES: "'master 0.11'"
-    - DEPLOY_PYTHONS: "'2.7.17 3.8.1'"
+    - DEPLOY_PYTHONS: "'2.7.17 3.8.2'"
     - DEPLOY_OSES: "'linux'"
     - PYB_ARGS: "'-E ci -v -X analyze install'"
     - TWINE_USERNAME: pybuilder-travis2
@@ -38,9 +38,14 @@ jobs:
     - os: windows
       env: PYTHON_VERSION="pypy3.6-7.3.0"
   allow_failures:
-    - if: (os != windows) AND (env(PYTHON_VERSION) =~ /^pypy(2\.7|3\.5).+$/)
+    - if: env(PYTHON_VERSION) =~ /^pypy.+$/
 cache:
   directories:
     - $HOME/.pyenv
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/3e07f25a6c20d8c6c172
+    on_cancel:  never # default: always
 install: python travis/travis_shim.py install
 script: python travis/travis_shim.py build

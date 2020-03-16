@@ -22,6 +22,7 @@ from pybuilder import pip_utils
 from pybuilder.core import (task,
                             description,
                             use_plugin,
+                            depends,
                             init)
 from pybuilder.install_utils import install_dependencies as install_dependency
 from pybuilder.utils import mkdir, as_list
@@ -47,6 +48,7 @@ def initialize_install_dependencies_plugin(project):
 
 
 @task
+@depends("prepare")
 @description("Installs all (both runtime and build) dependencies specified in the build descriptor")
 def install_dependencies(logger, project, reactor):
     logger.info("Installing all dependencies")
@@ -58,6 +60,7 @@ def install_dependencies(logger, project, reactor):
 
 
 @task
+@depends("prepare")
 @description("Installs all build dependencies specified in the build descriptor")
 def install_build_dependencies(logger, project, reactor):
     logger.info("Installing build dependencies")
@@ -69,6 +72,7 @@ def install_build_dependencies(logger, project, reactor):
 
 
 @task
+@depends("prepare")
 @description("Installs all runtime dependencies specified in the build descriptor")
 def install_runtime_dependencies(logger, project, reactor):
     logger.info("Installing runtime dependencies")
@@ -90,6 +94,9 @@ def list_dependencies(project):
 @task("prepare")
 def create_install_log_directory(logger, project):
     log_dir = project.expand_path("$dir_install_logs")
-
-    logger.debug("Creating log directory '%s'", log_dir)
+    logger.debug("Creating log directory %r", log_dir)
     mkdir(log_dir)
+
+    target_dir = project.expand_path("$dir_target")
+    logger.debug("Creating target directory %r", target_dir)
+    mkdir(target_dir)

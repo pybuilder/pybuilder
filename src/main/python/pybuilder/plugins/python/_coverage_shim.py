@@ -18,6 +18,7 @@
 
 import ast
 import sys
+from os.path import dirname
 
 
 class CoverageImporter:
@@ -55,6 +56,9 @@ class CoverageImporter:
 
 
 if __name__ == "__main__":
+    # Need to preserve location for _coverage_util import
+    main_file_dir = dirname(__import__("__main__").__file__)
+
     self = sys.argv[0]
     config_literal = sys.argv[1]
     del sys.argv[:2]
@@ -62,12 +66,24 @@ if __name__ == "__main__":
 
     config = ast.literal_eval(config_literal)
 
+    # Make sure we can actually load coverage
     CoverageImporter(config["cov_parent_dir"]).install()
+
+    sys.path.append(main_file_dir)
+
+    from _coverage_util import save_normalized_coverage, patch_coverage
+
+    del sys.path[-1]
+
+    # Patch coverage
+    patch_coverage()
 
     from coverage import coverage as coverage_factory
     from coverage.execfile import PyRunner
 
     coverage = coverage_factory(*(config.get("cov_args", ())), **(config.get("cov_kwargs", {})))
+    source_path = config["cov_source_path"]
+    omit_patterns = config["cov_omit_patterns"]
 
     args = sys.argv
     module = False
@@ -83,4 +99,4 @@ if __name__ == "__main__":
         runner.run()
     finally:
         coverage.stop()
-        coverage.save()
+        save_normalized_coverage(coverage, source_path, omit_patterns)

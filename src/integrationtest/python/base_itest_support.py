@@ -23,14 +23,13 @@ import sys
 import tempfile
 import unittest
 
-from pybuilder.cli import StdOutLogger
-from pybuilder.core import Logger
-from pybuilder.execution import ExecutionManager
-from pybuilder.python_utils import StringIO
-from pybuilder.reactor import Reactor
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 
-class IntegrationTestSupport(unittest.TestCase):
+class BaseIntegrationTestSupport(unittest.TestCase):
     def setUp(self):
         self.tmp_directory = tempfile.mkdtemp(prefix="IntegrationTestSupport")
 
@@ -118,13 +117,6 @@ class IntegrationTestSupport(unittest.TestCase):
                 self.assertEqual(expected_line, actual_line, message)
 
         self.assertEqual(expected_lines, actual_line_number)
-
-    def prepare_reactor(self):
-        logger = StdOutLogger(level=Logger.DEBUG)
-        execution_manager = ExecutionManager(logger)
-        reactor = Reactor(logger, execution_manager)
-        reactor.prepare_build(project_directory=self.tmp_directory)
-        return reactor
 
     def outcomes(self):
         result = self._get_result()

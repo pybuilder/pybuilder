@@ -23,7 +23,9 @@ import sys
 from os.path import dirname, join as jp
 
 # This is only necessary in PyBuilder sources for bootstrap
-sys.path.insert(0, jp(dirname(__file__), "src/main/python"))
+build_sources = jp(dirname(__file__), "src/main/python")
+if build_sources not in sys.path:
+    sys.path.insert(0, build_sources)
 
 from pybuilder import bootstrap
 from pybuilder.core import Author, init, use_plugin
@@ -33,6 +35,7 @@ bootstrap()
 use_plugin("python.core")
 use_plugin("python.pytddmon")
 use_plugin("python.distutils")
+use_plugin("python.install_dependencies")
 
 use_plugin("copy_resources")
 use_plugin("filter_resources")
@@ -62,12 +65,13 @@ if sys.platform != "win32":
     use_plugin("python.pdoc")
 
 name = "pybuilder"
-summary = "An extensible, easy to use continuous build tool for Python"
-description = """PyBuilder is a build automation tool for python.
+summary = "An extensible, easy-to-use build automation tool for Python"
+description = """PyBuilder &#x2014; an easy-to-use build automation tool for Python.
 
-PyBuilder is a software build tool written in pure Python which mainly targets Python applications.
-It is based on the concept of dependency based programming but also comes along with powerful plugin mechanism that
-allows the construction of build life cycles similar to those known from other famous build tools like Apache Maven.
+PyBuilder is a software build automation tool written in pure Python mainly targeting Python ecosystem. 
+It is based on the concept of dependency-based programming but also comes along with powerful plugin mechanism that 
+allows the construction of build life-cycles similar to those known from other famous build tools like 
+Apache Maven and Gradle.
 """
 
 authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),

@@ -19,7 +19,7 @@
 import sys
 import unittest
 
-from integrationtest_support import IntegrationTestSupport
+from itest_support import IntegrationTestSupport
 
 
 class Test(IntegrationTestSupport):
