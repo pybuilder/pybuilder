@@ -19,7 +19,7 @@
 import unittest
 from os.path import join
 
-from integrationtest_support import IntegrationTestSupport
+from itest_support import IntegrationTestSupport
 
 
 class Test(IntegrationTestSupport):

@@ -121,11 +121,13 @@ class CoveragePluginTests(TestCase):
         execution_description = "mock coverage"
         config_prefix = "mock_coverage"
         project = Mock()
+        source_path = ""
         module_names = []
         module_files = []
         project.get_property.side_effect = [70, 70, 70, [], False, False, False]
         self.assertTrue(_build_coverage_report(project, MagicMock(Logger), execution_description, execution_name,
-                                               config_prefix, coverage, module_names, module_files) is None)
+                                               config_prefix, coverage, source_path, module_names,
+                                               module_files) is None)
 
     @patch("pybuilder.plugins.python.coverage_plugin.render_report")
     @patch("coverage.coverage")
@@ -134,6 +136,7 @@ class CoveragePluginTests(TestCase):
         execution_description = "mock coverage"
         config_prefix = "mock_coverage"
         project = Mock()
+        source_path = ""
         module_names = ["module_a", "module_b"]
         module_files = ["module_a.py", "module_b.py"]
 
@@ -165,7 +168,8 @@ class CoveragePluginTests(TestCase):
 
         coverage._analyze.side_effect = [module_a_coverage, module_b_coverage]
         self.assertTrue(_build_coverage_report(project, MagicMock(Logger), execution_description, execution_name,
-                                               config_prefix, coverage, module_names, module_files) is None)
+                                               config_prefix, coverage, source_path, module_names,
+                                               module_files) is None)
         report = render_report.call_args[0][0]
         self.assertEqual(report["overall_coverage"], 50)
         self.assertEqual(report["overall_branch_coverage"], 50)
@@ -184,7 +188,7 @@ class CoveragePluginTests(TestCase):
 
         self.assertEqual(_optimize_omit_module_files(module_files, ["/a/z.py",
                                                                     "/a/b/o.py"]),
-                         ["/a/z.py", "/a/b/o.py"])
+                         ["/a/b/o.py", "/a/z.py"])
 
         self.assertEqual(_optimize_omit_module_files(module_files, ["/a/b/c/d/x.py"]),
                          ["/a/b/c/d/x.py"])

@@ -17,10 +17,9 @@
 #   limitations under the License.
 
 
-from pybuilder.remote import get_rom, ctx, PipeShutdownError, RemoteObjectPipe, logger, \
-    log_to_stderr
+from pybuilder.remote import ctx, PipeShutdownError, RemoteObjectPipe, logger, log_to_stderr
 
-__all__ = ["get_rom", "RemoteObjectPipe", "start_tool", "Tool", "PipeShutdownError", "logger"]
+__all__ = ["RemoteObjectPipe", "start_tool", "Tool", "PipeShutdownError", "logger"]
 
 
 class Tool:
@@ -42,13 +41,14 @@ def start_tool(tools, group=None, name=None, logging=None):
         log_to_stderr()
         logger.setLevel(int(logging))
 
-    pipe = get_rom().new_pipe()
+    pipe = RemoteObjectPipe.new_pipe()
     proc = ctx.Process(group=group, target=_instrumented_tool, name=name, args=(tools, pipe))
     try:
         proc.start()
     finally:
         pipe.close_client_side()
 
+    pipe.receive()  # Pickle protocol selection
     return proc, pipe
 
 
