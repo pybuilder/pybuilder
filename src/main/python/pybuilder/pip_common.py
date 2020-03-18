@@ -16,13 +16,19 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pybuilder.vendor import packaging
-from pybuilder.vendor import pkg_resources
+from pkg_resources import packaging
+
+import pkg_resources.extern.packaging.specifiers
+import pkg_resources.extern.packaging.version
+import pkg_resources.extern.packaging.requirements
+import pkg_resources.extern.packaging.utils
 
 SpecifierSet = packaging.specifiers.SpecifierSet
 InvalidSpecifier = packaging.specifiers.InvalidSpecifier
 Version = packaging.version.Version
 InvalidVersion = packaging.version.InvalidVersion
+Requirement = packaging.requirements.Requirement
+InvalidRequirement = packaging.requirements.InvalidRequirement
 canonicalize_name = packaging.utils.canonicalize_name
 
 WorkingSet = pkg_resources.WorkingSet

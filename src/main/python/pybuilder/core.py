@@ -32,7 +32,6 @@ from datetime import datetime
 from os.path import sep as PATH_SEPARATOR, normcase as nc, join as jp, isdir, isfile, basename
 
 # Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
-from pybuilder import pip_common
 from pybuilder.errors import MissingPropertyException, UnspecifiedPluginNameException
 from pybuilder.utils import as_list
 
@@ -273,8 +272,7 @@ class Dependency(object):
     """
 
     def __init__(self, name, version=None, url=None, declaration_only=False):
-        self.name = name
-
+        from pybuilder import pip_common
         if version:
             try:
                 version = ">=" + str(pip_common.Version(version))
@@ -284,7 +282,16 @@ class Dependency(object):
                     version = str(pip_common.SpecifierSet(version))
                 except pip_common.InvalidSpecifier:
                     raise ValueError("'%s' must be either PEP 0440 version or a version specifier set" % version)
+        else:
+            try:
+                req = pip_common.Requirement(name)
+                name = req.name
+                version = version or str(req.specifier) or None
+                url = url or req.url
+            except pip_common.InvalidRequirement:
+                pass
 
+        self.name = name
         self.version = version
         self.url = url
         self.declaration_only = declaration_only
@@ -465,6 +472,7 @@ class Project(object):
 
     @requires_python.setter
     def requires_python(self, value):
+        from pybuilder import pip_common
         spec_set = pip_common.SpecifierSet(value)
         self._requires_python = str(spec_set)
 

@@ -23,12 +23,12 @@
 
 import datetime
 import optparse
-import os
 import re
 import sys
 import traceback
 
 from pybuilder import __version__
+from pybuilder import extern
 from pybuilder.core import Logger
 from pybuilder.errors import PyBuilderException
 from pybuilder.execution import ExecutionManager
@@ -41,6 +41,7 @@ from pybuilder.terminal import (BOLD, BROWN, RED, GREEN, bold, styled_text,
 from pybuilder.utils import format_timestamp, get_dist_version_string
 
 PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
+_extern = extern
 
 
 class CommandLineUsageException(PyBuilderException):
@@ -251,6 +252,9 @@ def init_logger(options):
     if not should_colorize(options):
         logger = StdOutLogger(threshold)
     else:
+        if IS_WIN:
+            import colorama
+            colorama.init()
         logger = ColoredStdOutLogger(threshold)
 
     return logger
@@ -378,11 +382,6 @@ def main(*args):
         return 1
 
     start = datetime.datetime.now()
-
-    if IS_WIN:
-        if os.isatty(sys.stdout.fileno()):
-            import pybuilder._vendor.colorama as colorama
-            colorama.init()
 
     logger = init_logger(options)
     reactor = init_reactor(logger)

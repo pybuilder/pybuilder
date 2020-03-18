@@ -54,8 +54,8 @@ try:
 except NameError:
     FileExistsError = OSError
 
-from pkg_resources.extern import six
-from pkg_resources.extern.six.moves import urllib, map, filter
+from .extern import six
+from .extern.six.moves import urllib, map, filter
 
 # capture these to bypass sandboxing
 from os import utime
@@ -77,8 +77,8 @@ except ImportError:
     importlib_machinery = None
 
 from . import py31compat
-from pkg_resources.extern import appdirs
-from pkg_resources.extern import packaging
+from .extern import appdirs
+from .extern import packaging
 __import__('pkg_resources.extern.packaging.version')
 __import__('pkg_resources.extern.packaging.specifiers')
 __import__('pkg_resources.extern.packaging.requirements')

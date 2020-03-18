@@ -35,12 +35,15 @@ def install_dependencies(logger, project, dependencies, python_env,
                          constraints_file_name=None,
                          log_file_mode="ab",
                          package_type="dependency",
+                         target_dir=None,
+                         ignore_installed=False,
                          ):
-    entry_paths = python_env.site_paths
+    entry_paths = target_dir or python_env.site_paths
     dependencies_to_install, orig_installed_pkgs, dependency_constraints = _filter_dependencies(logger,
                                                                                                 project,
                                                                                                 dependencies,
-                                                                                                entry_paths)
+                                                                                                entry_paths,
+                                                                                                ignore_installed)
     constraints_file = None
     if constraints_file_name:
         constraints_file = nc(jp(python_env.env_dir, constraints_file_name))
@@ -60,7 +63,7 @@ def install_dependencies(logger, project, dependencies, python_env,
         if dependency.name in local_mapping or url:
             install_options["force_reinstall"] = bool(url)
 
-        if dependency.name in local_mapping:
+        if not target_dir and dependency.name in local_mapping:
             install_options["target_dir"] = local_mapping[dependency.name]
 
         install_batch.append((as_pip_install_target(dependency), install_options))
@@ -88,8 +91,9 @@ def install_dependencies(logger, project, dependencies, python_env,
                                           constraint_file=constraints_file,
                                           logger=logger,
                                           outfile_name=log_file,
-                                          error_file_name=log_file)
-
+                                          error_file_name=log_file,
+                                          target_dir=target_dir,
+                                          ignore_installed=ignore_installed)
         for result in results:
             if result:
                 raise BuildFailedException("Unable to install %s packages into %s. "
@@ -101,7 +105,7 @@ def install_dependencies(logger, project, dependencies, python_env,
     return dependencies_to_install
 
 
-def _filter_dependencies(logger, project, dependencies, entry_paths):
+def _filter_dependencies(logger, project, dependencies, entry_paths, ignore_installed):
     dependencies = as_list(dependencies)
     installed_packages = get_packages_info(entry_paths)
     dependencies_to_install = []
@@ -109,14 +113,21 @@ def _filter_dependencies(logger, project, dependencies, entry_paths):
 
     for dependency in dependencies:
         logger.debug("Inspecting package %s", dependency)
+        if ignore_installed:
+            logger.debug("Package %s will be installed because existing installation will be ignored", dependency)
+            dependencies_to_install.append(dependency)
+            continue
+
         if dependency.declaration_only:
             logger.info("Package %s is declaration-only and will not be installed", dependency)
             continue
+
         if isinstance(dependency, RequirementsFile):
             # Always add requirement file-based dependencies
             logger.debug("Package %s is a requirement file and will be updated", dependency)
             dependencies_to_install.append(dependency)
             continue
+
         elif isinstance(dependency, Dependency):
             if dependency.version:
                 dependency_constraints.append(dependency)

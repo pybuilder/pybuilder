@@ -490,7 +490,7 @@ def virtualenv_support_dirs():
     elif os.path.splitext(os.path.dirname(__file__))[0] != "virtualenv":
         try:
             # noinspection PyUnresolvedReferences
-            import virtualenv
+            from . import virtualenv
         except ImportError:
             yield []
         else:
