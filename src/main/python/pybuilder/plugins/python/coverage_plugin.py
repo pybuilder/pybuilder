@@ -49,6 +49,7 @@ def init_coverage_properties(project):
     project.set_property_if_unset("coverage_break_build", True)
     project.set_property_if_unset("coverage_exceptions", [])
     project.set_property_if_unset("coverage_concurrency", ["thread"])
+    project.set_property_if_unset("coverage_debug", [])
     project.set_property_if_unset("coverage_source_path", "$dir_source_main_python")
     project.set_property_if_unset("coverage_name", project.name.capitalize())
 
@@ -119,6 +120,7 @@ def coverage(project, logger, reactor):
                            cover_pylib=False,
                            config_file=False,
                            branch=True,
+                           debug=as_list(project.get_property("coverage_debug")),
                            context=project.name)
 
     project.set_property("__coverage_config", coverage_config)
@@ -180,7 +182,10 @@ def run_coverage(project, logger, reactor, covered_task, source_path, module_nam
                            config_file=False,
                            branch=True,
                            context=str(covered_task),
-                           concurrency=project.get_property("%scoverage_concurrency" % config_prefix))
+                           debug=as_list(project.get_property("%scoverage_debug" % config_prefix,
+                                                              project.get_property("coverage_debug"))),
+                           concurrency=project.get_property("%scoverage_concurrency" % config_prefix,
+                                                            project.get_property("coverage_concurrency")))
 
     from coverage import coverage as coverage_factory
 

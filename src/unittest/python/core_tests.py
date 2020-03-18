@@ -21,11 +21,14 @@ import types
 import unittest
 from os.path import normcase as nc
 
+from pybuilder import extern
 from pybuilder.core import (Project, Logger, init, INITIALIZER_ATTRIBUTE,
                             ENVIRONMENTS_ATTRIBUTE, task, description,
                             Dependency, RequirementsFile)
 from pybuilder.errors import MissingPropertyException
 from test_utils import patch
+
+_extern = extern
 
 
 class ProjectTest(unittest.TestCase):
