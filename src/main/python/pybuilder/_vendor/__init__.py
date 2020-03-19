@@ -1,1 +1,1 @@
-__names__ = ['colorama', 'tailer', 'tblib', 'virtualenv', 'virtualenv_support']
+__names__ = ['colorama', 'pkg_resources', 'tailer', 'tblib', 'virtualenv', 'virtualenv_support']
