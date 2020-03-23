@@ -20,10 +20,10 @@
 #   limitations under the License.
 
 import sys
-from os.path import dirname, join as jp
+from os.path import dirname, join as jp, normcase as nc
 
 # This is only necessary in PyBuilder sources for bootstrap
-build_sources = jp(dirname(__file__), "src/main/python")
+build_sources = nc(jp(dirname(__file__), "src/main/python"))
 if build_sources not in sys.path:
     sys.path.insert(0, build_sources)
 
@@ -152,7 +152,7 @@ def initialize(project):
     # project.set_property("distutils_issue8876_workaround_enabled", True)
     project.set_property("distutils_readme_description", True)
     project.set_property("distutils_description_overwrite", True)
-    project.set_property("distutils_console_scripts", ["pyb_ = pybuilder.cli:main"])
+    project.set_property("distutils_console_scripts", ["pyb = pybuilder.cli:main"])
     project.set_property("distutils_classifiers", [
         "Programming Language :: Python",
         "Programming Language :: Python :: Implementation :: CPython",

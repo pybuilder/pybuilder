@@ -23,15 +23,16 @@
 """
 
 import ast
-import re
 from glob import iglob
+from os import sep, unlink, walk
+from os.path import exists, relpath, isdir
+
+import re
 from itertools import chain
-from os import sep, unlink
-from os.path import join as jp, exists, relpath, isdir
 from shutil import rmtree
 
 from pybuilder.core import task, init, use_plugin, depends, Dependency
-from pybuilder.utils import as_list, makedirs
+from pybuilder.utils import as_list, makedirs, jp, np
 
 __author__ = "Arcadiy Ivanov"
 
@@ -185,16 +186,18 @@ class ImportTransformer(ast.NodeVisitor):
 
 def _vendorize(vendorized_path):
     vendorized_packages = _list_top_level_packages(vendorized_path)
-    for py_path in chain(iglob(jp(vendorized_path, "*.py")),
-                         iglob(jp(vendorized_path, "**", "*.py"), recursive=True),
-                         ):
-        with open(py_path, "rt") as source_file:
-            source = source_file.read()
-        parsed_ast = ast.parse(source, filename=py_path)
-        it = ImportTransformer(py_path, source, vendorized_path, vendorized_packages, [])
-        it.visit(parsed_ast)
-        with open(py_path, "wt") as source_file:
-            source_file.write(it.transformed_source)
+    for root, dirs, files in walk(vendorized_path):
+        for py_path in files:
+            if not py_path.endswith(".py"):
+                continue
+            py_path = np(jp(root, py_path))
+            with open(py_path, "rt") as source_file:
+                source = source_file.read()
+            parsed_ast = ast.parse(source, filename=py_path)
+            it = ImportTransformer(py_path, source, vendorized_path, vendorized_packages, [])
+            it.visit(parsed_ast)
+            with open(py_path, "wt") as source_file:
+                source_file.write(it.transformed_source)
 
     return vendorized_packages
 

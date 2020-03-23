@@ -20,14 +20,16 @@
     The PyBuilder utils module.
     Provides generic utilities that can be used by plugins.
 """
-import collections
 import fnmatch
 import json
 import os
+import tempfile
+from os.path import normcase, normpath, abspath, realpath, join
+
+import collections
 import re
 import subprocess
 import sys
-import tempfile
 import time
 from subprocess import Popen, PIPE
 
@@ -328,3 +330,19 @@ def safe_log_file_name(file_name):
     # per https://support.microsoft.com/en-us/kb/177506
     # per https://msdn.microsoft.com/en-us/library/aa365247
     return re.sub(r'\\|/|:|\*|\?|\"|<|>|\|', '_', file_name)
+
+
+nc = normcase
+jp = join
+
+
+def np(path):
+    return nc(normpath(path))
+
+
+def ap(path):
+    return nc(abspath(path))
+
+
+def rp(path):
+    return nc(realpath(path))

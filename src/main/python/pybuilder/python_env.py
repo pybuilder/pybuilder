@@ -20,12 +20,12 @@ import ast
 import os
 import subprocess
 import sys
-from os.path import normcase as nc, join as jp, pathsep
+from os.path import pathsep
 from shutil import rmtree
 
 from pybuilder.install_utils import install_dependencies
 from pybuilder.python_utils import is_windows, which
-from pybuilder.utils import assert_can_execute, execute_command
+from pybuilder.utils import assert_can_execute, execute_command, jp, np
 
 __all__ = ["PythonEnv", "PythonEnvRegistry"]
 
@@ -452,4 +452,4 @@ def _venv_python_executable(env_dir, platform):
     else:
         candidate = jp(env_dir, "bin", _venv_python_exename)
 
-    return nc(candidate)
+    return np(candidate)

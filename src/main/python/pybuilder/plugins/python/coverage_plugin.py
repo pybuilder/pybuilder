@@ -18,8 +18,9 @@
 
 import ast
 import copy
+from os.path import dirname
+
 import sys
-from os.path import join as jp, dirname, abspath, normcase as nc
 
 from pybuilder.core import init, use_plugin, task, depends, dependents, optional
 from pybuilder.errors import BuildFailedException
@@ -27,7 +28,7 @@ from pybuilder.execution import ExecutionManager
 from pybuilder.plugins.python._coverage_util import patch_coverage
 from pybuilder.plugins.python.remote_tools.coverage_tool import CoverageTool
 from pybuilder.python_utils import StringIO, IS_WIN
-from pybuilder.utils import discover_module_files, discover_modules, render_report, as_list
+from pybuilder.utils import discover_module_files, discover_modules, render_report, as_list, jp, ap, nc
 
 if IS_WIN:
     from fnmatch import fnmatch
@@ -233,13 +234,12 @@ def run_coverage(project, logger, reactor, covered_task, source_path, module_nam
 
 def _override_python_env_for_coverage(current_python_env, coverage_config, source_path, omit_patterns):
     import coverage as cov_module
-    cov_parent_dir = abspath(jp(dirname(cov_module.__file__), ".."))
+    cov_parent_dir = ap(jp(dirname(cov_module.__file__), ".."))
 
     new_python_env = copy.copy(current_python_env)
     new_python_env.overwrite("executable", tuple(
         current_python_env.executable +
-        [nc(abspath(jp(dirname(sys.modules[_override_python_env_for_coverage.__module__].__file__),
-                       "_coverage_shim.py"))),
+        [ap(jp(dirname(sys.modules[_override_python_env_for_coverage.__module__].__file__), "_coverage_shim.py")),
          repr({"cov_parent_dir": cov_parent_dir,
                "cov_kwargs": coverage_config,
                "cov_source_path": source_path,

@@ -16,17 +16,18 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from os.path import pathsep
+
 import unittest
-from os.path import normcase as nc, pathsep
 
 from pybuilder.core import Project
 from pybuilder.errors import BuildFailedException
-from pybuilder.plugins.python.cram_plugin import (
-    _cram_command_for,
-    _find_files,
-    _report_file,
-    run_cram_tests,
-)
+from pybuilder.plugins.python.cram_plugin import (_cram_command_for,
+                                                  _find_files,
+                                                  _report_file,
+                                                  run_cram_tests,
+                                                  )
+from pybuilder.utils import jp, np
 from test_utils import patch, Mock, call
 
 
@@ -48,18 +49,18 @@ class CramPluginTests(unittest.TestCase):
     @patch('pybuilder.plugins.python.cram_plugin.discover_files_matching')
     def test_find_files(self, discover_mock):
         project = Project('.')
-        project.set_property('dir_source_cmdlinetest', nc('/any/dir'))
+        project.set_property('dir_source_cmdlinetest', np('any/dir'))
         project.set_property('cram_test_file_glob', '*.t')
-        expected = [nc('./any/dir/test.cram')]
+        expected = [np(jp(project.basedir, './any/dir/test.cram'))]
         discover_mock.return_value = expected
         received = _find_files(project)
         self.assertEqual(expected, received)
-        discover_mock.assert_called_once_with(nc('/any/dir'), '*.t')
+        discover_mock.assert_called_once_with(np('any/dir'), '*.t')
 
     def test_report(self):
         project = Project('.')
-        project.set_property('dir_reports', '/any/dir')
-        expected = nc('./any/dir/cram.err')
+        project.set_property('dir_reports', np('any/dir'))
+        expected = np(jp(project.basedir, 'any/dir/cram.err'))
         received = _report_file(project)
         self.assertEqual(expected, received)
 
@@ -99,7 +100,8 @@ class CramPluginTests(unittest.TestCase):
         execute_mock.assert_called_once_with(
             ['a/b', 'cram', 'test1.cram', 'test2.cram'], 'report_file',
             error_file_name='report_file',
-            env={'PYTHONPATH': nc('./python' + pathsep), 'PATH': nc('./python/scripts' + pathsep)}
+            env={'PYTHONPATH': np(jp(project.basedir, 'python')) + pathsep,
+                 'PATH': np(jp(project.basedir, 'python/scripts')) + pathsep}
         )
         expected_info_calls = [call('Running Cram command line tests'),
                                call('Cram tests were fine'),
@@ -142,7 +144,8 @@ class CramPluginTests(unittest.TestCase):
         execute_mock.assert_called_once_with(
             ['a/b', 'cram', 'test1.cram', 'test2.cram'], 'report_file',
             error_file_name='report_file',
-            env={'PYTHONPATH': nc('./python' + pathsep), 'PATH': nc('./scripts' + pathsep)}
+            env={'PYTHONPATH': np(jp(project.basedir, 'python')) + pathsep,
+                 'PATH': np(jp(project.basedir, 'scripts')) + pathsep}
         )
         expected_info_calls = [call('Running Cram command line tests'),
                                call('Cram tests were fine'),
@@ -188,7 +191,8 @@ class CramPluginTests(unittest.TestCase):
         execute_mock.assert_called_once_with(
             ['a/b', 'cram', 'test1.cram', 'test2.cram'], 'report_file',
             error_file_name='report_file',
-            env={'PYTHONPATH': nc('./python' + pathsep), 'PATH': nc('./scripts' + pathsep)}
+            env={'PYTHONPATH': np(jp(project.basedir, 'python')) + pathsep,
+                 'PATH': np(jp(project.basedir, 'scripts')) + pathsep}
         )
         expected_info_calls = [call('Running Cram command line tests'),
                                ]

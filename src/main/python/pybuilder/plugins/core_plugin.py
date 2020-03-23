@@ -19,9 +19,9 @@
 import os
 import shutil
 from functools import partial
-from os.path import join as jp
 
 from pybuilder.core import init, task, description, depends, optional
+from pybuilder.utils import jp
 
 
 @init

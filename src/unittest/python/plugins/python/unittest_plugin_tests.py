@@ -18,7 +18,6 @@
 
 from __future__ import unicode_literals
 
-from os.path import normcase as nc
 from unittest import TestCase, TextTestRunner
 
 from pybuilder.core import Project
@@ -28,33 +27,34 @@ from pybuilder.plugins.python.unittest_plugin import (execute_tests, execute_tes
                                                       _create_runner,
                                                       _get_make_result_method_name,
                                                       report_to_ci_server)
+from pybuilder.utils import np, jp
 from test_utils import Mock, patch
 
-__author__ = 'Michael Gruber'
+__author__ = "Michael Gruber"
 
 
 class PythonPathTests(TestCase):
     def setUp(self):
-        self.project = Project(nc('/path/to/project'))
-        self.project.set_property('dir_source_unittest_python', 'unittest')
-        self.project.set_property('dir_source_main_python', 'src')
+        self.project = Project(np("/path/to/project"))
+        self.project.set_property("dir_source_unittest_python", "unittest")
+        self.project.set_property("dir_source_main_python", "src")
 
     def test_should_register_source_paths(self):
-        system_path = [nc('some/python/path')]
+        system_path = [np("some/python/path")]
 
         _register_test_and_source_path_and_return_test_dir(self.project, system_path, "unittest")
 
-        self.assertTrue(nc('/path/to/project/unittest') in system_path)
-        self.assertTrue(nc('/path/to/project/src') in system_path)
+        self.assertTrue(np(jp(self.project.basedir, "unittest")) in system_path)
+        self.assertTrue(np(jp(self.project.basedir, "src")) in system_path)
 
     def test_should_put_project_sources_before_other_sources(self):
-        system_path = [nc('irrelevant/sources')]
+        system_path = [np("irrelevant/sources")]
 
         _register_test_and_source_path_and_return_test_dir(self.project, system_path, "unittest")
 
-        test_sources_index_in_path = system_path.index(nc('/path/to/project/unittest'))
-        main_sources_index_in_path = system_path.index(nc('/path/to/project/src'))
-        irrelevant_sources_index_in_path = system_path.index(nc('irrelevant/sources'))
+        test_sources_index_in_path = system_path.index(np(jp(self.project.basedir, "unittest")))
+        main_sources_index_in_path = system_path.index(np(jp(self.project.basedir, "src")))
+        irrelevant_sources_index_in_path = system_path.index(np("irrelevant/sources"))
         self.assertTrue(test_sources_index_in_path < irrelevant_sources_index_in_path and
                         main_sources_index_in_path < irrelevant_sources_index_in_path)
 
@@ -64,34 +64,34 @@ class ExecuteTestsTests(TestCase):
         self.mock_result = Mock()
         self.mock_logger = Mock()
 
-    @patch('pybuilder.plugins.python.unittest_plugin.start_unittest_tool')
-    @patch('unittest.TextTestRunner')
-    @patch('pybuilder.plugins.python.unittest_plugin.unittest')
-    @patch('pybuilder.plugins.python.unittest_plugin.discover_modules_matching')
+    @patch("pybuilder.plugins.python.unittest_plugin.start_unittest_tool")
+    @patch("unittest.TextTestRunner")
+    @patch("pybuilder.plugins.python.unittest_plugin.unittest")
+    @patch("pybuilder.plugins.python.unittest_plugin.discover_modules_matching")
     def test_should_discover_modules_by_suffix(self, mock_discover_modules_matching, mock_unittest, runner, tool):
         pipe = Mock()
         pipe.remote_close_cause.return_value = None
         tool.return_value = (Mock(), pipe)
-        execute_tests([], runner, self.mock_logger, '/path/to/test/sources', '_tests.py')
+        execute_tests([], runner, self.mock_logger, "/path/to/test/sources", "_tests.py")
 
-        mock_discover_modules_matching.assert_called_with('/path/to/test/sources', '*_tests.py')
+        mock_discover_modules_matching.assert_called_with("/path/to/test/sources", "*_tests.py")
 
-    @patch('pybuilder.plugins.python.unittest_plugin.start_unittest_tool')
-    @patch('unittest.TextTestRunner')
-    @patch('pybuilder.plugins.python.unittest_plugin.unittest')
-    @patch('pybuilder.plugins.python.unittest_plugin.discover_modules_matching')
+    @patch("pybuilder.plugins.python.unittest_plugin.start_unittest_tool")
+    @patch("unittest.TextTestRunner")
+    @patch("pybuilder.plugins.python.unittest_plugin.unittest")
+    @patch("pybuilder.plugins.python.unittest_plugin.discover_modules_matching")
     def test_should_discover_modules_by_glob(self, mock_discover_modules_matching, mock_unittest, runner, tool):
         pipe = Mock()
         pipe.remote_close_cause.return_value = None
         tool.return_value = (Mock(), pipe)
-        execute_tests_matching([], runner, self.mock_logger, '/path/to/test/sources', '*_tests.py')
+        execute_tests_matching([], runner, self.mock_logger, "/path/to/test/sources", "*_tests.py")
 
-        mock_discover_modules_matching.assert_called_with('/path/to/test/sources', '*_tests.py')
+        mock_discover_modules_matching.assert_called_with("/path/to/test/sources", "*_tests.py")
 
-    @patch('pybuilder.plugins.python.unittest_plugin.start_unittest_tool')
-    @patch('unittest.TextTestRunner')
-    @patch('pybuilder.plugins.python.unittest_plugin.unittest')
-    @patch('pybuilder.utils.discover_modules')
+    @patch("pybuilder.plugins.python.unittest_plugin.start_unittest_tool")
+    @patch("unittest.TextTestRunner")
+    @patch("pybuilder.plugins.python.unittest_plugin.unittest")
+    @patch("pybuilder.utils.discover_modules")
     def test_should_return_actual_test_results(self, mock_discover_modules, mock_unittest, runner, tool):
         pipe = Mock()
         pipe.remote_close_cause.return_value = None
@@ -100,49 +100,49 @@ class ExecuteTestsTests(TestCase):
         mock_unittest.defaultTestLoader.loadTestsFromNames.return_value = mock_tests
         runner.return_value.run.return_value = self.mock_result
 
-        actual, _ = execute_tests([], runner, self.mock_logger, '/path/to/test/sources', '_tests.py')
+        actual, _ = execute_tests([], runner, self.mock_logger, "/path/to/test/sources", "_tests.py")
 
         self.assertEqual(self.mock_result, actual)
 
 
 class CIServerInteractionTests(TestCase):
-    @patch('pybuilder.ci_server_interaction.TestProxy')
-    @patch('pybuilder.ci_server_interaction._is_running_on_teamcity')
+    @patch("pybuilder.ci_server_interaction.TestProxy")
+    @patch("pybuilder.ci_server_interaction._is_running_on_teamcity")
     def test_should_report_passed_tests_to_ci_server(self, teamcity, proxy):
         teamcity.return_value = False
-        project = Project('basedir')
+        project = Project("basedir")
         mock_proxy = Mock()
         proxy.return_value = mock_proxy
         mock_proxy.and_test_name.return_value = mock_proxy
         mock_proxy.__enter__ = Mock(return_value=mock_proxy)
         mock_proxy.__exit__ = Mock(return_value=False)
         result = Mock()
-        result.test_names = ['test1', 'test2', 'test3']
+        result.test_names = ["test1", "test2", "test3"]
         result.failed_test_names_and_reasons = {}
 
         report_to_ci_server(project, result)
 
         mock_proxy.fails.assert_not_called()
 
-    @patch('pybuilder.ci_server_interaction.TestProxy')
-    @patch('pybuilder.ci_server_interaction._is_running_on_teamcity')
+    @patch("pybuilder.ci_server_interaction.TestProxy")
+    @patch("pybuilder.ci_server_interaction._is_running_on_teamcity")
     def test_should_report_failed_tests_to_ci_server(self, teamcity, proxy):
         teamcity.return_value = False
-        project = Project('basedir')
+        project = Project("basedir")
         mock_proxy = Mock()
         proxy.return_value = mock_proxy
         mock_proxy.and_test_name.return_value = mock_proxy
         mock_proxy.__enter__ = Mock(return_value=mock_proxy)
         mock_proxy.__exit__ = Mock(return_value=False)
         result = Mock()
-        result.test_names = ['test1', 'test2', 'test3']
+        result.test_names = ["test1", "test2", "test3"]
         result.failed_test_names_and_reasons = {
-            'test2': 'Something went very wrong'
+            "test2": "Something went very wrong"
         }
 
         report_to_ci_server(project, result)
 
-        mock_proxy.fails.assert_called_with('Something went very wrong')
+        mock_proxy.fails.assert_called_with("Something went very wrong")
 
 
 class TestNameAwareTestResult(TestCase):
@@ -174,7 +174,7 @@ class TestNameAwareTestResult(TestCase):
 
         self.assertEqual(
             self.mock_test_result.failed_test_names_and_reasons,
-            {'test_with_failure': 'type: exception'})
+            {"test_with_failure": "type: exception"})
 
     def test_should_save_exception_details_when_test_error_occurs(self):
         self.mock_test_result.addError(
@@ -183,7 +183,7 @@ class TestNameAwareTestResult(TestCase):
 
         self.assertEqual(
             self.mock_test_result.failed_test_names_and_reasons,
-            {'test_with_failure': 'type: exception'})
+            {"test_with_failure": "type: exception"})
 
     def test_should_save_exception_details_when_test_failure_with_unicode_occurs(self):
         self.mock_test_result.addFailure(
@@ -192,7 +192,7 @@ class TestNameAwareTestResult(TestCase):
 
         self.assertEqual(
             self.mock_test_result.failed_test_names_and_reasons,
-            {'test_with_failure': 'type: exception with ünicode'})
+            {"test_with_failure": "type: exception with ünicode"})
 
     def test_should_save_exception_details_when_test_error_with_unicode_occurs(self):
         self.mock_test_result.addError(
@@ -201,7 +201,7 @@ class TestNameAwareTestResult(TestCase):
 
         self.assertEqual(
             self.mock_test_result.failed_test_names_and_reasons,
-            {'test_with_failure': 'type: exception with ünicode'})
+            {"test_with_failure": "type: exception with ünicode"})
 
 
 class UnittestRunnerTest(TestCase):

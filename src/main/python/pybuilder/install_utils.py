@@ -16,8 +16,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from os.path import normcase as nc, join as jp
-
 from pybuilder.core import RequirementsFile, Dependency
 from pybuilder.errors import BuildFailedException
 from pybuilder.pip_utils import (create_constraint_file,
@@ -26,7 +24,7 @@ from pybuilder.pip_utils import (create_constraint_file,
                                  version_satisfies_spec,
                                  as_pip_install_target,
                                  get_packages_info)
-from pybuilder.utils import as_list, tail_log
+from pybuilder.utils import as_list, tail_log, np, jp
 
 
 def install_dependencies(logger, project, dependencies, python_env,
@@ -46,7 +44,7 @@ def install_dependencies(logger, project, dependencies, python_env,
                                                                                                 ignore_installed)
     constraints_file = None
     if constraints_file_name:
-        constraints_file = nc(jp(python_env.env_dir, constraints_file_name))
+        constraints_file = np(jp(python_env.env_dir, constraints_file_name))
         create_constraint_file(constraints_file, dependency_constraints)
 
     if not local_mapping:
@@ -79,7 +77,7 @@ def install_dependencies(logger, project, dependencies, python_env,
             pip_env["PIP_NO_INDEX"] = "1"
             logger.warn("PIP will be operating in the offline mode")
 
-        with open(nc(log_file_name), log_file_mode) as log_file:
+        with open(np(log_file_name), log_file_mode) as log_file:
             results = pip_install_batches(install_batch,
                                           python_env,
                                           index_url=project.get_property("install_dependencies_index_url"),

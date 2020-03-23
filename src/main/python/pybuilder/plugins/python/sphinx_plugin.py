@@ -19,10 +19,10 @@
 """Sphinx-plugin for PyBuilder to run a sphinx quickstart and generate the documentation once set up.
 """
 
-import sys
-from datetime import date
 from os import mkdir
 from os.path import join, dirname, relpath, exists, isdir
+
+from datetime import date
 from shutil import rmtree
 
 from pybuilder import scaffolding as SCAFFOLDING
@@ -46,11 +46,12 @@ except ImportError:
         if csl(link_name, source, flags) == 0:
             raise ctypes.WinError()
 
-__author__ = 'Thomas Prebble', 'Marcel Wolf', 'Arcadiy Ivanov'
+__author__ = "Thomas Prebble", "Marcel Wolf", "Arcadiy Ivanov"
 
 use_plugin("core")
+use_plugin("python.core")
 
-DEFAULT_SPHINX_OUTPUT_DIR = join(SCAFFOLDING.DEFAULT_DOCS_DIRECTORY, "_build", "")
+DEFAULT_SPHINX_OUTPUT_DIR = join(SCAFFOLDING.DEFAULT_DOCS_DIRECTORY, "_build")
 SPHINX_PYB_CONFIG_MODULE = "sphinx_pyb_conf"
 SPHINX_PYB_RUNTIME_DIR = ("$dir_target", "sphinx_pyb")
 SPHINX_PYB_APIDOC_DIR = "apidoc"
@@ -98,54 +99,54 @@ def initialize_sphinx_plugin(project):
     project.set_property_if_unset(
         "sphinx_project_conf", {
             "extensions": [
-                'sphinx.ext.autodoc',
-                'sphinx.ext.todo',
-                'sphinx.ext.viewcode',
+                "sphinx.ext.autodoc",
+                "sphinx.ext.todo",
+                "sphinx.ext.viewcode",
             ],
-            "templates_path": ['_templates'],
-            "source_suffix": '.rst',
-            "master_doc": 'index',
+            "templates_path": ["_templates"],
+            "source_suffix": ".rst",
+            "master_doc": "index",
             "project": project.get_property("sphinx_project_name"),
             "copyright": copyright,
             "author": project.get_property("sphinx_doc_author"),
             "version": project.get_property("sphinx_project_version"),
             "release": project.dist_version,
-            "language": 'en',
-            "exclude_patterns": ['_build', 'Thumbs.db', '.DS_Store'],
-            "pygments_style": 'sphinx',
+            "language": "en",
+            "exclude_patterns": ["_build", "Thumbs.db", ".DS_Store"],
+            "pygments_style": "sphinx",
             "todo_include_todos": True,
-            "html_static_path": ['_static'],
-            "htmlhelp_basename": '%sdoc' % project.get_property("sphinx_project_name"),
+            "html_static_path": ["_static"],
+            "htmlhelp_basename": "%sdoc" % project.get_property("sphinx_project_name"),
             "latex_elements": {
 
             },
 
             "latex_documents": [
-                ('index',
-                 '%s.tex' % project.get_property("sphinx_project_name"),
-                 '%s Documentation' % project.get_property("sphinx_project_name"),
-                 project.get_property("sphinx_doc_author"), 'manual'),
+                ("index",
+                 "%s.tex" % project.get_property("sphinx_project_name"),
+                 "%s Documentation" % project.get_property("sphinx_project_name"),
+                 project.get_property("sphinx_doc_author"), "manual"),
             ],
             "man_pages": [
-                ('index',
+                ("index",
                  project.get_property("sphinx_project_name"),
-                 '%s Documentation' % project.get_property("sphinx_project_name"),
+                 "%s Documentation" % project.get_property("sphinx_project_name"),
                  [project.get_property("sphinx_doc_author")], 1)
             ],
             "texinfo_documents": [
-                ('index',
+                ("index",
                  project.get_property("sphinx_project_name"),
-                 '%s Documentation' % project.get_property("sphinx_project_name"),
+                 "%s Documentation" % project.get_property("sphinx_project_name"),
                  project.get_property("sphinx_doc_author"),
                  project.get_property("sphinx_project_name"),
-                 'One line description of project.',
-                 'Miscellaneous'),
+                 "One line description of project.",
+                 "Miscellaneous"),
             ],
             "epub_title": project.get_property("sphinx_project_name"),
             "epub_author": project.get_property("sphinx_doc_author"),
             "epub_publisher": project.get_property("sphinx_doc_author"),
             "epub_copyright": copyright,
-            "epub_exclude_files": ['search.html']
+            "epub_exclude_files": ["search.html"]
         }
     )
 
@@ -176,7 +177,7 @@ def run_sphinx_build(build_command, task_name, logger, project, reactor, builder
     logger.info("Running %s" % task_name)
     log_file = project.expand_path("$dir_target", "reports", task_name)
 
-    build_command = [sys.executable, "-m"] + build_command
+    build_command = reactor.pybuilder_venv.executable + ["-m"] + build_command
     if project.get_property("verbose"):
         logger.debug(build_command)
 
@@ -227,7 +228,7 @@ def sphinx_pyb_quickstart_generate(project, logger, reactor):
     """
     sphinx_quickstart_generate(project, logger, reactor)  # If this fails we won't touch the config directory further
 
-    sphinx_config_path = project.get_property("sphinx_config_path")
+    sphinx_config_path = project.expand_path("$sphinx_config_path")
     sphinx_pyb_config_path = project.expand_path(*SPHINX_PYB_CONFIG_FILE_PATH)
     sphinx_pyb_config_dir = dirname(sphinx_pyb_config_path)
     sphinx_pyb_rel_dir = relpath(sphinx_pyb_config_dir, sphinx_config_path)
@@ -235,15 +236,15 @@ def sphinx_pyb_quickstart_generate(project, logger, reactor):
     content = """\
 # Automatically generated by PyB
 import sys
-from os import path
+from os.path import normcase as nc, normpath as np, join as jp, dirname, exists
 
-sphinx_pyb_dir = path.abspath(path.join(path.dirname(__file__) if __file__ else ".", "%(sphinx_pyb_rel_dir)s"))
-sphinx_pyb_module = "%(sphinx_pyb_module_name)s"
-sphinx_pyb_module_file = path.abspath(path.join(sphinx_pyb_dir, sphinx_pyb_module + ".py"))
+sphinx_pyb_dir = nc(np(jp(dirname(__file__) if __file__ else ".", %(sphinx_pyb_rel_dir)r))
+sphinx_pyb_module = %(sphinx_pyb_module_name)r
+sphinx_pyb_module_file = nc(np(jp(sphinx_pyb_dir, sphinx_pyb_module + ".py"))
 
 sys.path.insert(0, sphinx_pyb_dir)
 
-if not path.exists(sphinx_pyb_module_file):
+if not exists(sphinx_pyb_module_file):
     raise RuntimeError("No PyB-based Sphinx configuration found in " + sphinx_pyb_module_file)
 
 from %(sphinx_pyb_module_name)s import *
@@ -278,7 +279,7 @@ def get_sphinx_quickstart_command(project):
                "-p", project.get_property("sphinx_project_name"),
                "-a", project.get_property("sphinx_doc_author"),
                "-v", project.get_property("sphinx_project_version"),
-               project.expand_path(project.get_property("sphinx_source_dir"))]
+               project.expand_path("$sphinx_source_dir")]
     return options
 
 
@@ -292,7 +293,7 @@ def get_sphinx_build_command(project, logger, builder):
     verbose = None
     if project.get_property("verbose"):
         verbose = "-v"
-    if logger.threshold == logger.DEBUG:
+    if logger.level == logger.DEBUG:
         verbose = "-vvvv"
     if verbose:
         options.append(verbose)
@@ -310,12 +311,12 @@ def get_sphinx_build_command(project, logger, builder):
     return options
 
 
-def get_sphinx_apidoc_command(project):
+def get_sphinx_apidoc_command(project, reactor):
     implicit_namespaces = False
     try:
         import sphinx
 
-        if sys.version_info[:2] >= (3, 3) and sphinx.version_info[:2] >= (1, 5):
+        if reactor.pybuilder_venv.version[:2] >= (3, 3) and sphinx.version_info[:2] >= (1, 5):
             implicit_namespaces = True
     except ImportError:
         pass
@@ -329,7 +330,8 @@ def get_sphinx_apidoc_command(project):
 
     options += as_list(project.get_property("sphinx_apidoc_extra_args"))
 
-    options += ["-o", project.expand_path(*SPHINX_PYB_RUNTIME_APIDOC_DIR),
+    options += ["-o",
+                project.expand_path(*SPHINX_PYB_RUNTIME_APIDOC_DIR),
                 project.expand_path("$dir_source_main_python")]
     return options
 
@@ -356,6 +358,6 @@ def generate_sphinx_apidocs(project, logger, reactor):
     logger.debug("Creating %s", apidoc_dir)
     mkdir(apidoc_dir)
 
-    build_command = get_sphinx_apidoc_command(project)
+    build_command = get_sphinx_apidoc_command(project, reactor)
     logger.debug("Generating Sphinx API Doc")
     run_sphinx_build(build_command, "sphinx-apidoc", logger, project, reactor)

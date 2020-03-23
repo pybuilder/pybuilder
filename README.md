@@ -4,10 +4,17 @@ PyBuilder
 [PyBuilder](https://pybuilder.io)
 
 
-[![Gitter](https://badges.gitter.im/pybuilder/pybuilder.svg)](https://gitter.im/pybuilder/pybuilder)
-[![Build Status](https://secure.travis-ci.org/pybuilder/pybuilder.png?branch=master)](https://travis-ci.org/pybuilder/pybuilder)
-[![PyPI version](https://badge.fury.io/py/pybuilder.png)](https://pypi.org/project/pybuilder/)
-[![Coverage Status](https://coveralls.io/repos/pybuilder/pybuilder/badge.png?branch=master)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
+[![Gitter](https://img.shields.io/gitter/room/pybuilder/pybuilder)](https://gitter.im/pybuilder/pybuilder)
+[![Build Status](https://img.shields.io/travis/pybuilder/pybuilder/master)](https://travis-ci.org/pybuilder/pybuilder)
+[![Coverage Status](https://img.shields.io/coveralls/github/pybuilder/pybuilder/master)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
+
+[
+![PyBuilder Version](https://img.shields.io/pypi/v/pybuilder)
+![Python Versions](https://img.shields.io/pypi/pyversions/pybuilder)
+![](https://img.shields.io/pypi/dd/pybuilder)
+![](https://img.shields.io/pypi/dw/pybuilder)
+![](https://img.shields.io/pypi/dm/pybuilder)
+](https://pypi.org/project/pybuilder/)
 
 PyBuilder is a software build tool written in 100% pure Python, mainly
 targeting Python applications.

@@ -25,9 +25,9 @@
 import imp
 import os
 import os.path
-import sys
 from collections import deque
-from os.path import normcase as nc, join as jp
+
+import sys
 
 from pybuilder.core import (TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE, DEPENDENTS_ATTRIBUTE,
                             DESCRIPTION_ATTRIBUTE, AFTER_ATTRIBUTE,
@@ -43,7 +43,7 @@ from pybuilder.python_env import PythonEnvRegistry, PythonEnv
 from pybuilder.python_utils import IS_WIN, PY2, odict, patch_mp_pyb_env, add_env_to_path
 from pybuilder.utils import (as_list,
                              get_dist_version_string,
-                             basestring)
+                             basestring, np, jp)
 
 
 class BuildSummary:
@@ -460,27 +460,22 @@ class Reactor:
 
     @staticmethod
     def verify_project_directory(project_directory, project_descriptor):
-        project_directory = os.path.abspath(project_directory)
+        project_directory = np(project_directory)
 
         if not os.path.exists(project_directory):
-            raise PyBuilderException(
-                "Project directory does not exist: %s", project_directory)
+            raise PyBuilderException("Project directory does not exist: %s", project_directory)
 
         if not os.path.isdir(project_directory):
-            raise PyBuilderException(
-                "Project directory is not a directory: %s", project_directory)
+            raise PyBuilderException("Project directory is not a directory: %s", project_directory)
 
-        project_descriptor_full_path = os.path.join(
-            project_directory, project_descriptor)
+        project_descriptor_full_path = jp(project_directory, project_descriptor)
 
         if not os.path.exists(project_descriptor_full_path):
-            raise PyBuilderException(
-                "Project directory does not contain descriptor file: %s",
-                project_descriptor_full_path)
+            raise PyBuilderException("Project directory does not contain descriptor file: %s",
+                                     project_descriptor_full_path)
 
         if not os.path.isfile(project_descriptor_full_path):
-            raise PyBuilderException(
-                "Project descriptor is not a file: %s", project_descriptor_full_path)
+            raise PyBuilderException("Project descriptor is not a file: %s", project_descriptor_full_path)
 
         return project_directory, project_descriptor_full_path
 
@@ -505,8 +500,8 @@ class Reactor:
     def _setup_plugin_directory(self, reset_plugins):
         per = self.python_env_registry
         system_env = per["system"]
-        plugin_dir = self._plugin_dir = jp(nc(self.project.basedir), ".pybuilder", "plugins",
-                                           system_env.versioned_dir_name)
+        plugin_dir = self._plugin_dir = np(jp(self.project.basedir, ".pybuilder", "plugins",
+                                              system_env.versioned_dir_name))
 
         self.logger.debug("Setting up plugins VEnv at '%s'%s", plugin_dir, " (resetting)" if reset_plugins else "")
         plugin_env = per["pybuilder"] = PythonEnv(plugin_dir, self).create_venv(with_pip=True,

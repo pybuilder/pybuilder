@@ -16,8 +16,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import unittest
 from os.path import join
+
+import unittest
 
 from pybuilder.core import Project
 from pybuilder.plugins.python.core_plugin import (DISTRIBUTION_PROPERTY,
@@ -30,56 +31,64 @@ from test_utils import patch
 
 class InitPythonDirectoriesTest(unittest.TestCase):
     def greedy(self, generator):
-        return [element for element in generator]
+        return list(generator)
 
     def setUp(self):
         self.project = Project(".")
 
-    @patch("pybuilder.plugins.python.core_plugin.os.listdir")
-    @patch("pybuilder.plugins.python.core_plugin.os.path.isfile")
+    @patch("pybuilder.plugins.python.core_plugin.listdir")
+    @patch("pybuilder.plugins.python.core_plugin.isfile")
     def test_should_set_list_modules_function_with_project_modules(self, _, source_listdir):
         source_listdir.return_value = ["foo.py", "bar.py", "some-package"]
 
         init_python_directories(self.project)
 
         self.assertEqual(
-            ['foo', 'bar'],
+            ["foo", "bar"],
             self.greedy(self.project.list_modules())
         )
 
-    @patch("pybuilder.plugins.python.core_plugin.os.walk")
-    @patch("pybuilder.plugins.python.core_plugin.os.path.exists")
+    @patch("pybuilder.plugins.python.core_plugin.walk")
+    @patch("pybuilder.plugins.python.core_plugin.exists")
     def test_should_set_list_packages_function_with_project_packages(self, _, walk):
-        walk.return_value = [(join(".", "src", "main", "python", "pybuilder"),
-                              ['pluginhelper', 'plugins'],
-                              ['execution.py', 'terminal.py', 'execution.pyc', 'scaffolding.py']
-                              )]
         self.project.set_property("dir_source_main_python",
                                   "src/main/python")
 
         init_python_directories(self.project)
+        src_path = self.project.expand_path("$dir_source_main_python")
+
+        walk.return_value = [
+            (join(src_path, "pybuilder"), ["pluginhelper", "plugins"], ("__init__.py", "foo.py", "foo.txt")),
+            (join(src_path, "pybuilder", "pluginhelper"), (), "__init__.py"),
+            (join(src_path, "pybuilder", "plugins"), (), "__init__.py")
+        ]
 
         self.assertEqual(
-            ['pybuilder.pluginhelper',
-             'pybuilder.plugins'],
+            ["pybuilder",
+             "pybuilder.pluginhelper",
+             "pybuilder.plugins"],
             self.greedy(self.project.list_packages())
         )
 
-    @patch("pybuilder.plugins.python.core_plugin.os.walk")
-    @patch("pybuilder.plugins.python.core_plugin.os.path.exists")
+    @patch("pybuilder.plugins.python.core_plugin.walk")
+    @patch("pybuilder.plugins.python.core_plugin.exists")
     def test_should_not_cut_off_packages_when_path_ends_with_trailing_slash(self, _, walk):
-        walk.return_value = [(join(".", "src", "main", "python", "pybuilder"),
-                              ['pluginhelper', 'plugins'],
-                              ['execution.py', 'terminal.py', 'execution.pyc', 'scaffolding.py']
-                              )]
         self.project.set_property("dir_source_main_python",
                                   "src/main/python/")
 
         init_python_directories(self.project)
+        src_path = self.project.expand_path("$dir_source_main_python")
+
+        walk.return_value = [
+            (join(src_path, "pybuilder"), ["pluginhelper", "plugins"], ("__init__.py", "foo.py", "foo.txt")),
+            (join(src_path, "pybuilder", "pluginhelper"), (), "__init__.py"),
+            (join(src_path, "pybuilder", "plugins"), (), "__init__.py")
+        ]
 
         self.assertEqual(
-            ['pybuilder.pluginhelper',
-             'pybuilder.plugins'],
+            ["pybuilder",
+             "pybuilder.pluginhelper",
+             "pybuilder.plugins"],
             self.greedy(self.project.list_packages())
         )
 
