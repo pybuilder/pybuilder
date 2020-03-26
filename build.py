@@ -64,6 +64,8 @@ use_plugin("python.sphinx")
 if sys.platform != "win32":
     use_plugin("python.pdoc")
 
+use_plugin("python.vendorize")
+
 name = "pybuilder"
 summary = "An extensible, easy-to-use build automation tool for Python"
 description = """PyBuilder &#x2014; an easy-to-use build automation tool for Python.
@@ -86,7 +88,7 @@ url = "http://pybuilder.github.io"
 license = "Apache License"
 version = "0.12.0.dev"
 
-requires_python = ">=2.7,!=3.0,!=3.1,!=3.2,!=3.3,!=3.4,<3.9"
+requires_python = ">=2.7,!=3.0,!=3.1,!=3.2,!=3.3,!=3.4"
 
 default_task = ["analyze", "publish"]
 
@@ -96,6 +98,17 @@ def initialize(project):
     project.build_depends_on("pygments")
 
     project.set_property("verbose", True)
+
+    project.set_property("vendorize_target_dir", "$dir_source_main_python/pybuilder/_vendor")
+    project.set_property("vendorize_packages", ["tblib~=1.5",
+                                                "tailer~=0.4",
+                                                "setuptools<45.0.0",
+                                                "virtualenv>16.0.0,<20.0.0",
+                                                "colorama~=0.4.3"
+                                                ])
+    project.set_property("vendorize_cleanup_globs", ["bin",
+                                                     "setuptools*",
+                                                     "easy_install.py"])
 
     project.set_property("coverage_break_build", False)
     project.get_property("coverage_exceptions").extend(["pybuilder._vendor",

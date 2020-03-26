@@ -26,7 +26,6 @@ from shutil import rmtree
 from pybuilder.install_utils import install_dependencies
 from pybuilder.python_utils import is_windows, which
 from pybuilder.utils import assert_can_execute, execute_command
-from pybuilder.vendor import virtualenv
 
 __all__ = ["PythonEnv", "PythonEnvRegistry"]
 
@@ -219,7 +218,10 @@ class PythonEnv(object):
                              local_mapping=None,
                              constraints_file_name=None,
                              log_file_mode="ab",
-                             package_type="dependency"):
+                             package_type="dependency",
+                             target_dir=None,
+                             ignore_installed=False,
+                             ):
 
         install_dependencies(self.logger, self.project,
                              pip_batch,
@@ -228,7 +230,9 @@ class PythonEnv(object):
                              local_mapping=local_mapping,
                              constraints_file_name=constraints_file_name,
                              log_file_mode=log_file_mode,
-                             package_type=package_type)
+                             package_type=package_type,
+                             target_dir=target_dir,
+                             ignore_installed=ignore_installed)
 
     def verify_can_execute(self, command_and_arguments, prerequisite, caller, env=None, no_path_search=False,
                            inherit_env=True):
@@ -411,6 +415,8 @@ def create_venv(home_dir,
                 with_pip=False,
                 prompt=None,
                 offline=False):
+    import virtualenv
+
     if clear:
         if os.path.exists(home_dir):
             rmtree(home_dir)

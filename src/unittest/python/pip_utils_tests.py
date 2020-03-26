@@ -18,9 +18,11 @@
 
 import unittest
 
-from pybuilder import core
+from pybuilder import extern, core
 from pybuilder import pip_utils
 from test_utils import ANY, Mock
+
+_extern = extern
 
 
 class PipVersionTests(unittest.TestCase):
