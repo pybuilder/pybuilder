@@ -18,9 +18,10 @@
 
 import os
 import platform
-import sys
 import traceback
 from collections import OrderedDict
+
+import sys
 
 try:
     basestring = basestring

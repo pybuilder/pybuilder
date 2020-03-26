@@ -16,17 +16,17 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
+from os import sep, listdir, walk
+from os.path import isdir, isfile, exists, relpath
+
 import re
 import shutil
 from functools import partial
 
 from pybuilder.core import description
-from pybuilder.core import (task,
-                            use_plugin,
-                            init)
+from pybuilder.core import task, use_plugin, init
 from pybuilder.python_env import PythonEnv
-from pybuilder.utils import (as_list, mkdir)
+from pybuilder.utils import as_list, mkdir, makedirs, np, jp
 
 HIDDEN_FILE_NAME_PATTERN = re.compile(r'^\..*$')
 
@@ -101,34 +101,27 @@ def create_venvs(logger, project, reactor):
 
 
 def list_packages(project):
-    source_path = project.expand_path("$dir_source_main_python")
-    for root, dirnames, _ in os.walk(source_path):
-        for directory in dirnames:
-            full_path = os.path.join(root, directory)
-            if os.path.exists(os.path.join(full_path, "__init__.py")):
-                package = full_path.replace(source_path, "")
-                if package.startswith(os.sep):
-                    package = package[1:]
-                package = package.replace(os.sep, ".")
-                yield package
+    source_path = project.expand_path("$" + PYTHON_SOURCES_PROPERTY)
+    for root, dirs, files in walk(source_path):
+        if "__init__.py" in files:
+            yield relpath(root, source_path).replace(sep, ".")
 
 
 def list_modules(project):
-    source_path = project.expand_path("$dir_source_main_python")
-    for potential_module_file in os.listdir(source_path):
-        potential_module_path = os.path.join(source_path, potential_module_file)
-        if os.path.isfile(potential_module_path) and potential_module_file.endswith(".py"):
+    source_path = project.expand_path("$" + PYTHON_SOURCES_PROPERTY)
+    for potential_module_file in listdir(source_path):
+        potential_module_path = np(jp(source_path, potential_module_file))
+        if isfile(potential_module_path) and potential_module_file.endswith(".py"):
             yield potential_module_file[:-len(".py")]
 
 
 def list_scripts(project):
-    scripts_dir = project.expand_path("$dir_source_main_scripts")
-    if not os.path.exists(scripts_dir):
+    scripts_dir = project.expand_path("$" + SCRIPTS_SOURCES_PROPERTY)
+    if not exists(scripts_dir):
         return
-    for script in os.listdir(scripts_dir):
-        if os.path.isfile(os.path.join(scripts_dir, script)) \
-                and not HIDDEN_FILE_NAME_PATTERN.match(script):
-            yield script
+    for script in listdir(scripts_dir):
+        if isfile(jp(scripts_dir, script)) and not HIDDEN_FILE_NAME_PATTERN.match(script):
+            yield np(script)
 
 
 @task
@@ -147,13 +140,13 @@ def copy_scripts(project, logger):
     if project.get_property(SCRIPTS_TARGET_PROPERTY):
         scripts_target = project.expand_path("$" + DISTRIBUTION_PROPERTY + "/$" + SCRIPTS_TARGET_PROPERTY)
 
-    if not os.path.exists(scripts_target):
-        os.mkdir(scripts_target)
+    if not exists(scripts_target):
+        mkdir(scripts_target)
 
     logger.info("Copying scripts to %s", scripts_target)
 
     scripts_source = project.expand_path("$" + SCRIPTS_SOURCES_PROPERTY)
-    if not os.path.exists(scripts_source):
+    if not exists(scripts_source):
         return
     for script in project.list_scripts():
         logger.debug("Copying script %s", script)
@@ -162,13 +155,13 @@ def copy_scripts(project, logger):
 
 
 def copy_python_sources(project, logger):
-    for package in os.listdir(project.expand_path("$" + PYTHON_SOURCES_PROPERTY)):
+    for package in listdir(project.expand_path("$" + PYTHON_SOURCES_PROPERTY)):
         if HIDDEN_FILE_NAME_PATTERN.match(package):
             continue
         logger.debug("Copying module/ package %s", package)
         source = project.expand_path("$" + PYTHON_SOURCES_PROPERTY, package)
         target = project.expand_path("$" + DISTRIBUTION_PROPERTY, package)
-        if os.path.isdir(source):
+        if isdir(source):
             shutil.copytree(source, target,
                             symlinks=False,
                             ignore=shutil.ignore_patterns("*.pyc", ".*"))
@@ -179,9 +172,9 @@ def copy_python_sources(project, logger):
 def init_dist_target(project, logger):
     dist_target = project.expand_path("$" + DISTRIBUTION_PROPERTY)
 
-    if os.path.exists(dist_target):
+    if exists(dist_target):
         logger.debug("Removing preexisting distribution %s", dist_target)
         shutil.rmtree(dist_target)
 
     logger.debug("Creating directory %s", dist_target)
-    os.makedirs(dist_target)
+    makedirs(dist_target)
