@@ -232,7 +232,7 @@ def get_package_version(mixed, logger=None, entry_paths=None):
         else:
             return mixed
 
-    entry_paths = as_list(entry_paths) if entry_paths else None
+    entry_paths = as_list(entry_paths) if entry_paths is not None else None
     package_query = [normalized_package for normalized_package in
                      (normalize_dependency_package(p) for p in as_list(mixed)) if normalized_package]
     ws = WorkingSet(entry_paths)
@@ -248,6 +248,7 @@ def get_packages_info(entry_paths=None):
     Gather details from installed distributions. Print distribution name,
     version, location, and installed files.
     """
+    entry_paths = as_list(entry_paths) if entry_paths is not None else None
     ws = WorkingSet(entry_paths)
     installed = {}
     for dist in ws:

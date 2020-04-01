@@ -23,15 +23,15 @@
 """
 
 import ast
-from glob import iglob
-from os import sep, unlink, walk
-from os.path import exists, relpath, isdir
-
 import re
+import sys
 from itertools import chain
+from os import sep, unlink, walk
+from os.path import exists, relpath, isdir, splitext, basename, dirname
 from shutil import rmtree
 
 from pybuilder.core import task, init, use_plugin, depends, Dependency
+from pybuilder.python_utils import iglob
 from pybuilder.utils import as_list, makedirs, jp, np
 
 __author__ = "Arcadiy Ivanov"
@@ -47,6 +47,8 @@ def initialize_vendorize_plugin(project):
     project.set_property_if_unset("vendorize_target_dir", "$dir_source_main_python/_vendor")
     project.set_property_if_unset("vendorize_clean_target_dir", True)
     project.set_property_if_unset("vendorize_cleanup_globs", [])
+    project.set_property_if_unset("vendorize_collect_licenses", True)
+    project.set_property_if_unset("vendorize_licenses", "$vendorize_target_dir/LICENSES")
 
 
 @task
@@ -70,20 +72,39 @@ def vendorize(project, reactor, logger):
                                                 ignore_installed=True)
 
     # Vendorize
-    _vendorize(target_dir)
+    _vendorize(target_dir, logger)
+
+    if project.get_property("vendorize_collect_licenses"):
+        licenses_content = ""
+        for p in _list_metadata_dirs(target_dir):
+            package_name, _ = splitext(basename(p))
+            lic_file = None
+            for f in ("LICENSE", "LICENSE.txt"):
+                f = jp(p, f)
+                if exists(f):
+                    lic_file = f
+                    break
+
+            if not lic_file:
+                logger.warn("No license file found in package %r", package_name)
+                continue
+
+            with open(lic_file, "rt") as f:
+                licenses_content += "%s\n==========\n%s\n\n" % (package_name, f.read())
+
+            logger.debug("Collected license file for package %r", package_name)
+
+        with open(project.expand_path("$vendorize_licenses"), "wt") as f:
+            f.write(licenses_content)
 
     # Cleanup globs
     for g in project.get_property("vendorize_cleanup_globs"):
-        for p in iglob(jp(target_dir, g)):
+        for p in iglob(jp(target_dir, g), recursive=True):
+            print(p)
             if isdir(p):
                 rmtree(p)
             else:
                 unlink(p)
-
-    # Populate names after cleanup
-    cleaned_up_packages = _list_top_level_packages(target_dir)
-    with open(jp(target_dir, "__init__.py"), "wt") as init_py:
-        init_py.write("__names__ = %r\n" % sorted(cleaned_up_packages))
 
     # Cleanup metadata
     for p in _list_metadata_dirs(target_dir):
@@ -91,6 +112,12 @@ def vendorize(project, reactor, logger):
             rmtree(p)
         else:
             unlink(p)
+
+    # Populate names after cleanup
+    cleaned_up_packages = list(chain((basename(dirname(f)) for f in iglob(jp(target_dir, "*", "__init__.py"))),
+                                     (basename(f)[:-3] for f in iglob(jp(target_dir, "*.py")))))
+    with open(jp(target_dir, "__init__.py"), "wt") as init_py:
+        init_py.write("__names__ = %r\n" % sorted(cleaned_up_packages))
 
 
 def _relpkg_import(pkg_parts):
@@ -115,7 +142,56 @@ def _path_to_package(path):
     return pkg_parts
 
 
-class ImportTransformer(ast.NodeVisitor):
+if sys.version_info[:2] < (3, 8):
+    class NodeVisitor(object):
+        def __init__(self):
+            self._count = 0
+            self._q = []
+            self.source_lines = None
+
+        def _visit(self, node):
+            if hasattr(node, "lineno") and hasattr(node, "col_offset"):
+                self._q.append(node)
+
+            for field, value in ast.iter_fields(node):
+                if isinstance(value, list):
+                    for item in value:
+                        if isinstance(item, ast.AST):
+                            self._visit(item)
+                elif isinstance(value, ast.AST):
+                    self._visit(value)
+
+        def visit(self, node):
+            """Visit a node."""
+            self._visit(node)
+
+            q = self._q
+            len_q = len(self._q)
+            sl = self.source_lines
+
+            for idx, node in enumerate(q):
+                method = 'visit_' + node.__class__.__name__
+                visitor = getattr(self, method, None)
+                if visitor:
+                    next_idx = idx + 1
+                    if next_idx < len_q:
+                        next_node = q[next_idx]
+                        if node.lineno == next_node.lineno:
+                            node.end_lineno = next_node.lineno
+                            node.end_col_offset = next_node.col_offset - 1
+                        else:
+                            node.end_lineno = next_node.lineno - 1
+                            node.end_col_offset = sl[node.end_lineno] - sl[node.end_lineno - 1]
+                    else:
+                        node.end_lineno = len(sl) - 1
+                        node.end_col_offset = sl[node.end_lineno] - sl[node.end_lineno - 1]
+
+                    visitor(node)
+else:
+    NodeVisitor = ast.NodeVisitor
+
+
+class ImportTransformer(NodeVisitor):
     def __init__(self, source_path, source, vendor_path, vendorized_packages, results):
         super(ImportTransformer, self).__init__()
         self.source_path = source_path
@@ -158,7 +234,6 @@ class ImportTransformer(ast.NodeVisitor):
                     self.offset += -len(alias.name) + len(name[0])
 
             self.transformed_source = ts_prefix + inject + import_stmt + ts_postfix
-        return node
 
     def visit_ImportFrom(self, node):
         if not node.level:
@@ -175,16 +250,15 @@ class ImportTransformer(ast.NodeVisitor):
                     ts_postfix = ts[offset_start + self.offset + m.end(1):]
                     inject = import_changes
                     self.transformed_source = ts_prefix + inject + ts_postfix
-                    self.offset += len(inject) - len(m[1])
+                    self.offset += len(inject) - len(m.group(1))
                     break
-        return node
 
     def extract_source(self, node):
         start_off, end_off = _extract_source(self.source_lines, node)
         return self.source[start_off:end_off], start_off, end_off
 
 
-def _vendorize(vendorized_path):
+def _vendorize(vendorized_path, logger):
     vendorized_packages = _list_top_level_packages(vendorized_path)
     for root, dirs, files in walk(vendorized_path):
         for py_path in files:
@@ -196,8 +270,10 @@ def _vendorize(vendorized_path):
             parsed_ast = ast.parse(source, filename=py_path)
             it = ImportTransformer(py_path, source, vendorized_path, vendorized_packages, [])
             it.visit(parsed_ast)
-            with open(py_path, "wt") as source_file:
-                source_file.write(it.transformed_source)
+            if source != it.transformed_source:
+                logger.debug("Vendorized %r", py_path)
+                with open(py_path, "wt") as source_file:
+                    source_file.write(it.transformed_source)
 
     return vendorized_packages
 

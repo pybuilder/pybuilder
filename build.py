@@ -19,8 +19,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import sys
 from os.path import dirname, join as jp, normcase as nc
+
+import sys
 
 # This is only necessary in PyBuilder sources for bootstrap
 build_sources = nc(jp(dirname(__file__), "src/main/python"))
@@ -107,7 +108,7 @@ def initialize(project):
                                                 "colorama~=0.4.3"
                                                 ])
     project.set_property("vendorize_cleanup_globs", ["bin",
-                                                     "setuptools*",
+                                                     "setuptools",
                                                      "easy_install.py"])
 
     project.set_property("coverage_break_build", False)
@@ -131,6 +132,7 @@ def initialize(project):
     project.get_property("copy_resources_glob").append("LICENSE")
     project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
     project.include_file("pybuilder", "LICENSE")
+    project.include_file("pybuilder._vendor", "LICENSES")
     project.include_file("", "*.whl")  # All included binary wheels from vendors
 
     project.set_property("sphinx_doc_author", "PyBuilder Team")
@@ -150,6 +152,9 @@ def initialize(project):
 
     # enable this to build a bdist on vagrant
     # project.set_property("distutils_issue8876_workaround_enabled", True)
+
+    project.set_property_if_unset("distutils_commands", ["bdist_wheel"])
+
     project.set_property("distutils_readme_description", True)
     project.set_property("distutils_description_overwrite", True)
     project.set_property("distutils_console_scripts", ["pyb = pybuilder.cli:main"])
