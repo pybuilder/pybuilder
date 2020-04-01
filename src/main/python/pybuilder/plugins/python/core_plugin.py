@@ -16,12 +16,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from os import sep, listdir, walk
-from os.path import isdir, isfile, exists, relpath
-
 import re
 import shutil
 from functools import partial
+from os import sep, listdir, walk
+from os.path import isdir, isfile, exists, relpath
 
 from pybuilder.core import description
 from pybuilder.core import task, use_plugin, init
@@ -102,26 +101,35 @@ def create_venvs(logger, project, reactor):
 
 def list_packages(project):
     source_path = project.expand_path("$" + PYTHON_SOURCES_PROPERTY)
+    result = []
     for root, dirs, files in walk(source_path):
         if "__init__.py" in files:
-            yield relpath(root, source_path).replace(sep, ".")
+            result.append(relpath(root, source_path).replace(sep, "."))
+
+    return sorted(result)
 
 
 def list_modules(project):
     source_path = project.expand_path("$" + PYTHON_SOURCES_PROPERTY)
+    result = []
     for potential_module_file in listdir(source_path):
         potential_module_path = np(jp(source_path, potential_module_file))
         if isfile(potential_module_path) and potential_module_file.endswith(".py"):
-            yield potential_module_file[:-len(".py")]
+            result.append(potential_module_file[:-3])
+
+    return sorted(result)
 
 
 def list_scripts(project):
     scripts_dir = project.expand_path("$" + SCRIPTS_SOURCES_PROPERTY)
+    result = []
     if not exists(scripts_dir):
-        return
+        return result
     for script in listdir(scripts_dir):
         if isfile(jp(scripts_dir, script)) and not HIDDEN_FILE_NAME_PATTERN.match(script):
-            yield np(script)
+            result.append(np(script))
+
+    return sorted(result)
 
 
 @task

@@ -44,7 +44,7 @@ class InitPythonDirectoriesTest(unittest.TestCase):
         init_python_directories(self.project)
 
         self.assertEqual(
-            ["foo", "bar"],
+            ["bar", "foo"],
             self.greedy(self.project.list_modules())
         )
 
