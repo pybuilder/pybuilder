@@ -8,6 +8,11 @@ branches:
     - master
     - doc/sphinxdoc
     - 0.11
+os:
+  - linux
+  - osx
+  - windows
+osx_image: xcode11.3
 env:
   jobs:
     - PYTHON_VERSION="3.8.2"
@@ -25,11 +30,8 @@ env:
     - PYB_ARGS: "'-E ci -v -X analyze install'"
     - TWINE_USERNAME: pybuilder-travis2
     - secure: D49QJr9Z4v9yz9VObFw0q44o2fy3YBjI48b6+Vb1qr2RNMF5GpVj+xWFTr9j1qMw7ilfwWCEKlHytKmh/OSOStUcd1vTlasGz8YefBCP8iIbvp9M6qcBKqMlp8f/6uxwUxak+OMvj5WuKwtyIUy8L9JwDxd02Q12MUW6SNtu2Lo=
-os:
-  - linux
-  - osx
-  - windows
 jobs:
+  fast_finish: true
   exclude:
     - os: windows
       env: PYTHON_VERSION="pypy2.7-7.3.0"
@@ -38,7 +40,8 @@ jobs:
     - os: windows
       env: PYTHON_VERSION="pypy3.6-7.3.0"
   allow_failures:
-    - if: env(PYTHON_VERSION) =~ /^pypy.+$/
+    - if: env(PYTHON_VERSION) =~ /^pypy.+$/ OR os = osx
+
 cache:
   directories:
     - $HOME/.pyenv
