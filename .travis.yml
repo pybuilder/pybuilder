@@ -31,7 +31,6 @@ env:
     - TWINE_USERNAME: pybuilder-travis2
     - secure: D49QJr9Z4v9yz9VObFw0q44o2fy3YBjI48b6+Vb1qr2RNMF5GpVj+xWFTr9j1qMw7ilfwWCEKlHytKmh/OSOStUcd1vTlasGz8YefBCP8iIbvp9M6qcBKqMlp8f/6uxwUxak+OMvj5WuKwtyIUy8L9JwDxd02Q12MUW6SNtu2Lo=
 jobs:
-  fast_finish: true
   exclude:
     - os: windows
       env: PYTHON_VERSION="pypy2.7-7.3.0"
