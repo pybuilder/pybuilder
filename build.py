@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-#
-
 #   -*- coding: utf-8 -*-
 #
 #   This file is part of PyBuilder
@@ -150,13 +148,9 @@ def initialize(project):
     # Also Windows needs PATH for DLL loading in all Pythons
     project.set_property("integrationtest_inherit_environment", True)
 
-    # enable this to build a bdist on vagrant
-    # project.set_property("distutils_issue8876_workaround_enabled", True)
-
-    project.set_property_if_unset("distutils_commands", ["bdist_wheel"])
-
     project.set_property("distutils_readme_description", True)
     project.set_property("distutils_description_overwrite", True)
+    project.set_property("distutils_upload_skip_existing", True)
     project.set_property("distutils_console_scripts", ["pyb = pybuilder.cli:main"])
     project.set_property("distutils_classifiers", [
         "Programming Language :: Python",

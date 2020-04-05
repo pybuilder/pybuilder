@@ -21,11 +21,11 @@ import unittest
 from smoke_itest_support import SmokeIntegrationTestSupport
 
 
-class SphinxSmokeTest(SmokeIntegrationTestSupport):
-    PROJECT_FILES = list(SmokeIntegrationTestSupport.PROJECT_FILES) + ["docs"]
+class PEP517SmokeTest(SmokeIntegrationTestSupport):
+    PROJECT_FILES = list(SmokeIntegrationTestSupport.PROJECT_FILES) + ["pyproject.toml"]
 
-    def test_smoke_analyze_publish_no_integration_no_coverage(self):
-        self.smoke_test("-v", "-X", "vendorize")
+    def test_smoke_pep517_install(self):
+        self.smoke_test_module("pip", "-vvvvvvvvvvvvvv", "install", ".")
 
 
 if __name__ == "__main__":

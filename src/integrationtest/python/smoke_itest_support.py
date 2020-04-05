@@ -19,7 +19,7 @@
 import sys
 from os import chdir, getcwd
 from os.path import join as jp, dirname, exists, isfile, isdir
-from runpy import run_path
+from runpy import run_path, run_module
 from shutil import copytree, copy2
 
 import base_itest_support
@@ -70,6 +70,31 @@ class SmokeIntegrationTestSupport(base_itest_support.BaseIntegrationTestSupport)
         chdir(self.tmp_directory)
         try:
             return run_path(self.build_py, run_name="__main__")
+        except SystemExit as e:
+            self.assertEqual(e.code, 0, "Test did not exit successfully")
+        finally:
+            del sys.argv[:]
+            sys.argv.extend(old_argv)
+
+            sys.modules.clear()
+            sys.modules.update(old_modules)
+
+            del sys.meta_path[:]
+            sys.meta_path.extend(old_meta_path)
+            chdir(old_cwd)
+
+    def smoke_test_module(self, module, *args):
+        old_argv = list(sys.argv)
+        del sys.argv[:]
+        sys.argv.append("bogus")
+        sys.argv.extend(args)
+
+        old_modules = dict(sys.modules)
+        old_meta_path = list(sys.meta_path)
+        old_cwd = getcwd()
+        chdir(self.tmp_directory)
+        try:
+            return run_module(module, run_name="__main__")
         except SystemExit as e:
             self.assertEqual(e.code, 0, "Test did not exit successfully")
         finally:

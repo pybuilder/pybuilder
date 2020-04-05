@@ -11,3 +11,5 @@ set PATH=%VENV_DIR%;%PATH%
 
 where python
 python --version
+pip install -U pip setuptools
+pip --version
