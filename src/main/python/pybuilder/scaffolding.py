@@ -89,18 +89,34 @@ def start_project():
 
     scaffolding.set_up_project()
     _create_setup_file()
+    _create_pyproject_file()
     return 0
 
 
 def update_project():
     _create_setup_file()
+    _create_pyproject_file()
     return 0
+
+
+def _create_pyproject_file():
+    pyproject_contents = '''[build-system]
+requires = ["pybuilder"]
+build-backend = "pybuilder.pep517"
+'''
+    if os.path.exists("pyproject.toml"):
+        choice = prompt_user("Overwrite 'pyproject.toml' (y/N)?", 'n')
+        overwrite = not choice or choice.lower() == 'y'
+        if not overwrite:
+            return
+        os.unlink("pyproject.toml")
+    with open('pyproject.toml', 'w') as pyproject_file:
+        pyproject_file.write(pyproject_contents)
+    print_text_line("\nCreated 'pyproject.toml'.")
 
 
 def _create_setup_file():
     setup_py_file_contents = '''#!/usr/bin/env python
-#
-
 #   -*- coding: utf-8 -*-
 #
 #   This file is part of PyBuilder
@@ -143,7 +159,7 @@ if py2:
 
 def install_pyb():
     try:
-        subprocess.check_call([sys.executable, "-m", "pip.__main__", "install", "pybuilder"])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "pybuilder"])
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
 
@@ -165,8 +181,16 @@ except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
 
 try:
-    subprocess.check_call(["pyb", "clean", "package", "-o"])
-    dist_dir = glob.glob(os.path.join(script_dir, "target", "dist", "*"))[0]
+    from pybuilder.cli import main
+    # verbose, debug, skip all optional...
+    if main("-v", "-X", "-o", "--reset-plugins", "clean", "package"):
+        raise RuntimeError("PyBuilder build failed")
+
+    from pybuilder.reactor import Reactor
+    reactor = Reactor.current_instance()
+    project = reactor.project
+    dist_dir = project.expand_path("$dir_dist")
+
     for src_file in glob.glob(os.path.join(dist_dir, "*")):
         file_name = os.path.basename(src_file)
         target_file_name = os.path.join(script_dir, file_name)

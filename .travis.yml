@@ -39,7 +39,7 @@ jobs:
     - os: windows
       env: PYTHON_VERSION="pypy3.6-7.3.0"
   allow_failures:
-    - if: env(PYTHON_VERSION) =~ /^pypy.+$/ OR os = osx
+    - if: env(PYTHON_VERSION) =~ /^pypy.+$/
 
 cache:
   directories:
@@ -49,5 +49,5 @@ notifications:
     urls:
       - https://webhooks.gitter.im/e/3e07f25a6c20d8c6c172
     on_cancel:  never # default: always
-install: python travis/travis_shim.py install
-script: python travis/travis_shim.py build
+install: travis_wait 30 python travis/travis_shim.py install
+script: travis_wait 60 python travis/travis_shim.py build

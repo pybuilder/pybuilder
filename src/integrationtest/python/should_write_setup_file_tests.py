@@ -103,6 +103,7 @@ if __name__ == '__main__':
         version = '1.0.dev0',
         description = '',
         long_description = '',
+        long_description_content_type = None,
         author = '',
         author_email = '',
         license = '',

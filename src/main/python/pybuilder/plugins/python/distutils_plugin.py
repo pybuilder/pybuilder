@@ -16,6 +16,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import io
 import os
 import re
 import string
@@ -68,6 +69,7 @@ if __name__ == '__main__':
         version = $version,
         description = $summary,
         long_description = $description,
+        long_description_content_type = $description_content_type,
         author = $author,
         author_email = $author_email,
         license = $license,
@@ -104,6 +106,7 @@ def as_str(value):
 @init
 def initialize_distutils_plugin(project):
     project.plugin_depends_on("pypandoc", "~=1.4")
+    project.plugin_depends_on("setuptools", ">=38.6.0")
     project.plugin_depends_on("twine", ">=1.15.0")
     project.plugin_depends_on("wheel", ">=0.34.0")
 
@@ -123,9 +126,14 @@ def initialize_distutils_plugin(project):
     project.set_property_if_unset("distutils_upload_repository_key", None)
     project.set_property_if_unset("distutils_upload_sign", False)
     project.set_property_if_unset("distutils_upload_sign_identity", None)
+    project.set_property_if_unset("distutils_upload_skip_existing", False)
 
     project.set_property_if_unset("distutils_readme_description", False)
     project.set_property_if_unset("distutils_readme_file", "README.md")
+    project.set_property_if_unset("distutils_readme_file_convert", False)
+    project.set_property_if_unset("distutils_readme_file_type", None)
+    project.set_property_if_unset("distutils_readme_file_encoding", None)
+    project.set_property_if_unset("distutils_readme_file_variant", None)
     project.set_property_if_unset("distutils_description_overwrite", False)
 
     project.set_property_if_unset("distutils_console_scripts", None)
@@ -136,11 +144,28 @@ def initialize_distutils_plugin(project):
 @after("prepare")
 def set_description(project, logger, reactor):
     if project.get_property("distutils_readme_description"):
-        try:
-            reactor.pybuilder_venv.verify_can_execute(["pandoc", "--version"], "pandoc", "distutils")
-            doc_convert(project, logger)
-        except (MissingPrerequisiteException, ImportError):
-            logger.warn("Was unable to find pandoc or pypandoc and did not convert the documentation")
+        description = None
+        if project.get_property("distutils_readme_file_convert"):
+            try:
+                reactor.pybuilder_venv.verify_can_execute(["pandoc", "--version"], "pandoc", "distutils")
+                description = doc_convert(project, logger)
+            except (MissingPrerequisiteException, ImportError):
+                logger.warn("Was unable to find pandoc or pypandoc and did not convert the documentation")
+        else:
+            with io.open(project.expand_path("$distutils_readme_file"), "rt",
+                         encoding=project.get_property("distutils_readme_file_encoding")) as f:
+                description = f.read()
+
+        if description:
+            if (not hasattr(project, "description") or
+                    project.description is None or
+                    project.get_property("distutils_description_overwrite")):
+                setattr(project, "description", description)
+
+            if (not hasattr(project, "summary") or
+                    project.summary is None or
+                    project.get_property("distutils_description_overwrite")):
+                setattr(project, "summary", description.splitlines()[0].strip())
 
 
 @after("package")
@@ -164,6 +189,7 @@ def render_setup_script(project):
         "version": as_str(project.dist_version),
         "summary": as_str(default(project.summary)),
         "description": as_str(default(project.description)),
+        "description_content_type": repr(_get_description_content_type(project)),
         "author": as_str(author),
         "author_email": as_str(author_email),
         "license": as_str(default(project.license)),
@@ -218,6 +244,7 @@ def build_binary_distribution(project, logger, reactor):
     commands = [build_command_with_options(cmd, project.get_property("distutils_command_options"))
                 for cmd in as_list(project.get_property("distutils_commands"))]
     execute_distutils(project, logger, reactor.pybuilder_venv, commands, True)
+    upload_check(project, logger, reactor)
 
 
 @task("install")
@@ -262,15 +289,25 @@ def upload(project, logger, reactor):
     if project.get_property("distutils_upload_register"):
         logger.info("Registering project %s-%s%s", project.name, project.version,
                     (" into repository '%s'" % repository) if repository else "")
-        execute_twine(project, logger, reactor.pybuilder_venv, repository_args, True)
+        execute_twine(project, logger, reactor.pybuilder_venv, repository_args, "register")
 
-    logger.info("Uploading project %s-%s%s%s%s", project.name, project.version,
+    skip_existing = project.get_property("distutils_upload_skip_existing")
+    logger.info("Uploading project %s-%s%s%s%s%s", project.name, project.version,
                 (" to repository '%s'" % repository) if repository else "",
                 get_dist_version_string(project, " as version %s"),
-                (" signing%s" % (" with %s" % sign_identity if sign_identity else "")) if upload_sign else "")
+                (" signing%s" % (" with %s" % sign_identity if sign_identity else "")) if upload_sign else "",
+                (", will skip existing" if skip_existing else ""))
 
     upload_cmd_args = repository_args + upload_sign_args
-    execute_twine(project, logger, reactor.pybuilder_venv, upload_cmd_args, False)
+    if skip_existing:
+        upload_cmd_args.append("--skip-existing")
+
+    execute_twine(project, logger, reactor.pybuilder_venv, upload_cmd_args, "upload")
+
+
+def upload_check(project, logger, reactor):
+    logger.info("Running Twine check for generated artifcats")
+    execute_twine(project, logger, reactor.pybuilder_venv, [], "check")
 
 
 def render_manifest_file(project):
@@ -324,17 +361,11 @@ def execute_distutils(project, logger, python_env, distutils_commands, clean=Fal
                     command, out_file, tail_log(out_file))
 
 
-def execute_twine(project, logger, python_env, command_args, register):
+def execute_twine(project, logger, python_env, command_args, command):
     reports_dir = _prepare_reports_dir(project)
-    dist_artifact_dir = project.expand_path("$dir_dist", "dist")
+    dist_artifact_dir, artifacts = _get_generated_artifacts(project, logger)
 
-    if register:
-        command = "register"
-    else:
-        command = "upload"
-
-    artifacts = [os.path.join(dist_artifact_dir, artifact) for artifact in list(os.walk(dist_artifact_dir))[0][2]]
-    if register:
+    if command == "register":
         for artifact in artifacts:
             out_file = os.path.join(reports_dir,
                                     safe_log_file_name("twine_%s_%s.log" % (command, os.path.basename(artifact))))
@@ -604,14 +635,7 @@ def doc_convert(project, logger):
     import pypandoc
     readme_file = project.expand_path("$distutils_readme_file")
     logger.debug("Converting %s into RST format for PyPi documentation...", readme_file)
-    description = pypandoc.convert_file(readme_file, "rst")
-    if not hasattr(project, "description") or project.description is None or project.get_property(
-            "distutils_description_overwrite"):
-        setattr(project, "description", description)
-
-    if not hasattr(project, "summary") or project.summary is None or project.get_property(
-            "distutils_description_overwrite"):
-        setattr(project, "summary", description.splitlines()[0].strip())
+    return pypandoc.convert_file(readme_file, "rst")
 
 
 def _expand_leading_tabs(s, indent=4):
@@ -632,3 +656,38 @@ def _prepare_reports_dir(project):
     if not os.path.exists(reports_dir):
         os.mkdir(reports_dir)
     return reports_dir
+
+
+def _get_description_content_type(project):
+    file_type = project.get_property("distutils_readme_file_type")
+    file_encoding = project.get_property("distutils_readme_file_encoding")
+    file_variant = project.get_property("distutils_readme_file_variant")
+
+    if not file_type:
+        if project.get_property("distutils_readme_description"):
+            readme_file_ci = project.get_property("distutils_readme_file").lower()
+            if readme_file_ci.endswith("md"):
+                file_type = "text/markdown"
+            elif readme_file_ci.endswith("rst"):
+                file_type = "text/x-rst"
+            else:
+                file_type = "text/plain"
+
+    if file_encoding:
+        file_encoding = file_encoding.upper()
+
+    if file_type == "text/markdown":
+        if file_variant:
+            file_variant = file_variant.upper()
+
+    if file_type:
+        return "%s%s%s" % (file_type,
+                           "; charset=%s" % file_encoding if file_encoding else "",
+                           "; variant=%s" % file_variant if file_variant else "")
+
+
+def _get_generated_artifacts(project, logger):
+    dist_artifact_dir = project.expand_path("$dir_dist", "dist")
+
+    artifacts = [os.path.join(dist_artifact_dir, artifact) for artifact in list(os.walk(dist_artifact_dir))[0][2]]
+    return dist_artifact_dir, artifacts

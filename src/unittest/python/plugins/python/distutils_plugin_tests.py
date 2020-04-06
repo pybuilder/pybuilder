@@ -411,6 +411,7 @@ if __name__ == '__main__':
         version = '1.2.3',
         description = 'This is a simple integration-test for distutils plugin.',
         long_description = 'As you might have guessed we have nothing to say here.',
+        long_description_content_type = None,
         author = 'Udo Juettner, Michael Gruber',
         author_email = 'udo.juettner@gmail.com, aelgru@gmail.com',
         license = 'WTFPL',
@@ -481,6 +482,7 @@ if __name__ == '__main__':
         version = '1.2.3',
         description = 'This is a simple integration-test for distutils plugin.',
         long_description = 'As you might have guessed we have nothing to say here.',
+        long_description_content_type = None,
         author = 'Udo Juettner, Michael Gruber',
         author_email = 'udo.juettner@gmail.com, aelgru@gmail.com',
         license = 'WTFPL',
@@ -566,7 +568,7 @@ if __name__ == '__main__':
         actual_setup_script = build_setup_keywords(self.project)
         self.assertEqual("'a'", actual_setup_script)
 
-        self.project.set_property("distutils_setup_keywords", ("a b", ))
+        self.project.set_property("distutils_setup_keywords", ("a b",))
         actual_setup_script = build_setup_keywords(self.project)
         self.assertEqual("'a b'", actual_setup_script)
 
@@ -866,23 +868,35 @@ class TasksTest(PyBuilderTestCase):
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    def test_binary_distribution(self, *_):
+    @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
+    def test_binary_distribution(self, walk, *_):
+        walk.return_value = [("root", (), ("file1", "file2"))]
+
         build_binary_distribution(self.project, MagicMock(Logger), self.reactor)
 
         self.pyb_env.run_process_and_wait.assert_has_calls(
             [call(self.pyb_env.executable + [ANY, "clean", "--all", "sdist"], ANY, ANY),
-             call(self.pyb_env.executable + [ANY, "clean", "--all", "bdist_dumb"], ANY, ANY)])
+             call(self.pyb_env.executable + [ANY, "clean", "--all", "bdist_dumb"], ANY, ANY),
+             call(self.pyb_env.executable + ["-m", "twine", "check",
+                                             self.project.expand_path("$dir_dist", "dist", "file1"),
+                                             self.project.expand_path("$dir_dist", "dist", "file2")], ANY, ANY)])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    def test_binary_distribution_with_command_options(self, *_):
+    @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
+    def test_binary_distribution_with_command_options(self, walk, *_):
         self.project.set_property("distutils_command_options", {"sdist": ['--formats', 'bztar']})
+
+        walk.return_value = [("root", (), ("file1", "file2"))]
 
         build_binary_distribution(self.project, MagicMock(Logger), self.reactor)
 
         self.pyb_env.run_process_and_wait.assert_has_calls(
             [call(self.pyb_env.executable + [ANY, "clean", "--all", "sdist", "--formats", "bztar"], ANY, ANY),
-             call(self.pyb_env.executable + [ANY, "clean", "--all", "bdist_dumb"], ANY, ANY)])
+             call(self.pyb_env.executable + [ANY, "clean", "--all", "bdist_dumb"], ANY, ANY),
+             call(self.pyb_env.executable + ["-m", "twine", "check",
+                                             self.project.expand_path("$dir_dist", "dist", "file1"),
+                                             self.project.expand_path("$dir_dist", "dist", "file2")], ANY, ANY)])
 
 
 def popen_distutils_args(self, call_count, proc_runner):
