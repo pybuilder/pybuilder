@@ -83,7 +83,7 @@ authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            Author("Arcadiy Ivanov", "arcadiy@ivanov.biz"),
            Author("Valentin Haenel", "valentin@haenel.co"),
            ]
-url = "http://pybuilder.github.io"
+url = "https://pybuilder.io"
 license = "Apache License"
 version = "0.12.0.dev"
 
