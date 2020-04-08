@@ -45,8 +45,7 @@ def collect_project_information():
 
     dir_source_main_python = prompt_user('Source directory', DEFAULT_SOURCE_DIRECTORY)
     dir_docs = prompt_user('Docs directory', DEFAULT_DOCS_DIRECTORY)
-    dir_source_unittest_python = prompt_user(
-        'Unittest directory', DEFAULT_UNITTEST_DIRECTORY)
+    dir_source_unittest_python = prompt_user('Unittest directory', DEFAULT_UNITTEST_DIRECTORY)
     dir_source_main_scripts = prompt_user("Scripts directory", DEFAULT_SCRIPTS_DIRECTORY)
 
     plugins = suggest_plugins(PLUGINS_TO_SUGGEST)
@@ -242,7 +241,7 @@ def set_properties(project):
         self.dir_source_main_scripts = DEFAULT_SCRIPTS_DIRECTORY
         self.dir_docs = DEFAULT_DOCS_DIRECTORY
         self.core_imports = ['use_plugin']
-        self.plugins = ['python.core', 'python.unittest', 'python.install_dependencies']
+        self.plugins = ['python.core', 'python.unittest']
         self.initializer = ''
 
     def add_plugins(self, plugins):
