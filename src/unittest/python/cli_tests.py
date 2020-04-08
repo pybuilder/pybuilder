@@ -23,8 +23,10 @@ from pybuilder.cli import (parse_options,
                            CommandLineUsageException,
                            StdOutLogger,
                            length_of_longest_string,
-                           print_list_of_tasks)
+                           print_list_of_tasks,
+                           get_failure_message)
 from pybuilder.core import Logger
+from pybuilder.errors import PyBuilderException
 from test_utils import Mock, patch, call
 
 
@@ -232,3 +234,17 @@ class LengthOfLongestStringTests(unittest.TestCase):
 
     def test_should_return_four_when_list_contains_foo_bar_egg_and_spam(self):
         self.assertEqual(4, length_of_longest_string(["egg", "spam", "foo", "bar"]))
+
+
+class ErrorHandlingTests(unittest.TestCase):
+    def test_generic_error_message(self):
+        try:
+            raise Exception("test")
+        except Exception:
+            self.assertRegexpMatches(get_failure_message(), r"Exception: test \(cli_tests.py\:\d+\)")
+
+    def test_pyb_error_message(self):
+        try:
+            raise PyBuilderException("test")
+        except Exception:
+            self.assertRegexpMatches(get_failure_message(), r"test \(cli_tests.py\:\d+\)")
