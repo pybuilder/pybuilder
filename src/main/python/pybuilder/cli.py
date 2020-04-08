@@ -26,6 +26,7 @@ import optparse
 import re
 import sys
 import traceback
+from os.path import sep, normcase as nc
 
 from pybuilder import __version__
 from pybuilder import extern
@@ -371,6 +372,33 @@ def print_plan_list_of_tasks(options, arguments, reactor, quiet=False):
     print_task_list(execution_plan, quiet)
 
 
+def get_failure_message():
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+
+    filename = None
+    lineno = None
+
+    while exc_tb.tb_next:
+        exc_tb = exc_tb.tb_next
+
+    frame = exc_tb.tb_frame
+    if hasattr(frame, "f_code"):
+        code = frame.f_code
+        filename = code.co_filename
+        lineno = exc_tb.tb_lineno
+
+        filename = nc(filename)
+        for path in sys.path:
+            path = nc(path)
+            if filename.startswith(path) and len(filename) > len(path) and filename[len(path)] == sep:
+                filename = filename[len(path) + 1:]
+                break
+
+    return "%s%s%s" % ("%s: " % exc_type.__name__ if not isinstance(exc_obj, PyBuilderException) else "",
+                       exc_obj,
+                       " (%s:%d)" % (filename, lineno) if filename else "")
+
+
 def main(*args):
     if not args:
         args = sys.argv[1:]
@@ -407,8 +435,8 @@ def main(*args):
             if options.list_plan_tasks:
                 print_plan_list_of_tasks(options, arguments, reactor, quiet=options.very_quiet)
             return 0
-        except PyBuilderException as e:
-            print_build_status(str(e), options, successful=False)
+        except PyBuilderException:
+            print_build_status(get_failure_message(), options, successful=False)
             return 1
 
     if not options.very_quiet:
@@ -442,9 +470,9 @@ def main(*args):
         except KeyboardInterrupt:
             raise PyBuilderException("Build aborted")
 
-    except (Exception, SystemExit) as e:
+    except (Exception, SystemExit):
         successful = False
-        failure_message = str(e)
+        failure_message = get_failure_message()
         if options.debug:
             traceback.print_exc(file=sys.stderr)
 
