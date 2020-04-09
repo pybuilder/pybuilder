@@ -72,7 +72,7 @@ class ExecuteTestsTests(TestCase):
         pipe = Mock()
         pipe.remote_close_cause.return_value = None
         tool.return_value = (Mock(), pipe)
-        execute_tests([], runner, self.mock_logger, "/path/to/test/sources", "_tests.py")
+        execute_tests(Mock(), [], runner, self.mock_logger, "/path/to/test/sources", "_tests.py")
 
         mock_discover_modules_matching.assert_called_with("/path/to/test/sources", "*_tests.py")
 
@@ -84,7 +84,7 @@ class ExecuteTestsTests(TestCase):
         pipe = Mock()
         pipe.remote_close_cause.return_value = None
         tool.return_value = (Mock(), pipe)
-        execute_tests_matching([], runner, self.mock_logger, "/path/to/test/sources", "*_tests.py")
+        execute_tests_matching(Mock(), [], runner, self.mock_logger, "/path/to/test/sources", "*_tests.py")
 
         mock_discover_modules_matching.assert_called_with("/path/to/test/sources", "*_tests.py")
 
@@ -100,7 +100,7 @@ class ExecuteTestsTests(TestCase):
         mock_unittest.defaultTestLoader.loadTestsFromNames.return_value = mock_tests
         runner.return_value.run.return_value = self.mock_result
 
-        actual, _ = execute_tests([], runner, self.mock_logger, "/path/to/test/sources", "_tests.py")
+        actual, _ = execute_tests(Mock(), [], runner, self.mock_logger, "/path/to/test/sources", "_tests.py")
 
         self.assertEqual(self.mock_result, actual)
 

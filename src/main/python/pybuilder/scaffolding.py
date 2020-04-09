@@ -100,7 +100,7 @@ def update_project():
 
 def _create_pyproject_file():
     pyproject_contents = '''[build-system]
-requires = ["pybuilder"]
+requires = ["pybuilder>=0.12.0"]
 build-backend = "pybuilder.pep517"
 '''
     if os.path.exists("pyproject.toml"):

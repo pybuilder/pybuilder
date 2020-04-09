@@ -17,7 +17,7 @@
 #   limitations under the License.
 
 
-from pybuilder.remote import ctx, PipeShutdownError, RemoteObjectPipe, logger, log_to_stderr
+from pybuilder.remote import Process, PipeShutdownError, RemoteObjectPipe, logger, log_to_stderr
 
 __all__ = ["RemoteObjectPipe", "start_tool", "Tool", "PipeShutdownError", "logger"]
 
@@ -32,7 +32,7 @@ class Tool:
         pass
 
 
-def start_tool(tools, group=None, name=None, logging=None):
+def start_tool(pyenv, tools, group=None, name=None, logging=None):
     """
     Starts a tool process
     """
@@ -42,7 +42,8 @@ def start_tool(tools, group=None, name=None, logging=None):
         logger.setLevel(int(logging))
 
     pipe = RemoteObjectPipe.new_pipe()
-    proc = ctx.Process(group=group, target=_instrumented_tool, name=name, args=(tools, pipe))
+    proc = Process(pyenv, group=group, target=_instrumented_tool, name=name, args=(tools, pipe))
+
     try:
         proc.start()
     finally:

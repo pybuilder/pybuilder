@@ -46,6 +46,7 @@ def init_test_source_directory(project):
     project.set_property_if_unset("unittest_module_glob", "*_tests")
     project.set_property_if_unset("unittest_file_suffix", None)  # deprecated, use unittest_module_glob.
     project.set_property_if_unset("unittest_test_method_prefix", None)
+    project.set_property_if_unset("unittest_python_env", "build")
     project.set_property_if_unset("unittest_runner", (
         lambda stream: __import__("xmlrunner").XMLTestRunner(output=project.expand_path("$dir_target/reports"),
                                                              stream=stream), "_make_result"))
@@ -59,6 +60,7 @@ def coverage_init(project, logger, reactor):
         project.get_property("_coverage_tasks").append(run_unit_tests)
         project.get_property("_coverage_config_prefixes")[run_unit_tests] = "ut"
         project.set_property("ut_coverage_name", "Python unit test")
+        # project.set_property("ut_coverage_python_env", project.get_property("unittest_python_env"))
 
 
 @task
@@ -88,9 +90,11 @@ def run_tests(project, logger, reactor, execution_prefix, execution_name):
     try:
         test_method_prefix = project.get_property("%s_test_method_prefix" % execution_prefix)
         runner_generator = project.get_property("%s_runner" % execution_prefix)
-        result, console_out = execute_tests_matching(reactor.tools, runner_generator, logger, test_dir, module_glob,
-                                                     test_method_prefix,
-                                                     project.get_property("remote_debug"))
+        result, console_out = execute_tests_matching(
+            reactor.python_env_registry[project.get_property("unittest_python_env")],
+            reactor.tools, runner_generator, logger, test_dir, module_glob,
+            test_method_prefix,
+            project.get_property("remote_debug"))
 
         if result.testsRun == 0:
             logger.warn("No %s executed.", execution_name)
@@ -119,12 +123,12 @@ def run_tests(project, logger, reactor, execution_prefix, execution_name):
         raise BuildFailedException("Unable to execute %s." % execution_name)
 
 
-def execute_tests(tools, runner_generator, logger, test_source, suffix, test_method_prefix=None, remote_debug=0):
-    return execute_tests_matching(tools, runner_generator, logger, test_source, "*{0}".format(suffix),
+def execute_tests(pyenv, tools, runner_generator, logger, test_source, suffix, test_method_prefix=None, remote_debug=0):
+    return execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, "*{0}".format(suffix),
                                   test_method_prefix, remote_debug=remote_debug)
 
 
-def execute_tests_matching(tools, runner_generator, logger, test_source, file_glob, test_method_prefix=None,
+def execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, file_glob, test_method_prefix=None,
                            remote_debug=0):
     output_log_file = StringIO()
     try:
@@ -134,7 +138,7 @@ def execute_tests_matching(tools, runner_generator, logger, test_source, file_gl
                                     _create_runner(runner_generator, output_log_file))
 
         try:
-            proc, pipe = start_unittest_tool(tools, test_modules, test_method_prefix, logging=remote_debug)
+            proc, pipe = start_unittest_tool(pyenv, tools, test_modules, test_method_prefix, logging=remote_debug)
             try:
                 pipe.register_remote(runner)
                 pipe.register_remote_type(unittest.result.TestResult)
@@ -149,8 +153,10 @@ def execute_tests_matching(tools, runner_generator, logger, test_source, file_gl
                     try:
                         proc.join()
                     finally:
-                        if sys.version_info[:2] >= (3, 7):
+                        try:
                             proc.close()
+                        except AttributeError:
+                            pass
 
             remote_closed_cause = pipe.remote_close_cause()
             if remote_closed_cause is not None:
@@ -200,7 +206,7 @@ def _instrument_result(logger, result):
     old_addFailure = result.addFailure
 
     def startTest(self, test):
-        self.test_names.append(test)
+        self.test_names.append(str(test))
         self.logger.debug("starting %s", test)
         old_startTest(test)
 
