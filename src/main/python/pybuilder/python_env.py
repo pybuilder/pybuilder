@@ -156,6 +156,10 @@ class PythonEnv(object):
         return self._env_dir
 
     @property
+    def exec_dir(self):
+        return self._exec_dir
+
+    @property
     def versioned_dir_name(self):
         self._check_not_populated()
         return self._versioned_dir_name

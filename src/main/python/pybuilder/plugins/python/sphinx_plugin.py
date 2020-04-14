@@ -19,32 +19,17 @@
 """Sphinx-plugin for PyBuilder to run a sphinx quickstart and generate the documentation once set up.
 """
 
-from os import mkdir
-from os.path import join, dirname, relpath, exists, isdir
-
 from datetime import date
+from os import mkdir
+from os.path import join, dirname, relpath, exists
 from shutil import rmtree
 
 from pybuilder import scaffolding as SCAFFOLDING
 from pybuilder.core import after, depends, init, task, use_plugin
 from pybuilder.errors import BuildFailedException
+from pybuilder.python_utils import symlink
 from pybuilder.utils import (as_list,
                              tail_log)
-
-try:
-    from os import symlink
-except ImportError:
-    import ctypes
-
-    csl = ctypes.windll.kernel32.CreateSymbolicLinkW
-    csl.argtypes = (ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32)
-    csl.restype = ctypes.c_ubyte
-
-
-    def symlink(source, link_name):
-        flags = 1 if isdir(source) else 0
-        if csl(link_name, source, flags) == 0:
-            raise ctypes.WinError()
 
 __author__ = "Thomas Prebble", "Marcel Wolf", "Arcadiy Ivanov"
 
@@ -177,9 +162,7 @@ def run_sphinx_build(build_command, task_name, logger, project, reactor, builder
     logger.info("Running %s" % task_name)
     log_file = project.expand_path("$dir_target", "reports", task_name)
 
-    build_command = reactor.pybuilder_venv.executable + ["-m"] + build_command
-    if project.get_property("verbose"):
-        logger.debug(build_command)
+    build_command = reactor.pybuilder_venv.executable + ["-c"] + build_command
 
     exit_code = reactor.pybuilder_venv.execute_command(build_command, log_file, shell=False)
     if exit_code != 0:
@@ -238,9 +221,9 @@ def sphinx_pyb_quickstart_generate(project, logger, reactor):
 import sys
 from os.path import normcase as nc, normpath as np, join as jp, dirname, exists
 
-sphinx_pyb_dir = nc(np(jp(dirname(__file__) if __file__ else ".", %(sphinx_pyb_rel_dir)r))
+sphinx_pyb_dir = nc(np(jp(dirname(__file__) if __file__ else '.', %(sphinx_pyb_rel_dir)r)))
 sphinx_pyb_module = %(sphinx_pyb_module_name)r
-sphinx_pyb_module_file = nc(np(jp(sphinx_pyb_dir, sphinx_pyb_module + ".py"))
+sphinx_pyb_module_file = nc(np(jp(sphinx_pyb_dir, sphinx_pyb_module + '.py')))
 
 sys.path.insert(0, sphinx_pyb_dir)
 
@@ -263,7 +246,10 @@ from %(sphinx_pyb_module_name)s import *
     target_apidoc_dir = join(sphinx_pyb_rel_dir, SPHINX_PYB_APIDOC_DIR)
     source_apidoc_link = project.expand_path("$sphinx_source_dir", SPHINX_PYB_APIDOC_DIR)
     if not exists(source_apidoc_link):
-        symlink(target_apidoc_dir, source_apidoc_link, target_is_directory=True)
+        try:
+            symlink(target_apidoc_dir, source_apidoc_link, target_is_directory=True)
+        except TypeError:
+            symlink(target_apidoc_dir, source_apidoc_link)
 
 
 def get_sphinx_quickstart_command(project):
@@ -274,7 +260,7 @@ def get_sphinx_quickstart_command(project):
         :param -a: Author names.
         :param -v: Version of project.
     """
-    options = ["sphinx.quickstart",
+    options = [_get_sphinx_launch_cmd("sphinx.cmd.quickstart", "main", "sphinx-quickstart"),
                "-q",
                "-p", project.get_property("sphinx_project_name"),
                "-a", project.get_property("sphinx_doc_author"),
@@ -286,7 +272,7 @@ def get_sphinx_quickstart_command(project):
 def get_sphinx_build_command(project, logger, builder):
     """Builds the sphinx-build command using properties.
     """
-    options = ["sphinx",
+    options = [_get_sphinx_launch_cmd("sphinx.cmd.build", "main", "sphinx-build"),
                "-b", builder
                ]
 
@@ -321,9 +307,8 @@ def get_sphinx_apidoc_command(project, reactor):
     except ImportError:
         pass
 
-    options = ["sphinx.apidoc",
-               "-H", project.get_property("sphinx_project_name")
-               ]
+    options = [_get_sphinx_launch_cmd("sphinx.ext.apidoc", "main", "sphinx-apidoc"),
+               "-H", project.get_property("sphinx_project_name")]
 
     if implicit_namespaces:
         options.append("--implicit-namespaces")
@@ -361,3 +346,10 @@ def generate_sphinx_apidocs(project, logger, reactor):
     build_command = get_sphinx_apidoc_command(project, reactor)
     logger.debug("Generating Sphinx API Doc")
     run_sphinx_build(build_command, "sphinx-apidoc", logger, project, reactor)
+
+
+def _get_sphinx_launch_cmd(module, func, script_name):
+    return "import sys; from %(module)s import %(func)s; " \
+           "sys.argv[0] = %(script_name)r; sys.exit(%(func)s())" % dict(module=module,
+                                                                        func=func,
+                                                                        script_name=script_name)
