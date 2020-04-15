@@ -457,6 +457,22 @@ if PY2:
 else:
     from glob import glob, iglob
 
+try:
+    from os import symlink
+except ImportError:
+    import ctypes
+
+    csl = ctypes.windll.kernel32.CreateSymbolicLinkW
+    csl.argtypes = (ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32)
+    csl.restype = ctypes.c_ubyte
+
+
+    def symlink(source, link_name, target_is_directory=False):
+        flags = 1 if target_is_directory else 0
+        flags += 2
+        if csl(link_name, source, flags) == 0:
+            raise ctypes.WinError()
+
 sys_executable_suffix = sys.executable[len(sys.exec_prefix) + 1:]
 
 python_specific_dir_name = "%s-%s" % (platform.python_implementation().lower(),

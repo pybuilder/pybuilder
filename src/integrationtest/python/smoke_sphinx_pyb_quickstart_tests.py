@@ -18,15 +18,15 @@
 
 import unittest
 
+from pybuilder.python_utils import PY2, IS_WIN
 from smoke_itest_support import SmokeIntegrationTestSupport
 
 
 class SphinxSmokeTest(SmokeIntegrationTestSupport):
-    PROJECT_FILES = list(SmokeIntegrationTestSupport.PROJECT_FILES) + ["docs"]
-
-    def test_smoke_analyze_publish_no_integration_no_coverage(self):
-        self.smoke_test("-v", "-X", "sphinx_generate_documentation")
+    def test_smoke_sphinx_pyb_quickstart(self):
+        self.smoke_test("-v", "-X", "sphinx_pyb_quickstart", "sphinx_generate_documentation")
 
 
 if __name__ == "__main__":
-    unittest.main()
+    if not (IS_WIN and PY2):
+        unittest.main()

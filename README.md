@@ -4,15 +4,15 @@ PyBuilder
 [PyBuilder](https://pybuilder.io)
 
 
-[![Gitter](https://img.shields.io/gitter/room/pybuilder/pybuilder)](https://gitter.im/pybuilder/pybuilder)
-[![Build Status](https://img.shields.io/travis/pybuilder/pybuilder/master)](https://travis-ci.org/pybuilder/pybuilder)
-[![Coverage Status](https://img.shields.io/coveralls/github/pybuilder/pybuilder/master)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
+[![Gitter](https://img.shields.io/gitter/room/pybuilder/pybuilder?logo=gitter)](https://gitter.im/pybuilder/pybuilder)
+[![Build Status](https://img.shields.io/travis/pybuilder/pybuilder/master?logo=travis)](https://travis-ci.org/pybuilder/pybuilder)
+[![Coverage Status](https://img.shields.io/coveralls/github/pybuilder/pybuilder/master?logo=coveralls)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
 
-[![PyBuilder Version](https://img.shields.io/pypi/v/pybuilder)](https://pypi.org/project/pybuilder/)
-[![PyBuilder Python Versions](https://img.shields.io/pypi/pyversions/pybuilder)](https://pypi.org/project/pybuilder/)
-[![PyBuilder Downloads Per Day](https://img.shields.io/pypi/dd/pybuilder)](https://pypi.org/project/pybuilder/)
-[![PyBuilder Downloads Per Week](https://img.shields.io/pypi/dw/pybuilder)](https://pypi.org/project/pybuilder/)
-[![PyBuilder Downloads Per Month](https://img.shields.io/pypi/dm/pybuilder)](https://pypi.org/project/pybuilder/)
+[![PyBuilder Version](https://img.shields.io/pypi/v/pybuilder?logo=pypi)](https://pypi.org/project/pybuilder/)
+[![PyBuilder Python Versions](https://img.shields.io/pypi/pyversions/pybuilder?logo=pypi)](https://pypi.org/project/pybuilder/)
+[![PyBuilder Downloads Per Day](https://img.shields.io/pypi/dd/pybuilder?logo=pypi)](https://pypi.org/project/pybuilder/)
+[![PyBuilder Downloads Per Week](https://img.shields.io/pypi/dw/pybuilder?logo=pypi)](https://pypi.org/project/pybuilder/)
+[![PyBuilder Downloads Per Month](https://img.shields.io/pypi/dm/pybuilder?logo=pypi)](https://pypi.org/project/pybuilder/)
 
 PyBuilder is a software build tool written in 100% pure Python, mainly
 targeting Python applications.
