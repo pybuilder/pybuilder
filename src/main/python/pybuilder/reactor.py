@@ -25,9 +25,8 @@
 import imp
 import os
 import os.path
-from collections import deque
-
 import sys
+from collections import deque
 
 from pybuilder.core import (TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE, DEPENDENTS_ATTRIBUTE,
                             DESCRIPTION_ATTRIBUTE, AFTER_ATTRIBUTE,
@@ -40,7 +39,7 @@ from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
                                     DownloadingPluginLoader)
 from pybuilder.python_env import PythonEnvRegistry, PythonEnv
-from pybuilder.python_utils import IS_WIN, PY2, odict, patch_mp_pyb_env, add_env_to_path
+from pybuilder.python_utils import IS_WIN, PY2, odict, patch_mp_pyb_env, prepend_env_to_path
 from pybuilder.utils import (as_list,
                              get_dist_version_string,
                              basestring, np, jp)
@@ -511,7 +510,7 @@ class Reactor:
                                                                                        system_env.is_pypy),
                                                                                 offline=self.project.offline)
 
-        add_env_to_path(plugin_env, sys.path)
+        prepend_env_to_path(plugin_env, sys.path)
         patch_mp_pyb_env(plugin_env)
 
     def _setup_deferred_plugin_import(self):

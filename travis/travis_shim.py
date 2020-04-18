@@ -55,15 +55,8 @@ if __name__ == "__main__":
         environ["PATH"] = venv_bin_dir + os.pathsep + environ["PATH"]
         cmd_args = [python_bin, build_py] + pyb_args
 
-        if (not is_production or environ["PYTHON_VERSION"] in deploy_pythons
-                and environ["TRAVIS_OS_NAME"] in deploy_oses):
-            print("Will run PyBuilder build with the following args: %r" % cmd_args)
+        print("Will run PyBuilder build with the following args: %r" % cmd_args)
 
-            sys.stdout.flush()
+        sys.stdout.flush()
 
-            subprocess.check_call(cmd_args, env=environ)
-        else:
-            print("Skipping building on OS %r Python %r as "
-                  "this production version won't be deployed" % (environ["TRAVIS_OS_NAME"],
-                                                                 environ["PYTHON_VERSION"]))
-            sys.stdout.flush()
+        subprocess.check_call(cmd_args, env=environ)

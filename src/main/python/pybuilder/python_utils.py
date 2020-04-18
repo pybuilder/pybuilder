@@ -287,6 +287,15 @@ def spawn_process(target=None, args=(), kwargs={}, group=None, name=None):
         raise_exception(ex, result.args[1])
 
 
+def prepend_env_to_path(python_env, sys_path):
+    """type: (PythonEnv, List(str)) -> None
+    Prepend venv directories to sys.path-like collection
+    """
+    for path in reversed(python_env.site_paths):
+        if path not in sys_path:
+            sys_path.insert(0, path)
+
+
 def add_env_to_path(python_env, sys_path):
     """type: (PythonEnv, List(str)) -> None
     Adds venv directories to sys.path-like collection

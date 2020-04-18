@@ -22,12 +22,11 @@ from unittest import TestCase, TextTestRunner
 
 from pybuilder.core import Project
 from pybuilder.plugins.python.unittest_plugin import (execute_tests, execute_tests_matching,
-                                                      _register_test_and_source_path_and_return_test_dir,
                                                       _instrument_result,
                                                       _create_runner,
                                                       _get_make_result_method_name,
                                                       report_to_ci_server)
-from pybuilder.utils import np, jp
+from pybuilder.utils import np
 from test_utils import Mock, patch
 
 __author__ = "Michael Gruber"
@@ -38,25 +37,6 @@ class PythonPathTests(TestCase):
         self.project = Project(np("/path/to/project"))
         self.project.set_property("dir_source_unittest_python", "unittest")
         self.project.set_property("dir_source_main_python", "src")
-
-    def test_should_register_source_paths(self):
-        system_path = [np("some/python/path")]
-
-        _register_test_and_source_path_and_return_test_dir(self.project, system_path, "unittest")
-
-        self.assertTrue(np(jp(self.project.basedir, "unittest")) in system_path)
-        self.assertTrue(np(jp(self.project.basedir, "src")) in system_path)
-
-    def test_should_put_project_sources_before_other_sources(self):
-        system_path = [np("irrelevant/sources")]
-
-        _register_test_and_source_path_and_return_test_dir(self.project, system_path, "unittest")
-
-        test_sources_index_in_path = system_path.index(np(jp(self.project.basedir, "unittest")))
-        main_sources_index_in_path = system_path.index(np(jp(self.project.basedir, "src")))
-        irrelevant_sources_index_in_path = system_path.index(np("irrelevant/sources"))
-        self.assertTrue(test_sources_index_in_path < irrelevant_sources_index_in_path and
-                        main_sources_index_in_path < irrelevant_sources_index_in_path)
 
 
 class ExecuteTestsTests(TestCase):
@@ -72,7 +52,7 @@ class ExecuteTestsTests(TestCase):
         pipe = Mock()
         pipe.remote_close_cause.return_value = None
         tool.return_value = (Mock(), pipe)
-        execute_tests(Mock(), [], runner, self.mock_logger, "/path/to/test/sources", "_tests.py")
+        execute_tests(Mock(), [], runner, self.mock_logger, "/path/to/test/sources", "_tests.py", ["a", "b"])
 
         mock_discover_modules_matching.assert_called_with("/path/to/test/sources", "*_tests.py")
 
@@ -84,7 +64,7 @@ class ExecuteTestsTests(TestCase):
         pipe = Mock()
         pipe.remote_close_cause.return_value = None
         tool.return_value = (Mock(), pipe)
-        execute_tests_matching(Mock(), [], runner, self.mock_logger, "/path/to/test/sources", "*_tests.py")
+        execute_tests_matching(Mock(), [], runner, self.mock_logger, "/path/to/test/sources", "*_tests.py", ["a", "b"])
 
         mock_discover_modules_matching.assert_called_with("/path/to/test/sources", "*_tests.py")
 
@@ -100,7 +80,8 @@ class ExecuteTestsTests(TestCase):
         mock_unittest.defaultTestLoader.loadTestsFromNames.return_value = mock_tests
         runner.return_value.run.return_value = self.mock_result
 
-        actual, _ = execute_tests(Mock(), [], runner, self.mock_logger, "/path/to/test/sources", "_tests.py")
+        actual, _ = execute_tests(Mock(), [], runner, self.mock_logger, "/path/to/test/sources", "_tests.py",
+                                  ["a", "b"])
 
         self.assertEqual(self.mock_result, actual)
 

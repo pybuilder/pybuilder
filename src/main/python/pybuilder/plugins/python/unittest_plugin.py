@@ -71,7 +71,8 @@ def run_unit_tests(project, logger, reactor):
 
 def run_tests(project, logger, reactor, execution_prefix, execution_name):
     logger.info("Running %s", execution_name)
-    test_dir = _register_test_and_source_path_and_return_test_dir(project, sys.path, execution_prefix)
+    test_dir = project.expand_path("$dir_source_%s_python" % execution_prefix)
+    src_dir = project.expand_path("$dir_source_main_python")
 
     file_suffix = project.get_property("%s_file_suffix" % execution_prefix)
     if file_suffix is not None:
@@ -92,7 +93,7 @@ def run_tests(project, logger, reactor, execution_prefix, execution_name):
         runner_generator = project.get_property("%s_runner" % execution_prefix)
         result, console_out = execute_tests_matching(
             reactor.python_env_registry[project.get_property("unittest_python_env")],
-            reactor.tools, runner_generator, logger, test_dir, module_glob,
+            reactor.tools, runner_generator, logger, test_dir, module_glob, [test_dir, src_dir],
             test_method_prefix,
             project.get_property("remote_debug"))
 
@@ -123,13 +124,14 @@ def run_tests(project, logger, reactor, execution_prefix, execution_name):
         raise BuildFailedException("Unable to execute %s." % execution_name)
 
 
-def execute_tests(pyenv, tools, runner_generator, logger, test_source, suffix, test_method_prefix=None, remote_debug=0):
+def execute_tests(pyenv, tools, runner_generator, logger, test_source, suffix, sys_paths, test_method_prefix=None,
+                  remote_debug=0):
     return execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, "*{0}".format(suffix),
                                   test_method_prefix, remote_debug=remote_debug)
 
 
-def execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, file_glob, test_method_prefix=None,
-                           remote_debug=0):
+def execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, file_glob, sys_paths,
+                           test_method_prefix=None, remote_debug=0):
     output_log_file = StringIO()
     try:
         test_modules = discover_modules_matching(test_source, file_glob)
@@ -138,7 +140,8 @@ def execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, 
                                     _create_runner(runner_generator, output_log_file))
 
         try:
-            proc, pipe = start_unittest_tool(pyenv, tools, test_modules, test_method_prefix, logging=remote_debug)
+            proc, pipe = start_unittest_tool(pyenv, tools, sys_paths, test_modules, test_method_prefix,
+                                             logging=remote_debug)
             try:
                 pipe.register_remote(runner)
                 pipe.register_remote_type(unittest.result.TestResult)
@@ -228,14 +231,6 @@ def _instrument_result(logger, result):
     result.failed_test_names_and_reasons = {}
     result.logger = logger
     return result
-
-
-def _register_test_and_source_path_and_return_test_dir(project, system_path, execution_prefix):
-    test_dir = project.expand_path("$dir_source_%s_python" % execution_prefix)
-    system_path.insert(0, test_dir)
-    system_path.insert(0, project.expand_path("$dir_source_main_python"))
-
-    return test_dir
 
 
 def write_report(name, project, logger, result, console_out):
