@@ -84,7 +84,7 @@ authors = [Author("Arcadiy Ivanov", "arcadiy@ivanov.biz"),
            ]
 url = "https://pybuilder.io"
 license = "Apache License"
-version = "0.12.2.dev"
+version = "0.12.2"
 
 requires_python = ">=2.7,!=3.0,!=3.1,!=3.2,!=3.3,!=3.4"
 
