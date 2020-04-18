@@ -17,9 +17,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from os.path import dirname, join as jp, normcase as nc
-
 import sys
+from os.path import dirname, join as jp, normcase as nc
 
 # This is only necessary in PyBuilder sources for bootstrap
 build_sources = nc(jp(dirname(__file__), "src/main/python"))
@@ -75,12 +74,12 @@ allows the construction of build life-cycles similar to those known from other f
 Apache Maven and Gradle.
 """
 
-authors = [Author("Alexander Metzner", "alexander.metzner@gmail.com"),
+authors = [Author("Arcadiy Ivanov", "arcadiy@ivanov.biz"),
+           Author("Alexander Metzner", "alexander.metzner@gmail.com"),
            Author("Maximilien Riehl", "max@riehl.io"),
            Author("Michael Gruber", "aelgru@gmail.com"),
            Author("Udo Juettner", "udo.juettner@gmail.com"),
            Author("Marcel Wolf", "marcel.wolf@me.com"),
-           Author("Arcadiy Ivanov", "arcadiy@ivanov.biz"),
            Author("Valentin Haenel", "valentin@haenel.co"),
            ]
 url = "https://pybuilder.io"
@@ -128,7 +127,8 @@ def initialize(project):
 
     project.set_property("copy_resources_target", "$dir_dist/pybuilder")
     project.get_property("copy_resources_glob").append("LICENSE")
-    project.get_property("filter_resources_glob").append("**/pybuilder/__init__.py")
+    project.set_property("filter_resources_target", "$dir_dist")
+    project.get_property("filter_resources_glob").append("pybuilder/__init__.py")
     project.include_file("pybuilder", "LICENSE")
     project.include_file("pybuilder._vendor", "LICENSES")
     project.include_file("", "*.whl")  # All included binary wheels from vendors

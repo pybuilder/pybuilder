@@ -1,8 +1,5 @@
-PyBuilder
+[PyBuilder &#x2014; an easy-to-use build automation tool for Python](https://pybuilder.io)
 =========
-
-[PyBuilder](https://pybuilder.io)
-
 
 [![Gitter](https://img.shields.io/gitter/room/pybuilder/pybuilder?logo=gitter)](https://gitter.im/pybuilder/pybuilder)
 [![Build Status](https://img.shields.io/travis/pybuilder/pybuilder/master?logo=travis)](https://travis-ci.org/pybuilder/pybuilder)
