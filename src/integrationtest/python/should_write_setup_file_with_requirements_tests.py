@@ -71,6 +71,7 @@ def spam ():
         self.assert_file_exists(setup_py)
         self.assert_file_permissions(0o755, setup_py)
         self.assert_file_content(setup_py, """#!/usr/bin/env python
+#   -*- coding: utf-8 -*-
 
 from setuptools import setup
 from setuptools.command.install import install as _install
@@ -96,18 +97,26 @@ if __name__ == '__main__':
         description = '',
         long_description = '',
         long_description_content_type = None,
-        author = '',
-        author_email = '',
-        license = '',
-        url = '',
-        scripts = [],
-        packages = ['spam'],
-        namespace_packages = [],
-        py_modules = ['standalone_module'],
         classifiers = [
             'Development Status :: 3 - Alpha',
             'Programming Language :: Python'
         ],
+        keywords = '',
+
+        author = '',
+        author_email = '',
+        maintainer = '',
+        maintainer_email = '',
+
+        license = '',
+
+        url = '',
+        project_urls = {},
+
+        scripts = [],
+        packages = ['spam'],
+        namespace_packages = [],
+        py_modules = ['standalone_module'],
         entry_points = {},
         data_files = [],
         package_data = {},
@@ -120,7 +129,6 @@ if __name__ == '__main__':
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,
         cmdclass = {'install': install},
-        keywords = '',
         python_requires = '',
         obsoletes = [],
     )
