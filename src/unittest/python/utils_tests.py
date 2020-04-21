@@ -282,6 +282,18 @@ class ApplyOnFilesTest(unittest.TestCase):
 
         walk.assert_called_with("spam")
 
+    @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["test"])])
+    def test_should_handler_start_directory_with_trailing_slash(self, walk):
+        called_on_file = []
+
+        def callback(absolute_file_name, relative_file_name):
+            called_on_file.append(absolute_file_name)
+
+        apply_on_files("spam/", callback, ["test"])
+        self.assertEqual([nc("spam/test")], called_on_file)
+
+        walk.assert_called_with("spam")
+
 
 class MkdirTest(unittest.TestCase):
     def setUp(self):

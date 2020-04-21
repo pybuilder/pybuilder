@@ -275,6 +275,7 @@ class Timer(object):
 
 
 def apply_on_files(start_directory, closure, globs, *additional_closure_arguments, **keyword_closure_arguments):
+    start_directory = os.path.normpath(start_directory)
     glob_expressions = list(map(lambda g: GlobExpression(g), globs))
 
     for root, _, file_names in os.walk(start_directory):

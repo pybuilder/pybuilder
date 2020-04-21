@@ -27,18 +27,20 @@ use_plugin("core")
 
 @init
 def init_copy_resources_plugin(project):
+    project.set_property_if_unset("copy_resources_dir", "")
     project.set_property_if_unset("copy_resources_target", "$dir_target")
     project.set_property_if_unset("copy_resources_glob", [])
 
 
 @task
 def package(project, logger):
+    dir = project.get_mandatory_property("copy_resources_dir")
     globs = project.get_mandatory_property("copy_resources_glob")
     if not globs:
         logger.warn("No resources to copy configured. Consider removing plugin.")
         return
 
-    source = project.basedir
+    source = os.path.join(project.basedir, dir)
     target = project.expand_path("$copy_resources_target")
     logger.info("Copying resources matching '%s' from %s to %s", " ".join(globs), source, target)
 
