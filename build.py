@@ -65,8 +65,8 @@ if sys.platform != "win32":
 use_plugin("python.vendorize")
 
 name = "pybuilder"
-summary = "An extensible, easy-to-use build automation tool for Python"
-description = """PyBuilder &#x2014; an easy-to-use build automation tool for Python.
+summary = "PyBuilder — an easy-to-use build automation tool for Python."
+description = """PyBuilder — an easy-to-use build automation tool for Python.
 
 PyBuilder is a software build automation tool written in pure Python mainly targeting Python ecosystem. 
 It is based on the concept of dependency-based programming but also comes along with powerful plugin mechanism that 
@@ -82,8 +82,15 @@ authors = [Author("Arcadiy Ivanov", "arcadiy@ivanov.biz"),
            Author("Marcel Wolf", "marcel.wolf@me.com"),
            Author("Valentin Haenel", "valentin@haenel.co"),
            ]
+
+maintainers = [Author("Arcadiy Ivanov", "arcadiy@ivanov.biz")]
+
 url = "https://pybuilder.io"
-license = "Apache License"
+urls = {"Bug Tracker": "https://github.com/pybuilder/pybuilder/issues",
+        "Source Code": "https://github.com/pybuilder/pybuilder",
+        "Documentation": "https://pybuilder.io/documentation"
+        }
+license = "Apache License, Version 2.0"
 version = "0.12.3.dev"
 
 requires_python = ">=2.7,!=3.0,!=3.1,!=3.2,!=3.3,!=3.4"
@@ -151,6 +158,15 @@ def initialize(project):
     project.set_property("distutils_readme_description", True)
     project.set_property("distutils_description_overwrite", True)
     project.set_property("distutils_upload_skip_existing", True)
+    project.set_property("distutils_setup_keywords", ["PyBuilder",
+                                                      "PyB",
+                                                      "build",
+                                                      "tool",
+                                                      "automation",
+                                                      "Python",
+                                                      "testing",
+                                                      "QA",
+                                                      "PyB"])
     project.set_property("distutils_console_scripts", ["pyb = pybuilder.cli:main"])
     project.set_property("distutils_classifiers", [
         "Programming Language :: Python",

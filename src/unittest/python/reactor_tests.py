@@ -433,11 +433,14 @@ class ReactorTest(unittest.TestCase):
         module.version = "version"
         module.default_task = "default_task"
         module.summary = "summary"
-        module.home_page = "home_page"
         module.description = "description"
+        module.author = "author"
         module.authors = "authors"
+        module.maintainer = "maintainer"
+        module.maintainers = "maintainers"
         module.license = "license"
         module.url = "url"
+        module.urls = "urls"
 
         self.reactor.project = Mock()
         self.reactor.project_module = module
@@ -447,11 +450,14 @@ class ReactorTest(unittest.TestCase):
         self.assertEqual("version", self.reactor.project.version)
         self.assertEqual("default_task", self.reactor.project.default_task)
         self.assertEqual("summary", self.reactor.project.summary)
-        self.assertEqual("home_page", self.reactor.project.home_page)
         self.assertEqual("description", self.reactor.project.description)
+        self.assertEqual("author", self.reactor.project.author)
         self.assertEqual("authors", self.reactor.project.authors)
+        self.assertEqual("maintainer", self.reactor.project.maintainer)
+        self.assertEqual("maintainers", self.reactor.project.maintainers)
         self.assertEqual("license", self.reactor.project.license)
         self.assertEqual("url", self.reactor.project.url)
+        self.assertEqual("urls", self.reactor.project.urls)
 
     def test_ensure_project_name_is_set_from_attribute_when_instantiating_project(self):
         module = ModuleType("mock_module")

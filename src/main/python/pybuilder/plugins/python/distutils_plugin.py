@@ -32,7 +32,7 @@ from pybuilder.core import (after,
                             RequirementsFile,
                             Dependency)
 from pybuilder.errors import BuildFailedException, MissingPrerequisiteException
-from pybuilder.python_utils import StringIO
+from pybuilder.python_utils import StringIO, PY2
 from pybuilder.utils import (as_list,
                              is_string,
                              is_notstr_iterable,
@@ -45,6 +45,7 @@ use_plugin("python.core")
 LEADING_TAB_RE = re.compile(r'^(\t*)')
 DATA_FILES_PROPERTY = "distutils_data_files"
 SETUP_TEMPLATE = string.Template("""#!/usr/bin/env python
+#   -*- coding: utf-8 -*-
 $remove_hardlink_capabilities_for_shared_filesystems
 from $module import setup
 from $module.command.install import install as _install
@@ -70,23 +71,30 @@ if __name__ == '__main__':
         description = $summary,
         long_description = $description,
         long_description_content_type = $description_content_type,
+        classifiers = $classifiers,
+        keywords = $setup_keywords,
+
         author = $author,
         author_email = $author_email,
+        maintainer = $maintainer,
+        maintainer_email = $maintainer_email,
+
         license = $license,
+
         url = $url,
+        project_urls = $project_urls,
+
         scripts = $scripts,
         packages = $packages,
         namespace_packages = $namespace_packages,
         py_modules = $modules,
-        classifiers = $classifiers,
         entry_points = $entry_points,
         data_files = $data_files,
         package_data = $package_data,
         install_requires = $dependencies,
         dependency_links = $dependency_links,
-        zip_safe = True,
+        zip_safe = $zip_safe,
         cmdclass = {'install': install},
-        keywords = $setup_keywords,
         python_requires = $python_requires,
         obsoletes = $obsoletes,
     )
@@ -121,6 +129,9 @@ def initialize_distutils_plugin(project):
         "Programming Language :: Python"
     ])
     project.set_property_if_unset("distutils_use_setuptools", True)
+
+    project.set_property_if_unset("distutils_fail_on_warnings", False)
+
     project.set_property_if_unset("distutils_upload_register", False)
     project.set_property_if_unset("distutils_upload_repository", None)
     project.set_property_if_unset("distutils_upload_repository_key", None)
@@ -134,11 +145,13 @@ def initialize_distutils_plugin(project):
     project.set_property_if_unset("distutils_readme_file_type", None)
     project.set_property_if_unset("distutils_readme_file_encoding", None)
     project.set_property_if_unset("distutils_readme_file_variant", None)
+    project.set_property_if_unset("distutils_summary_overwrite", False)
     project.set_property_if_unset("distutils_description_overwrite", False)
 
     project.set_property_if_unset("distutils_console_scripts", None)
     project.set_property_if_unset("distutils_entry_points", None)
     project.set_property_if_unset("distutils_setup_keywords", None)
+    project.set_property_if_unset("distutils_zip_safe", True)
 
 
 @after("prepare")
@@ -157,15 +170,30 @@ def set_description(project, logger, reactor):
                 description = f.read()
 
         if description:
+            if (not hasattr(project, "summary") or
+                    project.summary is None or
+                    project.get_property("distutils_summary_overwrite")):
+                setattr(project, "summary", description.splitlines()[0].strip())
+
             if (not hasattr(project, "description") or
                     project.description is None or
                     project.get_property("distutils_description_overwrite")):
                 setattr(project, "description", description)
 
-            if (not hasattr(project, "summary") or
-                    project.summary is None or
-                    project.get_property("distutils_description_overwrite")):
-                setattr(project, "summary", description.splitlines()[0].strip())
+    warn = False
+    if len(project.summary) >= 512:
+        logger.warn("Project summary SHOULD be shorter than 512 characters per PEP-426")
+        warn = True
+
+    if "\n" in project.summary or "\r" in project.summary:
+        logger.warn("Project summary SHOULD NOT contain new-line characters per PEP-426")
+        warn = True
+
+    if len(project.summary) >= 2048:
+        raise BuildFailedException("Project summary MUST NOT be shorter than 2048 characters per PEP-426")
+
+    if warn and project.get_property("distutils_fail_on_warnings"):
+        raise BuildFailedException("Distutil plugin warnings caused a build failure. Please see warnings above.")
 
 
 @after("package")
@@ -173,8 +201,9 @@ def write_setup_script(project, logger):
     setup_script = project.expand_path("$dir_dist", "setup.py")
     logger.info("Writing setup.py as %s", setup_script)
 
-    with open(setup_script, "w") as setup_file:
-        setup_file.write(render_setup_script(project))
+    with io.open(setup_script, "wt", encoding="utf-8") as setup_file:
+        script = render_setup_script(project)
+        setup_file.write(script.decode("utf-8") if PY2 else script)
 
     os.chmod(setup_script, 0o755)
 
@@ -182,6 +211,8 @@ def write_setup_script(project, logger):
 def render_setup_script(project):
     author = ", ".join(map(lambda a: a.name, project.authors))
     author_email = ", ".join(map(lambda a: a.email, project.authors))
+    maintainer = ", ".join(map(lambda a: a.name, project.maintainers))
+    maintainer_email = ",".join(map(lambda a: a.email, project.maintainers))
 
     template_values = {
         "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
@@ -192,8 +223,11 @@ def render_setup_script(project):
         "description_content_type": repr(_get_description_content_type(project)),
         "author": as_str(author),
         "author_email": as_str(author_email),
+        "maintainer": as_str(maintainer),
+        "maintainer_email": as_str(maintainer_email),
         "license": as_str(default(project.license)),
         "url": as_str(default(project.url)),
+        "project_urls": build_map_string(project.urls),
         "scripts": build_scripts_string(project),
         "packages": build_packages_string(project),
         "namespace_packages": build_namespace_packages_string(project),
@@ -212,7 +246,8 @@ def render_setup_script(project):
         "postinstall_script": _normalize_setup_post_pre_script(project.setup_postinstall_script or "pass"),
         "setup_keywords": build_setup_keywords(project),
         "python_requires": as_str(default(project.requires_python)),
-        "obsoletes": build_string_from_array(project.obsoletes)
+        "obsoletes": build_string_from_array(project.obsoletes),
+        "zip_safe": project.get_property("distutils_zip_safe")
     }
 
     return SETUP_TEMPLATE.substitute(template_values)
@@ -500,13 +535,13 @@ def build_data_files_string(project):
 
 
 def build_package_data_string(project):
+    package_data = project.package_data
+    if not package_data:
+        return "{}"
+
     indent = 8
 
     sorted_keys = sorted(project.package_data.keys())
-
-    package_data = project.package_data
-    if package_data == {}:
-        return "{}"
 
     result = "{\n"
 
@@ -516,6 +551,26 @@ def build_package_data_string(project):
         result += "['"
         result += "', '".join(package_data[pkgType])
         result += "'],\n"
+
+    result = result[:-2] + "\n"
+    result += " " * indent + "}"
+
+    return result
+
+
+def build_map_string(m):
+    if not m:
+        return "{}"
+
+    indent = 8
+
+    sorted_keys = sorted(m.keys())
+
+    result = "{\n"
+
+    for k in sorted_keys:
+        result += " " * (indent + 4)
+        result += "%r: %r,\n" % (k, m[k])
 
     result = result[:-2] + "\n"
     result += " " * indent + "}"
@@ -575,7 +630,7 @@ def build_setup_keywords(project):
 
 
 def build_classifiers_string(project):
-    classifiers = project.get_property('distutils_classifiers', [])
+    classifiers = project.get_property("distutils_classifiers", [])
     return build_string_from_array(classifiers, indent=12)
 
 

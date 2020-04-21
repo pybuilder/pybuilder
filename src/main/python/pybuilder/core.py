@@ -434,12 +434,17 @@ class Project(object):
         self.default_task = None
 
         self.summary = ""
-        self.home_page = ""
         self.description = ""
+
         self.author = ""
         self.authors = []
+        self.maintainer = ""
+        self.maintainers = []
+
         self.license = ""
         self.url = ""
+        self.urls = {}
+
         self._requires_python = ""
         self._obsoletes = []
         self._explicit_namespaces = []

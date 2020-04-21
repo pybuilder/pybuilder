@@ -387,6 +387,7 @@ class RenderSetupScriptTest(PyBuilderTestCase):
         actual_setup_script = render_setup_script(self.project)
 
         self.assert_line_by_line_equal("""#!/usr/bin/env python
+#   -*- coding: utf-8 -*-
 
 from distutils.core import setup
 from distutils.core.command.install import install as _install
@@ -412,10 +413,25 @@ if __name__ == '__main__':
         description = 'This is a simple integration-test for distutils plugin.',
         long_description = 'As you might have guessed we have nothing to say here.',
         long_description_content_type = None,
+        classifiers = [
+            'Development Status :: 5 - Beta',
+            'Environment :: Console'
+        ],
+        keywords = '',
+
         author = 'Udo Juettner, Michael Gruber',
         author_email = 'udo.juettner@gmail.com, aelgru@gmail.com',
+        maintainer = '',
+        maintainer_email = '',
+
         license = 'WTFPL',
+
         url = 'http://github.com/pybuilder/pybuilder',
+        project_urls = {
+            'a': 'http://a',
+            'b': 'http://b'
+        },
+
         scripts = [
             'spam',
             'eggs'
@@ -432,10 +448,6 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
-        classifiers = [
-            'Development Status :: 5 - Beta',
-            'Environment :: Console'
-        ],
         entry_points = {},
         data_files = [
             ('dir', ['file1', 'file2'])
@@ -447,7 +459,6 @@ if __name__ == '__main__':
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,
         cmdclass = {'install': install},
-        keywords = '',
         python_requires = '',
         obsoletes = [],
     )
@@ -458,6 +469,7 @@ if __name__ == '__main__':
         self.project.post_install_script("post_install_test()")
         actual_setup_script = render_setup_script(self.project)
         self.assert_line_by_line_equal("""#!/usr/bin/env python
+#   -*- coding: utf-8 -*-
 
 from distutils.core import setup
 from distutils.core.command.install import install as _install
@@ -483,10 +495,25 @@ if __name__ == '__main__':
         description = 'This is a simple integration-test for distutils plugin.',
         long_description = 'As you might have guessed we have nothing to say here.',
         long_description_content_type = None,
+        classifiers = [
+            'Development Status :: 5 - Beta',
+            'Environment :: Console'
+        ],
+        keywords = '',
+
         author = 'Udo Juettner, Michael Gruber',
         author_email = 'udo.juettner@gmail.com, aelgru@gmail.com',
+        maintainer = '',
+        maintainer_email = '',
+
         license = 'WTFPL',
+
         url = 'http://github.com/pybuilder/pybuilder',
+        project_urls = {
+            'a': 'http://a',
+            'b': 'http://b'
+        },
+
         scripts = [
             'spam',
             'eggs'
@@ -503,10 +530,6 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
-        classifiers = [
-            'Development Status :: 5 - Beta',
-            'Environment :: Console'
-        ],
         entry_points = {},
         data_files = [
             ('dir', ['file1', 'file2'])
@@ -518,7 +541,6 @@ if __name__ == '__main__':
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,
         cmdclass = {'install': install},
-        keywords = '',
         python_requires = '',
         obsoletes = [],
     )
@@ -918,6 +940,9 @@ def create_project():
         Author("Udo Juettner", "udo.juettner@gmail.com"), Author("Michael Gruber", "aelgru@gmail.com")]
     project.license = "WTFPL"
     project.url = "http://github.com/pybuilder/pybuilder"
+    project.urls = {"b": "http://b",
+                    "a": "http://a",
+                    }
     project.explicit_namespaces = ["foo.bar", "quick.brown.fox"]
 
     def return_dummy_list():
@@ -933,4 +958,5 @@ def create_project():
     project.install_file("dir", "file2")
     project.include_file("spam", "eggs")
 
+    project.set_property("distutils_zip_safe", True)
     return project
