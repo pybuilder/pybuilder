@@ -188,6 +188,12 @@ class ParseOptionsTest(unittest.TestCase):
         self.assert_options(options, property_overrides={"spam": "eggs"})
         self.assertEqual([], arguments)
 
+    def test_should_set_property_with_equals_sign(self):
+        options, arguments = parse_options(["-P", "spam==eg=gs"])
+
+        self.assert_options(options, property_overrides={"spam": "=eg=gs"})
+        self.assertEqual([], arguments)
+
     def test_should_set_multiple_properties(self):
         options, arguments = parse_options(["-P", "spam=eggs",
                                             "-P", "foo=bar"])

@@ -222,7 +222,7 @@ def parse_options(args):
     for pair in options.property_overrides:
         if not PROPERTY_OVERRIDE_PATTERN.match(pair):
             parser.error("%s is not a property definition." % pair)
-        key, val = pair.split("=")
+        key, val = pair.split("=", 1)
         property_overrides[key] = val
 
     options.property_overrides = property_overrides
