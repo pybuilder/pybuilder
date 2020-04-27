@@ -20,22 +20,21 @@
     The PyBuilder utils module.
     Provides generic utilities that can be used by plugins.
 """
+import collections
 import fnmatch
 import json
 import os
-import tempfile
-from os.path import normcase, normpath, abspath, realpath, join
-
-import collections
 import re
 import subprocess
 import sys
+import tempfile
 import time
+from os.path import normcase, normpath, abspath, realpath, join
 from subprocess import Popen, PIPE
 
 from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
 from pybuilder.python_utils import (is_string, which, makedirs, basestring,
-                                    IS_WIN)
+                                    IS_WIN, iglob, escape)
 
 
 def get_all_dependencies_for_task(task):
@@ -275,31 +274,15 @@ class Timer(object):
 
 
 def apply_on_files(start_directory, closure, globs, *additional_closure_arguments, **keyword_closure_arguments):
-    glob_expressions = list(map(lambda g: GlobExpression(g), globs))
-
-    for root, _, file_names in os.walk(start_directory):
-        for file_name in file_names:
-            absolute_file_name = os.path.join(root, file_name)
-            relative_file_name = absolute_file_name.replace(start_directory, "")[1:]
-
-            for glob_expression in glob_expressions:
-                if glob_expression.matches(relative_file_name):
-                    closure(absolute_file_name,
-                            relative_file_name,
-                            *additional_closure_arguments,
-                            **keyword_closure_arguments)
-
-
-class GlobExpression(object):
-    def __init__(self, expression):
-        self.expression = expression
-        self.regex = "^" + expression.replace("**", ".+").replace("*", "[^/]*") + "$"
-        self.pattern = re.compile(self.regex)
-
-    def matches(self, path):
-        if self.pattern.match(path):
-            return True
-        return False
+    for glob in globs:
+        for absolute_file_name in iglob(normcase(os.path.join(escape(start_directory), glob)), recursive=True):
+            if os.path.isdir(absolute_file_name):
+                continue
+            relative_file_name = os.path.relpath(absolute_file_name, start_directory)
+            closure(absolute_file_name,
+                    relative_file_name,
+                    *additional_closure_arguments,
+                    **keyword_closure_arguments)
 
 
 def mkdir(directory):

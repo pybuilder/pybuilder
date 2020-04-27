@@ -39,8 +39,11 @@ class BaseIntegrationTestSupport(unittest.TestCase):
             shutil.rmtree(self.tmp_directory)
 
     def full_path(self, name):
-        parts = [self.tmp_directory] + name.split(os.sep)
-        return os.path.join(*parts)
+        name = os.path.normcase(os.path.normpath(name))
+        if os.path.isabs(name):
+            return name
+        else:
+            return os.path.join(self.tmp_directory, name)
 
     def create_directory(self, name):
         os.makedirs(self.full_path(name))
