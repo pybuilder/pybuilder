@@ -461,10 +461,24 @@ if PY2:
             return pattern == '**'
 
 
+    def _py2_escape(pathname):
+        """Escape all special characters.
+        """
+        # Escaping is done by wrapping any of "*?[" between square brackets.
+        # Metacharacters do not work in the drive part and shouldn't be escaped.
+        drive, pathname = os.path.splitdrive(pathname)
+        if isinstance(pathname, bytes):
+            pathname = magic_check_bytes.sub(br'[\1]', pathname)
+        else:
+            pathname = magic_check.sub(r'[\1]', pathname)
+        return drive + pathname
+
+
     glob = _py2_glob
     iglob = _py2_iglob
+    escape = _py2_escape
 else:
-    from glob import glob, iglob
+    from glob import glob, iglob, escape
 
 try:
     from os import symlink
@@ -489,4 +503,4 @@ python_specific_dir_name = "%s-%s" % (platform.python_implementation().lower(),
 
 _, _venv_python_exename = os.path.split(os.path.abspath(getattr(sys, "_base_executable", sys.executable)))
 
-__all__ = ["glob", "iglob"]
+__all__ = ["glob", "iglob", "escape"]

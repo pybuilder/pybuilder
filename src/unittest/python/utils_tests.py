@@ -27,8 +27,7 @@ from json import loads
 from os.path import normcase as nc, dirname, join as jp, exists
 
 from pybuilder.errors import PyBuilderException
-from pybuilder.utils import (GlobExpression,
-                             Timer,
+from pybuilder.utils import (Timer,
                              apply_on_files,
                              as_list,
                              discover_files,
@@ -217,32 +216,8 @@ class DiscoverModulesTest(unittest.TestCase):
         self.assertEqual(["reactor_tests"], discover_modules_matching("/path/to/tests/", "*_tests"))
 
 
-class GlobExpressionTest(unittest.TestCase):
-    def test_static_expression_should_match_exact_file_name(self):
-        self.assertTrue(GlobExpression("spam.eggs").matches("spam.eggs"))
-
-    def test_static_expression_should_not_match_different_file_name(self):
-        self.assertFalse(GlobExpression("spam.eggs").matches("spam.egg"))
-
-    def test_dynamic_file_expression_should_match_any_character(self):
-        self.assertTrue(GlobExpression("spam.egg*").matches("spam.eggs"))
-
-    def test_dynamic_file_expression_should_match_no_character(self):
-        self.assertTrue(GlobExpression("spam.egg*").matches("spam.egg"))
-
-    def test_dynamic_file_expression_should_not_match_different_file_part(self):
-        self.assertFalse(GlobExpression("spam.egg*").matches("foo.spam.egg"))
-
-    def test_dynamic_file_expression_should_not_match_directory_part(self):
-        self.assertFalse(GlobExpression("*spam.egg").matches("foo/spam.egg"))
-
-    def test_dynamic_directory_expression_should_match_file_in_directory(self):
-        self.assertTrue(GlobExpression("**/spam.egg").matches("foo/spam.egg"))
-        self.assertTrue(GlobExpression("**/spam.egg").matches("bar/spam.egg"))
-
-
 class ApplyOnFilesTest(unittest.TestCase):
-    @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["a", "b", "c"])])
+    @patch("pybuilder.utils.iglob", return_value=["spam/a", "spam/b", "spam/c"])
     def test_should_apply_callback_to_all_files_when_expression_matches_all_files(self, walk):
         absolute_file_names = []
         relative_file_names = []
@@ -252,12 +227,12 @@ class ApplyOnFilesTest(unittest.TestCase):
             relative_file_names.append(relative_file_name)
 
         apply_on_files("spam", callback, "*")
-        self.assertEqual([nc("spam/a"), nc("spam/b"), nc("spam/c")], absolute_file_names)
+        self.assertEqual(["spam/a", "spam/b", "spam/c"], absolute_file_names)
         self.assertEqual(["a", "b", "c"], relative_file_names)
 
-        walk.assert_called_with("spam")
+        walk.assert_called_with(nc("spam/*"), recursive=True)
 
-    @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["a", "b", "c"])])
+    @patch("pybuilder.utils.iglob", return_value=["spam/a"])
     def test_should_apply_callback_to_one_file_when_expression_matches_one_file(self, walk):
         called_on_file = []
 
@@ -265,11 +240,11 @@ class ApplyOnFilesTest(unittest.TestCase):
             called_on_file.append(absolute_file_name)
 
         apply_on_files("spam", callback, "a")
-        self.assertEqual([nc("spam/a")], called_on_file)
+        self.assertEqual(["spam/a"], called_on_file)
 
-        walk.assert_called_with("spam")
+        walk.assert_called_with(nc("spam/a"), recursive=True)
 
-    @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["a"])])
+    @patch("pybuilder.utils.iglob", return_value=["spam/a"])
     def test_should_pass_additional_arguments_to_closure(self, walk):
         called_on_file = []
 
@@ -278,9 +253,9 @@ class ApplyOnFilesTest(unittest.TestCase):
             called_on_file.append(absolute_file_name)
 
         apply_on_files("spam", callback, "a", "additional argument")
-        self.assertEqual([nc("spam/a")], called_on_file)
+        self.assertEqual(["spam/a"], called_on_file)
 
-        walk.assert_called_with("spam")
+        walk.assert_called_with(nc("spam/a"), recursive=True)
 
 
 class MkdirTest(unittest.TestCase):
