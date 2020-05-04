@@ -61,4 +61,4 @@ The release notes can be found [here](https://pybuilder.io/release-notes/).
 There will also be a git tag with each release. Please note that we do not currently promote tags to GitHub "releases".
 
 ## Development
-See [Developing PyBuilder](https://pybuilder.io/documentation/developing-pybuilder.html)
+See [Developing PyBuilder](https://pybuilder.io/documentation/developing-pybuilder)
