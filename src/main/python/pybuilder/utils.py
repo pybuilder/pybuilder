@@ -20,7 +20,6 @@
     The PyBuilder utils module.
     Provides generic utilities that can be used by plugins.
 """
-import collections
 import fnmatch
 import json
 import os
@@ -35,6 +34,11 @@ from subprocess import Popen, PIPE
 from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
 from pybuilder.python_utils import (is_string, which, makedirs, basestring,
                                     IS_WIN, iglob, escape)
+
+try:
+    from collections import abc
+except ImportError:
+    import collections as abc
 
 
 def get_all_dependencies_for_task(task):
@@ -302,7 +306,7 @@ def mkdir(directory):
 
 def is_notstr_iterable(obj):
     """Checks if obj is iterable, but not a string"""
-    return not isinstance(obj, basestring) and isinstance(obj, collections.Iterable)
+    return not isinstance(obj, basestring) and isinstance(obj, abc.Iterable)
 
 
 def get_dist_version_string(project, format=" (%s)"):
