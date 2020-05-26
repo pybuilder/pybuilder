@@ -28,11 +28,11 @@ from io import BytesIO, StringIO  # noqa: E402
 from pickle import PickleError, Unpickler, UnpicklingError, HIGHEST_PROTOCOL  # noqa: E402
 from pickletools import dis  # noqa: E402
 
-from pybuilder.python_utils import (mp_get_context,
+from pybuilder.python_utils import (mp_get_context,  # noqa: E402
                                     mp_ForkingPickler as ForkingPickler,
                                     mp_log_to_stderr as log_to_stderr,
                                     PY2,
-                                    IS_WIN)  # noqa: E402
+                                    IS_WIN)
 
 PICKLE_PROTOCOL_MIN = 2
 PICKLE_PROTOCOL_MAX = HIGHEST_PROTOCOL

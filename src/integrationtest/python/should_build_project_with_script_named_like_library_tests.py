@@ -17,15 +17,13 @@
 #   limitations under the License.
 
 import unittest
-from os.path import join
 
 from itest_support import IntegrationTestSupport
 
 
-class Test (IntegrationTestSupport):
+class Test(IntegrationTestSupport):
 
     def test(self):
-        requirements = join(self.tmp_directory, "requirements.txt")
         self.write_build_file("""
 from pybuilder.core import use_plugin
 
@@ -35,7 +33,7 @@ use_plugin("python.distutils")
 name = "integration-test"
 default_task = "publish"
 
-""".format(requirements))
+""")
         self.create_directory("src/main/python/spam")
         self.write_file("src/main/python/spam/__init__.py", "")
 

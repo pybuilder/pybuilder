@@ -237,7 +237,7 @@ def tail(file_path, lines=20):
 
 
 def tail_log(file_path, lines=20):
-    return "\n".join("\t" + l for l in tail(file_path, lines))
+    return "\n".join("\t" + line for line in tail(file_path, lines))
 
 
 def read_file(file_name):
