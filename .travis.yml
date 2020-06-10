@@ -20,7 +20,8 @@ env:
     - PYTHON_VERSION="3.7.7"
     - PYTHON_VERSION="3.6.8"
     - PYTHON_VERSION="3.5.4"
-    - PYTHON_VERSION="3.9.0b1"
+    - PYTHON_VERSION="3.9-dev"
+    - PYTHON_VERSION="3.10-dev"
     - PYTHON_VERSION="pypy3.6-7.3.0"
     - PYTHON_VERSION="pypy2.7-7.3.0"
     - PYTHON_VERSION="pypy3.5-7.0.0"
@@ -39,6 +40,8 @@ jobs:
       env: PYTHON_VERSION="pypy3.5-7.0.0"
     - os: windows
       env: PYTHON_VERSION="pypy3.6-7.3.0"
+    - os: windows
+      if: env(PYTHON_VERSION) =~ /^.+-dev$/
   allow_failures:
     - if: env(PYTHON_VERSION) =~ /^pypy.+$/ or env(PYTHON_VERSION) =~ /[a-z]+/
 
