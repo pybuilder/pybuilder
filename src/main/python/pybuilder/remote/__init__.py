@@ -23,6 +23,24 @@ patch_mp()
 
 import sys  # noqa: E402
 from textwrap import dedent  # noqa: E402
+
+from types import (MethodType,  # noqa: E402
+                   FunctionType,
+                   BuiltinFunctionType,
+                   )
+
+try:
+    from types import (WrapperDescriptorType,  # noqa: E402
+                       MethodWrapperType,
+                       MethodDescriptorType,
+                       ClassMethodDescriptorType,
+                       )
+except ImportError:
+    WrapperDescriptorType = type(object.__init__)
+    MethodWrapperType = type(object().__str__)
+    MethodDescriptorType = type(str.join)
+    ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
+
 from os.path import normcase as nc, sep  # noqa: E402
 from io import BytesIO, StringIO  # noqa: E402
 from pickle import PickleError, Unpickler, UnpicklingError, HIGHEST_PROTOCOL  # noqa: E402
@@ -36,6 +54,15 @@ from pybuilder.python_utils import (mp_get_context,  # noqa: E402
 
 PICKLE_PROTOCOL_MIN = 2
 PICKLE_PROTOCOL_MAX = HIGHEST_PROTOCOL
+
+CALLABLE_TYPES = (MethodType,
+                  FunctionType,
+                  BuiltinFunctionType,
+                  MethodWrapperType,
+                  ClassMethodDescriptorType,
+                  WrapperDescriptorType,
+                  MethodDescriptorType,
+                  )
 
 if PY2:
     ConnectionError = EnvironmentError
@@ -368,7 +395,7 @@ def proxy_members(obj, public=True, protected=True, add_callable=True, add_str=T
                 is_callable and add_callable or
                 is_str and add_str):
             member = getattr(obj, name)
-            if callable(member):
+            if isinstance(member, CALLABLE_TYPES):
                 methods.append(name)
             else:
                 fields.append(name)
