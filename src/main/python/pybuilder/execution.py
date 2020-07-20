@@ -289,7 +289,7 @@ class ExecutionManager(object):
 
         for name in list(self._dependencies_pending_tasks.keys()):
             if self.has_task(name):
-                self.logger.debug("Resolved late dependency of task '%s' on %s", name, dependencies[name])
+                self.logger.debug("Resolved late dependency of task '%s' on %s", name, self._dependencies_pending_tasks[name])
                 self.get_task(name).dependencies.extend(self._dependencies_pending_tasks[name])
                 del self._dependencies_pending_tasks[name]
 
