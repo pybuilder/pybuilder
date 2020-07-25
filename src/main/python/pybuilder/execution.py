@@ -122,7 +122,6 @@ class Action(Executable):
 class TaskDependency(object):
     def __init__(self, mixed, optional=False):
         self._name = as_task_name(mixed)
-        self._task = mixed if hasattr(mixed, "name") else None
         self._optional = optional
 
     def __repr__(self):
@@ -137,12 +136,11 @@ class TaskDependency(object):
         return self._name
 
     @property
-    def task(self):
-        return self._task
-
-    @property
     def optional(self):
         return self._optional
+
+    def required(self):
+        self._optional = False
 
 
 class Task(object):
@@ -282,15 +280,17 @@ class ExecutionManager(object):
 
     def register_late_task_dependencies(self, dependencies):
         for name in dependencies:
-            self.logger.debug("Registering late dependency of task '%s' on %s", name, dependencies[name])
+            dependency_tasks = dependencies[name]
+            self.logger.debug("Registering late dependency of task '%s' on %s", name, dependency_tasks)
             if name not in self._dependencies_pending_tasks:
                 self._dependencies_pending_tasks[name] = []
-            self._dependencies_pending_tasks[name].extend(dependencies[name])
+            self._dependencies_pending_tasks[name].extend(dependency_tasks)
 
         for name in list(self._dependencies_pending_tasks.keys()):
             if self.has_task(name):
-                self.logger.debug("Resolved late dependency of task '%s' on %s", name, dependencies[name])
-                self.get_task(name).dependencies.extend(self._dependencies_pending_tasks[name])
+                dependency_tasks = self._dependencies_pending_tasks[name]
+                self.logger.debug("Resolved late dependency of task '%s' on %s", name, dependency_tasks)
+                self.get_task(name).dependencies.extend(dependency_tasks)
                 del self._dependencies_pending_tasks[name]
 
     def execute_initializers(self, environments=None, **kwargs):
@@ -418,7 +418,7 @@ class ExecutionManager(object):
         visited.add(task)
         dependencies = [dependency for dependency in self._task_dependencies[task.name]]
         for dependency in dependencies:
-            self._collect_transitive_tasks(dependency.task, visited)
+            self._collect_transitive_tasks(self.get_task(dependency.name), visited)
         return visited
 
     def collect_all_transitive_tasks(self, task_names):
@@ -519,7 +519,7 @@ class ExecutionManager(object):
                     if existing_dependency.name == d.name:
                         if existing_dependency.optional != d.optional:
                             if existing_dependency.optional:
-                                task_dependencies[index] = TaskDependency(existing_dependency.name)
+                                existing_dependency.required()
                                 self.logger.debug("Converting optional dependency '%s' of task '%s' into required",
                                                   existing_dependency, task.name)
                             else:
