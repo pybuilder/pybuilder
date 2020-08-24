@@ -17,6 +17,7 @@
 #   limitations under the License.
 
 import sys
+from os.path import basename
 
 import pybuilder._vendor
 
@@ -93,4 +94,6 @@ class VendorImporter:
                     sys.modules.pop(p, None)
 
 
-VendorImporter(__name__, pybuilder._vendor.__names__, pybuilder._vendor.__name__).install()
+# Don't run if we're actually in PDoc
+if not (sys.version_info[0] == 2 and basename(sys.argv[0]) == "pdoc"):
+    VendorImporter(__name__, pybuilder._vendor.__names__, pybuilder._vendor.__name__).install()

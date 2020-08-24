@@ -239,7 +239,7 @@ def run_single_test(logger, project, reactor, reports_dir, test, output_test_nam
         "success": True
     }
     if return_code != 0:
-        logger.error("Integration test failed: %s", test)
+        logger.error("Integration test failed: %s, exit code %d", test, return_code)
         report_item["success"] = False
 
         if project.get_property("verbose") or project.get_property("integrationtest_always_verbose"):
