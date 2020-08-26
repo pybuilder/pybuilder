@@ -1,6 +1,7 @@
 import re
 import sys
 from types import CodeType
+from types import FrameType
 from types import TracebackType
 
 try:
@@ -15,8 +16,8 @@ except ImportError:
 if not tb_set_next and not tproxy:
     raise ImportError("Cannot use tblib. Runtime not supported.")
 
-__version__ = '1.6.0'
-__all__ = 'Traceback',
+__version__ = '1.7.0'
+__all__ = 'Traceback', 'TracebackParseError', 'Frame', 'Code'
 
 PY3 = sys.version_info[0] == 3
 FRAME_RE = re.compile(r'^\s*File "(?P<co_filename>.+)", line (?P<tb_lineno>\d+)(, in (?P<co_name>.+))?$')
@@ -24,7 +25,12 @@ FRAME_RE = re.compile(r'^\s*File "(?P<co_filename>.+)", line (?P<tb_lineno>\d+)(
 
 class _AttrDict(dict):
     __slots__ = ()
-    __getattr__ = dict.__getitem__
+
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
 
 
 # noinspection PyPep8Naming
@@ -37,33 +43,73 @@ class TracebackParseError(Exception):
 
 
 class Code(object):
-
+    """
+    Class that replicates just enough of the builtin Code object to enable serialization and traceback rendering.
+    """
     co_code = None
 
     def __init__(self, code):
         self.co_filename = code.co_filename
         self.co_name = code.co_name
+        self.co_argcount = 0
+        self.co_kwonlyargcount = 0
+        self.co_varnames = ()
+        self.co_nlocals = 0
+        self.co_stacksize = 0
+        self.co_flags = 64
+        self.co_firstlineno = 0
+
+    # noinspection SpellCheckingInspection
+    def __tproxy__(self, operation, *args, **kwargs):
+        """
+        Necessary for PyPy's tproxy.
+        """
+        if operation in ('__getattribute__', '__getattr__'):
+            return getattr(self, args[0])
+        else:
+            return getattr(self, operation)(*args, **kwargs)
 
 
 class Frame(object):
+    """
+    Class that replicates just enough of the builtin Frame object to enable serialization and traceback rendering.
+    """
     def __init__(self, frame):
+        self.f_locals = {}
         self.f_globals = {
             k: v
             for k, v in frame.f_globals.items()
             if k in ("__file__", "__name__")
         }
         self.f_code = Code(frame.f_code)
+        self.f_lineno = frame.f_lineno
 
     def clear(self):
-        # For compatibility with PyPy 3.5;
-        # clear() was added to frame in Python 3.4
-        # and is called by traceback.clear_frames(), which
-        # in turn is called by unittest.TestCase.assertRaises
-        pass
+        """
+        For compatibility with PyPy 3.5;
+        clear() was added to frame in Python 3.4
+        and is called by traceback.clear_frames(), which
+        in turn is called by unittest.TestCase.assertRaises
+        """
+
+    # noinspection SpellCheckingInspection
+    def __tproxy__(self, operation, *args, **kwargs):
+        """
+        Necessary for PyPy's tproxy.
+        """
+        if operation in ('__getattribute__', '__getattr__'):
+            if args[0] == 'f_code':
+                return tproxy(CodeType, self.f_code.__tproxy__)
+            else:
+                return getattr(self, args[0])
+        else:
+            return getattr(self, operation)(*args, **kwargs)
 
 
 class Traceback(object):
-
+    """
+    Class that wraps builtin Traceback objects.
+    """
     tb_next = None
 
     def __init__(self, tb):
@@ -84,8 +130,11 @@ class Traceback(object):
             tb = tb.tb_next
 
     def as_traceback(self):
+        """
+        Convert to a builtin Traceback object that is usable for raising or rendering a stacktrace.
+        """
         if tproxy:
-            return tproxy(TracebackType, self.__tproxy_handler)
+            return tproxy(TracebackType, self.__tproxy__)
         if not tb_set_next:
             raise RuntimeError("Unsupported Python interpreter!")
 
@@ -119,7 +168,7 @@ class Traceback(object):
 
             # noinspection PyBroadException
             try:
-                exec(code, current.tb_frame.f_globals, {})
+                exec(code, dict(current.tb_frame.f_globals), {})
             except Exception:
                 next_tb = sys.exc_info()[2].tb_next
                 if top_tb is None:
@@ -135,19 +184,28 @@ class Traceback(object):
         finally:
             del top_tb
             del tb
+    to_traceback = as_traceback
 
     # noinspection SpellCheckingInspection
-    def __tproxy_handler(self, operation, *args, **kwargs):
+    def __tproxy__(self, operation, *args, **kwargs):
+        """
+        Necessary for PyPy's tproxy.
+        """
         if operation in ('__getattribute__', '__getattr__'):
             if args[0] == 'tb_next':
                 return self.tb_next and self.tb_next.as_traceback()
+            elif args[0] == 'tb_frame':
+                return tproxy(FrameType, self.tb_frame.__tproxy__)
             else:
                 return getattr(self, args[0])
         else:
             return getattr(self, operation)(*args, **kwargs)
 
-    def to_dict(self):
-        """Convert a Traceback into a dictionary representation"""
+    def as_dict(self):
+        """
+        Converts to a dictionary representation. You can serialize the result to JSON as it only has
+        builtin objects like dicts, lists, ints or strings.
+        """
         if self.tb_next is None:
             tb_next = None
         else:
@@ -160,15 +218,20 @@ class Traceback(object):
         frame = {
             'f_globals': self.tb_frame.f_globals,
             'f_code': code,
+            'f_lineno': self.tb_frame.f_lineno,
         }
         return {
             'tb_frame': frame,
             'tb_lineno': self.tb_lineno,
             'tb_next': tb_next,
         }
+    to_dict = as_dict
 
     @classmethod
     def from_dict(cls, dct):
+        """
+        Creates an instance from a dictionary with the same structure as ``.as_dict()`` returns.
+        """
         if dct['tb_next']:
             tb_next = cls.from_dict(dct['tb_next'])
         else:
@@ -181,6 +244,7 @@ class Traceback(object):
         frame = _AttrDict(
             f_globals=dct['tb_frame']['f_globals'],
             f_code=code,
+            f_lineno=dct['tb_frame']['f_lineno'],
         )
         tb = _AttrDict(
             tb_frame=frame,
@@ -191,6 +255,10 @@ class Traceback(object):
 
     @classmethod
     def from_string(cls, string, strict=True):
+        """
+        Creates an instance by parsing a stacktrace. Strict means that parsing stops when lines are not indented by at least two spaces
+        anymore.
+        """
         frames = []
         header = strict
 
@@ -220,6 +288,7 @@ class Traceback(object):
                             __name__='?',
                         ),
                         f_code=_AttrDict(frame),
+                        f_lineno=int(frame['tb_lineno']),
                     ),
                     tb_next=previous,
                 )
