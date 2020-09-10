@@ -168,6 +168,12 @@ def parse_options(args):
                              default=False,
                              help="Reset plugins directory prior to running the build")
 
+    project_group.add_option("--no-venvs",
+                             action="store_true",
+                             dest="no_venvs",
+                             default=False,
+                             help="Disables the use of Python Virtual Environments")
+
     parser.add_option_group(project_group)
 
     output_group = optparse.OptionGroup(
@@ -427,7 +433,8 @@ def main(*args):
                                   exclude_optional_tasks=options.exclude_optional_tasks,
                                   exclude_tasks=options.exclude_tasks,
                                   exclude_all_optional=options.exclude_all_optional,
-                                  offline=options.offline
+                                  offline=options.offline,
+                                  no_venvs=options.no_venvs
                                   )
             if options.list_tasks:
                 print_list_of_tasks(reactor, quiet=options.very_quiet)
@@ -457,7 +464,8 @@ def main(*args):
                                   exclude_tasks=options.exclude_tasks,
                                   exclude_all_optional=options.exclude_all_optional,
                                   reset_plugins=options.reset_plugins,
-                                  offline=options.offline
+                                  offline=options.offline,
+                                  no_venvs=options.no_venvs
                                   )
 
             if options.verbose or options.debug:

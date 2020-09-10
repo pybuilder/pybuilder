@@ -51,6 +51,7 @@ Usage:
                           Exclude any task dependencies (dangerous, may break
                           the build in unexpected ways)
       --reset-plugins     Reset plugins directory prior to running the build
+      --no-venvs          Disables the use of Python Virtual Environments
   
     Output Options:
       Modifies the messages printed during a build.

@@ -421,11 +421,12 @@ class Project(object):
     as well as some convenience methods to access these properties.
     """
 
-    def __init__(self, basedir, version="1.0.dev0", name=None, offline=False):
+    def __init__(self, basedir, version="1.0.dev0", name=None, offline=False, no_venvs=False):
         self.name = name
         self._version = None
         self._dist_version = None
         self.offline = offline
+        self.no_venvs = no_venvs
         self.version = version
         self.basedir = ap(basedir)
         if not self.name:

@@ -72,31 +72,35 @@ def create_venvs(logger, project, reactor):
     logger.debug("Creating log directory '%s'", log_dir)
     mkdir(log_dir)
 
-    venv_dependencies_map = project.get_property("venv_dependencies")
-    if "build" not in venv_dependencies_map:
-        venv_dependencies_map["build"] = as_list(project.build_dependencies) + as_list(project.dependencies)
-    if "test" not in venv_dependencies_map:
-        venv_dependencies_map["test"] = as_list(project.dependencies)
-
     per = reactor.python_env_registry
     system_env = per["system"]
-    clear = project.get_property("refresh_venvs") or system_env.is_pypy
-    for venv_name in project.get_property("venv_names"):
-        venv_dir = project.expand_path("$dir_target/venv", venv_name,
-                                       system_env.versioned_dir_name)
-        logger.info("Creating target '%s' VEnv in '%s'%s", venv_name, venv_dir, " (refreshing)" if clear else "")
-        per[venv_name] = current_env = PythonEnv(venv_dir, reactor).create_venv(with_pip=True,
-                                                                                symlinks=system_env.venv_symlinks,
-                                                                                clear=clear,
-                                                                                offline=project.offline)
-        venv_dependencies = venv_dependencies_map.get(venv_name)
-        if venv_dependencies:
-            install_log_path = project.expand_path("$dir_install_logs", "venv_%s_install_logs" % venv_name)
-            constraints_file_name = project.get_property("install_dependencies_constraints")
-            current_env.install_dependencies(venv_dependencies,
-                                             install_log_path=install_log_path,
-                                             local_mapping={},
-                                             constraints_file_name=constraints_file_name)
+    if not project.no_venvs:
+        venv_dependencies_map = project.get_property("venv_dependencies")
+        if "build" not in venv_dependencies_map:
+            venv_dependencies_map["build"] = as_list(project.build_dependencies) + as_list(project.dependencies)
+        if "test" not in venv_dependencies_map:
+            venv_dependencies_map["test"] = as_list(project.dependencies)
+
+        clear = project.get_property("refresh_venvs") or system_env.is_pypy
+        for venv_name in project.get_property("venv_names"):
+            venv_dir = project.expand_path("$dir_target/venv", venv_name,
+                                           system_env.versioned_dir_name)
+            logger.info("Creating target '%s' VEnv in '%s'%s", venv_name, venv_dir, " (refreshing)" if clear else "")
+            per[venv_name] = current_env = PythonEnv(venv_dir, reactor).create_venv(with_pip=True,
+                                                                                    symlinks=system_env.venv_symlinks,
+                                                                                    clear=clear,
+                                                                                    offline=project.offline)
+            venv_dependencies = venv_dependencies_map.get(venv_name)
+            if venv_dependencies:
+                install_log_path = project.expand_path("$dir_install_logs", "venv_%s_install_logs" % venv_name)
+                constraints_file_name = project.get_property("install_dependencies_constraints")
+                current_env.install_dependencies(venv_dependencies,
+                                                 install_log_path=install_log_path,
+                                                 local_mapping={},
+                                                 constraints_file_name=constraints_file_name)
+    else:
+        for venv_name in project.get_property("venv_names"):
+            per[venv_name] = system_env
 
 
 def list_packages(project):

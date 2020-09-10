@@ -18,16 +18,13 @@
 
 import unittest
 
-from pybuilder.python_utils import PY2, IS_WIN
 from smoke_itest_support import SmokeIntegrationTestSupport
 
 
-class SphinxWithApiSmokeTest(SmokeIntegrationTestSupport):
-    def test_smoke_sphinx_pyb_quickstart_with_api_doc(self):
-        self.smoke_test("-v", "-X", "-P", "sphinx_run_apidoc=True", "sphinx_pyb_quickstart",
-                        "sphinx_generate_documentation")
+class InstallDependenciesNoVenvsSmokeTest(SmokeIntegrationTestSupport):
+    def test_clean(self):
+        self.smoke_test("-v", "-X", "--no-venvs", "install_dependencies")
 
 
 if __name__ == "__main__":
-    if not (IS_WIN and PY2):
-        unittest.main()
+    unittest.main()
