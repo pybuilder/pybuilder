@@ -21,7 +21,7 @@ import unittest
 from smoke_itest_support import SmokeIntegrationTestSupport
 
 
-class SphinxSmokeTest(SmokeIntegrationTestSupport):
+class VendorizeSmokeTest(SmokeIntegrationTestSupport):
     PROJECT_FILES = list(SmokeIntegrationTestSupport.PROJECT_FILES) + ["docs"]
 
     def test_smoke_analyze_publish_no_integration_no_coverage(self):

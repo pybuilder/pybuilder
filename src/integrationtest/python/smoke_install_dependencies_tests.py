@@ -21,7 +21,7 @@ import unittest
 from smoke_itest_support import SmokeIntegrationTestSupport
 
 
-class CleanSmokeTest(SmokeIntegrationTestSupport):
+class InstallDependenciesSmokeTest(SmokeIntegrationTestSupport):
     def test_clean(self):
         self.smoke_test("-v", "-X", "install_dependencies")
 

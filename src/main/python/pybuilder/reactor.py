@@ -182,7 +182,8 @@ class Reactor:
                       exclude_tasks=None,
                       exclude_all_optional=False,
                       reset_plugins=False,
-                      offline=False):
+                      offline=False,
+                      no_venvs=False):
         if not property_overrides:
             property_overrides = {}
         Reactor._set_current_instance(self)
@@ -190,11 +191,16 @@ class Reactor:
         project_directory, project_descriptor = self.verify_project_directory(
             project_directory, project_descriptor)
 
+        if no_venvs:
+            self.logger.warn("Python Virtual Environments are DISABLED!")
+            self.logger.warn("This will revert to INCORRECT PyBuilder v0.11 behaviors!")
+            self.logger.warn("Coverage results may be unreliable!")
+
         self.logger.debug("Loading project module from %s", project_descriptor)
 
-        self.project = Project(basedir=project_directory, offline=offline)
+        self.project = Project(basedir=project_directory, offline=offline, no_venvs=no_venvs)
 
-        self._setup_plugin_directory(reset_plugins)
+        self._setup_plugin_directory(reset_plugins, no_venvs)
 
         self._setup_deferred_plugin_import()
 
@@ -499,22 +505,25 @@ class Reactor:
     def pybuilder_venv(self):
         return self._python_env_registry["pybuilder"]
 
-    def _setup_plugin_directory(self, reset_plugins):
+    def _setup_plugin_directory(self, reset_plugins, no_venvs):
         per = self.python_env_registry
         system_env = per["system"]
-        plugin_dir = self._plugin_dir = np(jp(self.project.basedir, ".pybuilder", "plugins",
-                                              system_env.versioned_dir_name))
 
-        self.logger.debug("Setting up plugins VEnv at '%s'%s", plugin_dir, " (resetting)" if reset_plugins else "")
-        plugin_env = per["pybuilder"] = PythonEnv(plugin_dir, self).create_venv(with_pip=True,
-                                                                                symlinks=system_env.venv_symlinks,
-                                                                                upgrade=True,
-                                                                                clear=(reset_plugins or
-                                                                                       system_env.is_pypy),
-                                                                                offline=self.project.offline)
+        if not no_venvs:
+            plugin_dir = self._plugin_dir = np(jp(self.project.basedir, ".pybuilder", "plugins",
+                                                  system_env.versioned_dir_name))
 
-        prepend_env_to_path(plugin_env, sys.path)
-        patch_mp_pyb_env(plugin_env)
+            self.logger.debug("Setting up plugins VEnv at '%s'%s", plugin_dir, " (resetting)" if reset_plugins else "")
+            plugin_env = per["pybuilder"] = PythonEnv(plugin_dir, self).create_venv(with_pip=True,
+                                                                                    symlinks=system_env.venv_symlinks,
+                                                                                    upgrade=True,
+                                                                                    clear=(reset_plugins or
+                                                                                           system_env.is_pypy),
+                                                                                    offline=self.project.offline)
+            prepend_env_to_path(plugin_env, sys.path)
+            patch_mp_pyb_env(plugin_env)
+        else:
+            per["pybuilder"] = system_env
 
     def _setup_deferred_plugin_import(self):
         self._old_import = __import__

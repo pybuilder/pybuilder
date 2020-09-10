@@ -22,7 +22,7 @@ from pybuilder.python_utils import PY2, IS_WIN
 from smoke_itest_support import SmokeIntegrationTestSupport
 
 
-class SphinxSmokeTest(SmokeIntegrationTestSupport):
+class SphinxQuickstartSmokeTest(SmokeIntegrationTestSupport):
     def test_smoke_sphinx_quickstart(self):
         self.smoke_test("-v", "-X", "sphinx_quickstart", "sphinx_generate_documentation")
 
