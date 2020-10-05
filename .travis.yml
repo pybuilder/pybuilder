@@ -15,19 +15,19 @@ os:
 osx_image: xcode11.3
 env:
   jobs:
-    - PYTHON_VERSION="3.8.5"
+    - PYTHON_VERSION="3.9.0"
     - PYTHON_VERSION="2.7.18"
     - PYTHON_VERSION="3.7.9"
     - PYTHON_VERSION="3.6.8"
     - PYTHON_VERSION="3.5.4"
-    - PYTHON_VERSION="3.9-dev"
+    - PYTHON_VERSION="3.8.6"
     - PYTHON_VERSION="3.10-dev"
     - PYTHON_VERSION="pypy3.6-7.3.1"
     - PYTHON_VERSION="pypy2.7-7.3.1"
     - PYTHON_VERSION="pypy3.5-7.0.0"
   global:
     - DEPLOY_BRANCHES: "'master 0.11'"
-    - DEPLOY_PYTHONS: "'2.7.18 3.8.5'"
+    - DEPLOY_PYTHONS: "'2.7.18 3.9.0'"
     - DEPLOY_OSES: "'linux'"
     - PYB_ARGS: "'-E ci -v -X analyze install'"
     - TWINE_USERNAME: pybuilder-travis2
