@@ -19,7 +19,7 @@ PyBuilder is based on the concept of dependency based programming, but it also
 comes with a powerful plugin mechanism, allowing the construction of build life
 cycles similar to those known from other famous (Java) build tools.
 
-PyBuilder is running on the following versions of Python: 2.7, 3.5, 3.6, 3.7, 3.8, and PyPy 2.7, 3.5 and 3.6.
+PyBuilder is running on the following versions of Python: 2.7, 3.5, 3.6, 3.7, 3.8, 3.9 and PyPy 2.7, 3.5 and 3.6.
 
 See the [Travis Build](https://travis-ci.org/pybuilder/pybuilder) for version specific output.
 
