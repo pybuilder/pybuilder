@@ -341,7 +341,7 @@ def upload(project, logger, reactor):
 
 
 def upload_check(project, logger, reactor):
-    logger.info("Running Twine check for generated artifcats")
+    logger.info("Running Twine check for generated artifacts")
     execute_twine(project, logger, reactor.pybuilder_venv, [], "check")
 
 
