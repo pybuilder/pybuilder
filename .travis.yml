@@ -1,45 +1,38 @@
 language: c
 dist: bionic
 addons:
-  apt_packages:
-    - pandoc
+  apt:
+    packages:
+      - pandoc
 branches:
   only:
     - master
     - doc/sphinxdoc
-    - 0.11
+    - "0.11"
 os:
   - linux
-  - osx
   - windows
-osx_image: xcode11.3
+  - osx
+osx_image: xcode11.6
 env:
   jobs:
-    - PYTHON_VERSION="3.9.0"
-    - PYTHON_VERSION="2.7.18"
+    - PYTHON_VERSION="3.9.6"
+    - PYTHON_VERSION="3.8.10"
     - PYTHON_VERSION="3.7.9"
     - PYTHON_VERSION="3.6.8"
-    - PYTHON_VERSION="3.5.4"
-    - PYTHON_VERSION="3.8.6"
     - PYTHON_VERSION="3.10-dev"
-    - PYTHON_VERSION="pypy3.6-7.3.1"
-    - PYTHON_VERSION="pypy2.7-7.3.1"
-    - PYTHON_VERSION="pypy3.5-7.0.0"
+    - PYTHON_VERSION="3.11-dev"
+    - PYTHON_VERSION="pypy3.7-7.3.5"
+    - PYTHON_VERSION="pypy3.6-7.3.3"
   global:
     - DEPLOY_BRANCHES: "'master 0.11'"
-    - DEPLOY_PYTHONS: "'2.7.18 3.9.0'"
+    - DEPLOY_PYTHONS: "'3.9.6'"
     - DEPLOY_OSES: "'linux'"
     - PYB_ARGS: "'-E ci -v -X analyze install'"
     - TWINE_USERNAME: pybuilder-travis2
     - secure: D49QJr9Z4v9yz9VObFw0q44o2fy3YBjI48b6+Vb1qr2RNMF5GpVj+xWFTr9j1qMw7ilfwWCEKlHytKmh/OSOStUcd1vTlasGz8YefBCP8iIbvp9M6qcBKqMlp8f/6uxwUxak+OMvj5WuKwtyIUy8L9JwDxd02Q12MUW6SNtu2Lo=
 jobs:
   exclude:
-    - os: windows
-      env: PYTHON_VERSION="pypy2.7-7.3.1"
-    - os: windows
-      env: PYTHON_VERSION="pypy3.5-7.0.0"
-    - os: windows
-      env: PYTHON_VERSION="pypy3.6-7.3.1"
     - os: windows
       if: env(PYTHON_VERSION) =~ /^.+-dev$/
   allow_failures:
@@ -52,6 +45,8 @@ notifications:
   webhooks:
     urls:
       - https://webhooks.gitter.im/e/3e07f25a6c20d8c6c172
-    on_cancel:  never # default: always
-install: travis_wait 30 python travis/travis_shim.py install
-script: travis_wait 60 python travis/travis_shim.py build
+    on_cancel: never # default: always
+install:
+  - travis_wait 30 python travis/travis_shim.py install
+script:
+  - travis_wait 60 python travis/travis_shim.py build

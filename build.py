@@ -68,9 +68,9 @@ name = "pybuilder"
 summary = "PyBuilder — an easy-to-use build automation tool for Python."
 description = """PyBuilder — an easy-to-use build automation tool for Python.
 
-PyBuilder is a software build automation tool written in pure Python mainly targeting Python ecosystem. 
-It is based on the concept of dependency-based programming but also comes along with powerful plugin mechanism that 
-allows the construction of build life-cycles similar to those known from other famous build tools like 
+PyBuilder is a software build automation tool written in pure Python mainly targeting Python ecosystem.
+It is based on the concept of dependency-based programming but also comes along with powerful plugin mechanism that
+allows the construction of build life-cycles similar to those known from other famous build tools like
 Apache Maven and Gradle.
 """
 
@@ -91,9 +91,9 @@ urls = {"Bug Tracker": "https://github.com/pybuilder/pybuilder/issues",
         "Documentation": "https://pybuilder.io/documentation"
         }
 license = "Apache License, Version 2.0"
-version = "0.12.11.dev"
+version = "0.13.0.dev"
 
-requires_python = ">=2.7,!=3.0,!=3.1,!=3.2,!=3.3,!=3.4"
+requires_python = ">=3.6"
 
 default_task = ["analyze", "publish"]
 
@@ -107,13 +107,17 @@ def initialize(project):
     project.set_property("vendorize_target_dir", "$dir_source_main_python/pybuilder/_vendor")
     project.set_property("vendorize_packages", ["tblib~=1.5",
                                                 "tailer~=0.4",
-                                                "setuptools<45.0.0",
-                                                "virtualenv>16.0.0,<20.0.0",
+                                                "setuptools>=45.0.0",
+                                                "virtualenv>=20.0.0",
+                                                "importlib-resources>=1.0",
+                                                "importlib-metadata>=0.12",
+                                                "typing-extensions",
                                                 "colorama~=0.4.3"
                                                 ])
     project.set_property("vendorize_cleanup_globs", ["bin",
                                                      "setuptools",
                                                      "easy_install.py"])
+    project.set_property("vendorize_preserve_metadata", ["virtualenv*"])
 
     project.set_property("coverage_break_build", False)
     project.get_property("coverage_exceptions").extend(["pybuilder._vendor",
@@ -173,10 +177,7 @@ def initialize(project):
         "Programming Language :: Python",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",

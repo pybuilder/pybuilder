@@ -26,7 +26,7 @@ pyenv install $PYTHON_VERSION $INSTALL_OPTION
 pyenv virtualenv $PYTHON_VERSION pyb-$PYTHON_VERSION
 
 set +eu
-pyenv activate pyb-$PYTHON_VERSION
+source ~/.pyenv/versions/pyb-$PYTHON_VERSION/bin/activate
 set -eu
 
 pip install -U pip setuptools

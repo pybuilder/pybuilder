@@ -36,7 +36,7 @@ class BaseIntegrationTestSupport(unittest.TestCase):
     def tearDown(self):
         outcomes = self.outcomes()
         if self.tmp_directory and os.path.exists(self.tmp_directory) and not (outcomes[0] or outcomes[1]):
-            shutil.rmtree(self.tmp_directory)
+            shutil.rmtree(self.tmp_directory, ignore_errors=sys.platform in {"win32", "cygwin", "msys"})
 
     def full_path(self, name):
         name = os.path.normcase(os.path.normpath(name))
