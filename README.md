@@ -21,7 +21,7 @@ cycles similar to those known from other famous (Java) build tools.
 
 PyBuilder is running on the following versions of Python: 2.7, 3.5, 3.6, 3.7, 3.8, 3.9 and PyPy 2.7, 3.5 and 3.6.
 
-See the [Travis Build](https://travis-ci.org/pybuilder/pybuilder) for version specific output.
+See the [Travis Build](https://travis-ci.com/pybuilder/pybuilder) for version specific output.
 
 ## Installing
 
