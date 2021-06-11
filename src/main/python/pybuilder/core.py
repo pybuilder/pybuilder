@@ -442,10 +442,10 @@ class Project(object):
         self._build_dependencies.add(Dependency(name, version, url))
 
     def depends_on_requirements(self, file):
-        self._install_dependencies.add(RequirementsFile(file))
+        self._install_dependencies.add(RequirementsFile(os.path.join(self.basedir, file)))
 
     def build_depends_on_requirements(self, file):
-        self._build_dependencies.add(RequirementsFile(file))
+        self._build_dependencies.add(RequirementsFile(os.path.join(self.basedir, file)))
 
     def plugin_depends_on(self, name, version=None, url=None):
         self._plugin_dependencies.add(Dependency(name, version, url))
