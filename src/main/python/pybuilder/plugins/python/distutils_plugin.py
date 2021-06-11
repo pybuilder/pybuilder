@@ -422,6 +422,11 @@ def strip_comments(requirements):
             if not requirement.strip().startswith("#")]
 
 
+def strip_options(requirements):
+    return [requirement for requirement in requirements
+            if not requirement.strip().startswith("--") or is_editable_requirement(requirement)]
+
+
 def quote(requirements):
     return ['"%s"' % requirement for requirement in requirements]
 
@@ -434,7 +439,7 @@ def flatten_and_quote(requirements_file):
     with open(requirements_file.name, 'r') as requirements_file:
         requirements = [requirement.strip("\n") for requirement in requirements_file.readlines()]
         requirements = [requirement for requirement in requirements if requirement]
-        return quote(strip_comments(requirements))
+        return quote(strip_options(strip_comments(requirements)))
 
 
 def format_single_dependency(dependency):
