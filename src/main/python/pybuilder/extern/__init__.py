@@ -17,12 +17,14 @@
 #   limitations under the License.
 
 import sys
+from importlib import import_module
+from importlib.abc import Loader
 from os.path import basename
 
 import pybuilder._vendor
 
 
-class VendorImporter:
+class VendorImporter(Loader):
     """
     A PEP 302 meta path importer for finding optionally-vendored
     or otherwise naturally-installed packages from root_name.
@@ -32,6 +34,7 @@ class VendorImporter:
         self.root_name = root_name
         self.vendored_names = set(vendored_names)
         self.vendor_pkg = vendor_pkg
+        self._in_flight_imports = set()
 
     @property
     def search_path(self):
@@ -39,7 +42,8 @@ class VendorImporter:
         Search first the vendor package then as a natural package.
         """
         yield self.vendor_pkg + "."
-        yield ""
+
+    #        yield ""
 
     def find_module(self, fullname, path=None):
         """
@@ -65,14 +69,17 @@ class VendorImporter:
             root = None
             target = fullname
         for prefix in self.search_path:
-            try:
-                extant = prefix + target
-                __import__(extant)
+            extant = prefix + target
+            if extant not in self._in_flight_imports:
+                self._in_flight_imports.add(extant)
+                try:
+                    mod = import_module(extant)
+                finally:
+                    self._in_flight_imports.remove(extant)
+            if extant in sys.modules:
                 mod = sys.modules[extant]
                 sys.modules[fullname] = mod
                 return mod
-            except ImportError:
-                pass
         else:
             raise ImportError(
                 "The '{target}' package is required; "
@@ -80,6 +87,10 @@ class VendorImporter:
                 "this warning, consult the packager of your "
                 "distribution.".format(**locals())
             )
+
+    def find_distributions(self, context):
+        context.path.insert(0, pybuilder._vendor.__file__[:-len("__init__.py") - 1])
+        return []
 
     def install(self):
         """
@@ -96,4 +107,4 @@ class VendorImporter:
 
 # Don't run if we're actually in PDoc
 if not (sys.version_info[0] == 2 and basename(sys.argv[0]) == "pdoc"):
-    VendorImporter(__name__, pybuilder._vendor.__names__, pybuilder._vendor.__name__).install()
+    VendorImporter(__name__, pybuilder._vendor.__names__, pybuilder._vendor.__package__).install()

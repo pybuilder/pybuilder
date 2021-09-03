@@ -1,0 +1,35 @@
+name: pybuilder
+on:
+  - pull_request
+  - push
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+          os:
+            - ubuntu-latest
+            - macos-latest
+            - windows-latest
+          python-version:
+            - '3.6'
+            - '3.7'
+            - '3.8'
+            - '3.9'
+            - '3.10.0rc1'
+            - 'pypy-3.6'
+            - 'pypy-3.7'
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+      - run: pwd
+      - run: python --version
+      - run: python -m pip --version
+      - shell: python  # Prove that actual Python == expected Python
+        env:
+          EXPECTED_PYTHON: ${{ matrix.python-version }}
+        run: import os, sys ; assert sys.version.startswith(os.getenv("EXPECTED_PYTHON"))

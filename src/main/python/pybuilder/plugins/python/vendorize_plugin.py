@@ -47,6 +47,7 @@ def initialize_vendorize_plugin(project):
     project.set_property_if_unset("vendorize_target_dir", "$dir_source_main_python/_vendor")
     project.set_property_if_unset("vendorize_clean_target_dir", True)
     project.set_property_if_unset("vendorize_cleanup_globs", [])
+    project.set_property_if_unset("vendorize_preserve_metadata", [])
     project.set_property_if_unset("vendorize_collect_licenses", True)
     project.set_property_if_unset("vendorize_licenses", "$vendorize_target_dir/LICENSES")
 
@@ -97,21 +98,32 @@ def vendorize(project, reactor, logger):
         with open(project.expand_path("$vendorize_licenses"), "wt") as f:
             f.write(licenses_content)
 
-    # Cleanup globs
-    for g in project.get_property("vendorize_cleanup_globs"):
-        for p in iglob(jp(target_dir, g), recursive=True):
-            print(p)
-            if isdir(p):
-                rmtree(p)
-            else:
-                unlink(p)
-
-    # Cleanup metadata
-    for p in _list_metadata_dirs(target_dir):
+    def delete(p):
         if isdir(p):
             rmtree(p)
         else:
             unlink(p)
+
+    # Cleanup globs
+    for g in project.get_property("vendorize_cleanup_globs"):
+        for p in iglob(jp(target_dir, g), recursive=True):
+            delete(p)
+
+    # Cleanup metadata exclusions
+    preserve_metadata = []
+    for g in project.get_property("vendorize_preserve_metadata"):
+        for p in iglob(jp(target_dir, g), recursive=True):
+            preserve_metadata.append(p)
+
+    # Cleanup metadata
+    for p in _list_metadata_dirs(target_dir):
+        if p not in preserve_metadata:
+            if isdir(p):
+                rmtree(p)
+            else:
+                unlink(p)
+        else:
+            logger.debug("Preserving metadata %s", p)
 
     # Populate names after cleanup
     cleaned_up_packages = list(chain((basename(dirname(f)) for f in iglob(jp(target_dir, "*", "__init__.py"))),
@@ -136,7 +148,7 @@ def _relpkg_from(pkg_parts, import_parts):
 def _path_to_package(path):
     pkg_parts = path.split(sep)
     if pkg_parts and pkg_parts[-1] == "__init__.py":
-        del pkg_parts[-1]
+        pkg_parts[-1] = ""
     if pkg_parts and pkg_parts[-1].endswith(".py"):
         pkg_parts[-1] = pkg_parts[-1][:-3]
     return pkg_parts

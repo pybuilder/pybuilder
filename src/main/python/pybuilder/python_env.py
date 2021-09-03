@@ -30,15 +30,19 @@ from pybuilder.utils import assert_can_execute, execute_command, jp, np
 __all__ = ["PythonEnv", "PythonEnvRegistry"]
 
 _PYTHON_INFO_SCRIPT = """import platform, sys, os, sysconfig
-_executable = os.path.normcase(os.path.abspath(getattr(sys, "_base_executable", sys.executable)))
+_base_executable = getattr(sys, "_base_executable", None)
+_sys_executable = sys.executable
+_executable = sys.executable
 _platform = sys.platform
 if _platform == "linux2":
     _platform = "linux"
 print({
 "_platform": _platform,
 "_os_name": os.name,
+"_base_executable": (_base_executable, ),
+"_sys_executable": (_sys_executable, ),
 "_executable": (_executable, ),
-"_exec_dir": os.path.normcase(os.path.abspath(os.path.dirname(_executable))),
+"_exec_dir": os.path.dirname(_executable),
 "_name": platform.python_implementation(),
 "_type": platform.python_implementation().lower(),
 "_version": tuple(sys.version_info),
@@ -81,6 +85,7 @@ class PythonEnv(object):
 
         result = subprocess.check_output([python_exec_path, "-c", _PYTHON_INFO_SCRIPT], universal_newlines=True)
         python_info = ast.literal_eval(result)
+
         for k, v in python_info.items():
             setattr(self, k, v)
 
@@ -213,7 +218,8 @@ class PythonEnv(object):
                     upgrade=upgrade,
                     with_pip=with_pip,
                     prompt=prompt,
-                    offline=offline)
+                    offline=offline,
+                    logger=self.logger)
 
         return self.populate()
 
@@ -418,25 +424,33 @@ def create_venv(home_dir,
                 upgrade=False,
                 with_pip=False,
                 prompt=None,
-                offline=False):
+                offline=False,
+                logger=None):
     import virtualenv
 
     if clear:
         if os.path.exists(home_dir):
             rmtree(home_dir)
 
-    with virtualenv.virtualenv_support_dirs() as search_dirs:
-        virtualenv.create_environment(
-            home_dir,
-            site_packages=system_site_packages,
-            prompt=prompt,
-            search_dirs=search_dirs,
-            download=upgrade and (not offline),
-            no_setuptools=False,
-            no_pip=not with_pip,
-            no_wheel=False,
-            symlink=symlinks
-        )
+    args = [home_dir, "--no-periodic-update", "-p", sys.executable]
+
+    # if logger.level < logger.WARNING:
+    #    args += ["-v"]
+
+    if symlinks:
+        args.append("--symlinks")
+    else:
+        args.append("--copies")
+    if not with_pip:
+        args.append("--no-pip")
+    if upgrade and (not offline):
+        args.append("--download")
+    if system_site_packages:
+        args.append("--system-site-packages")
+    if prompt:
+        args += ["--prompt", prompt]
+
+    virtualenv.cli_run(args, setup_logging=False)
 
 
 _, _venv_python_exename = os.path.split(os.path.abspath(getattr(sys, "_base_executable", sys.executable)))
