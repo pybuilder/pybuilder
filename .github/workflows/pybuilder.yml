@@ -5,31 +5,107 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ startsWith(matrix.python-version, '3.10.0') || startsWith(matrix.python-version, 'pypy-') }}
     strategy:
       fail-fast: false
       matrix:
-          os:
-            - ubuntu-latest
-            - macos-latest
-            - windows-latest
-          python-version:
-            - '3.6'
-            - '3.7'
-            - '3.8'
-            - '3.9'
-            - '3.10.0rc1'
-            - 'pypy-3.6'
-            - 'pypy-3.7'
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+        python-version:
+          - '3.9.6'
+          - '3.8'
+          - '3.7'
+          - '3.6'
+          - '3.10.0-rc.1'
+          - 'pypy-3.6'
+          - 'pypy-3.7'
+        with-venv:
+          - 'true'
+          - 'false'
+    env:
+      DEPLOY_BRANCHES: "ref/heads/master"
+      DEPLOY_PYTHONS: "3.9.6"
+      DEPLOY_OSES: "Linux"
+      PYB_ARGS: "-E ci -v -X analyze install"
+      TWINE_USERNAME: pybuilder-travis2
+      TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
-      - run: pwd
-      - run: python --version
-      - run: python -m pip --version
-      - shell: python  # Prove that actual Python == expected Python
+      - name: Python Check
+        run: |
+          pwd
+          python --version
+          python -m pip --version
+      - name: Create VEnv
+        if: ${{ matrix.with-venv == 'true' }}
+        run: |
+          python -m pip install virtualenv
+          virtualenv $HOME/.pyb
+      - name: Build
+        shell: python
         env:
-          EXPECTED_PYTHON: ${{ matrix.python-version }}
-        run: import os, sys ; assert sys.version.startswith(os.getenv("EXPECTED_PYTHON"))
+          WITH_VENV: ${{ matrix.with-venv }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          import os
+          import subprocess
+          import sys
+          from os.path import join as jp, dirname, abspath, normcase as nc, expanduser
+
+          if __name__ == "__main__":
+              environ = os.environ
+              os_name = environ["RUNNER_OS"]
+
+              pyb_args = environ["PYB_ARGS"].split()
+              deploy_oses = environ["DEPLOY_OSES"].split()
+              deploy_pythons = environ["DEPLOY_PYTHONS"].split()
+              deploy_branches = environ["DEPLOY_BRANCHES"].split()
+
+              is_production = environ["GITHUB_EVENT_NAME"] != "pull_request"
+              if is_production:
+                  print("Running Production build!")
+                  if (environ["RUNNER_OS_NAME"] in deploy_oses and
+                      environ["PYTHON_VERSION"] in deploy_pythons and
+                      environ["GITHUB_REF"] in deploy_branches):
+                          print("This build will be deployed!")
+                          pyb_args.append("upload")
+              else:
+                  print("Running PR build!")
+
+              project_dir = environ["GITHUB_WORKSPACE"]
+              build_py = jp(project_dir, "build.py")
+
+              if environ["WITH_VENV"] == "true":
+                  venv_dir = jp(expanduser("~"), ".pyb")
+                  if os_name == "Windows":
+                      venv_bin_dir = jp(venv_dir, "Scripts")
+                      python_bin = jp(venv_bin_dir, "python.exe")
+                  else:
+                      venv_bin_dir = jp(venv_dir, "bin")
+                      python_bin = jp(venv_bin_dir, "python")
+                  environ["PATH"] = venv_bin_dir + os.pathsep + environ["PATH"]
+              else:
+                  if os_name == "Windows":
+                      venv_bin_dir = jp(dirname(sys.executable), "Scripts")
+                      environ["PATH"] = dirname(sys.executable) + os.pathsep + venv_bin_dir + os.pathsep + environ["PATH"]
+                  else:
+                      venv_bin_dir = dirname(sys.executable)
+                      environ["PATH"] = venv_bin_dir + os.pathsep + environ["PATH"]
+                  python_bin = sys.executable
+
+              cmd_args = [python_bin, build_py] + pyb_args
+
+              print("Will run PyBuilder build with the following args: %r" % cmd_args)
+
+              sys.stdout.flush()
+
+              subprocess.check_call(cmd_args, env=environ)
+      - name: Final Check
+        if: always()
+        run: echo Done!
