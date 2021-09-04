@@ -70,7 +70,7 @@ jobs:
               is_production = environ["GITHUB_EVENT_NAME"] != "pull_request"
               if is_production:
                   print("Running Production build!")
-                  if (environ["RUNNER_OS_NAME"] in deploy_oses and
+                  if (os_name in deploy_oses and
                       environ["PYTHON_VERSION"] in deploy_pythons and
                       environ["GITHUB_REF"] in deploy_branches):
                           print("This build will be deployed!")
