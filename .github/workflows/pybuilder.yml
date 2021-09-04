@@ -14,7 +14,7 @@ jobs:
           - macos-latest
           - windows-latest
         python-version:
-          - '3.9.6'
+          - '3.9'
           - '3.8'
           - '3.7'
           - '3.6'
@@ -26,7 +26,7 @@ jobs:
           - 'false'
     env:
       DEPLOY_BRANCHES: "ref/heads/master"
-      DEPLOY_PYTHONS: "3.9.6"
+      DEPLOY_PYTHONS: "3.9"
       DEPLOY_OSES: "Linux"
       PYB_ARGS: "-E ci -v -X analyze install"
       TWINE_USERNAME: pybuilder-travis2
@@ -52,6 +52,7 @@ jobs:
         env:
           WITH_VENV: ${{ matrix.with-venv }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYTHON_VERSION: ${{ matrix.python-version }}
         run: |
           import os
           import subprocess
