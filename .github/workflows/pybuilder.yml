@@ -25,7 +25,7 @@ jobs:
           - 'true'
           - 'false'
     env:
-      DEPLOY_BRANCHES: "ref/heads/master"
+      DEPLOY_BRANCHES: "refs/heads/master"
       DEPLOY_PYTHONS: "3.9"
       DEPLOY_OSES: "Linux"
       PYB_ARGS: "-E ci -v -X analyze install"
