@@ -42,6 +42,9 @@ jobs:
           pwd
           python --version
           python -m pip --version
+          echo GITHUB_REF $GITHUB_REF
+          echo GITHUB_HEAD_REF $GITHUB_HEAD_REF
+          echo GITHUB_BASE_REF $GITHUB_BASE_REF
       - name: Create VEnv
         if: ${{ matrix.with-venv == 'true' }}
         run: |
