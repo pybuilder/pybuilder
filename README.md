@@ -3,7 +3,7 @@
 
 [![Follow PyBuilder on Twitter](https://img.shields.io/twitter/follow/pybuilder_?label=Follow%20PyBuilder&style=social)](https://twitter.com/intent/follow?screen_name=pybuilder_)
 [![Gitter](https://img.shields.io/gitter/room/pybuilder/pybuilder?logo=gitter)](https://gitter.im/pybuilder/pybuilder)
-[![Build Status](https://img.shields.io/travis/pybuilder/pybuilder/master?logo=travis)](https://app.travis-ci.com/github/pybuilder/pybuilder)
+[![Build Status](https://img.shields.io/github/workflow/status/pybuilder/pybuilder/pybuilder/master)](https://github.com/pybuilder/pybuilder/actions/workflows/pybuilder.yml)
 [![Coverage Status](https://img.shields.io/coveralls/github/pybuilder/pybuilder/master?logo=coveralls)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
 
 [![PyBuilder Version](https://img.shields.io/pypi/v/pybuilder?logo=pypi)](https://pypi.org/project/pybuilder/)
@@ -21,7 +21,7 @@ cycles similar to those known from other famous (Java) build tools.
 
 PyBuilder is running on the following versions of Python: 3.6, 3.7, 3.8, 3.9, 3.10 and PyPy 3.6 and 3.7.
 
-See the [Travis Build](https://app.travis-ci.com/github/pybuilder/pybuilder) for version specific output.
+See the [GitHub Actions Workflow](https://github.com/pybuilder/pybuilder/actions/workflows/pybuilder.yml) for version specific output.
 
 ## Installing
 
