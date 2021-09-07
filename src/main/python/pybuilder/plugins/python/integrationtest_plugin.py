@@ -28,6 +28,8 @@ from pybuilder.utils import discover_files_matching, Timer, read_file
 
 use_plugin("core")
 
+from pybuilder.plugins.python.core_plugin import create_venv  # noqa: E402
+
 
 @init
 def initialize_integrationtest_plugin(project):
@@ -219,7 +221,9 @@ def run_single_test(logger, project, reactor, reports_dir, test, output_test_nam
     if output_test_names:
         logger.info("Running integration test %s", name)
 
-    python_env = reactor.python_env_registry[project.get_property("integrationtest_python_env")]
+    venv_name = project.get_property("integrationtest_python_env")
+    python_env = reactor.python_env_registry[venv_name]
+    create_venv(project, logger, reactor, venv_name, True)
     env = prepare_environment(project)
     command_and_arguments = python_env.executable + [test]
     command_and_arguments += additional_integrationtest_commandline

@@ -20,13 +20,9 @@ import io
 import os
 import string
 
-from pybuilder.python_utils import PY2
 from pybuilder.terminal import print_text_line
 
-try:
-    _input = raw_input
-except NameError:
-    _input = input
+_input = input
 
 DEFAULT_SOURCE_DIRECTORY = 'src/main/python'
 DEFAULT_UNITTEST_DIRECTORY = 'src/unittest/python'
@@ -86,7 +82,7 @@ def start_project():
     descriptor = scaffolding.render_build_descriptor()
 
     with io.open("build.py", "wt", encoding="utf-8") as build_descriptor_file:
-        build_descriptor_file.write(descriptor.decode("utf-8") if PY2 else descriptor)
+        build_descriptor_file.write(descriptor)
 
     scaffolding.set_up_project()
     _create_setup_file()
@@ -112,7 +108,7 @@ build-backend = "pybuilder.pep517"
             return
         os.unlink("pyproject.toml")
     with io.open("pyproject.toml", "wt", encoding="utf-8") as pyproject_file:
-        pyproject_file.write(pyproject_contents.decode("utf-8") if PY2 else pyproject_contents)
+        pyproject_file.write(pyproject_contents)
     print_text_line("\nCreated 'pyproject.toml'.")
 
 
@@ -214,7 +210,7 @@ sys.exit(exit_code)
             return
         os.unlink("setup.py")
     with io.open("setup.py", "wt", encoding="utf-8") as setup_descriptor_file:
-        setup_descriptor_file.write(setup_py_file_contents.decode("utf-8") if PY2 else setup_py_file_contents)
+        setup_descriptor_file.write(setup_py_file_contents)
     print_text_line("\nCreated 'setup.py'.")
 
 

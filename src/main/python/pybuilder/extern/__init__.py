@@ -19,7 +19,6 @@
 import sys
 from importlib import import_module
 from importlib.abc import Loader
-from os.path import basename
 
 import pybuilder._vendor
 
@@ -106,5 +105,5 @@ class VendorImporter(Loader):
 
 
 # Don't run if we're actually in PDoc
-if not (sys.version_info[0] == 2 and basename(sys.argv[0]) == "pdoc"):
-    VendorImporter(__name__, pybuilder._vendor.__names__, pybuilder._vendor.__package__).install()
+# if not (sys.version_info[0] == 2 and basename(sys.argv[0]) == "pdoc"):
+VendorImporter(__name__, pybuilder._vendor.__names__, pybuilder._vendor.__package__).install()

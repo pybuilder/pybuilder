@@ -126,11 +126,8 @@ class BaseIntegrationTestSupport(unittest.TestCase):
         return self._list2reason(result.errors), self._list2reason(result.failures)
 
     def _get_result(self):
-        if hasattr(self, '_outcome'):  # Python 3.4+
-            result = self.defaultTestResult()  # these 2 methods have no side effects
-            self._feedErrorsToResult(result, self._outcome.errors)
-        else:  # Python 3.2 - 3.3 or 3.0 - 3.1 and 2.7
-            result = getattr(self, '_outcomeForDoCleanups', self._resultForDoCleanups)
+        result = self.defaultTestResult()  # these 2 methods have no side effects
+        self._feedErrorsToResult(result, self._outcome.errors)
         return result
 
     def _list2reason(self, exc_list):

@@ -21,7 +21,6 @@ import os
 import subprocess
 import sys
 from os.path import pathsep
-from shutil import rmtree
 
 from pybuilder.install_utils import install_dependencies
 from pybuilder.python_utils import is_windows, which
@@ -207,10 +206,12 @@ class PythonEnv(object):
                     upgrade=False,
                     with_pip=False,
                     prompt=None,
-                    offline=False):
+                    offline=False,
+                    ):
         """Creates VEnv in the designated location. Must not be yet populated."""
 
         self._check_populated()
+
         create_venv(self._env_dir,
                     system_site_packages=system_site_packages,
                     clear=clear,
@@ -222,6 +223,27 @@ class PythonEnv(object):
                     logger=self.logger)
 
         return self.populate()
+
+    def recreate_venv(self, system_site_packages=False,
+                      clear=False,
+                      symlinks=False,
+                      upgrade=False,
+                      with_pip=False,
+                      prompt=None,
+                      offline=False,
+                      ):
+
+        create_venv(self._env_dir,
+                    system_site_packages=system_site_packages,
+                    clear=clear,
+                    symlinks=symlinks,
+                    upgrade=upgrade,
+                    with_pip=with_pip,
+                    prompt=prompt,
+                    offline=offline,
+                    logger=self.logger)
+
+        return self
 
     def install_dependencies(self, pip_batch,
                              install_log_path=None,
@@ -285,86 +307,23 @@ class PythonEnv(object):
 
     def _get_site_paths(self):
         prefix = self.env_dir
-        if self.version[0] < 3:
-            if self.platform in ("os2emx", "riscos"):
-                sitedirs = [os.path.join(prefix, "Lib", "site-packages")]
-            elif self.is_pypy:
-                sitedirs = [os.path.join(prefix, "site-packages")]
-            elif sys.platform == "darwin":
-                if prefix.startswith("/System/Library/Frameworks/"):  # Apple's Python
-                    sitedirs = [
-                        os.path.join("/Library/Python", "{}.{}".format(*self.version), "site-packages"),
-                        os.path.join(prefix, "Extras", "lib", "python"),
-                    ]
-                else:  # any other Python distros on OSX work this way
-                    sitedirs = [os.path.join(prefix, "lib", "python{}.{}".format(*self.version), "site-packages")]
-            elif os.sep == "/":
-                sitedirs = [
-                    os.path.join(prefix, "lib", "python{}.{}".format(*self.version), "site-packages"),
-                    os.path.join(prefix, "lib", "site-python"),
-                    os.path.join(prefix, "python{}.{}".format(*self.version), "lib-dynload"),
-                ]
-                lib64_dir = os.path.join(prefix, "lib64", "python{}.{}".format(*self.version), "site-packages")
-                if os.path.exists(lib64_dir) and os.path.realpath(lib64_dir) not in [
-                    os.path.realpath(p) for p in sitedirs
-                ]:
-                    if self.is_64bit:
-                        sitedirs.insert(0, lib64_dir)
-                    else:
-                        sitedirs.append(lib64_dir)
-                try:
-                    # sys.getobjects only available in --with-pydebug build
-                    sys.getobjects
-                    sitedirs.insert(0, os.path.join(sitedirs[0], "debug"))
-                except AttributeError:
-                    pass
-                # Debian-specific dist-packages directories:
-                sitedirs.append(
-                    os.path.join(prefix, "local/lib", "python{}.{}".format(*self.version), "dist-packages")
-                )
-                if self.version[0] == 2:
-                    sitedirs.append(
-                        os.path.join(prefix, "lib", "python{}.{}".format(*self.version), "dist-packages")
-                    )
-                else:
-                    sitedirs.append(
-                        os.path.join(prefix, "lib", "python{}".format(self.version[0]), "dist-packages")
-                    )
-                sitedirs.append(os.path.join(prefix, "lib", "dist-python"))
-            else:
-                sitedirs = [prefix, os.path.join(prefix, "lib", "site-packages")]
-
-            if self.platform == "darwin":
-                # for framework builds *only* we add the standard Apple
-                # locations. Currently only per-user, but /Library and
-                # /Network/Library could be added too
-                if "Python.framework" in prefix or "Python3.framework" in prefix:
-                    home = self.environ.get("HOME")
-                    if home:
-                        sitedirs.append(
-                            os.path.join(home, "Library", "Python", "{}.{}".format(*self.version), "site-packages")
-                        )
-            for sitedir in sitedirs:
-                if os.path.isdir(sitedir):
-                    yield sitedir
+        if self.is_pypy:
+            yield os.path.join(prefix, "site-packages")
+        elif os.sep == "/":
+            yield os.path.join(prefix, "lib",
+                               "python%d.%d" % self.version[:2],
+                               "site-packages")
         else:
-            if self.is_pypy:
-                yield os.path.join(prefix, "site-packages")
-            elif os.sep == "/":
-                yield os.path.join(prefix, "lib",
-                                   "python%d.%d" % self.version[:2],
-                                   "site-packages")
-            else:
-                yield prefix
-                yield os.path.join(prefix, "lib", "site-packages")
+            yield prefix
+            yield os.path.join(prefix, "lib", "site-packages")
 
-            if self.platform == "darwin":
-                # for framework builds *only* we add the standard Apple
-                # locations.
-                framework = self._darwin_python_framework
-                if framework:
-                    yield os.path.join("/Library", framework,
-                                       "%d.%d" % self.version[:2], "site-packages")
+        if self.platform == "darwin":
+            # for framework builds *only* we add the standard Apple
+            # locations.
+            framework = self._darwin_python_framework
+            if framework:
+                yield os.path.join("/Library", framework,
+                                   "%d.%d" % self.version[:2], "site-packages")
 
 
 class PythonEnvRegistry(object):
@@ -428,11 +387,21 @@ def create_venv(home_dir,
                 logger=None):
     import virtualenv
 
-    if clear:
-        if os.path.exists(home_dir):
-            rmtree(home_dir)
-
     args = [home_dir, "--no-periodic-update", "-p", sys.executable]
+
+    if upgrade and (not offline):
+        pass
+    #        args_upgrade = list(args)
+    #        args_upgrade.append("--download")
+    #        args_upgrade.append("--upgrade-embed-wheels")
+    #        try:
+    #            virtualenv.cli_run(args_upgrade, setup_logging=False)
+    #        except SystemExit as e:
+    #            if e.code:
+    #                raise RuntimeError("VirtualEnv upgrade has not completed successfully", e)
+
+    if clear:
+        args.append("--clear")
 
     # if logger.level < logger.WARNING:
     #    args += ["-v"]
@@ -443,8 +412,6 @@ def create_venv(home_dir,
         args.append("--copies")
     if not with_pip:
         args.append("--no-pip")
-    if upgrade and (not offline):
-        args.append("--download")
     if system_site_packages:
         args.append("--system-site-packages")
     if prompt:

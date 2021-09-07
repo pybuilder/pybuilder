@@ -39,10 +39,10 @@ from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
                                     DownloadingPluginLoader)
 from pybuilder.python_env import PythonEnvRegistry, PythonEnv
-from pybuilder.python_utils import IS_WIN, PY2, odict, patch_mp_pyb_env, prepend_env_to_path
+from pybuilder.python_utils import odict, patch_mp_pyb_env, prepend_env_to_path
 from pybuilder.utils import (as_list,
                              get_dist_version_string,
-                             basestring, np, jp)
+                             np, jp)
 
 
 class BuildSummary:
@@ -204,11 +204,6 @@ class Reactor:
 
         self._setup_deferred_plugin_import()
 
-        # This is really a way to make sure we can install `billiard` as a dependency
-        # before any of the plugins actually initialize
-        if PY2 and not IS_WIN:
-            self.require_plugin("pypi:billiard", "~=3.6.2", plugin_module_name="pybuilder.plugins.billiard_plugin")
-
         self.project_module = self.load_project_module(project_descriptor)
 
         self._load_deferred_plugins()
@@ -325,7 +320,7 @@ class Reactor:
 
         def add_task_dependency(names, depends_on, optional):
             for name in as_list(names):
-                if not isinstance(name, basestring):
+                if not isinstance(name, str):
                     name = self.normalize_candidate_name(name)
                 if name not in injected_task_dependencies:
                     injected_task_dependencies[name] = list()

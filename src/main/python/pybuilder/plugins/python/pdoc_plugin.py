@@ -25,7 +25,6 @@ import os
 
 from pybuilder.core import task, init, depends, dependents, optional, after, use_plugin
 from pybuilder.errors import BuildFailedException
-from pybuilder.python_utils import PY2
 from pybuilder.utils import tail_log
 
 __author__ = "Arcadiy Ivanov"
@@ -35,17 +34,10 @@ use_plugin("core")
 
 @init
 def pdoc_init(project):
-    if PY2:
-        project.plugin_depends_on("pdoc")
-    else:
-        project.plugin_depends_on("pdoc3", ">=0.8.3")
+    project.plugin_depends_on("pdoc3", ">=0.8.3")
 
-    if PY2:
-        project.set_property_if_unset("pdoc_command_args",
-                                      ["--html", "--all-submodules", "--overwrite", "--external-links"])
-    else:
-        project.set_property_if_unset("pdoc_command_args",
-                                      ["--html", "--overwrite", "--external-links", "--skip-errors"])
+    project.set_property_if_unset("pdoc_command_args",
+                                  ["--html", "--overwrite", "--external-links", "--skip-errors"])
 
     project.set_property_if_unset("pdoc_source", "$dir_source_main_python")
     project.set_property_if_unset("pdoc_output_dir", "$dir_target/pdocs")

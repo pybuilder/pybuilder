@@ -32,7 +32,7 @@ from os.path import normcase, normpath, abspath, realpath, join
 from subprocess import Popen, PIPE
 
 from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
-from pybuilder.python_utils import (is_string, which, makedirs, basestring,
+from pybuilder.python_utils import (is_string, which, makedirs,
                                     IS_WIN, iglob, escape)
 
 try:
@@ -306,7 +306,7 @@ def mkdir(directory):
 
 def is_notstr_iterable(obj):
     """Checks if obj is iterable, but not a string"""
-    return not isinstance(obj, basestring) and isinstance(obj, abc.Iterable)
+    return not isinstance(obj, str) and isinstance(obj, abc.Iterable)
 
 
 def get_dist_version_string(project, format=" (%s)"):

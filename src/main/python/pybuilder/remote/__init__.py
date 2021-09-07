@@ -49,10 +49,9 @@ from pickletools import dis  # noqa: E402
 from pybuilder.python_utils import (mp_get_context,  # noqa: E402
                                     mp_ForkingPickler as ForkingPickler,
                                     mp_log_to_stderr as log_to_stderr,
-                                    PY2,
                                     IS_WIN)
 
-PICKLE_PROTOCOL_MIN = 2
+PICKLE_PROTOCOL_MIN = 4
 PICKLE_PROTOCOL_MAX = HIGHEST_PROTOCOL
 
 CALLABLE_TYPES = (MethodType,
@@ -64,11 +63,7 @@ CALLABLE_TYPES = (MethodType,
                   MethodDescriptorType,
                   )
 
-if PY2:
-    ConnectionError = EnvironmentError
-    _compat_pickle = None
-else:
-    import _compat_pickle
+import _compat_pickle  # noqa: E402
 
 ctx = mp_get_context("spawn")
 ctx.allow_connection_pickling()
@@ -87,22 +82,15 @@ class Process:
 
     def start(self):
         pyenv = self.pyenv
-        if PY2:
-            if IS_WIN:
-                from multiprocessing import forking as patch_module
-                tracker = None
-            else:
-                from billiard import spawn as patch_module
-                from billiard import semaphore_tracker as tracker
+
+        from multiprocessing import spawn as patch_module
+        if not IS_WIN:
+            try:
+                from multiprocessing import semaphore_tracker as tracker
+            except ImportError:
+                from multiprocessing import resource_tracker as tracker
         else:
-            from multiprocessing import spawn as patch_module
-            if not IS_WIN:
-                try:
-                    from multiprocessing import semaphore_tracker as tracker
-                except ImportError:
-                    from multiprocessing import resource_tracker as tracker
-            else:
-                tracker = None
+            tracker = None
 
         # This is done to prevent polluting tracker's path with our path magic
         if tracker:
@@ -126,11 +114,6 @@ class Process:
         def patched_preparation_data(name):
             d = old_preparation_data(name)
             sys_path = d["sys_path"]
-
-            # Python 2
-            if sys_path is sys.path:
-                sys_path = list(sys_path)
-                d["sys_path"] = sys_path
 
             exec_prefix = nc(sys.exec_prefix) + sep
 
@@ -316,11 +299,8 @@ class RemoteObjectPickler(ForkingPickler, object):
         self._rop = kwargs.pop("_rop")  # type: _RemoteObjectPipe
         self._verify_types = set()
         self.exc_persisted = []
-        if PY2:
-            kwargs["protocol"] = self._rop.pickle_version  # This is for full backwards compatibility with Python 2
-            super(RemoteObjectPickler, self).__init__(*args, **kwargs)
-        else:
-            super(RemoteObjectPickler, self).__init__(args[0], self._rop.pickle_version, *args[1:])
+
+        super(RemoteObjectPickler, self).__init__(args[0], self._rop.pickle_version, *args[1:])
 
     def persistent_id(self, obj):  # Mutable default is intentional here
         t_obj = obj if isinstance(obj, type) else type(obj)
@@ -410,7 +390,7 @@ def proxy_members(obj, public=True, protected=True, add_callable=True, add_str=T
         if hasattr(obj, "__suppress_context__"):
             fields.append("__suppress_context__")
 
-    if isinstance(obj, type) and not PY2:
+    if isinstance(obj, type):
         spec_fields["__qualname__"] = obj.__qualname__
 
     return methods, fields, spec_fields
@@ -670,12 +650,6 @@ class _RemoteObjectPipe(RemoteObjectPipe):
         self.id = None
         self.conn = None  # type: ctx.Connection
         self.pickle_version = PICKLE_PROTOCOL_MIN
-
-    def __del__(self):  # noqa
-        # DO NOT REMOVE
-        # This is required on Python 2.7 to ensure that the object is properly GC'ed
-        # and that there isn't an attempt to close an FD with a stale object
-        pass
 
     def get_exposed(self, exposed_name):
         self._send_obj((ROP_GET_EXPOSED, exposed_name))
@@ -1019,82 +993,40 @@ class _RemoteObjectPipe(RemoteObjectPipe):
             else:
                 return buf
 
-    if PY2 and IS_WIN:
-        # Python 2 on Windows uses Python multiprocessing
+    def _send_obj(self, obj):
+        """Send a (picklable) object"""
+        self.conn._check_closed()
 
-        def _send_obj(self, obj):
-            """Send a (picklable) object"""
-            if self.conn.closed:
-                raise OSError("handle is closed")
-
-            buf = self._dump(obj)
-            logger.debug("sending %r", obj)
+        buf = self._dump(obj)
+        logger.debug("sending %r", obj)
+        try:
+            self.conn._send_bytes(buf)
+        except (ConnectionError, EOFError) as e:
+            logger.debug("failed to send %r", obj, exc_info=e)
             try:
-                self.conn.send_bytes(buf)
-            except (ConnectionError, EOFError) as e:
-                logger.debug("failed to send %r", obj, exc_info=e)
-                try:
-                    self._set_remote_close_cause(e)
-                    raise PipeShutdownError()
-                finally:
-                    self._close()
+                self._set_remote_close_cause(e)
+                raise PipeShutdownError()
+            finally:
+                self._close()
 
-        def _recv_obj(self, suppress_error=False):
-            """Receive a (picklable) object"""
-            if self.conn.closed:
-                raise OSError("handle is closed")
+    def _recv_obj(self, suppress_error=False):
+        """Receive a (picklable) object"""
+        self.conn._check_closed()
+        try:
+            buf = self.conn._recv_bytes()
+        except (ConnectionError, EOFError) as e:
+            if suppress_error:
+                return
+
+            logger.debug("receive has failed", exc_info=e)
             try:
-                buf = self.conn.recv_bytes()
-            except (ConnectionError, EOFError) as e:
-                if suppress_error:
-                    return
-
-                logger.debug("receive has failed", exc_info=e)
-                try:
-                    self._set_remote_close_cause(e)
-                    raise PipeShutdownError()
-                finally:
-                    self._close()
-            obj = RemoteObjectUnpickler.loads(buf, self)
-            logger.debug("received %r", obj)
-
-            return obj
-    else:
-        # Python 2 on Linux uses Billiard that is API-compatible with Python 3
-        def _send_obj(self, obj):
-            """Send a (picklable) object"""
-            self.conn._check_closed()
-
-            buf = self._dump(obj)
-            logger.debug("sending %r", obj)
-            try:
-                self.conn._send_bytes(buf)
-            except (ConnectionError, EOFError) as e:
-                logger.debug("failed to send %r", obj, exc_info=e)
-                try:
-                    self._set_remote_close_cause(e)
-                    raise PipeShutdownError()
-                finally:
-                    self._close()
-
-        def _recv_obj(self, suppress_error=False):
-            """Receive a (picklable) object"""
-            self.conn._check_closed()
-            try:
-                buf = self.conn._recv_bytes()
-            except (ConnectionError, EOFError) as e:
-                if suppress_error:
-                    return
-
-                logger.debug("receive has failed", exc_info=e)
-                try:
-                    self._set_remote_close_cause(e)
-                    raise PipeShutdownError()
-                finally:
-                    self._close()
-            obj = RemoteObjectUnpickler.loads(buf.getvalue(), self)
-            logger.debug("received %r", obj)
-            return obj
+                self._set_remote_close_cause(e)
+                raise PipeShutdownError()
+            finally:
+                self._close()
+        obj = RemoteObjectUnpickler.loads(buf.getvalue(), self)
+        logger.debug("received %r", obj)
+        return obj
 
 
 def find_class(module, name, proto):

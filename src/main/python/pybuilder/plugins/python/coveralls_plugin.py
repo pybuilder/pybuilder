@@ -23,7 +23,6 @@ from pybuilder.core import init, use_plugin, finalize
 from pybuilder.errors import BuildFailedException
 from pybuilder.execution import ExecutionManager
 from pybuilder.plugins.python._coverage_util import patch_coverage
-from pybuilder.python_utils import PY2
 
 use_plugin("python.core")
 use_plugin("analysis")
@@ -32,10 +31,7 @@ use_plugin("python.coverage")
 
 @init(environments="ci")
 def init_coveralls_properties(project):
-    if PY2:
-        project.plugin_depends_on("coveralls", "<2.0.0")
-    else:
-        project.plugin_depends_on("coveralls", "~=2.1")
+    project.plugin_depends_on("coveralls", "~=2.1")
 
     project.set_property_if_unset("coveralls_dry_run", False)
     project.set_property_if_unset("coveralls_report", False)

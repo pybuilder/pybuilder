@@ -38,17 +38,11 @@ from pybuilder.errors import (CircularTaskDependencyException,
                               NoSuchTaskException,
                               RequiredTaskExclusionException)
 from pybuilder.graph_utils import Graph
-from pybuilder.python_utils import odict
+from pybuilder.python_utils import odict, raise_exception
 from pybuilder.utils import as_list, Timer
 
-if sys.version_info[0] < 3:  # if major is less than 3
-    from .excp_util_2 import raise_exception
 
-    getargspec = inspect.getargspec
-else:
-    from .excp_util_3 import raise_exception
-
-    getargspec = inspect.getfullargspec
+getargspec = inspect.getfullargspec
 
 
 def as_task_name(item):

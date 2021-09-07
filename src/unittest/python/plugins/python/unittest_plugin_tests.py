@@ -26,7 +26,6 @@ from pybuilder.plugins.python.unittest_plugin import (execute_tests, execute_tes
                                                       _create_runner,
                                                       _get_make_result_method_name,
                                                       report_to_ci_server)
-from pybuilder.python_utils import PY2
 from pybuilder.utils import np
 from test_utils import Mock, patch
 
@@ -220,8 +219,8 @@ class UnittestRunnerCompatibilityTest(TestCase):
         """
         Test that numbers between 0 and 5 are all between 0 and 5.
         """
-        if not PY2:
-            for i in range(0, 6):
-                with self.subTest(i=i):
-                    self.assertLess(i, 6)
-                    self.assertGreaterEqual(i, 0)
+
+        for i in range(0, 6):
+            with self.subTest(i=i):
+                self.assertLess(i, 6)
+                self.assertGreaterEqual(i, 0)
