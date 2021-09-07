@@ -31,7 +31,6 @@ from pybuilder.core import Author, init, use_plugin
 bootstrap()
 
 use_plugin("python.core")
-use_plugin("python.pytddmon")
 use_plugin("python.distutils")
 use_plugin("python.install_dependencies")
 
@@ -50,12 +49,8 @@ use_plugin("python.coveralls")
 use_plugin("python.flake8")
 use_plugin("filter_resources")
 
-if not sys.version_info[0] == 3:
-    use_plugin("python.snakefood")
-
 use_plugin("python.pydev")
 use_plugin("python.pycharm")
-use_plugin("python.pytddmon")
 
 use_plugin("python.sphinx")
 

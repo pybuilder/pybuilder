@@ -18,7 +18,6 @@
 
 import unittest
 
-from pybuilder.python_utils import PY2, IS_WIN
 from smoke_itest_support import SmokeIntegrationTestSupport
 
 
@@ -28,5 +27,4 @@ class SphinxSmokeTest(SmokeIntegrationTestSupport):
 
 
 if __name__ == "__main__":
-    if not (IS_WIN and PY2):
-        unittest.main()
+    unittest.main()

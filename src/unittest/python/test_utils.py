@@ -16,15 +16,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import sys
 from functools import partial
 from traceback import extract_stack
 from unittest import TestCase
-
-if sys.version_info[0] == 2:
-    import mock
-else:
-    from unittest import mock
+from unittest import mock
 
 
 def _new_mock(*args, **kwargs):

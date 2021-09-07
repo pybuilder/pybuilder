@@ -32,7 +32,7 @@ from pybuilder.core import (after,
                             RequirementsFile,
                             Dependency)
 from pybuilder.errors import BuildFailedException, MissingPrerequisiteException
-from pybuilder.python_utils import StringIO, PY2
+from pybuilder.python_utils import StringIO
 from pybuilder.utils import (as_list,
                              is_string,
                              is_notstr_iterable,
@@ -203,7 +203,7 @@ def write_setup_script(project, logger):
 
     with io.open(setup_script, "wt", encoding="utf-8") as setup_file:
         script = render_setup_script(project)
-        setup_file.write(script.decode("utf-8") if PY2 else script)
+        setup_file.write(script)
 
     os.chmod(setup_script, 0o755)
 

@@ -28,7 +28,7 @@ from pybuilder.core import init, task, description, use_plugin, before
 from pybuilder.errors import BuildFailedException
 from pybuilder.plugins.python.remote_tools.unittest_tool import start_unittest_tool, PipeShutdownError, \
     logger as tool_logger
-from pybuilder.python_utils import PY2, StringIO
+from pybuilder.python_utils import StringIO
 from pybuilder.terminal import print_text_line
 from pybuilder.utils import discover_modules_matching, render_report
 
@@ -37,11 +37,7 @@ use_plugin("python.core")
 
 @init
 def init_test_source_directory(project):
-    if PY2:
-        project.plugin_depends_on("mock")
-        project.plugin_depends_on("unittest-xml-reporting", "~=2.5.2")
-    else:
-        project.plugin_depends_on("unittest-xml-reporting", "~=3.0.2")
+    project.plugin_depends_on("unittest-xml-reporting", "~=3.0.4")
 
     project.set_property_if_unset("dir_source_unittest_python", "src/unittest/python")
     project.set_property_if_unset("unittest_breaks_build", True)

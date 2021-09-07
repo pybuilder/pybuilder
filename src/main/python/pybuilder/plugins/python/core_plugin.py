@@ -83,24 +83,44 @@ def create_venvs(logger, project, reactor):
 
         clear = project.get_property("refresh_venvs") or system_env.is_pypy
         for venv_name in project.get_property("venv_names"):
-            venv_dir = project.expand_path("$dir_target/venv", venv_name,
-                                           system_env.versioned_dir_name)
-            logger.info("Creating target '%s' VEnv in '%s'%s", venv_name, venv_dir, " (refreshing)" if clear else "")
-            per[venv_name] = current_env = PythonEnv(venv_dir, reactor).create_venv(with_pip=True,
-                                                                                    symlinks=system_env.venv_symlinks,
-                                                                                    clear=clear,
-                                                                                    offline=project.offline)
-            venv_dependencies = venv_dependencies_map.get(venv_name)
-            if venv_dependencies:
-                install_log_path = project.expand_path("$dir_install_logs", "venv_%s_install_logs" % venv_name)
-                constraints_file_name = project.get_property("install_dependencies_constraints")
-                current_env.install_dependencies(venv_dependencies,
-                                                 install_log_path=install_log_path,
-                                                 local_mapping={},
-                                                 constraints_file_name=constraints_file_name)
+            create_venv(project, logger, reactor, venv_name, clear)
     else:
         for venv_name in project.get_property("venv_names"):
             per[venv_name] = system_env
+
+
+def create_venv(project, logger, reactor, venv_name, clear):
+    if project.no_venvs:
+        return
+
+    per = reactor.python_env_registry
+    system_env = per["system"]
+    venv_dependencies_map = project.get_property("venv_dependencies")
+    venv_dir = project.expand_path("$dir_target/venv", venv_name,
+                                   system_env.versioned_dir_name)
+
+    try:
+        current_env = per[venv_name]
+        logger.info("Recreating target '%s' VEnv in '%s'%s", venv_name, venv_dir, " (refreshing)" if clear else "")
+        venv_func = current_env.recreate_venv
+    except KeyError:
+        logger.info("Creating target '%s' VEnv in '%s'%s", venv_name, venv_dir, " (refreshing)" if clear else "")
+        per[venv_name] = current_env = PythonEnv(venv_dir, reactor)
+        venv_func = current_env.create_venv
+
+    venv_func(with_pip=True,
+              symlinks=system_env.venv_symlinks,
+              clear=clear,
+              offline=project.offline)
+
+    venv_dependencies = venv_dependencies_map.get(venv_name)
+    if venv_dependencies:
+        install_log_path = project.expand_path("$dir_install_logs", "venv_%s_install_logs" % venv_name)
+        constraints_file_name = project.get_property("install_dependencies_constraints")
+        current_env.install_dependencies(venv_dependencies,
+                                         install_log_path=install_log_path,
+                                         local_mapping={},
+                                         constraints_file_name=constraints_file_name)
 
 
 def list_packages(project):
