@@ -398,7 +398,7 @@ def proxy_members(obj, public=True, protected=True, add_callable=True, add_str=T
 
 class RemoteObjectPipe:
 
-    def expose(self, name, obj, methods=None, fields=None, remote=True):
+    def expose(self, name, obj, methods=None, fields=None, remote=True, error=False):
         """Same as `RemoteObjectManager.expose`"""
         raise NotImplementedError
 
@@ -499,13 +499,18 @@ class _RemoteObjectSession:
 
         return _RemoteObjectPipe(self)
 
-    def expose(self, name, obj, remote=True, methods=None, fields=None):
+    def expose(self, name, obj, remote=True, methods=None, fields=None, error=False):
         exposed_objs = self._exposed_objs
 
         if name in exposed_objs:
             raise ValueError("%r is already exposed" % name)
+
+        if error:
+            obj = ExposedObjectError(obj)
+
         exposed_objs[name] = obj
-        if remote:
+
+        if not error and remote:
             self.register_remote(obj, methods, fields)
 
     def hide(self, name):
@@ -602,6 +607,11 @@ class PipeShutdownError(RemoteObjectError):
         self.cause = cause
 
 
+class ExposedObjectError(RemoteObjectError):
+    def __init__(self, cause=None):
+        self.cause = cause
+
+
 class _BaseProxy:
     def __init__(self, __rop, __proxy_def):
         self.__rop = __rop
@@ -619,12 +629,13 @@ ROP_PICKLE_VERSION = 2
 
 ROP_GET_EXPOSED = 5
 ROP_GET_EXPOSED_RESULT = 6
+ROP_GET_EXPOSED_ERROR = 7
 
-ROP_GET_PROXY_DEF = 7
-ROP_GET_PROXY_DEF_RESULT = 8
+ROP_GET_PROXY_DEF = 10
+ROP_GET_PROXY_DEF_RESULT = 11
 
-ROP_VERIFY_TYPES = 9
-ROP_VERIFY_TYPES_RESULT = 10
+ROP_VERIFY_TYPES = 14
+ROP_VERIFY_TYPES_RESULT = 15
 
 ROP_REMOTE_ACTION = 20
 ROP_REMOTE_ACTION_CALL = 21
@@ -690,8 +701,8 @@ class _RemoteObjectPipe(RemoteObjectPipe):
     def get_remote_obj_by_id(self, remote_id):
         return self._ros.get_remote_obj_by_id(remote_id)
 
-    def expose(self, name, obj, remote=True, methods=None, fields=None):
-        return self._ros.expose(name, obj, remote, methods, fields)
+    def expose(self, name, obj, remote=True, methods=None, fields=None, error=False):
+        return self._ros.expose(name, obj, remote, methods, fields, error)
 
     def hide(self, name):
         self._ros.hide(name)
@@ -918,11 +929,17 @@ class _RemoteObjectPipe(RemoteObjectPipe):
             if action_type == ROP_GET_EXPOSED:
                 exposed_name = data[1]
                 exposed = self._ros.get_exposed_by_name(exposed_name)
-                self._send_obj((ROP_GET_EXPOSED_RESULT, exposed))
+                if isinstance(exposed, ExposedObjectError):
+                    self._send_obj((ROP_GET_EXPOSED_ERROR, exposed.cause))
+                else:
+                    self._send_obj((ROP_GET_EXPOSED_RESULT, exposed))
                 continue
 
             if action_type == ROP_GET_EXPOSED_RESULT:
                 return data[1]
+
+            if action_type == ROP_GET_EXPOSED_ERROR:
+                raise data[1]
 
             if action_type == ROP_GET_PROXY_DEF:
                 remote_id = data[1]
