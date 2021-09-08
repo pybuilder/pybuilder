@@ -17,6 +17,7 @@
 #   limitations under the License.
 
 import sys
+
 from pybuilder.plugins.python.remote_tools import start_tool, RemoteObjectPipe, Tool, logger, PipeShutdownError
 
 __all__ = ["start_unittest_tool", "PipeShutdownError", logger]
@@ -37,9 +38,17 @@ class UnitTestTool(Tool):
         loader = unittest.defaultTestLoader
         if self.test_method_prefix:
             loader.testMethodPrefix = self.test_method_prefix
-        tests = loader.loadTestsFromNames(self.test_modules)
 
-        pipe.expose("unittest_tests", tests)
+        try:
+            tests = loader.loadTestsFromNames(self.test_modules)
+            pipe.expose("unittest_tests", tests)
+        except SystemExit as e:
+            raise e
+        except KeyboardInterrupt as e:
+            raise e
+        except Exception as e:
+            pipe.expose("unittest_tests", e, error=True)
+
         pipe.register_remote_type(unittest.BaseTestSuite)
         pipe.register_remote_type(unittest.TestCase)
 
