@@ -81,7 +81,6 @@ class PythonEnv(object):
         self._check_populated()
 
         python_exec_path = _venv_python_executable(self._env_dir, self._platform)
-
         result = subprocess.check_output([python_exec_path, "-c", _PYTHON_INFO_SCRIPT], universal_newlines=True)
         python_info = ast.literal_eval(result)
 
@@ -423,17 +422,22 @@ def create_venv(home_dir,
 _, _venv_python_exename = os.path.split(os.path.abspath(getattr(sys, "_base_executable", sys.executable)))
 venv_symlinks = os.name == "posix"
 
+# On Windows python.exe could be in PythonXY/ or venv/Scripts/
+# python[3[.x]].exe may also not be available, only python.exe
+_windows_exec_candidates = (lambda env_dir: jp(env_dir, "Scripts", _venv_python_exename),
+                            lambda env_dir: jp(env_dir, _venv_python_exename),
+                            lambda env_dir: jp(env_dir, "Scripts", "python.exe"),
+                            lambda env_dir: jp(env_dir, "python.exe"),
+                            )
+
 
 def _venv_python_executable(env_dir, platform):
     """Binary Python executable for a specific virtual environment"""
     if is_windows(platform):
-        candidate = jp(env_dir, "Scripts", _venv_python_exename)
-
-        # On Windows python.exe could be in PythonXY/ or venv/Scripts/
-        if not os.path.exists(candidate):
-            alternative = jp(env_dir, _venv_python_exename)
-            if os.path.exists(alternative):
-                candidate = alternative
+        for candidate_func in _windows_exec_candidates:
+            candidate = candidate_func(env_dir)
+            if os.path.exists(candidate):
+                break
     else:
         candidate = jp(env_dir, "bin", _venv_python_exename)
 
