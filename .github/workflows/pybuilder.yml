@@ -80,7 +80,7 @@ jobs:
           PYTHON_VERSION: ${{ matrix.python-version }}
         run: python3 $GITHUB_WORKSPACE/gha_build.py
   build-stable-summary:
-    if: always()
+    if: success() || failure()
     runs-on: ubuntu-latest
     name: Build Stable Summary
     needs: build-stable
