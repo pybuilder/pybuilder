@@ -22,16 +22,13 @@ import stat
 import sys
 import tempfile
 import unittest
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
+from uuid import uuid4
 
 
 class BaseIntegrationTestSupport(unittest.TestCase):
     def setUp(self):
-        self.tmp_directory = tempfile.mkdtemp(prefix="IntegrationTestSupport")
+        self.tmp_directory = tempfile.mkdtemp(prefix="IntegrationTestSupport", suffix=str(uuid4()).replace("-", ""))
 
     def tearDown(self):
         outcomes = self.outcomes()
