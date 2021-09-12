@@ -19,13 +19,14 @@
 import re
 import shutil
 from functools import partial
-from os import sep, listdir, walk
-from os.path import isdir, isfile, exists, relpath
+from itertools import chain
+from os import sep, walk
+from os.path import isdir, exists, relpath
 
 from pybuilder.core import description
 from pybuilder.core import task, use_plugin, init
 from pybuilder.python_env import PythonEnv
-from pybuilder.utils import as_list, mkdir, makedirs, np, jp
+from pybuilder.utils import as_list, mkdir, makedirs, jp
 
 HIDDEN_FILE_NAME_PATTERN = re.compile(r'^\..*$')
 
@@ -126,7 +127,7 @@ def create_venv(project, logger, reactor, venv_name, clear):
 def list_packages(project):
     source_path = project.expand_path("$" + PYTHON_SOURCES_PROPERTY)
     result = []
-    for root, dirs, files in walk(source_path):
+    for root, dirs, files in walk(source_path, followlinks=True):
         if "__init__.py" in files:
             result.append(relpath(root, source_path).replace(sep, "."))
 
@@ -136,10 +137,16 @@ def list_packages(project):
 def list_modules(project):
     source_path = project.expand_path("$" + PYTHON_SOURCES_PROPERTY)
     result = []
-    for potential_module_file in listdir(source_path):
-        potential_module_path = np(jp(source_path, potential_module_file))
-        if isfile(potential_module_path) and potential_module_file.endswith(".py"):
-            result.append(potential_module_file[:-3])
+    for root, dirs, files in walk(source_path, followlinks=True):
+        if "__init__.py" in files:
+            # This directory is a package, therefore does not require inclusion in the modules
+            dirs.clear()
+            continue
+
+        for file in files:
+            potential_module_file = file
+            if potential_module_file.endswith(".py"):
+                result.append(relpath(jp(root, potential_module_file), source_path).replace(sep, ".")[:-3])
 
     return sorted(result)
 
@@ -149,9 +156,11 @@ def list_scripts(project):
     result = []
     if not exists(scripts_dir):
         return result
-    for script in listdir(scripts_dir):
-        if isfile(jp(scripts_dir, script)) and not HIDDEN_FILE_NAME_PATTERN.match(script):
-            result.append(np(script))
+    for root, dirs, files in walk(scripts_dir, followlinks=True):
+        for script in files:
+            if not HIDDEN_FILE_NAME_PATTERN.match(script):
+                result.append(script)
+        break
 
     return sorted(result)
 
@@ -181,24 +190,26 @@ def copy_scripts(project, logger):
     if not exists(scripts_source):
         return
     for script in project.list_scripts():
-        logger.debug("Copying script %s", script)
+        logger.debug("Copying script %s to %s", script, scripts_target)
         source_file = project.expand_path("$" + SCRIPTS_SOURCES_PROPERTY, script)
         shutil.copy(source_file, scripts_target)
 
 
 def copy_python_sources(project, logger):
-    for package in listdir(project.expand_path("$" + PYTHON_SOURCES_PROPERTY)):
-        if HIDDEN_FILE_NAME_PATTERN.match(package):
-            continue
-        logger.debug("Copying module/ package %s", package)
-        source = project.expand_path("$" + PYTHON_SOURCES_PROPERTY, package)
-        target = project.expand_path("$" + DISTRIBUTION_PROPERTY, package)
-        if isdir(source):
-            shutil.copytree(source, target,
-                            symlinks=False,
-                            ignore=shutil.ignore_patterns("*.pyc", ".*"))
-        else:
-            shutil.copyfile(source, target)
+    for root, dirs, files in walk(project.expand_path("$" + PYTHON_SOURCES_PROPERTY), followlinks=True):
+        for pkg in chain(dirs, files):
+            if HIDDEN_FILE_NAME_PATTERN.match(pkg):
+                continue
+            logger.debug("Copying module/package %s", pkg)
+            source = project.expand_path("$" + PYTHON_SOURCES_PROPERTY, pkg)
+            target = project.expand_path("$" + DISTRIBUTION_PROPERTY, pkg)
+            if isdir(source):
+                shutil.copytree(source, target,
+                                symlinks=False,
+                                ignore=shutil.ignore_patterns("*.pyc", ".*"))
+            else:
+                shutil.copyfile(source, target)
+        break
 
 
 def init_dist_target(project, logger):
