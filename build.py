@@ -136,8 +136,8 @@ def initialize(project):
     project.set_property("filter_resources_target", "$dir_dist")
     project.get_property("filter_resources_glob").append("pybuilder/__init__.py")
     project.include_file("pybuilder", "LICENSE")
-    project.include_file("pybuilder._vendor", "LICENSES")
-    project.include_file("", "*.whl")  # All included binary wheels from vendors
+    project.include_directory("pybuilder/_vendor", "*",
+                              "$dir_source_main_python")  # All included vendored payload is included
 
     project.set_property("sphinx_doc_author", "PyBuilder Team")
     project.set_property("sphinx_doc_builder", "html")
