@@ -63,7 +63,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 
-setuptools-58.0.2
+setuptools-58.0.4
 ==========
 Copyright Jason R. Coombs
 
@@ -131,7 +131,7 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWIS
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-virtualenv-20.7.2
+virtualenv-20.8.0
 ==========
 Copyright (c) 2020-202x The virtualenv developers
 
