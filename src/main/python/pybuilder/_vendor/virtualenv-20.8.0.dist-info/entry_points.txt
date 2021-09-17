@@ -6,6 +6,7 @@ bash = virtualenv.activation.bash:BashActivator
 batch = virtualenv.activation.batch:BatchActivator
 cshell = virtualenv.activation.cshell:CShellActivator
 fish = virtualenv.activation.fish:FishActivator
+nushell = virtualenv.activation.nushell:NushellActivator
 powershell = virtualenv.activation.powershell:PowerShellActivator
 python = virtualenv.activation.python:PythonActivator
 
