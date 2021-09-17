@@ -106,13 +106,18 @@ def create_venv(project, logger, reactor, venv_name, clear):
         venv_func = current_env.recreate_venv
     except KeyError:
         logger.info("Creating target '%s' VEnv in '%s'%s", venv_name, venv_dir, " (refreshing)" if clear else "")
-        per[venv_name] = current_env = PythonEnv(venv_dir, reactor)
+        current_env = PythonEnv(venv_dir, reactor)
         venv_func = current_env.create_venv
 
     venv_func(with_pip=True,
               symlinks=system_env.venv_symlinks,
               clear=clear,
               offline=project.offline)
+
+    try:
+        per[venv_name] = current_env
+    except KeyError:
+        pass
 
     venv_dependencies = venv_dependencies_map.get(venv_name)
     if venv_dependencies:
