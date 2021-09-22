@@ -17,6 +17,7 @@ jobs:
           - macos-10.15
           - macos-11
         python-version:
+          - '3.10.0-rc.2'
           - '3.9'
           - '3.8'
           - '3.7'
@@ -31,54 +32,33 @@ jobs:
       DEPLOY_BRANCHES: "refs/heads/master"
       DEPLOY_PYTHONS: "3.9"
       DEPLOY_OSES: "Linux"
-      PYB_ARGS: "-E ci -v -X analyze install"
       TWINE_USERNAME: pybuilder-travis2
       TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
-      SKIP_JOB: >-
-        ${{ matrix.with-homebrew == 'true' && !startsWith(matrix.os, 'macos') ||
-            matrix.with-homebrew == 'true' && startsWith(matrix.os, 'macos') && matrix.python-version == '3.6'
-        }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v2
-        if: env.SKIP_JOB == 'false'
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        if: env.SKIP_JOB == 'false' && matrix.with-homebrew == 'false'
+      - shell: bash
+        if: |
+          contains(env.DEPLOY_OSES, runner.os) &&
+          contains(env.DEPLOY_PYTHONS, matrix.python-version) &&
+          contains(env.DEPLOY_BRANCHES, github.ref)
+        run: |
+          echo "PYB_EXTRA_ARGS=upload" >> $GITHUB_ENV
+      - uses: pybuilder/build@master
+        if: |
+          !(matrix.with-homebrew == 'true' && runner.os != 'macOS' ||
+            matrix.with-homebrew == 'true' && runner.os == 'macOS' &&
+            (matrix.python-version == '3.6' ||
+             contains(matrix.python-version, '-rc') ||
+             contains(matrix.python-version, '-b')
+            )
+           )
         with:
           python-version: ${{ matrix.python-version }}
-          architecture: x64
-      - name: Setup Python with Homebrew
-        if: env.SKIP_JOB == 'false' && matrix.with-homebrew == 'true'
-        shell: bash
-        run: |
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          brew install python@${{ matrix.python-version }}
-          echo "/usr/local/opt/python@${{ matrix.python-version }}/bin" >> $GITHUB_PATH
-      - name: Python Check
-        if: env.SKIP_JOB == 'false'
-        shell: bash
-        run: |
-          pwd
-          which python3
-          python3 --version
-          python3 -m pip --version
-          echo GITHUB_REF $GITHUB_REF
-          echo GITHUB_HEAD_REF $GITHUB_HEAD_REF
-          echo GITHUB_BASE_REF $GITHUB_BASE_REF
-      - name: Create VEnv
-        if: env.SKIP_JOB == 'false' && matrix.with-venv == 'true'
-        shell: bash
-        run: |
-          python3 -m pip install virtualenv
-          virtualenv $HOME/.pyb
-      - name: Build
-        if: env.SKIP_JOB == 'false'
-        shell: bash
-        env:
-          WITH_VENV: ${{ matrix.with-venv }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PYTHON_VERSION: ${{ matrix.python-version }}
-        run: python3 $GITHUB_WORKSPACE/gha_build.py
+          homebrew-python: ${{ matrix.with-homebrew }}
+          with-venv: ${{ matrix.with-venv }}
+          install-pyb: 'false'
+          pyb-command: $PYTHON build.py
+          pyb-extra-args: ${{ env.PYB_EXTRA_ARGS }}
   build-stable-summary:
     if: success() || failure()
     runs-on: ubuntu-latest
@@ -101,47 +81,18 @@ jobs:
           - macos-10.15
           - macos-11
         python-version:
-          - '3.10.0-rc.1'
           - 'pypy-3.6'
           - 'pypy-3.7'
         with-venv:
           - 'true'
           - 'false'
-    if: github.event_name == 'push'
     env:
-      DEPLOY_BRANCHES: ""
-      DEPLOY_PYTHONS: ""
-      DEPLOY_OSES: ""
-      PYB_ARGS: "-E ci -v -X analyze install"
-      TWINE_USERNAME: ""
-      TWINE_PASSWORD: ""
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    if: github.event_name == 'push'
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup Python
-        uses: actions/setup-python@v2
+      - uses: pybuilder/build@master
         with:
           python-version: ${{ matrix.python-version }}
-          architecture: x64
-      - name: Python Check
-        shell: bash
-        run: |
-          pwd
-          which python3
-          python3 --version
-          python3 -m pip --version
-          echo GITHUB_REF $GITHUB_REF
-          echo GITHUB_HEAD_REF $GITHUB_HEAD_REF
-          echo GITHUB_BASE_REF $GITHUB_BASE_REF
-      - name: Create VEnv
-        if: matrix.with-venv == 'true'
-        shell: bash
-        run: |
-          python3 -m pip install virtualenv
-          virtualenv $HOME/.pyb
-      - name: Build
-        shell: bash
-        env:
-          WITH_VENV: ${{ matrix.with-venv }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PYTHON_VERSION: ${{ matrix.python-version }}
-        run: python3 $GITHUB_WORKSPACE/gha_build.py
+          with-venv: ${{ matrix.with-venv }}
+          install-pyb: 'false'
+          pyb-command: $PYTHON build.py
