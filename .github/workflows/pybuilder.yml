@@ -32,15 +32,16 @@ jobs:
       DEPLOY_BRANCHES: "refs/heads/master"
       DEPLOY_PYTHONS: "3.9"
       DEPLOY_OSES: "Linux"
-      TWINE_USERNAME: pybuilder-travis2
-      TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+      TWINE_USERNAME: __token__
+      TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - shell: bash
         if: |
           contains(env.DEPLOY_OSES, runner.os) &&
           contains(env.DEPLOY_PYTHONS, matrix.python-version) &&
-          contains(env.DEPLOY_BRANCHES, github.ref)
+          contains(env.DEPLOY_BRANCHES, github.ref) &&
+          matrix.with-venv == 'true'
         run: |
           echo "PYB_EXTRA_ARGS=upload" >> $GITHUB_ENV
       - uses: pybuilder/build@master
