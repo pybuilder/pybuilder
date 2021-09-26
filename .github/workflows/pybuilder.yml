@@ -59,7 +59,7 @@ jobs:
           with-venv: ${{ matrix.with-venv }}
           install-pyb: 'false'
           pyb-command: $PYTHON build.py
-          pyb-extra-args: ${{ env.PYB_EXTRA_ARGS }}
+          pyb-extra-args: +install ${{ env.PYB_EXTRA_ARGS }}
   build-stable-summary:
     if: success() || failure()
     runs-on: ubuntu-latest
