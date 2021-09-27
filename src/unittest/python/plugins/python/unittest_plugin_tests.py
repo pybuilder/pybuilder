@@ -16,8 +16,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from __future__ import unicode_literals
-
 from unittest import TestCase, TextTestRunner
 
 from pybuilder.core import Project

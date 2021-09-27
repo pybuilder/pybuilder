@@ -144,6 +144,13 @@ def user_log_dir(
     return PlatformDirs(appname=appname, appauthor=appauthor, version=version, opinion=opinion).user_log_dir
 
 
+def user_documents_dir() -> str:
+    """
+    :returns: documents directory tied to the user
+    """
+    return PlatformDirs().user_documents_dir
+
+
 def user_runtime_dir(
     appname: Optional[str] = None,
     appauthor: Union[str, None, "Literal[False]"] = None,
@@ -272,6 +279,13 @@ def user_log_path(
     return PlatformDirs(appname=appname, appauthor=appauthor, version=version, opinion=opinion).user_log_path
 
 
+def user_documents_path() -> Path:
+    """
+    :returns: documents path tied to the user
+    """
+    return PlatformDirs().user_documents_path
+
+
 def user_runtime_path(
     appname: Optional[str] = None,
     appauthor: Union[str, None, "Literal[False]"] = None,
@@ -299,6 +313,7 @@ __all__ = [
     "user_cache_dir",
     "user_state_dir",
     "user_log_dir",
+    "user_documents_dir",
     "user_runtime_dir",
     "site_data_dir",
     "site_config_dir",
@@ -307,6 +322,7 @@ __all__ = [
     "user_cache_path",
     "user_state_path",
     "user_log_path",
+    "user_documents_path",
     "user_runtime_path",
     "site_data_path",
     "site_config_path",

@@ -1,6 +1,8 @@
 import os
 import sys
+from configparser import ConfigParser
 from pathlib import Path
+from typing import Optional
 
 from .api import PlatformDirsABC
 
@@ -112,6 +114,19 @@ class Unix(PlatformDirsABC):
         return path
 
     @property
+    def user_documents_dir(self) -> str:
+        """
+        :return: documents directory tied to the user, e.g. ``~/Documents``
+        """
+        documents_dir = _get_user_dirs_folder("XDG_DOCUMENTS_DIR")
+        if documents_dir is None:
+            documents_dir = os.environ.get("XDG_DOCUMENTS_DIR", "").strip()
+            if not documents_dir:
+                documents_dir = os.path.expanduser("~/Documents")
+
+        return documents_dir
+
+    @property
     def user_runtime_dir(self) -> str:
         """
         :return: runtime directory tied to the user, e.g. ``/run/user/$(id -u)/$appname/$version`` or
@@ -137,6 +152,27 @@ class Unix(PlatformDirsABC):
             # If multipath is True, the first path is returned.
             directory = directory.split(os.pathsep)[0]
         return Path(directory)
+
+
+def _get_user_dirs_folder(key: str) -> Optional[str]:
+    """Return directory from user-dirs.dirs config file. See https://freedesktop.org/wiki/Software/xdg-user-dirs/"""
+    user_dirs_config_path = os.path.join(Unix().user_config_dir, "user-dirs.dirs")
+    if os.path.exists(user_dirs_config_path):
+        parser = ConfigParser()
+
+        with open(user_dirs_config_path) as stream:
+            # Add fake section header, so ConfigParser doesn't complain
+            parser.read_string(f"[top]\n{stream.read()}")
+
+        if key not in parser["top"]:
+            return None
+
+        path = parser["top"][key].strip('"')
+        # Handle relative home paths
+        path = path.replace("$HOME", os.path.expanduser("~"))
+        return path
+
+    return None
 
 
 __all__ = [
