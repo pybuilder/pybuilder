@@ -43,7 +43,7 @@ jobs:
           contains(env.DEPLOY_BRANCHES, github.ref) &&
           matrix.with-venv == 'true'
         run: |
-          echo "PYB_EXTRA_ARGS=upload" >> $GITHUB_ENV
+          echo "PYB_EXTRA_ARGS='+upload'" >> $GITHUB_ENV
       - uses: pybuilder/build@master
         if: |
           !(matrix.with-homebrew == 'true' && runner.os != 'macOS' ||
