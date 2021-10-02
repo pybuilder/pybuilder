@@ -87,9 +87,16 @@ class VendorImporter(Loader):
                 "distribution.".format(**locals())
             )
 
-    def find_distributions(self, context):
+    def _find_distributions(self, context):
         context.path.insert(0, pybuilder._vendor.__file__[:-len("__init__.py") - 1])
         return []
+
+    # https://github.com/pybuilder/pybuilder/issues/807
+    if sys.version_info[:2] == (3, 8):
+        def find_distributions(self, context):
+            return iter(self._find_distributions(context))
+    else:
+        find_distributions = _find_distributions
 
     def install(self):
         """
