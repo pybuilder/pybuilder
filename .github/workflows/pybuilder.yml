@@ -17,11 +17,12 @@ jobs:
           - macos-10.15
           - macos-11
         python-version:
-          - '3.10.0-rc.2'
+          - '3.10'
           - '3.9'
           - '3.8'
           - '3.7'
           - '3.6'
+          - 'pypy-3.7'
         with-venv:
           - 'true'
           - 'false'
@@ -50,7 +51,8 @@ jobs:
             matrix.with-homebrew == 'true' && runner.os == 'macOS' &&
             (matrix.python-version == '3.6' ||
              contains(matrix.python-version, '-rc') ||
-             contains(matrix.python-version, '-b')
+             contains(matrix.python-version, '-b') ||
+             contains(matrix.python-version, 'pypy-')
             )
            )
         with:
@@ -69,30 +71,3 @@ jobs:
       - name: Check build matrix status
         if: needs.build-stable.result != 'success'
         run: exit 1
-  build-experimental:
-    needs: [ build-stable, build-stable-summary ]
-    runs-on: ${{ matrix.os }}
-    continue-on-error: true
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-10.15
-          - macos-11
-        python-version:
-          - 'pypy-3.7'
-        with-venv:
-          - 'true'
-          - 'false'
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    if: github.event_name == 'push'
-    steps:
-      - uses: pybuilder/build@master
-        with:
-          python-version: ${{ matrix.python-version }}
-          with-venv: ${{ matrix.with-venv }}
-          install-pyb: 'false'
-          pyb-command: $PYTHON build.py
