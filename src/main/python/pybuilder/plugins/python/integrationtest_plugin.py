@@ -44,6 +44,7 @@ def initialize_integrationtest_plugin(project):
     project.set_property_if_unset("integrationtest_always_verbose", False)
     project.set_property_if_unset("integrationtest_cpu_scaling_factor", 4)
     project.set_property_if_unset("integrationtest_python_env", "test")
+    project.set_property_if_unset("integrationtest_python_env_recreate", False)
 
     project.set_property_if_unset("integrationtest_file_suffix", None)  # deprecated, use integrationtest_file_glob.
 
@@ -223,7 +224,8 @@ def run_single_test(logger, project, reactor, reports_dir, test, output_test_nam
 
     venv_name = project.get_property("integrationtest_python_env")
     python_env = reactor.python_env_registry[venv_name]
-    create_venv(project, logger, reactor, venv_name, True)
+    create_venv(project, logger, reactor, venv_name, True,
+                recreate_if_exists=project.get_property("integrationtest_python_env_recreate"))
     env = prepare_environment(project)
     command_and_arguments = python_env.executable + [test]
     command_and_arguments += additional_integrationtest_commandline

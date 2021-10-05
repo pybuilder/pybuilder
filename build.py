@@ -153,6 +153,7 @@ def initialize(project):
     # PyPy distutils needs os.environ['PATH'] not matter what
     # Also Windows needs PATH for DLL loading in all Pythons
     project.set_property("integrationtest_inherit_environment", True)
+    project.set_property("integrationtest_python_env_recreate", True)
 
     project.set_property("distutils_readme_description", True)
     project.set_property("distutils_description_overwrite", True)
