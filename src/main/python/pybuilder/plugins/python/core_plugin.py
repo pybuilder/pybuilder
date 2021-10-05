@@ -90,7 +90,7 @@ def create_venvs(logger, project, reactor):
             per[venv_name] = system_env
 
 
-def create_venv(project, logger, reactor, venv_name, clear):
+def create_venv(project, logger, reactor, venv_name, clear, recreate_if_exists=False):
     if project.no_venvs:
         return
 
@@ -102,6 +102,9 @@ def create_venv(project, logger, reactor, venv_name, clear):
 
     try:
         current_env = per[venv_name]
+        if not recreate_if_exists:
+            logger.info("Reusing target '%s' VEnv in '%s'", venv_name, venv_dir)
+            return
         logger.info("Recreating target '%s' VEnv in '%s'%s", venv_name, venv_dir, " (refreshing)" if clear else "")
         venv_func = current_env.recreate_venv
     except KeyError:
