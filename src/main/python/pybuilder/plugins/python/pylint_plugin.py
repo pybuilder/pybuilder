@@ -47,17 +47,24 @@ def execute_pylint(project, logger, reactor):
     logger.info("Executing pylint on project sources")
 
     command_and_arguments = ["pylint"] + project.get_property("pylint_options")
-    result_tuple = execute_tool_on_modules(project, "pylint", reactor.pybuilder_venv, command_and_arguments, True)
+    result_tuple = execute_tool_on_modules(project, "pylint", reactor.pybuilder_venv, command_and_arguments,
+                                           extend_pythonpath=True,
+                                           include_package_modules=False)
 
-    if project.get_property("pylint_break_build"):
-        report_file = result_tuple[1]  # access by position to avoid changing mocking behaviour
+    report_file = result_tuple[1]  # access by position to avoid changing mocking behaviour
 
-        warnings = [line
-                    for line in read_file(report_file)
-                    if line.find('.py:') >= 0]
-        warning_count = len(warnings)
+    warnings = [line.rstrip()
+                for line in read_file(report_file)
+                if line.find(".py:") >= 0]
+    warning_count = len(warnings)
 
-        if warning_count > 0:
-            message = "Pylint found {} warning(s).".format(warning_count)
+    if warning_count:
+        for warning in warnings:
+            logger.warn("PyLint: %s", warning)
+
+        message = "Pylint found {} warning(s).".format(warning_count)
+        if project.get_property("pylint_break_build"):
             logger.error(message)
             raise BuildFailedException(message)
+        else:
+            logger.warn(message)

@@ -111,7 +111,7 @@ def remove_leading_slash_or_dot_from_path(path):
 
 def remove_python_source_suffix(file_name):
     if file_name.endswith(".py"):
-        return file_name[0:-len(".py")]
+        return file_name[0:-3]
     return file_name
 
 
@@ -130,22 +130,51 @@ def discover_module_files_matching(source_path, module_glob):
     return result
 
 
-def discover_modules(source_path, suffix=".py"):
-    return discover_modules_matching(source_path, "*{0}".format(suffix))
+def discover_modules(source_path, suffix=".py",
+                     include_packages=True,
+                     include_package_modules=True,
+                     include_namespace_modules=True
+                     ):
+    return discover_modules_matching(source_path, "*{0}".format(suffix),
+                                     include_packages=include_packages,
+                                     include_package_modules=include_package_modules,
+                                     include_namespace_modules=include_namespace_modules)
 
 
-def discover_modules_matching(source_path, module_glob):
+def discover_modules_matching(source_path, module_glob,
+                              include_packages=True,
+                              include_package_modules=True,
+                              include_namespace_modules=True):
     result = []
     if not module_glob.endswith(".py"):
         module_glob += ".py"
-    for module_file_path in discover_files_matching(source_path, module_glob):
-        relative_module_file_path = os.path.relpath(module_file_path, source_path)
-        relative_module_file_path = relative_module_file_path.replace(os.sep, ".")
-        module_file = remove_leading_slash_or_dot_from_path(relative_module_file_path)
-        module_name = remove_python_source_suffix(module_file)
-        if module_name.endswith(".__init__"):
-            module_name = module_name.replace(".__init__", "")
-        result.append(module_name)
+
+    for root, dirs, files in os.walk(source_path, followlinks=True):
+        is_package = False
+        for file_name in files:
+            if file_name == "__init__.py":
+                is_package = True
+                break
+
+        for file_name in files:
+            if fnmatch.fnmatch(file_name, module_glob):
+                module_file_path = jp(root, file_name)
+                relative_module_file_path = os.path.relpath(module_file_path, source_path)
+                relative_module_file_path = relative_module_file_path.replace(os.sep, ".")
+                module_file = remove_leading_slash_or_dot_from_path(relative_module_file_path)
+                module_name = remove_python_source_suffix(module_file)
+
+                add_module = False
+                if file_name == "__init__.py":
+                    if include_packages:
+                        module_name = module_name[:-9]  # len(".__init__")
+                        add_module = True
+                else:
+                    add_module = (not is_package and include_namespace_modules or
+                                  is_package and include_package_modules)
+
+                if add_module:
+                    result.append(module_name)
     return result
 
 
@@ -154,7 +183,7 @@ def discover_files(start_dir, suffix):
 
 
 def discover_files_matching(start_dir, file_glob, exclude_file_glob=None):
-    for root, _, files in os.walk(start_dir):
+    for root, _, files in os.walk(start_dir, followlinks=True):
         for file_name in files:
             if exclude_file_glob:
                 for exclude_pat in as_list(exclude_file_glob):

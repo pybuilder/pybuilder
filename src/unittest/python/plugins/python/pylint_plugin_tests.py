@@ -59,7 +59,8 @@ class PylintPluginTests(TestCase):
 
         self.reactor.pybuilder_venv.verify_can_execute.assert_called_with(['pylint'], 'pylint', 'plugin python.pylint')
 
-    def test_should_run_pylint_with_default_options(self):
+    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=PYLINT_NORMAL_OUTPUT)
+    def test_should_run_pylint_with_default_options(self, *_):
         init_pylint(self.project)
 
         execute_pylint(self.project, Mock(Logger), self.reactor)
@@ -67,7 +68,8 @@ class PylintPluginTests(TestCase):
         self.reactor.pybuilder_venv.execute_command.assert_called_with(["pylint"] + DEFAULT_PYLINT_OPTIONS, ANY,
                                                                        env=ANY)
 
-    def test_should_run_pylint_with_custom_options(self):
+    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=PYLINT_NORMAL_OUTPUT)
+    def test_should_run_pylint_with_custom_options(self, *_):
         init_pylint(self.project)
         self.project.set_property("pylint_options", ["--test", "-f", "--x=y"])
 

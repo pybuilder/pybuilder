@@ -92,9 +92,16 @@ def execute_tool_on_source_files(project, name, python_env, command_and_argument
     return execution_result
 
 
-def execute_tool_on_modules(project, name, python_env, command_and_arguments, extend_pythonpath=True):
+def execute_tool_on_modules(project, name, python_env, command_and_arguments,
+                            extend_pythonpath=True,
+                            include_packages=True,
+                            include_package_modules=True,
+                            include_namespace_modules=True):
     source_dir = project.expand_path("$dir_source_main_python")
-    modules = discover_modules(source_dir)
+    modules = discover_modules(source_dir,
+                               include_packages=include_packages,
+                               include_package_modules=include_package_modules,
+                               include_namespace_modules=include_namespace_modules)
     command = as_list(command_and_arguments) + modules
 
     report_file = project.expand_path("$dir_reports/%s" % name)
