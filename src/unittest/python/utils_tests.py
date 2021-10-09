@@ -165,26 +165,26 @@ class DiscoverFilesTest(unittest.TestCase):
         expected_result = [nc("spam/spam.py"), nc("spam/eggs.py")]
         actual_result = set(discover_files("spam", ".py"))
         self.assertEqual(set(expected_result), actual_result)
-        walk.assert_called_with("spam")
+        walk.assert_called_with("spam", followlinks=True)
 
     @patch("pybuilder.utils.os.walk", return_value=[("spam", [], fake_dir_contents)])
     def test_should_only_return_py_glob(self, walk):
         expected_result = [nc("spam/readme.md")]
         actual_result = set(discover_files_matching("spam", "readme.?d"))
         self.assertEqual(set(expected_result), actual_result)
-        walk.assert_called_with("spam")
+        walk.assert_called_with("spam", followlinks=True)
 
 
 class DiscoverModulesTest(unittest.TestCase):
     @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["eggs.pi"])])
     def test_should_return_empty_list_when_directory_contains_single_file_not_matching_suffix(self, walk):
         self.assertEqual([], discover_modules("spam", ".py"))
-        walk.assert_called_with("spam")
+        walk.assert_called_with("spam", followlinks=True)
 
     @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["eggs.py"])])
     def test_should_return_list_with_single_module_when_directory_contains_single_file(self, walk):
         self.assertEqual(["eggs"], discover_modules("spam", ".py"))
-        walk.assert_called_with("spam")
+        walk.assert_called_with("spam", followlinks=True)
 
     @patch("pybuilder.utils.os.walk", return_value=[("pet_shop", [],
                                                      ["parrot.txt", "parrot.py", "parrot.pyc", "parrot.py~",
@@ -193,27 +193,63 @@ class DiscoverModulesTest(unittest.TestCase):
         expected_result = ["parrot"]
         actual_result = discover_modules_matching("pet_shop", "*parrot*")
         self.assertEqual(set(expected_result), set(actual_result))
-        walk.assert_called_with("pet_shop")
+        walk.assert_called_with("pet_shop", followlinks=True)
 
     @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["eggs.py"])])
     def test_glob_should_return_list_with_single_module_when_directory_contains_single_file(self, walk):
         self.assertEqual(["eggs"], discover_modules_matching("spam", "*"))
-        walk.assert_called_with("spam")
+        walk.assert_called_with("spam", followlinks=True)
 
     @patch("pybuilder.utils.os.walk", return_value=[("spam", ["eggs"], []),
                                                     ("spam/eggs", [], ["__init__.py"])])
     def test_glob_should_return_list_with_single_module_when_directory_contains_package(self, walk):
         self.assertEqual(["eggs"], discover_modules_matching("spam", "*"))
 
-        walk.assert_called_with("spam")
+        walk.assert_called_with("spam", followlinks=True)
 
-    @patch("pybuilder.utils.discover_files_matching", return_value=['/path/to/tests/reactor_tests.py'])
+    @patch("pybuilder.utils.os.walk", return_value=[("/path/to/tests", [], ["reactor_tests.py"])])
     def test_should_not_eat_first_character_of_modules_when_source_path_ends_with_slash(self, _):
         self.assertEqual(["reactor_tests"], discover_modules_matching("/path/to/tests/", "*"))
 
-    @patch("pybuilder.utils.discover_files_matching", return_value=['/path/to/tests/reactor_tests.py'])
+    @patch("pybuilder.utils.os.walk", return_value=[("/path/to/tests", [], ["reactor_tests.py"])])
     def test_should_honor_suffix_without_stripping_it_from_module_names(self, _):
         self.assertEqual(["reactor_tests"], discover_modules_matching("/path/to/tests/", "*_tests"))
+
+    @patch("pybuilder.utils.os.walk",
+           return_value=[("python", ["a", "b", "name"], []),
+                         ("python/a", ["b"], ["module.py", "__init__.py"]),
+                         ("python/a/b", [], ["module.py", "__init__.py"]),
+                         ("python/b", [], ["module.py", "__init__.py"]),
+                         ("python/name", ["space"], []),
+                         ("python/name/space", ["x"], ["module.py"]),
+                         ("python/name/space/x", [], ["__init__.py", "module.py"])])
+    def test_packages_and_ns_modules_only(self, _):
+        self.assertEqual(["a", "a.b", "b", "name.space.module", "name.space.x"],
+                         discover_modules_matching("python", "*", include_package_modules=False))
+
+    @patch("pybuilder.utils.os.walk",
+           return_value=[("python", ["a", "b", "name"], []),
+                         ("python/a", ["b"], ["module.py", "__init__.py"]),
+                         ("python/a/b", [], ["module.py", "__init__.py"]),
+                         ("python/b", [], ["module.py", "__init__.py"]),
+                         ("python/name", ["space"], []),
+                         ("python/name/space", ["x"], ["module.py"]),
+                         ("python/name/space/x", [], ["__init__.py", "module.py"])])
+    def test_non_package_modules_and_ns_modules_only(self, _):
+        self.assertEqual(["a.module", "a.b.module", "b.module", "name.space.module", "name.space.x.module"],
+                         discover_modules_matching("python", "*", include_packages=False))
+
+    @patch("pybuilder.utils.os.walk",
+           return_value=[("python", ["a", "b", "name"], []),
+                         ("python/a", ["b"], ["module.py", "__init__.py"]),
+                         ("python/a/b", [], ["module.py", "__init__.py"]),
+                         ("python/b", [], ["module.py", "__init__.py"]),
+                         ("python/name", ["space"], []),
+                         ("python/name/space", ["x"], ["module.py"]),
+                         ("python/name/space/x", [], ["__init__.py", "module.py"])])
+    def test_packages_and_package_modules_only(self, _):
+        self.assertEqual(["a.module", "a", "a.b.module", "a.b", "b.module", "b", "name.space.x", "name.space.x.module"],
+                         discover_modules_matching("python", "*", include_namespace_modules=False))
 
 
 class ApplyOnFilesTest(unittest.TestCase):
