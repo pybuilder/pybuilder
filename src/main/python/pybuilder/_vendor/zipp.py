@@ -12,6 +12,9 @@ else:
     OrderedDict = dict
 
 
+__all__ = ['Path']
+
+
 def _parents(path):
     """
     Given a path with elements separated by
