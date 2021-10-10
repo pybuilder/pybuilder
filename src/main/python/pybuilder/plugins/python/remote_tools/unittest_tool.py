@@ -56,6 +56,6 @@ class UnitTestTool(Tool):
         pipe.hide("unittest_tests")
 
 
-def start_unittest_tool(pyenv, tools, sys_paths, test_modules, test_method_prefix, logging=0):
+def start_unittest_tool(pyenv, tools, sys_paths, test_modules, test_method_prefix, logging=0, tracing=0):
     tool = UnitTestTool(sys_paths, test_modules, test_method_prefix)
-    return start_tool(pyenv, tools + [tool], name="unittest", logging=logging)
+    return start_tool(pyenv, tools + [tool], name="unittest", logging=logging, tracing=tracing)

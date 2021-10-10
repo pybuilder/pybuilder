@@ -91,7 +91,8 @@ def run_tests(project, logger, reactor, execution_prefix, execution_name):
             reactor.python_env_registry[project.get_property("unittest_python_env")],
             reactor.tools, runner_generator, logger, test_dir, module_glob, [test_dir, src_dir],
             test_method_prefix,
-            project.get_property("remote_debug"))
+            project.get_property("remote_debug"),
+            project.get_property("remote_tracing"))
 
         if result.testsRun == 0:
             logger.warn("No %s executed.", execution_name)
@@ -121,13 +122,13 @@ def run_tests(project, logger, reactor, execution_prefix, execution_name):
 
 
 def execute_tests(pyenv, tools, runner_generator, logger, test_source, suffix, sys_paths, test_method_prefix=None,
-                  remote_debug=0):
+                  remote_debug=0, remote_tracing=0):
     return execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, "*{0}".format(suffix),
-                                  test_method_prefix, remote_debug=remote_debug)
+                                  test_method_prefix, remote_debug=remote_debug, remote_tracing=remote_tracing)
 
 
 def execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, file_glob, sys_paths,
-                           test_method_prefix=None, remote_debug=0):
+                           test_method_prefix=None, remote_debug=0, remote_tracing=0):
     output_log_file = StringIO()
     try:
         test_modules = discover_modules_matching(test_source, file_glob)
@@ -135,9 +136,10 @@ def execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, 
                                     logger,
                                     _create_runner(runner_generator, output_log_file))
 
+        exit_code = None
         try:
             proc, pipe = start_unittest_tool(pyenv, tools, sys_paths, test_modules, test_method_prefix,
-                                             logging=remote_debug)
+                                             logging=remote_debug, tracing=remote_tracing)
             try:
                 pipe.register_remote(runner)
                 pipe.register_remote_type(unittest.result.TestResult)
@@ -153,9 +155,15 @@ def execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, 
                         proc.join()
                     finally:
                         try:
-                            proc.close()
-                        except AttributeError:
-                            pass
+                            exit_code = proc.exitcode
+                        finally:
+                            try:
+                                proc.close()
+                            except AttributeError:
+                                pass
+
+            if exit_code:
+                raise BuildFailedException("Unittest tool failed with exit code %s", exit_code)
 
             remote_closed_cause = pipe.remote_close_cause()
             if remote_closed_cause is not None:
