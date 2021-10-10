@@ -31,6 +31,7 @@ def init(project):
     project.set_property("dir_logs", jp("$dir_target", "logs"))
 
     project.set_property_if_unset("remote_debug", 0)
+    project.set_property_if_unset("remote_tracing", 0)
 
     project.write_report = partial(write_report, project)
 

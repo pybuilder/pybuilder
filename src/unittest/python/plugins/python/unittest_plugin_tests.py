@@ -49,7 +49,9 @@ class ExecuteTestsTests(TestCase):
     def test_should_discover_modules_by_suffix(self, mock_discover_modules_matching, mock_unittest, runner, tool):
         pipe = Mock()
         pipe.remote_close_cause.return_value = None
-        tool.return_value = (Mock(), pipe)
+        proc = Mock()
+        proc.exitcode = 0
+        tool.return_value = (proc, pipe)
         execute_tests(Mock(), [], runner, self.mock_logger, "/path/to/test/sources", "_tests.py", ["a", "b"])
 
         mock_discover_modules_matching.assert_called_with("/path/to/test/sources", "*_tests.py")
@@ -61,7 +63,9 @@ class ExecuteTestsTests(TestCase):
     def test_should_discover_modules_by_glob(self, mock_discover_modules_matching, mock_unittest, runner, tool):
         pipe = Mock()
         pipe.remote_close_cause.return_value = None
-        tool.return_value = (Mock(), pipe)
+        proc = Mock()
+        proc.exitcode = 0
+        tool.return_value = (proc, pipe)
         execute_tests_matching(Mock(), [], runner, self.mock_logger, "/path/to/test/sources", "*_tests.py", ["a", "b"])
 
         mock_discover_modules_matching.assert_called_with("/path/to/test/sources", "*_tests.py")
@@ -73,7 +77,9 @@ class ExecuteTestsTests(TestCase):
     def test_should_return_actual_test_results(self, mock_discover_modules, mock_unittest, runner, tool):
         pipe = Mock()
         pipe.remote_close_cause.return_value = None
-        tool.return_value = (Mock(), pipe)
+        proc = Mock()
+        proc.exitcode = 0
+        tool.return_value = (proc, pipe)
         mock_tests = Mock()
         mock_unittest.defaultTestLoader.loadTestsFromNames.return_value = mock_tests
         runner.return_value.run.return_value = self.mock_result
