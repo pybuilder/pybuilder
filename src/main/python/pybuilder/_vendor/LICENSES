@@ -63,7 +63,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 
-setuptools-58.1.0
+setuptools-58.2.0
 ==========
 Copyright Jason R. Coombs
 
@@ -178,7 +178,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 
 
-filelock-3.0.12
+filelock-3.3.0
 ==========
 This is free and unencumbered software released into the public domain.
 
@@ -254,7 +254,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-zipp-3.5.0
+zipp-3.6.0
 ==========
 Copyright Jason R. Coombs
 
