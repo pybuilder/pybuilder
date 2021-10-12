@@ -79,22 +79,19 @@ def pip_install_batches(packages, python_env, index_url=None, extra_index_url=No
             batches[opts] = batch_pkgs
         batch_pkgs.append(pkg_spec)
 
-    results = []
     for opts, pkgs in batches.items():
         cmd_line = list(pip_command_line)
         cmd_line.extend(opts)
         for pkg in pkgs:
             cmd_line.extend(pkg)
 
-        results.append(python_env.execute_command(cmd_line,
-                                                  outfile_name=outfile_name,
-                                                  error_file_name=error_file_name,
-                                                  env=env_environ,
-                                                  cwd=cwd,
-                                                  shell=False,
-                                                  no_path_search=True))
-
-    return results
+        yield python_env.execute_command(cmd_line,
+                                         outfile_name=outfile_name,
+                                         error_file_name=error_file_name,
+                                         env=env_environ,
+                                         cwd=cwd,
+                                         shell=False,
+                                         no_path_search=True)
 
 
 def pip_install(install_targets, python_env, index_url=None, extra_index_url=None, upgrade=False,
