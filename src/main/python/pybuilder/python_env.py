@@ -17,6 +17,7 @@
 #   limitations under the License.
 
 import ast
+import logging
 import os
 import subprocess
 import sys
@@ -416,6 +417,7 @@ def create_venv(home_dir,
     if prompt:
         args += ["--prompt", prompt]
 
+    logging.getLogger("filelock").setLevel(logging.INFO)
     virtualenv.cli_run(args, setup_logging=False)
 
 
