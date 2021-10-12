@@ -38,6 +38,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - shell: bash
+        name: Configure
         if: |
           contains(env.DEPLOY_OSES, runner.os) &&
           contains(env.DEPLOY_PYTHONS, matrix.python-version) &&
@@ -46,6 +47,7 @@ jobs:
         run: |
           echo "PYB_EXTRA_ARGS='+upload'" >> $GITHUB_ENV
       - uses: pybuilder/build@master
+        name: Build
         if: |
           !(matrix.with-homebrew == 'true' && runner.os != 'macOS' ||
             matrix.with-homebrew == 'true' && runner.os == 'macOS' &&
@@ -62,6 +64,15 @@ jobs:
           install-pyb: 'false'
           pyb-command: $PYTHON build.py
           pyb-extra-args: +install ${{ env.PYB_EXTRA_ARGS }}
+      - shell: bash
+        name: Print Logs on Failure
+        if: failure()
+        run: |
+          for f in $(find . -name \*.log); do
+              echo ">>>>>> $f"
+              cat "$f"
+          done
+          exit 1
   build-stable-summary:
     if: success() || failure()
     runs-on: ubuntu-latest

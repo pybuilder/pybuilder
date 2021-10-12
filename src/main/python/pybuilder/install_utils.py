@@ -78,28 +78,31 @@ def install_dependencies(logger, project, dependencies, python_env,
             logger.warn("PIP will be operating in the offline mode")
 
         with open(np(log_file_name), log_file_mode) as log_file:
-            results = pip_install_batches(install_batch,
-                                          python_env,
-                                          index_url=project.get_property("install_dependencies_index_url"),
-                                          extra_index_url=project.get_property("install_dependencies_extra_index_url"),
-                                          trusted_host=project.get_property("install_dependencies_trusted_host"),
-                                          insecure_installs=project.get_property(
-                                              "install_dependencies_insecure_installation"),
-                                          verbose=project.get_property("pip_verbose"),
-                                          constraint_file=constraints_file,
-                                          logger=logger,
-                                          outfile_name=log_file,
-                                          error_file_name=log_file,
-                                          target_dir=target_dir,
-                                          ignore_installed=ignore_installed)
-        for result in results:
-            if result:
-                raise BuildFailedException("Unable to install %s packages into %s. "
-                                           "Please see '%s' for full details:\n%s",
-                                           package_type,
-                                           python_env.env_dir,
-                                           log_file_name,
-                                           tail_log(log_file_name))
+            for result in pip_install_batches(install_batch,
+                                              python_env,
+                                              index_url=project.get_property("install_dependencies_index_url"),
+                                              extra_index_url=project.get_property(
+                                                  "install_dependencies_extra_index_url"),
+                                              trusted_host=project.get_property("install_dependencies_trusted_host"),
+                                              insecure_installs=project.get_property(
+                                                  "install_dependencies_insecure_installation"),
+                                              verbose=project.get_property("pip_verbose"),
+                                              constraint_file=constraints_file,
+                                              logger=logger,
+                                              outfile_name=log_file,
+                                              error_file_name=log_file,
+                                              target_dir=target_dir,
+                                              ignore_installed=ignore_installed):
+                if result:
+                    try:
+                        log_file.close()
+                    finally:
+                        raise BuildFailedException("Unable to install %s packages into %s. "
+                                                   "Please see '%s' for full details:\n%s",
+                                                   package_type,
+                                                   python_env.env_dir,
+                                                   log_file_name,
+                                                   tail_log(log_file_name))
     return dependencies_to_install
 
 
