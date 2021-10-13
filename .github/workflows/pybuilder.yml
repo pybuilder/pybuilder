@@ -5,7 +5,7 @@ on:
     branches:
       - master
 jobs:
-  build-stable:
+  build-primary:
     runs-on: ${{ matrix.os }}
     continue-on-error: false
     strategy:
@@ -13,6 +13,38 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
+        python-version:
+          - '3.10'
+          - '3.9'
+          - '3.8'
+          - '3.7'
+          - '3.6'
+          - 'pypy-3.7'
+        with-venv:
+          - 'true'
+          - 'false'
+    env:
+      TWINE_USERNAME: __token__
+      TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/
+        with:
+          python-version: '${{ matrix.python-version }}'
+          with-venv: '${{ matrix.with-venv }}'
+          with-homebrew: 'false'
+          deploy-on-python: '["3.9"]'
+          deploy-on-os: '["Linux"]'
+          deploy-on-branch: '["refs/heads/master"]'
+  build-secondary:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: false
+    needs: build-primary
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
           - windows-latest
           - macos-10.15
           - macos-11
@@ -30,55 +62,25 @@ jobs:
           - 'true'
           - 'false'
     env:
-      DEPLOY_BRANCHES: "refs/heads/master"
-      DEPLOY_PYTHONS: "3.9"
-      DEPLOY_OSES: "Linux"
-      TWINE_USERNAME: __token__
-      TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - shell: bash
-        name: Configure
-        if: |
-          contains(env.DEPLOY_OSES, runner.os) &&
-          contains(env.DEPLOY_PYTHONS, matrix.python-version) &&
-          contains(env.DEPLOY_BRANCHES, github.ref) &&
-          matrix.with-venv == 'true'
-        run: |
-          echo "PYB_EXTRA_ARGS='+upload'" >> $GITHUB_ENV
-      - uses: pybuilder/build@master
-        name: Build
-        if: |
-          !(matrix.with-homebrew == 'true' && runner.os != 'macOS' ||
-            matrix.with-homebrew == 'true' && runner.os == 'macOS' &&
-            (matrix.python-version == '3.6' ||
-             contains(matrix.python-version, '-rc') ||
-             contains(matrix.python-version, '-b') ||
-             contains(matrix.python-version, 'pypy-')
-            )
-           )
+      - uses: actions/checkout@v2
+      - uses: ./.github/
         with:
-          python-version: ${{ matrix.python-version }}
-          homebrew-python: ${{ matrix.with-homebrew }}
-          with-venv: ${{ matrix.with-venv }}
-          install-pyb: 'false'
-          pyb-command: $PYTHON build.py
-          pyb-extra-args: +install ${{ env.PYB_EXTRA_ARGS }}
-      - shell: bash
-        name: Print Logs on Failure
-        if: failure()
-        run: |
-          for f in $(find . -name \*.log); do
-              echo ">>>>>> $f"
-              cat "$f"
-          done
-          exit 1
+          python-version: '${{ matrix.python-version }}'
+          with-venv: '${{ matrix.with-venv }}'
+          with-homebrew: '${{ matrix.with-homebrew }}'
+          deploy-on-python: '[]'
+          deploy-on-os: '[]'
+          deploy-on-branch: '[]'
   build-stable-summary:
     if: success() || failure()
     runs-on: ubuntu-latest
     name: Build Stable Summary
-    needs: build-stable
+    needs:
+      - build-primary
+      - build-secondary
     steps:
       - name: Check build matrix status
-        if: needs.build-stable.result != 'success'
+        if: needs.build-primary.result != 'success' || needs.build-secondary.result != 'success'
         run: exit 1
