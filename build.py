@@ -83,7 +83,8 @@ maintainers = [Author("Arcadiy Ivanov", "arcadiy@ivanov.biz")]
 url = "https://pybuilder.io"
 urls = {"Bug Tracker": "https://github.com/pybuilder/pybuilder/issues",
         "Source Code": "https://github.com/pybuilder/pybuilder",
-        "Documentation": "https://pybuilder.io/documentation"
+        "Documentation": "https://pybuilder.io/documentation",
+        "Twitter": "https://twitter.com/pybuilder_",
         }
 license = "Apache License, Version 2.0"
 version = "0.13.3.dev"
