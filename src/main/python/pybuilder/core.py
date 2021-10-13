@@ -459,6 +459,7 @@ class Project(object):
         self._files_to_install = []
         self._preinstall_script = None
         self._postinstall_script = None
+        self._environments = ()
 
     def __str__(self):
         return "[Project name=%s basedir=%s]" % (self.name, self.basedir)
@@ -572,6 +573,10 @@ class Project(object):
 
     def plugin_depends_on(self, name, version=None, url=None, declaration_only=False):
         self._plugin_dependencies.add(Dependency(name, version, url, declaration_only))
+
+    @property
+    def environments(self):
+        return self._environments
 
     @property
     def setup_preinstall_script(self):
