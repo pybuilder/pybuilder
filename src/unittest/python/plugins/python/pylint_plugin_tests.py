@@ -17,6 +17,7 @@
 #   limitations under the License.
 
 from unittest import TestCase
+from unittest.mock import call
 
 from pybuilder.core import Project, Logger
 from pybuilder.errors import BuildFailedException
@@ -24,7 +25,7 @@ from pybuilder.plugins.python.pylint_plugin import (check_pylint_availability,
                                                     init_pylint,
                                                     execute_pylint,
                                                     DEFAULT_PYLINT_OPTIONS)
-from test_utils import Mock, patch, ANY
+from test_utils import Mock, patch
 
 PYLINT_ERROR_OUTPUT = [
     '************* Module mode.file',
@@ -59,54 +60,85 @@ class PylintPluginTests(TestCase):
 
         self.reactor.pybuilder_venv.verify_can_execute.assert_called_with(['pylint'], 'pylint', 'plugin python.pylint')
 
-    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=PYLINT_NORMAL_OUTPUT)
-    def test_should_run_pylint_with_default_options(self, *_):
+    @patch('pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder')
+    def test_should_run_pylint_with_default_options(self, ecb):
         init_pylint(self.project)
+
+        result = Mock()
+        result.exit_code = 16
+        result.report_lines = PYLINT_NORMAL_OUTPUT
+        ecb().run_on_production_source_files.return_value = result
 
         execute_pylint(self.project, Mock(Logger), self.reactor)
 
-        self.reactor.pybuilder_venv.execute_command.assert_called_with(["pylint"] + DEFAULT_PYLINT_OPTIONS, ANY,
-                                                                       env=ANY)
+        self.assertEqual(ecb().use_argument.call_args_list,
+                         [call(arg) for arg in DEFAULT_PYLINT_OPTIONS])
 
-    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=PYLINT_NORMAL_OUTPUT)
-    def test_should_run_pylint_with_custom_options(self, *_):
+    @patch('pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder')
+    def test_should_run_pylint_with_custom_options(self, ecb):
         init_pylint(self.project)
+
+        result = Mock()
+        result.exit_code = 16
+        result.report_lines = PYLINT_NORMAL_OUTPUT
+        ecb().run_on_production_source_files.return_value = result
+
         self.project.set_property("pylint_options", ["--test", "-f", "--x=y"])
 
         execute_pylint(self.project, Mock(Logger), self.reactor)
 
-        self.reactor.pybuilder_venv.execute_command.assert_called_with(["pylint", "--test", "-f", "--x=y"], ANY,
-                                                                       env=ANY)
+        self.assertEqual(ecb().use_argument.call_args_list,
+                         [call(arg) for arg in ["--test", "-f", "--x=y"]])
 
-    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=PYLINT_ERROR_OUTPUT)
-    @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
-    def test_should_break_build_when_warnings_and_set(self, *_):
+    @patch('pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder')
+    def test_should_break_build_when_warnings_and_set(self, ecb):
         init_pylint(self.project)
+
+        result = Mock()
+        result.exit_code = 16
+        result.report_lines = PYLINT_ERROR_OUTPUT
+        ecb().run_on_production_source_files.return_value = result
+
         self.project.set_property("pylint_break_build", True)
 
         with self.assertRaises(BuildFailedException):
             execute_pylint(self.project, Mock(Logger), self.reactor)
 
-    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=PYLINT_ERROR_OUTPUT)
-    @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
-    def test_should_not_break_build_when_warnings_and_not_set(self, *_):
+    @patch('pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder')
+    def test_should_not_break_build_when_warnings_and_not_set(self, ecb):
         init_pylint(self.project)
+
+        result = Mock()
+        result.exit_code = 16
+        result.report_lines = PYLINT_ERROR_OUTPUT
+        ecb().run_on_production_source_files.return_value = result
+
         self.project.set_property("pylint_break_build", False)
 
         execute_pylint(self.project, Mock(Logger), self.reactor)
 
-    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=PYLINT_NORMAL_OUTPUT)
-    @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
-    def test_should_not_break_build_when_no_warnings_and_set(self, *_):
+    @patch('pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder')
+    def test_should_not_break_build_when_no_warnings_and_set(self, ecb):
         init_pylint(self.project)
+
+        result = Mock()
+        result.exit_code = 16
+        result.report_lines = PYLINT_NORMAL_OUTPUT
+        ecb().run_on_production_source_files.return_value = result
+
         self.project.set_property("pylint_break_build", True)
 
         execute_pylint(self.project, Mock(Logger), self.reactor)
 
-    @patch('pybuilder.plugins.python.pylint_plugin.read_file', return_value=PYLINT_NORMAL_OUTPUT)
-    @patch('pybuilder.plugins.python.pylint_plugin.execute_tool_on_modules')
-    def test_should_not_break_build_when_no_warnings_and_not_set(self, *_):
+    @patch('pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder')
+    def test_should_not_break_build_when_no_warnings_and_not_set(self, ecb):
         init_pylint(self.project)
+
+        result = Mock()
+        result.exit_code = 16
+        result.report_lines = PYLINT_NORMAL_OUTPUT
+        ecb().run_on_production_source_files.return_value = result
+
         self.project.set_property("pylint_break_build", False)
 
         execute_pylint(self.project, Mock(Logger), self.reactor)

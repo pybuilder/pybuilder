@@ -38,6 +38,7 @@ def init (project):
         """)
 
         self.create_directory("src/main/python/a")
+        self.create_directory("src/main/python/name/space")
         self.write_file("src/main/python/a/__init__.py", textwrap.dedent(
             """
             print("Hello from the package")
@@ -46,12 +47,20 @@ def init (project):
             """
             print("Hello from the module")
             """))
+        self.write_file("src/main/python/name/space/__init__.py", textwrap.dedent(
+            """
+            print("Hello from the namespace package")
+            """))
+        self.write_file("src/main/python/name/space/module.py", textwrap.dedent(
+            """
+            print("Hello from the namespace module")
+            """))
         reactor = self.prepare_reactor()
 
         with self.assertRaises(BuildFailedException) as raised_e:
             reactor.build("analyze")
 
-        self.assertEqual(raised_e.exception.message, "Pylint found 2 warning(s).")
+        self.assertEqual(raised_e.exception.message, "PyLint found 4 warning(s).")
 
 
 if __name__ == "__main__":
