@@ -243,6 +243,8 @@ class Reactor:
         if environments:
             self.logger.info("Activated environments: %s", ", ".join(environments))
 
+        self.project._environments = tuple(environments)
+
         self.execution_manager.execute_initializers(environments, logger=self.logger, project=self.project,
                                                     reactor=self)
         self.log_project_properties()
