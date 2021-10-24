@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: virtualenv
-Version: 20.8.1
+Version: 20.9.0
 Summary: Virtual Python Environment builder
 Home-page: https://virtualenv.pypa.io/
 Author: Bernat Gabor
@@ -37,7 +37,7 @@ Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: backports.entry-points-selectable (>=1.0.4)
 Requires-Dist: distlib (<1,>=0.3.1)
-Requires-Dist: filelock (<4,>=3.0.0)
+Requires-Dist: filelock (<4,>=3.2)
 Requires-Dist: platformdirs (<3,>=2)
 Requires-Dist: six (<2,>=1.9.0)
 Requires-Dist: pathlib2 (<3,>=2.3.3) ; python_version < "3.4" and sys_platform != "win32"
