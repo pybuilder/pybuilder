@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: virtualenv
-Version: 20.9.0
+Version: 20.10.0
 Summary: Virtual Python Environment builder
 Home-page: https://virtualenv.pypa.io/
 Author: Bernat Gabor
@@ -48,7 +48,7 @@ Requires-Dist: proselint (>=0.10.2) ; extra == 'docs'
 Requires-Dist: sphinx (>=3) ; extra == 'docs'
 Requires-Dist: sphinx-argparse (>=0.2.5) ; extra == 'docs'
 Requires-Dist: sphinx-rtd-theme (>=0.4.3) ; extra == 'docs'
-Requires-Dist: towncrier (>=19.9.0rc1) ; extra == 'docs'
+Requires-Dist: towncrier (>=21.3) ; extra == 'docs'
 Provides-Extra: testing
 Requires-Dist: coverage (>=4) ; extra == 'testing'
 Requires-Dist: coverage-enable-subprocess (>=1) ; extra == 'testing'
