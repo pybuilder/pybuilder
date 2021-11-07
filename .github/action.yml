@@ -23,50 +23,39 @@ runs:
   using: "composite"
   steps:
     - name: Configure
-      id: configure
-      uses: ChristopherHX/conditional@main
-      with:
-        if: |
-          ${{ contains(fromJSON(inputs.deploy-on-os), runner.os) &&
-          contains(fromJSON(inputs.deploy-on-python), inputs.python-version) &&
-          contains(fromJSON(inputs.deploy-on-branch), github.ref) &&
-          inputs.with-venv == 'true' }}
-        step: |
-          shell: bash
-          run: |
-            echo "PYB_EXTRA_ARGS=+upload" >> $GITHUB_ENV
+      if: |
+        contains(fromJSON(inputs.deploy-on-os), runner.os) &&
+        contains(fromJSON(inputs.deploy-on-python), inputs.python-version) &&
+        contains(fromJSON(inputs.deploy-on-branch), github.ref) &&
+        inputs.with-venv == 'true'
+      shell: bash
+      run: |
+        echo "PYB_EXTRA_ARGS=+upload" >> $GITHUB_ENV
     - name: Build
-      id: build
-      uses: ChristopherHX/conditional@main
+      if: |
+        !(inputs.with-homebrew == 'true' && runner.os != 'macOS' ||
+          inputs.with-homebrew == 'true' && runner.os == 'macOS' &&
+          (inputs.python-version == '3.6' ||
+           contains(inputs.python-version, '-rc') ||
+           contains(inputs.python-version, '-b') ||
+           contains(inputs.python-version, 'pypy-')
+          )
+         )
+      uses: pybuilder/build@master
       with:
-        if: |
-          ${{ !(inputs.with-homebrew == 'true' && runner.os != 'macOS' ||
-            inputs.with-homebrew == 'true' && runner.os == 'macOS' &&
-            (inputs.python-version == '3.6' ||
-             contains(inputs.python-version, '-rc') ||
-             contains(inputs.python-version, '-b') ||
-             contains(inputs.python-version, 'pypy-')
-            )
-           ) }}
-        step: |
-          uses: pybuilder/build@master
-          with:
-            checkout: 'false'
-            python-version: '${{ inputs.python-version }}'
-            homebrew-python: '${{ inputs.with-homebrew }}'
-            with-venv: '${{ inputs.with-venv }}'
-            install-pyb: 'false'
-            pyb-command: $PYTHON build.py
-            pyb-extra-args: +install ${{ env.PYB_EXTRA_ARGS }}
+        checkout: 'false'
+        python-version: '${{ inputs.python-version }}'
+        homebrew-python: '${{ inputs.with-homebrew }}'
+        with-venv: '${{ inputs.with-venv }}'
+        install-pyb: 'false'
+        pyb-command: $PYTHON build.py
+        pyb-extra-args: +install ${{ env.PYB_EXTRA_ARGS }}
     - name: Print Logs on Failure
-      uses: ChristopherHX/conditional@main
-      with:
-        if: ${{ steps.configure.output == 'failure' || steps.build.output == 'failure' }}
-        step: |
-          shell: bash
-          run: |
-            for f in $(find . -name \*.log); do
-                echo ">>>>>> $f"
-                cat "$f"
-            done
-            exit 1
+      if: failure()
+      shell: bash
+      run: |
+        for f in $(find . -name \*.log); do
+            echo ">>>>>> $f"
+            cat "$f"
+        done
+        exit 1

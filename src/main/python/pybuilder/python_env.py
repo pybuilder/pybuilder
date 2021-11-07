@@ -308,6 +308,7 @@ class PythonEnv(object):
     def _get_site_paths(self):
         prefix = self.env_dir
         if self.is_pypy:
+            yield os.path.join(prefix, "lib", "pypy%d.%d" % self.version[:2], "site-packages")
             yield os.path.join(prefix, "site-packages")
         elif os.sep == "/":
             yield os.path.join(prefix, "lib",
