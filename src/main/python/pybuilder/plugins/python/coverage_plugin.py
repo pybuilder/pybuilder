@@ -41,7 +41,7 @@ use_plugin("analysis")
 
 @init
 def init_coverage_properties(project):
-    project.plugin_depends_on("coverage", "~=5.2")
+    project.plugin_depends_on("coverage", "~=6.0")
 
     # These settings are for aggregate coverage
     project.set_property_if_unset("coverage_threshold_warn", 70)
