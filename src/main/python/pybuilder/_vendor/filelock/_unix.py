@@ -12,7 +12,6 @@ if sys.platform == "win32":  # pragma: win32 cover
     class UnixFileLock(BaseFileLock, ABC):
         """Uses the :func:`fcntl.flock` to hard lock the lock file on unix systems."""
 
-
 else:  # pragma: win32 no cover
     try:
         import fcntl

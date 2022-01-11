@@ -107,13 +107,16 @@ def initialize(project):
                                                 "virtualenv>=20.0.0",
                                                 "importlib-resources>=1.0",
                                                 "importlib-metadata>=0.12",
+                                                "filelock<=3.4.1",
+                                                "platformdirs<=2.4.0",
                                                 "typing-extensions",
                                                 "colorama~=0.4.3"
                                                 ])
     project.set_property("vendorize_cleanup_globs", ["bin",
                                                      "setuptools",
-                                                     "easy_install.py"])
-    project.set_property("vendorize_preserve_metadata", ["virtualenv*"])
+                                                     "easy_install.py",
+                                                     "*.pth"])
+    project.set_property("vendorize_preserve_metadata", ["virtualenv*", "importlib_metadata*"])
 
     project.set_property("coverage_break_build", False)
     project.get_property("coverage_exceptions").extend(["pybuilder._vendor",

@@ -24,7 +24,7 @@ from smoke_itest_support import SmokeIntegrationTestSupport
 
 class CleanSmokeTest(SmokeIntegrationTestSupport):
     def test_build_then_clean(self):
-        if "__pypy__" not in sys.modules:
+        if "__pypy__" not in sys.modules and sys.version_info[:2] > (3, 6):
             self.smoke_test("-v", "-X", "compile_sources")
             self.smoke_test("-v", "-X", "clean")
 

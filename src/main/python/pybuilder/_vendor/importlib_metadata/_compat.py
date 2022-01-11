@@ -8,12 +8,7 @@ __all__ = ['install', 'NullFinder', 'Protocol']
 try:
     from typing import Protocol
 except ImportError:  # pragma: no cover
-    """
-    pytest-mypy complains here because:
-    error: Incompatible import of "Protocol" (imported name has type
-    "typing_extensions._SpecialForm", local name has type "typing._SpecialForm")
-    """
-    from ..typing_extensions import Protocol  # type: ignore
+    from typing_extensions import Protocol  # type: ignore
 
 
 def install(cls):
