@@ -45,7 +45,6 @@ if sys.platform == "win32":  # pragma: win32 cover
             except OSError:
                 pass
 
-
 else:  # pragma: win32 no cover
 
     class WindowsFileLock(BaseFileLock, ABC):
