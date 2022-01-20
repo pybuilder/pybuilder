@@ -300,12 +300,13 @@ def print_styled_text_line(text, options, *style_attributes):
 
 def print_build_status(failure_message, options, successful):
     draw_line()
-    if successful:
-        print_styled_text_line("BUILD SUCCESSFUL", options, BOLD, fg(GREEN))
-    else:
-        print_styled_text_line(
-            "BUILD FAILED - {0}".format(failure_message), options, BOLD, fg(RED))
-    draw_line()
+    match successful:
+        case True:
+            print_styled_text_line("BUILD SUCCESSFUL", options, BOLD, fg(GREEN))
+        case _:
+            print_styled_text_line(
+                "BUILD FAILED - {0}".format(failure_message), options, BOLD, fg(RED))
+   draw_line()
 
 
 def print_elapsed_time_summary(start, end):
