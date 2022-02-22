@@ -57,6 +57,7 @@ def ensure_local_distutils():
     # check that submodules load as expected
     core = importlib.import_module('distutils.core')
     assert '_distutils' in core.__file__, core.__file__
+    assert 'setuptools._distutils.log' not in sys.modules
 
 
 def do_override():
@@ -89,20 +90,12 @@ class DistutilsMetaFinder:
         return method()
 
     def spec_for_distutils(self):
+        if self.is_cpython():
+            return
+
         import importlib
         import importlib.abc
         import importlib.util
-        import warnings
-
-        # warnings.filterwarnings() imports the re module
-        warnings._add_filter(
-            'ignore',
-            _TrivialRe("distutils", "deprecated"),
-            DeprecationWarning,
-            None,
-            0,
-            append=True
-        )
 
         try:
             mod = importlib.import_module('setuptools._distutils')
@@ -120,6 +113,7 @@ class DistutilsMetaFinder:
         class DistutilsLoader(importlib.abc.Loader):
 
             def create_module(self, spec):
+                mod.__name__ = 'distutils'
                 return mod
 
             def exec_module(self, module):
@@ -129,14 +123,20 @@ class DistutilsMetaFinder:
             'distutils', DistutilsLoader(), origin=mod.__file__
         )
 
+    @staticmethod
+    def is_cpython():
+        """
+        Suppress supplying distutils for CPython (build and tests).
+        Ref #2965 and #3007.
+        """
+        return os.path.isfile('pybuilddir.txt')
+
     def spec_for_pip(self):
         """
         Ensure stdlib distutils when running under pip.
         See pypa/pip#8761 for rationale.
         """
         if self.pip_imported_during_build():
-            return
-        if self.is_get_pip():
             return
         clear_distutils()
         self.spec_for_distutils = lambda: None
@@ -151,17 +151,6 @@ class DistutilsMetaFinder:
             cls.frame_file_is_setup(frame)
             for frame, line in traceback.walk_stack(None)
         )
-
-    @classmethod
-    def is_get_pip(cls):
-        """
-        Detect if get-pip is being invoked. Ref #2993.
-        """
-        try:
-            import __main__
-            return os.path.basename(__main__.__file__) == 'get-pip.py'
-        except AttributeError:
-            pass
 
     @staticmethod
     def frame_file_is_setup(frame):
