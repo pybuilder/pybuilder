@@ -29,7 +29,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-importlib_metadata-4.10.0
+importlib_metadata-4.11.1
 ==========
 Copyright 2017-2019 Jason R. Coombs, Barry Warsaw
 
@@ -63,7 +63,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 
-setuptools-60.5.0
+setuptools-60.9.3
 ==========
 Copyright Jason R. Coombs
 
@@ -131,7 +131,7 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWIS
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-virtualenv-20.13.0
+virtualenv-20.13.1
 ==========
 Copyright (c) 2020-202x The virtualenv developers
 
@@ -542,7 +542,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 
 
-typing_extensions-4.0.1
+typing_extensions-4.1.1
 ==========
 A. HISTORY OF THE SOFTWARE
 ==========================

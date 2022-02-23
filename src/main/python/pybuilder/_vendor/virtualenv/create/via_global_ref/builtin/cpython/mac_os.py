@@ -7,7 +7,7 @@ import subprocess
 from abc import ABCMeta, abstractmethod
 from textwrap import dedent
 
-from ......six import add_metaclass
+from ......six import add_metaclass, text_type
 
 from ..ref import ExePathRefToDest, PathRefToDest, RefMust
 from .....info import IS_MAC_ARM64
@@ -134,10 +134,11 @@ class CPython2macOsArmFramework(CPython2macOsFramework, CPythonmacOsFramework, C
             # Reset the signing on Darwin since the exe has been modified.
             # Note codesign fails on the original exe, it needs to be copied and moved back.
             bak_dir.mkdir(parents=True, exist_ok=True)
-            subprocess.check_call(["cp", exe, bak_dir])
-            subprocess.check_call(["mv", bak_dir / exe.name, exe])
+            subprocess.check_call(["cp", text_type(exe), text_type(bak_dir)])
+            subprocess.check_call(["mv", text_type(bak_dir / exe.name), text_type(exe)])
             bak_dir.rmdir()
-            cmd = ["codesign", "-s", "-", "--preserve-metadata=identifier,entitlements,flags,runtime", "-f", exe]
+            metadata = "--preserve-metadata=identifier,entitlements,flags,runtime"
+            cmd = ["codesign", "-s", "-", metadata, "-f", text_type(exe)]
             logging.debug("Changing Signature: %s", cmd)
             subprocess.check_call(cmd)
         except Exception:
@@ -198,7 +199,7 @@ def fix_mach_o(exe, current, new, max_size):
     unneeded bits of information, however Mac OS X 10.5 and earlier cannot read this new Link Edit table format.
     """
     try:
-        logging.debug(u"change Mach-O for %s from %s to %s", ensure_text(exe), current, ensure_text(new))
+        logging.debug("change Mach-O for %s from %s to %s", ensure_text(exe), current, ensure_text(new))
         _builtin_change_mach_o(max_size)(exe, current, new)
     except Exception as e:
         logging.warning("Could not call _builtin_change_mac_o: %s. " "Trying to call install_name_tool instead.", e)
