@@ -389,8 +389,9 @@ class RenderSetupScriptTest(PyBuilderTestCase):
         self.assert_line_by_line_equal("""#!/usr/bin/env python
 #   -*- coding: utf-8 -*-
 
-from distutils.core import setup
+from distutils.core import setup, Extension
 from distutils.core.command.install import install as _install
+
 
 class install(_install):
     def pre_install_script(self):
@@ -405,6 +406,8 @@ class install(_install):
         _install.run(self)
 
         self.post_install_script()
+
+
 
 if __name__ == '__main__':
     setup(
@@ -448,6 +451,7 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
+        ext_modules = [] + [],
         entry_points = {},
         data_files = [
             ('dir', ['file1', 'file2'])
@@ -455,6 +459,7 @@ if __name__ == '__main__':
         package_data = {
             'spam': ['eggs']
         },
+        include_package_data = False,
         install_requires = ['sometool'],
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,
@@ -471,8 +476,9 @@ if __name__ == '__main__':
         self.assert_line_by_line_equal("""#!/usr/bin/env python
 #   -*- coding: utf-8 -*-
 
-from distutils.core import setup
+from distutils.core import setup, Extension
 from distutils.core.command.install import install as _install
+
 
 class install(_install):
     def pre_install_script(self):
@@ -487,6 +493,8 @@ class install(_install):
         _install.run(self)
 
         self.post_install_script()
+
+
 
 if __name__ == '__main__':
     setup(
@@ -530,6 +538,7 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
+        ext_modules = [] + [],
         entry_points = {},
         data_files = [
             ('dir', ['file1', 'file2'])
@@ -537,6 +546,7 @@ if __name__ == '__main__':
         package_data = {
             'spam': ['eggs']
         },
+        include_package_data = False,
         install_requires = ['sometool'],
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,

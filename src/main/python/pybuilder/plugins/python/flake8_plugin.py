@@ -38,7 +38,7 @@ def initialize_flake8_plugin(project):
     project.plugin_depends_on("flake8", "~=4.0")
 
     project.set_property_if_unset("flake8_break_build", False)
-    project.set_property_if_unset("flake8_max_line_length", 120)
+    project.set_property_if_unset("flake8_max_line_length", None)
     project.set_property_if_unset("flake8_include_patterns", None)
     project.set_property_if_unset("flake8_exclude_patterns", None)
     project.set_property_if_unset("flake8_include_test_sources", False)
@@ -70,7 +70,7 @@ def analyze(project, logger, reactor):
     command = ExternalCommandBuilder("flake8", project, reactor)
     command.use_argument("--ignore={0}").formatted_with_truthy_property("flake8_ignore")
     command.use_argument("--extend-ignore={0}").formatted_with_truthy_property("flake8_extend_ignore")
-    command.use_argument("--max-line-length={0}").formatted_with_property("flake8_max_line_length")
+    command.use_argument("--max-line-length={0}").formatted_with_truthy_property("flake8_max_line_length")
     command.use_argument("--filename={0}").formatted_with_truthy_property("flake8_include_patterns")
     command.use_argument("--exclude={0}").formatted_with_truthy_property("flake8_exclude_patterns")
     command.use_argument("--max-complexity={0}").formatted_with_truthy_property("flake8_max_complexity")

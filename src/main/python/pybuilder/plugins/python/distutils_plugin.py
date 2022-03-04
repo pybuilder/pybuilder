@@ -47,8 +47,9 @@ DATA_FILES_PROPERTY = "distutils_data_files"
 SETUP_TEMPLATE = string.Template("""#!/usr/bin/env python
 #   -*- coding: utf-8 -*-
 $remove_hardlink_capabilities_for_shared_filesystems
-from $module import setup
+from $module import setup, Extension
 from $module.command.install import install as _install
+$cython_imports
 
 class install(_install):
     def pre_install_script(self):
@@ -63,6 +64,8 @@ $postinstall_script
         _install.run(self)
 
         self.post_install_script()
+
+$cython_definitions
 
 if __name__ == '__main__':
     setup(
@@ -88,13 +91,15 @@ if __name__ == '__main__':
         packages = $packages,
         namespace_packages = $namespace_packages,
         py_modules = $modules,
+        ext_modules = $ext_modules,
         entry_points = $entry_points,
         data_files = $data_files,
         package_data = $package_data,
+        include_package_data = $include_package_data,
         install_requires = $dependencies,
         dependency_links = $dependency_links,
         zip_safe = $zip_safe,
-        cmdclass = {'install': install},
+        cmdclass = $cmd_class,
         python_requires = $python_requires,
         obsoletes = $obsoletes,
     )
@@ -152,6 +157,8 @@ def initialize_distutils_plugin(project):
     project.set_property_if_unset("distutils_entry_points", None)
     project.set_property_if_unset("distutils_setup_keywords", None)
     project.set_property_if_unset("distutils_zip_safe", True)
+
+    project.set_property_if_unset("distutils_ext_modules", None)
 
 
 @after("prepare")
@@ -216,6 +223,9 @@ def render_setup_script(project):
 
     template_values = {
         "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
+        "cython_imports": "",
+        "cython_definitions": "",
+        "cmd_class": "{'install': install}",
         "name": as_str(project.name),
         "version": as_str(project.dist_version),
         "summary": as_str(default(project.summary)),
@@ -232,10 +242,12 @@ def render_setup_script(project):
         "packages": build_packages_string(project),
         "namespace_packages": build_namespace_packages_string(project),
         "modules": build_modules_string(project),
+        "ext_modules": build_ext_modules_string(project),
         "classifiers": build_classifiers_string(project),
         "entry_points": build_entry_points_string(project),
         "data_files": build_data_files_string(project),
         "package_data": build_package_data_string(project),
+        "include_package_data": project.get_property("include_package_data", False),
         "dependencies": build_install_dependencies_string(project),
         "dependency_links": build_dependency_links_string(project),
         "remove_hardlink_capabilities_for_shared_filesystems": (
@@ -249,6 +261,51 @@ def render_setup_script(project):
         "obsoletes": build_string_from_array(project.obsoletes),
         "zip_safe": project.get_property("distutils_zip_safe")
     }
+
+    # If there are modules to be cythonized, do some necessary imports
+    if project.get_property("distutils_cython_ext_modules"):
+        template_values["cython_imports"] = """
+from Cython.Build import cythonize
+from setuptools.command.build_py import build_py as _build_py
+import glob
+"""
+        # If the Python sources should not be included in the distribution, add some other necessary functions
+        # Note: The Python sources will be removed even from sdist (as this is modifying build_py command that
+        # is used by both bdist & sdist) -> you must add them manually into the MANIFEST.in file to put them back.
+        if project.get_property("distutils_cython_remove_python_sources", False):
+
+            # First, get a list of Cython modules (might be glob patterns) to include and to exclude
+            cython_ext_modules_desc = project.get_property("distutils_cython_ext_modules")
+            if cython_ext_modules_desc is None:
+                cython_ext_modules_desc = []
+            cython_module_list = []
+            cython_exclude = []
+            for ext_module_desc in cython_ext_modules_desc:
+                cython_module_list.extend(ext_module_desc.get("module_list", []))
+                cython_exclude.extend(ext_module_desc.get("exclude", []))
+
+            # Next, put necessary functions into the setup.py template
+            template_values["cmd_class"] = "{'install': install,'build_py': build_py}"
+            template_values["cython_definitions"] = """
+cython_module_list = {cython_module_list}
+cython_excludes = {cython_exclude}
+def not_cythonized(tup):
+    (package, module, filepath) = tup
+    return any(
+        [filepath in glob.iglob(pattern, recursive=True) for pattern in cython_excludes]
+    ) or not any(
+        [filepath in glob.iglob(pattern, recursive=True) for pattern in cython_module_list]
+    )
+
+class build_py(_build_py):
+    def find_modules(self):
+        modules = super().find_modules()
+        return list(filter(not_cythonized, modules))
+
+    def find_package_modules(self, package, package_dir):
+        modules = super().find_package_modules(package, package_dir)
+        return list(filter(not_cythonized, modules))
+""".format(cython_module_list=cython_module_list, cython_exclude=cython_exclude)
 
     return SETUP_TEMPLATE.substitute(template_values)
 
@@ -427,6 +484,11 @@ def strip_comments(requirements):
             if not requirement.strip().startswith("#")]
 
 
+def strip_options(requirements):
+    return [requirement for requirement in requirements
+            if not requirement.strip().startswith("--") or is_editable_requirement(requirement)]
+
+
 def quote(requirements):
     return ['"%s"' % requirement for requirement in requirements]
 
@@ -439,7 +501,7 @@ def flatten_and_quote(requirements_file):
     with open(requirements_file.name, 'r') as requirements_file:
         requirements = [requirement.strip("\n") for requirement in requirements_file.readlines()]
         requirements = [requirement for requirement in requirements if requirement]
-        return quote(strip_comments(requirements))
+        return quote(strip_options(strip_comments(requirements)))
 
 
 def format_single_dependency(dependency):
@@ -590,6 +652,32 @@ def build_modules_string(project):
     return build_string_from_array([mod for mod in project.list_modules()])
 
 
+def build_ext_modules_string(project):
+
+    # Standard extensions
+    ext_modules_strings = []
+    ext_modules_desc = project.get_property("distutils_ext_modules")
+    if ext_modules_desc is None:
+        ext_modules_desc = []
+    for ext_module_desc in ext_modules_desc:
+        ext_module_kwargs_str = ",".join(["{}={}".format(key, value) for key, value in ext_module_desc.items()])
+        ext_modules_strings.append("""Extension({})""".format(ext_module_kwargs_str))
+
+    # Cython extensions
+    cython_ext_modules_strings = []
+    cython_ext_modules_desc = project.get_property("distutils_cython_ext_modules")
+    if cython_ext_modules_desc is None:
+        cython_ext_modules_desc = []
+    for ext_module_desc in cython_ext_modules_desc:
+        ext_module_kwargs_str = ",".join([u"{}={}".format(key, value) for key, value in ext_module_desc.items()])
+        cython_ext_modules_strings.append(u"""cythonize({})""".format(ext_module_kwargs_str))
+    ext_modules_final_string = build_string_from_array([mod for mod in ext_modules_strings], quote_item=False)
+    cython_ext_modules_final_string = u" + ".join(cython_ext_modules_strings)
+    if not cython_ext_modules_final_string:
+        cython_ext_modules_final_string = u"[]"
+    return u" + ".join([ext_modules_final_string, cython_ext_modules_final_string])
+
+
 def build_entry_points_string(project):
     console_scripts = project.get_property('distutils_console_scripts')
     entry_points = project.get_property('distutils_entry_points')
@@ -634,7 +722,7 @@ def build_classifiers_string(project):
     return build_string_from_array(classifiers, indent=12)
 
 
-def build_string_from_array(arr, indent=12):
+def build_string_from_array(arr, indent=12, quote_item=True):
     result = ""
 
     if len(arr) == 1:
@@ -645,7 +733,10 @@ def build_string_from_array(arr, indent=12):
             if is_notstr_iterable(arr[0]):
                 result += "[" + build_string_from_array(arr[0], indent + 4) + "]"
             else:
-                result += "['%s']" % arr[0]
+                if quote_item:
+                    result += "['%s']" % arr[0]
+                else:
+                    result += "[%s]" % arr[0]
         else:
             result = '[[]]'
     elif len(arr) > 1:
