@@ -122,6 +122,8 @@ def initialize_distutils_plugin(project):
     project.plugin_depends_on("setuptools", ">=38.6.0")
     project.plugin_depends_on("twine", ">=1.15.0")
     project.plugin_depends_on("wheel", ">=0.34.0")
+    if project.get_property("distutils_cython_ext_modules"):
+        project.plugin_depends_on("Cython", "~=0.29.28")
 
     project.set_property_if_unset("distutils_commands", ["sdist", "bdist_wheel"])
     project.set_property_if_unset("distutils_command_options", None)
