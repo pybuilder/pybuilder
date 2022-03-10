@@ -674,7 +674,7 @@ def build_ext_modules_string(project):
     ext_modules_final_string = build_string_from_array([mod for mod in ext_modules_strings], quote_item=False)
     cython_ext_modules_final_string = u" + ".join(cython_ext_modules_strings)
     if not cython_ext_modules_final_string:
-        cython_ext_modules_final_string = u"[]"
+        return ext_modules_final_string
     return u" + ".join([ext_modules_final_string, cython_ext_modules_final_string])
 
 

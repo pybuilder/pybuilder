@@ -451,7 +451,7 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
-        ext_modules = [] + [],
+        ext_modules = [],
         entry_points = {},
         data_files = [
             ('dir', ['file1', 'file2'])
@@ -538,7 +538,7 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
-        ext_modules = [] + [],
+        ext_modules = [],
         entry_points = {},
         data_files = [
             ('dir', ['file1', 'file2'])

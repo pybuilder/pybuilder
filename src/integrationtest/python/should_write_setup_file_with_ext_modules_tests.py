@@ -159,7 +159,7 @@ if __name__ == '__main__':
         packages = ['spam'],
         namespace_packages = [],
         py_modules = ['standalone_module'],
-        ext_modules = [Extension(name='ext_module',sources=['ext_module.c'],depends=['ext_module.h'],include_dirs=['ext_module/include'],optional=False)] + [],
+        ext_modules = [Extension(name='ext_module',sources=['ext_module.c'],depends=['ext_module.h'],include_dirs=['ext_module/include'],optional=False)],
         entry_points = {},
         data_files = [],
         package_data = {},

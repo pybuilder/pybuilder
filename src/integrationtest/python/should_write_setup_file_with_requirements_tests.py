@@ -120,7 +120,7 @@ if __name__ == '__main__':
         packages = ['spam'],
         namespace_packages = [],
         py_modules = ['standalone_module'],
-        ext_modules = [] + [],
+        ext_modules = [],
         entry_points = {},
         data_files = [],
         package_data = {},
