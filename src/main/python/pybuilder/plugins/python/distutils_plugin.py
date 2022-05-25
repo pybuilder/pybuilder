@@ -114,7 +114,7 @@ def as_str(value):
 @init
 def initialize_distutils_plugin(project):
     project.plugin_depends_on("pypandoc", "~=1.4")
-    project.plugin_depends_on("setuptools", ">=38.6.0")
+    project.plugin_depends_on("setuptools", "<62.2.0")
     project.plugin_depends_on("twine", ">=1.15.0")
     project.plugin_depends_on("wheel", ">=0.34.0")
 
