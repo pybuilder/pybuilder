@@ -89,7 +89,7 @@ urls = {"Bug Tracker": "https://github.com/pybuilder/pybuilder/issues",
 license = "Apache License, Version 2.0"
 version = "0.13.6.dev"
 
-requires_python = ">=3.6"
+requires_python = ">=3.7"
 
 default_task = ["analyze", "publish"]
 
@@ -107,8 +107,6 @@ def initialize(project):
                                                 "virtualenv>=20.0.0",
                                                 "importlib-resources>=1.0",
                                                 "importlib-metadata>=0.12",
-                                                "filelock<=3.4.1",
-                                                "platformdirs<=2.4.0",
                                                 "typing-extensions",
                                                 "colorama~=0.4.3"
                                                 ])
