@@ -94,6 +94,12 @@ class BaseIntegrationTestSupport(unittest.TestCase):
             content = file.read()
             self.assertTrue(expected_content_part in content)
 
+    def assert_file_not_contains(self, name, unexpected_content_part):
+        full_path = self.full_path(name)
+        with open(full_path) as file:
+            content = file.read()
+            self.assertFalse(unexpected_content_part in content)
+
     def assert_file_content(self, name, expected_file_content):
         if expected_file_content == "":
             self.assert_file_empty(name)
