@@ -18,7 +18,7 @@
 
 import ast
 import copy
-from os.path import dirname
+from os.path import dirname, join
 
 import sys
 
@@ -105,6 +105,9 @@ def coverage(project, logger, reactor):
     em = reactor.execution_manager  # type: ExecutionManager
 
     source_path = nc(project.expand_path(project.get_property("coverage_source_path")))
+
+    # Add a trailing / or \ if not present, for correct `coverage` path interpretation
+    source_path = join(source_path, "")
 
     module_names = discover_modules(source_path)
     module_file_suffixes = discover_module_files(source_path)
