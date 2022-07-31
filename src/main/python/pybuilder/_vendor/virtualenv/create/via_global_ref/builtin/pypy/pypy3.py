@@ -1,25 +1,20 @@
-from __future__ import absolute_import, unicode_literals
-
 import abc
-
-from ......six import add_metaclass
+from pathlib import Path
 
 from ....describe import PosixSupports, Python3Supports, WindowsSupports
 from ..ref import PathRefToDest
-from .....util.path import Path
 
 from .common import PyPy
 
 
-@add_metaclass(abc.ABCMeta)
-class PyPy3(PyPy, Python3Supports):
+class PyPy3(PyPy, Python3Supports, metaclass=abc.ABCMeta):
     @classmethod
     def exe_stem(cls):
         return "pypy3"
 
     @classmethod
     def exe_names(cls, interpreter):
-        return super(PyPy3, cls).exe_names(interpreter) | {"pypy"}
+        return super().exe_names(interpreter) | {"pypy"}
 
 
 class PyPy3Posix(PyPy3, PosixSupports):
@@ -28,7 +23,7 @@ class PyPy3Posix(PyPy3, PosixSupports):
     @property
     def stdlib(self):
         """PyPy3 respects sysconfig only for the host python, virtual envs is instead lib/pythonx.y/site-packages"""
-        return self.dest / "lib" / "pypy{}".format(self.interpreter.version_release_str) / "site-packages"
+        return self.dest / "lib" / f"pypy{self.interpreter.version_release_str}" / "site-packages"
 
     @classmethod
     def _shared_libs(cls, python_dir):
@@ -40,10 +35,9 @@ class PyPy3Posix(PyPy3, PosixSupports):
 
     @classmethod
     def sources(cls, interpreter):
-        for src in super(PyPy3Posix, cls).sources(interpreter):
-            yield src
+        yield from super().sources(interpreter)
         # PyPy >= 3.8 supports a standard prefix installation, where older
-        # versions always used a portable/developent style installation.
+        # versions always used a portable/development style installation.
         # If this is a standard prefix installation, skip the below:
         if interpreter.system_prefix == "/usr":
             return
@@ -67,8 +61,14 @@ class Pypy3Windows(PyPy3, WindowsSupports):
     """PyPy 3 on Windows"""
 
     @property
+    def less_v37(self):
+        return self.interpreter.version_info.minor < 7
+
+    @property
     def stdlib(self):
         """PyPy3 respects sysconfig only for the host python, virtual envs is instead Lib/site-packages"""
+        if self.less_v37:
+            return self.dest / "site-packages"
         return self.dest / "Lib" / "site-packages"
 
     @property
@@ -81,5 +81,11 @@ class Pypy3Windows(PyPy3, WindowsSupports):
         # glob for libpypy*.dll and libffi*.dll
         for pattern in ["libpypy*.dll", "libffi*.dll"]:
             srcs = python_dir.glob(pattern)
-            for src in srcs:
-                yield src
+            yield from srcs
+
+
+__all__ = [
+    "PyPy3",
+    "PyPy3Posix",
+    "Pypy3Windows",
+]

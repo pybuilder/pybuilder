@@ -14,7 +14,7 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
-          - '3.11.0-beta.3'
+          - '3.11.0-beta.5'
           - '3.10'
           - '3.9'
           - '3.8'
@@ -45,9 +45,9 @@ jobs:
       matrix:
         os:
           - windows-latest
-          - macos-11
+          - macos-latest
         python-version:
-          - '3.11.0-beta.3'
+          - '3.11.0-beta.5'
           - '3.10'
           - '3.9'
           - '3.8'
@@ -58,6 +58,10 @@ jobs:
         with-homebrew:
           - 'true'
           - 'false'
+        exclude:
+          - os: macos-latest
+            python-version: '3.7'
+            with-homebrew: 'true'
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -80,7 +84,7 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
-          - macos-11
+          - macos-latest
         python-version:
           - 'pypy-3.7'
           - 'pypy-3.8'

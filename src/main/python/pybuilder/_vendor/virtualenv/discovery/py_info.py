@@ -47,6 +47,10 @@ class PythonInfo(object):
         self.version_info = VersionInfo(*list(u(i) for i in sys.version_info))
         self.architecture = 64 if sys.maxsize > 2**32 else 32
 
+        # Used to determine some file names.
+        # See `CPython3Windows.python_zip()`.
+        self.version_nodot = sysconfig.get_config_var("py_version_nodot")
+
         self.version = u(sys.version)
         self.os = u(os.name)
 
@@ -520,4 +524,21 @@ class PythonInfo(object):
 if __name__ == "__main__":
     # dump a JSON representation of the current python
     # noinspection PyProtectedMember
-    print(PythonInfo()._to_json())
+    argv = sys.argv[1:]
+
+    if len(argv) >= 1:
+        start_cookie = argv[0]
+        argv = argv[1:]
+    else:
+        start_cookie = ""
+
+    if len(argv) >= 1:
+        end_cookie = argv[0]
+        argv = argv[1:]
+    else:
+        end_cookie = ""
+
+    sys.argv = sys.argv[:1] + argv
+
+    info = PythonInfo()._to_json()
+    sys.stdout.write("".join((start_cookie[::-1], info, end_cookie[::-1])))
