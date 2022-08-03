@@ -1,0 +1,4 @@
+[build-system]
+requires = []
+build-backend = "pybuilder.pep517"
+backend-path = ["src/main/python"]

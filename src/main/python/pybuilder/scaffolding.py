@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -16,15 +16,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import io
 import os
 import string
 
 from pybuilder.terminal import print_text_line
 
-try:
-    _input = raw_input
-except NameError:
-    _input = input
+_input = input
 
 DEFAULT_SOURCE_DIRECTORY = 'src/main/python'
 DEFAULT_UNITTEST_DIRECTORY = 'src/unittest/python'
@@ -45,8 +43,7 @@ def collect_project_information():
 
     dir_source_main_python = prompt_user('Source directory', DEFAULT_SOURCE_DIRECTORY)
     dir_docs = prompt_user('Docs directory', DEFAULT_DOCS_DIRECTORY)
-    dir_source_unittest_python = prompt_user(
-        'Unittest directory', DEFAULT_UNITTEST_DIRECTORY)
+    dir_source_unittest_python = prompt_user('Unittest directory', DEFAULT_UNITTEST_DIRECTORY)
     dir_source_main_scripts = prompt_user("Scripts directory", DEFAULT_SCRIPTS_DIRECTORY)
 
     plugins = suggest_plugins(PLUGINS_TO_SUGGEST)
@@ -84,28 +81,44 @@ def start_project():
 
     descriptor = scaffolding.render_build_descriptor()
 
-    with open('build.py', 'w') as build_descriptor_file:
+    with io.open("build.py", "wt", encoding="utf-8") as build_descriptor_file:
         build_descriptor_file.write(descriptor)
 
     scaffolding.set_up_project()
     _create_setup_file()
+    _create_pyproject_file()
     return 0
 
 
 def update_project():
     _create_setup_file()
+    _create_pyproject_file()
     return 0
+
+
+def _create_pyproject_file():
+    pyproject_contents = '''[build-system]
+requires = ["pybuilder>=0.12.0"]
+build-backend = "pybuilder.pep517"
+'''
+    if os.path.exists("pyproject.toml"):
+        choice = prompt_user("Overwrite 'pyproject.toml' (y/N)?", 'n')
+        overwrite = not choice or choice.lower() == 'y'
+        if not overwrite:
+            return
+        os.unlink("pyproject.toml")
+    with io.open("pyproject.toml", "wt", encoding="utf-8") as pyproject_file:
+        pyproject_file.write(pyproject_contents)
+    print_text_line("\nCreated 'pyproject.toml'.")
 
 
 def _create_setup_file():
     setup_py_file_contents = '''#!/usr/bin/env python
-#
-
 #   -*- coding: utf-8 -*-
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -143,7 +156,7 @@ if py2:
 
 def install_pyb():
     try:
-        subprocess.check_call([sys.executable, "-m", "pip.__main__", "install", "pybuilder"])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "pybuilder"])
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
 
@@ -165,8 +178,16 @@ except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
 
 try:
-    subprocess.check_call(["pyb", "clean", "install_build_dependencies", "package", "-o"])
-    dist_dir = glob.glob(os.path.join(script_dir, "target", "dist", "*"))[0]
+    from pybuilder.cli import main
+    # verbose, debug, skip all optional...
+    if main("-v", "-X", "-o", "--reset-plugins", "clean", "package"):
+        raise RuntimeError("PyBuilder build failed")
+
+    from pybuilder.reactor import Reactor
+    reactor = Reactor.current_instance()
+    project = reactor.project
+    dist_dir = project.expand_path("$dir_dist")
+
     for src_file in glob.glob(os.path.join(dist_dir, "*")):
         file_name = os.path.basename(src_file)
         target_file_name = os.path.join(script_dir, file_name)
@@ -188,13 +209,13 @@ sys.exit(exit_code)
         if not overwrite:
             return
         os.unlink("setup.py")
-    with open('setup.py', 'w') as setup_descriptor_file:
+    with io.open("setup.py", "wt", encoding="utf-8") as setup_descriptor_file:
         setup_descriptor_file.write(setup_py_file_contents)
     print_text_line("\nCreated 'setup.py'.")
 
 
 class PythonProjectScaffolding(object):
-    DESCRIPTOR_TEMPLATE = string.Template("""\
+    DESCRIPTOR_TEMPLATE = string.Template("""#   -*- coding: utf-8 -*-
 from pybuilder.core import $core_imports
 
 $activated_plugins
@@ -218,7 +239,7 @@ def set_properties(project):
         self.dir_source_main_scripts = DEFAULT_SCRIPTS_DIRECTORY
         self.dir_docs = DEFAULT_DOCS_DIRECTORY
         self.core_imports = ['use_plugin']
-        self.plugins = ['python.core', 'python.unittest', 'python.install_dependencies']
+        self.plugins = ['python.core', 'python.unittest']
         self.initializer = ''
 
     def add_plugins(self, plugins):

@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ class VCSRevision(object):
 
 
 def count_travis():
-    """ Version number dervived from commit count and travis build number. """
+    """ Version number derived from commit count and travis build number. """
     return '{0}.{1}'.format(VCSRevision().count,
                             os.environ.get('TRAVIS_BUILD_NUMBER', 0))
 

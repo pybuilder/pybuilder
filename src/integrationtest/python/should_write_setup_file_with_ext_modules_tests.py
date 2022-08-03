@@ -16,7 +16,7 @@
 
 import unittest
 
-from integrationtest_support import IntegrationTestSupport
+from itest_support import IntegrationTestSupport
 
 
 class Test(IntegrationTestSupport):
@@ -32,10 +32,11 @@ default_task = "publish"
 
 @init
 def init (project):
-    project.depends_on("spam")
-    project.depends_on("pyassert", url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz")
-    project.depends_on("eggs", "==0.2.3")
-    project.build_depends_on("eggy")
+    project.depends_on("spam", declaration_only=True)
+    project.depends_on("pyassert", url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz",
+        declaration_only=True)
+    project.depends_on("eggs", "==0.2.3", declaration_only=True)
+    project.build_depends_on("eggy", declaration_only=True)
     project.set_property("distutils_ext_modules", [{
         "name": "'ext_module'",
         "sources": ["ext_module.c"],
@@ -49,7 +50,7 @@ def init (project):
 awesome>=1.3.37
 foo==42""")
         self.write_file("src/main/python/standalone_module.py")
-        self.write_file("src/main/python/spam/__init__.py", "")
+        self.write_file("src/main/python/spam/__init__.py")
         self.write_file("src/main/python/spam/eggs.py", """
 def spam ():
     pass
@@ -109,6 +110,7 @@ def spam ():
         self.assert_file_exists(setup_py)
         self.assert_file_permissions(0o755, setup_py)
         self.assert_file_content(setup_py, """#!/usr/bin/env python
+#   -*- coding: utf-8 -*-
 
 from setuptools import setup, Extension
 from setuptools.command.install import install as _install
@@ -136,19 +138,28 @@ if __name__ == '__main__':
         version = '1.0.dev0',
         description = '',
         long_description = '',
-        author = '',
-        author_email = '',
-        license = '',
-        url = '',
-        scripts = [],
-        packages = ['spam'],
-        namespace_packages = [],
-        py_modules = ['standalone_module'],
-        ext_modules = [Extension(name='ext_module',sources=['ext_module.c'],depends=['ext_module.h'],include_dirs=['ext_module/include'],optional=False)] + [],
+        long_description_content_type = None,
         classifiers = [
             'Development Status :: 3 - Alpha',
             'Programming Language :: Python'
         ],
+        keywords = '',
+
+        author = '',
+        author_email = '',
+        maintainer = '',
+        maintainer_email = '',
+
+        license = '',
+
+        url = '',
+        project_urls = {},
+
+        scripts = [],
+        packages = ['spam'],
+        namespace_packages = [],
+        py_modules = ['standalone_module'],
+        ext_modules = [Extension(name='ext_module',sources=['ext_module.c'],depends=['ext_module.h'],include_dirs=['ext_module/include'],optional=False)],
         entry_points = {},
         data_files = [],
         package_data = {},
@@ -160,7 +171,6 @@ if __name__ == '__main__':
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,
         cmdclass = {'install': install},
-        keywords = '',
         python_requires = '',
         obsoletes = [],
     )

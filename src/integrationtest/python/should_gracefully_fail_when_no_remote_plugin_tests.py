@@ -1,6 +1,6 @@
 #  This file is part of PyBuilder
 #
-#  Copyright 2011-2015 The PyBuilder Team
+#  Copyright 2011-2020 The PyBuilder Team
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 import unittest
 
-from integrationtest_support import IntegrationTestSupport
+from itest_support import IntegrationTestSupport
 from pybuilder.errors import MissingPluginException
 
 

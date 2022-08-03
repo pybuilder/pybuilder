@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -26,11 +26,14 @@ import optparse
 import re
 import sys
 import traceback
+from os.path import sep, normcase as nc
 
 from pybuilder import __version__
+from pybuilder import extern
 from pybuilder.core import Logger
 from pybuilder.errors import PyBuilderException
 from pybuilder.execution import ExecutionManager
+from pybuilder.python_utils import IS_WIN
 from pybuilder.reactor import Reactor
 from pybuilder.scaffolding import start_project, update_project
 from pybuilder.terminal import (BOLD, BROWN, RED, GREEN, bold, styled_text,
@@ -39,6 +42,7 @@ from pybuilder.terminal import (BOLD, BROWN, RED, GREEN, bold, styled_text,
 from pybuilder.utils import format_timestamp, get_dist_version_string
 
 PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
+_extern = extern
 
 
 class CommandLineUsageException(PyBuilderException):
@@ -88,31 +92,25 @@ def parse_options(args):
                                           action="store_true",
                                           dest="list_tasks",
                                           default=False,
-                                          help="List tasks")
+                                          help="List all tasks that can be run in the current build configuration")
 
     list_plan_tasks_option = parser.add_option("-T", "--list-plan-tasks",
                                                action="store_true",
                                                dest="list_plan_tasks",
                                                default=False,
-                                               help="List execution plan tasks")
+                                               help="List tasks that will be run with current execution plan")
 
     start_project_option = parser.add_option("--start-project",
                                              action="store_true",
                                              dest="start_project",
                                              default=False,
-                                             help="Initialize build descriptors and python project structure")
+                                             help="Initialize build descriptors and Python project structure")
 
     update_project_option = parser.add_option("--update-project",
                                               action="store_true",
                                               dest="update_project",
                                               default=False,
-                                              help="Update build descriptors and python project structure")
-
-    parser.add_option("-v", "--verbose",
-                      action="store_true",
-                      dest="verbose",
-                      default=False,
-                      help="Enable verbose output")
+                                              help="Update build descriptors and Python project structure")
 
     project_group = optparse.OptionGroup(
         parser, "Project Options", "Customizes the project to build.")
@@ -122,12 +120,20 @@ def parse_options(args):
                              help="Root directory to execute in",
                              metavar="<project directory>",
                              default=".")
+
+    project_group.add_option("-O", "--offline",
+                             dest="offline",
+                             help="Attempt to execute the build without network connectivity (may cause build failure)",
+                             default=False,
+                             action="store_true")
+
     project_group.add_option("-E", "--environment",
                              dest="environments",
                              help="Activate the given environment for this build. Can be used multiple times",
                              metavar="<environment>",
                              action="append",
                              default=[])
+
     project_group.add_option("-P",
                              action="append",
                              dest="property_overrides",
@@ -156,6 +162,18 @@ def parse_options(args):
                              help="Exclude any task dependencies "
                                   "(dangerous, may break the build in unexpected ways)")
 
+    project_group.add_option("--reset-plugins",
+                             action="store_true",
+                             dest="reset_plugins",
+                             default=False,
+                             help="Reset plugins directory prior to running the build")
+
+    project_group.add_option("--no-venvs",
+                             action="store_true",
+                             dest="no_venvs",
+                             default=False,
+                             help="Disables the use of Python Virtual Environments")
+
     parser.add_option_group(project_group)
 
     output_group = optparse.OptionGroup(
@@ -166,21 +184,31 @@ def parse_options(args):
                             dest="debug",
                             default=False,
                             help="Print debug messages")
+
+    output_group.add_option("-v", "--verbose",
+                            action="store_true",
+                            dest="verbose",
+                            default=False,
+                            help="Enable verbose output")
+
     output_group.add_option("-q", "--quiet",
                             action="store_true",
                             dest="quiet",
                             default=False,
                             help="Quiet mode; print only warnings and errors")
+
     output_group.add_option("-Q", "--very-quiet",
                             action="store_true",
                             dest="very_quiet",
                             default=False,
                             help="Very quiet mode; print only errors")
+
     output_group.add_option("-c", "--color",
                             action="store_true",
                             dest="force_color",
                             default=False,
                             help="Force colored output")
+
     output_group.add_option("-C", "--no-color",
                             action="store_true",
                             dest="no_color",
@@ -200,7 +228,7 @@ def parse_options(args):
     for pair in options.property_overrides:
         if not PROPERTY_OVERRIDE_PATTERN.match(pair):
             parser.error("%s is not a property definition." % pair)
-        key, val = pair.split("=")
+        key, val = pair.split("=", 1)
         property_overrides[key] = val
 
     options.property_overrides = property_overrides
@@ -231,6 +259,9 @@ def init_logger(options):
     if not should_colorize(options):
         logger = StdOutLogger(threshold)
     else:
+        if IS_WIN:
+            import colorama
+            colorama.init()
         logger = ColoredStdOutLogger(threshold)
 
     return logger
@@ -347,6 +378,33 @@ def print_plan_list_of_tasks(options, arguments, reactor, quiet=False):
     print_task_list(execution_plan, quiet)
 
 
+def get_failure_message():
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+
+    filename = None
+    lineno = None
+
+    while exc_tb.tb_next:
+        exc_tb = exc_tb.tb_next
+
+    frame = exc_tb.tb_frame
+    if hasattr(frame, "f_code"):
+        code = frame.f_code
+        filename = code.co_filename
+        lineno = exc_tb.tb_lineno
+
+        filename = nc(filename)
+        for path in sys.path:
+            path = nc(path)
+            if filename.startswith(path) and len(filename) > len(path) and filename[len(path)] == sep:
+                filename = filename[len(path) + 1:]
+                break
+
+    return "%s%s%s" % ("%s: " % exc_type.__name__ if not isinstance(exc_obj, PyBuilderException) else "",
+                       exc_obj,
+                       " (%s:%d)" % (filename, lineno) if filename else "")
+
+
 def main(*args):
     if not args:
         args = sys.argv[1:]
@@ -374,7 +432,9 @@ def main(*args):
                                   project_directory=options.project_directory,
                                   exclude_optional_tasks=options.exclude_optional_tasks,
                                   exclude_tasks=options.exclude_tasks,
-                                  exclude_all_optional=options.exclude_all_optional
+                                  exclude_all_optional=options.exclude_all_optional,
+                                  offline=options.offline,
+                                  no_venvs=options.no_venvs
                                   )
             if options.list_tasks:
                 print_list_of_tasks(reactor, quiet=options.very_quiet)
@@ -382,8 +442,8 @@ def main(*args):
             if options.list_plan_tasks:
                 print_plan_list_of_tasks(options, arguments, reactor, quiet=options.very_quiet)
             return 0
-        except PyBuilderException as e:
-            print_build_status(str(e), options, successful=False)
+        except PyBuilderException:
+            print_build_status(get_failure_message(), options, successful=False)
             return 1
 
     if not options.very_quiet:
@@ -402,7 +462,10 @@ def main(*args):
                                   project_directory=options.project_directory,
                                   exclude_optional_tasks=options.exclude_optional_tasks,
                                   exclude_tasks=options.exclude_tasks,
-                                  exclude_all_optional=options.exclude_all_optional
+                                  exclude_all_optional=options.exclude_all_optional,
+                                  reset_plugins=options.reset_plugins,
+                                  offline=options.offline,
+                                  no_venvs=options.no_venvs
                                   )
 
             if options.verbose or options.debug:
@@ -415,9 +478,9 @@ def main(*args):
         except KeyboardInterrupt:
             raise PyBuilderException("Build aborted")
 
-    except (Exception, SystemExit) as e:
+    except (Exception, SystemExit):
         successful = False
-        failure_message = str(e)
+        failure_message = get_failure_message()
         if options.debug:
             traceback.print_exc(file=sys.stderr)
 

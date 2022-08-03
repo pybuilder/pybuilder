@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -16,18 +16,18 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
 import types
 import unittest
-from os.path import normcase as nc
 
-from pyassert import assert_that
-
+from pybuilder import extern
 from pybuilder.core import (Project, Logger, init, INITIALIZER_ATTRIBUTE,
                             ENVIRONMENTS_ATTRIBUTE, task, description,
                             Dependency, RequirementsFile)
 from pybuilder.errors import MissingPropertyException
+from pybuilder.utils import np, jp
 from test_utils import patch
+
+_extern = extern
 
 
 class ProjectTest(unittest.TestCase):
@@ -92,15 +92,14 @@ class ProjectTest(unittest.TestCase):
     def test_expand_path_should_return_expanded_path(self):
         self.project.set_property("spam", "spam")
         self.project.set_property("eggs", "eggs")
-        self.assertEqual(nc(os.path.join("/imaginary", "spam", "eggs")),
+        self.assertEqual(np(jp(self.project.basedir, "spam", "eggs")),
                          self.project.expand_path("$spam/$eggs"))
 
     def test_expand_path_should_return_expanded_path_and_additional_parts_when_additional_parts_are_given(self):
         self.project.set_property("spam", "spam")
         self.project.set_property("eggs", "eggs")
-        self.assertEqual(
-            nc(os.path.join("/imaginary", "spam", "eggs", "foo", "bar")),
-            self.project.expand_path("$spam/$eggs", "foo", "bar"))
+        self.assertEqual(np(jp(self.project.basedir, "spam", "eggs", "foo", "bar")),
+                         self.project.expand_path("$spam/$eggs", "foo", "bar"))
 
     def test_should_raise_exception_when_getting_mandatory_propert_and_property_is_not_found(self):
         self.assertRaises(MissingPropertyException,
@@ -181,16 +180,9 @@ class ProjectPackageDataTests(unittest.TestCase):
     def setUp(self):
         self.project = Project(basedir="/imaginary", name="Unittest")
 
-    def test_should_raise_exception_when_package_name_not_given(self):
-        self.assertRaises(ValueError, self.project.include_file, None, "spam")
-
     def test_should_raise_exception_when_filename_not_given(self):
         self.assertRaises(
             ValueError, self.project.include_file, "my_package", None)
-
-    def test_should_raise_exception_when_package_name_is_empty_string(self):
-        self.assertRaises(
-            ValueError, self.project.include_file, "    \n", "spam")
 
     def test_should_raise_exception_when_filename_is_empty_string(self):
         self.assertRaises(
@@ -236,7 +228,17 @@ class ProjectPackageDataTests(unittest.TestCase):
         self.assertEqual(
             {"monty": ["ham"], "spam": ["eggs"]}, self.project.package_data)
         self.assertEqual(
-            [nc("spam/eggs"), nc("monty/ham")], self.project.manifest_included_files)
+            [np("spam/eggs"), np("monty/ham")], self.project.manifest_included_files)
+
+    @patch("pybuilder.core.os.walk")
+    def test_should_add_pattern_to_list_of_included_filed_for_package_spam(self, walk):
+        walk.return_value = [[jp(self.project.basedir, "spam"),
+                              ("foo", "bar"),
+                              ("bacon.eggs", "bacon.noeggs")],
+                             ]
+        self.project.include_directory("spam", "*.eggs")
+
+        self.assertEqual({"spam": ["bacon.eggs"]}, self.project.package_data)
 
 
 class ProjectDataFilesTests(unittest.TestCase):
@@ -298,35 +300,32 @@ class ProjectValidationTest(unittest.TestCase):
 
     def test_should_validate_empty_project(self):
         validation_messages = self.project.validate()
-        assert_that(validation_messages).is_empty()
+        self.assertFalse(validation_messages)
 
     def test_should_not_validate_project_with_duplicate_dependency_but_different_versions(self):
         self.project.depends_on('spam', version='1')
         self.project.depends_on('spam', version='2')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Runtime dependency 'spam' has been defined multiple times.")
+        self.assertTrue("Runtime dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_dependency_when_version_is_given_for_one(self):
         self.project.depends_on('spam')
         self.project.depends_on('spam', version='2')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Runtime dependency 'spam' has been defined multiple times.")
+        self.assertTrue("Runtime dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_dependency_when_urls_are_different(self):
         self.project.depends_on('spam', url='y')
         self.project.depends_on('spam', url='x')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Runtime dependency 'spam' has been defined multiple times.")
+        self.assertTrue(
+            "Runtime dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_dependency_when_url_is_given_for_one(self):
         self.project.depends_on('spam')
         self.project.depends_on('spam', url='x')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Runtime dependency 'spam' has been defined multiple times.")
+        self.assertTrue("Runtime dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_dependency_for_more_than_two_times(self):
         self.project.depends_on('spam', version='1')
@@ -334,37 +333,33 @@ class ProjectValidationTest(unittest.TestCase):
         self.project.depends_on('spam', version='3')
         validation_messages = self.project.validate()
 
-        assert_that(validation_messages).contains(
-            "Runtime dependency 'spam' has been defined multiple times.")
-        assert_that(len(validation_messages)).equals(1)
+        self.assertTrue("Runtime dependency 'spam' has been defined multiple times." in validation_messages)
+        self.assertEquals(len(validation_messages), 1)
 
     def test_should_not_validate_project_with_duplicate_build_dependency_but_different_versions(self):
         self.project.build_depends_on('spam', version='1')
         self.project.build_depends_on('spam', version='2')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Build dependency 'spam' has been defined multiple times.")
+        self.assertTrue(
+            "Build dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_build_dependency_when_version_is_given_for_one(self):
         self.project.build_depends_on('spam')
         self.project.build_depends_on('spam', version='2')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Build dependency 'spam' has been defined multiple times.")
+        self.assertTrue("Build dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_build_dependency_when_urls_are_different(self):
         self.project.build_depends_on('spam', url='y')
         self.project.build_depends_on('spam', url='x')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Build dependency 'spam' has been defined multiple times.")
+        self.assertTrue("Build dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_build_dependency_when_url_is_given_for_one(self):
         self.project.build_depends_on('spam')
         self.project.build_depends_on('spam', url='x')
         validation_messages = self.project.validate()
-        assert_that(validation_messages).contains(
-            "Build dependency 'spam' has been defined multiple times.")
+        self.assertTrue("Build dependency 'spam' has been defined multiple times." in validation_messages)
 
     def test_should_not_validate_project_with_duplicate_build_dependency_for_more_than_two_times(self):
         self.project.build_depends_on('spam', version='1')
@@ -372,18 +367,18 @@ class ProjectValidationTest(unittest.TestCase):
         self.project.build_depends_on('spam', version='3')
         validation_messages = self.project.validate()
 
-        assert_that(validation_messages).contains(
-            "Build dependency 'spam' has been defined multiple times.")
-        assert_that(len(validation_messages)).equals(1)
+        self.assertTrue(
+            "Build dependency 'spam' has been defined multiple times." in validation_messages)
+        self.assertEquals(len(validation_messages), 1)
 
     def test_should_not_validate_project_with_runtime_dependency_being_also_given_as_build_dependency(self):
         self.project.depends_on('spam')
         self.project.build_depends_on('spam')
         validation_messages = self.project.validate()
 
-        assert_that(validation_messages).contains(
-            "Runtime dependency 'spam' has also been given as build dependency.")
-        assert_that(len(validation_messages)).equals(1)
+        self.assertTrue(
+            "Runtime dependency 'spam' has also been given as build dependency." in validation_messages)
+        self.assertEquals(len(validation_messages), 1)
 
 
 class LoggerTest(unittest.TestCase):
@@ -486,8 +481,8 @@ class TaskTests(unittest.TestCase):
         def task_without_description():
             pass
 
-        self.assertEqual(task_without_description._python_builder_task, True)
-        self.assertEqual(task_without_description._python_builder_name,
+        self.assertEqual(task_without_description._pybuilder_task, True)
+        self.assertEqual(task_without_description._pybuilder_name,
                          "task_without_description")
 
     def test_should_name_task_when_decorator_called_with_nothing(self):
@@ -495,8 +490,8 @@ class TaskTests(unittest.TestCase):
         def another_task_without_description():
             pass
 
-        self.assertEqual(another_task_without_description._python_builder_task, True)
-        self.assertEqual(another_task_without_description._python_builder_name,
+        self.assertEqual(another_task_without_description._pybuilder_task, True)
+        self.assertEqual(another_task_without_description._pybuilder_name,
                          "another_task_without_description")
 
     def test_should_describe_task_when_description_decorator_is_used(self):
@@ -505,8 +500,8 @@ class TaskTests(unittest.TestCase):
         def task_with_description():
             pass
 
-        self.assertEqual(task_with_description._python_builder_task, True)
-        self.assertEqual(task_with_description._python_builder_description, "any-description")
+        self.assertEqual(task_with_description._pybuilder_task, True)
+        self.assertEqual(task_with_description._pybuilder_description, "any-description")
 
     def test_should_describe_named_task_when_description_decorator_is_used(self):
         @task("any-task-name")
@@ -514,27 +509,27 @@ class TaskTests(unittest.TestCase):
         def task_with_description():
             pass
 
-        self.assertEqual(task_with_description._python_builder_task, True)
-        self.assertEqual(task_with_description._python_builder_name, "any-task-name")
-        self.assertEqual(task_with_description._python_builder_description, "any-description")
+        self.assertEqual(task_with_description._pybuilder_task, True)
+        self.assertEqual(task_with_description._pybuilder_name, "any-task-name")
+        self.assertEqual(task_with_description._pybuilder_description, "any-description")
 
     def test_should_describe_named_task_when_description_kwarg_is_used(self):
         @task("any-task-name", description="any-description")
         def task_with_description():
             pass
 
-        self.assertEqual(task_with_description._python_builder_task, True)
-        self.assertEqual(task_with_description._python_builder_name, "any-task-name")
-        self.assertEqual(task_with_description._python_builder_description, "any-description")
+        self.assertEqual(task_with_description._pybuilder_task, True)
+        self.assertEqual(task_with_description._pybuilder_name, "any-task-name")
+        self.assertEqual(task_with_description._pybuilder_description, "any-description")
 
     def test_should_describe_task_when_description_kwarg_is_used(self):
         @task(description="any-description")
         def task_with_description():
             pass
 
-        self.assertEqual(task_with_description._python_builder_task, True)
-        self.assertEqual(task_with_description._python_builder_name, "task_with_description")
-        self.assertEqual(task_with_description._python_builder_description, "any-description")
+        self.assertEqual(task_with_description._pybuilder_task, True)
+        self.assertEqual(task_with_description._pybuilder_name, "task_with_description")
+        self.assertEqual(task_with_description._pybuilder_description, "any-description")
 
 
 class RequirementsFileTests(unittest.TestCase):

@@ -1,0 +1,124 @@
+name: pybuilder
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+jobs:
+  build-primary:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: false
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        python-version:
+          - '3.10'
+          - '3.9'
+          - '3.8'
+          - '3.7'
+          - '3.6'
+          - 'pypy-3.7'
+          - 'pypy-3.8'
+        with-venv:
+          - 'true'
+          - 'false'
+    env:
+      TWINE_USERNAME: __token__
+      TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/
+        with:
+          python-version: '${{ matrix.python-version }}'
+          with-venv: '${{ matrix.with-venv }}'
+          with-homebrew: 'false'
+          deploy-on-python: '["3.10"]'
+          deploy-on-os: '["Linux"]'
+          deploy-on-branch: '["refs/heads/master"]'
+  build-secondary:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: false
+    needs: build-primary
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+          - macos-10.15
+          - macos-11
+        python-version:
+          - '3.10'
+          - '3.9'
+          - '3.8'
+          - '3.7'
+          - '3.6'
+          - 'pypy-3.7'
+          - 'pypy-3.8'
+        with-venv:
+          - 'true'
+          - 'false'
+        with-homebrew:
+          - 'true'
+          - 'false'
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/
+        with:
+          python-version: '${{ matrix.python-version }}'
+          with-venv: '${{ matrix.with-venv }}'
+          with-homebrew: '${{ matrix.with-homebrew }}'
+          deploy-on-python: '[]'
+          deploy-on-os: '[]'
+          deploy-on-branch: '[]'
+  build-experimental:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    needs: build-primary
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-10.15
+          - macos-11
+        python-version:
+          - '3.11.0-alpha.5'
+        with-venv:
+          - 'true'
+          - 'false'
+        with-homebrew:
+          - 'true'
+          - 'false'
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/
+        with:
+          python-version: '${{ matrix.python-version }}'
+          with-venv: '${{ matrix.with-venv }}'
+          with-homebrew: '${{ matrix.with-homebrew }}'
+          deploy-on-python: '[]'
+          deploy-on-os: '[]'
+          deploy-on-branch: '[]'
+
+  build-stable-summary:
+    if: success() || failure()
+    runs-on: ubuntu-latest
+    name: Build Stable Summary
+    needs:
+      - build-primary
+      - build-secondary
+      - build-experimental
+    steps:
+      - name: Check build matrix status
+        if: |
+          needs.build-primary.result != 'success' ||
+          needs.build-secondary.result != 'success'
+        run: exit 1

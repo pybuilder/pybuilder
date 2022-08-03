@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -22,13 +22,12 @@ except NameError:
     from io import FileIO as TYPE_FILE
 
 import unittest
-from os.path import normcase as nc
 
 from pybuilder.core import Project
-from pybuilder.plugins.python.pydev_plugin import (
-    pydev_generate,
-    init_pydev_plugin
-)
+from pybuilder.plugins.python.pydev_plugin import (pydev_generate,
+                                                   init_pydev_plugin,
+                                                   )
+from pybuilder.utils import np, jp
 from test_utils import patch, Mock, MagicMock, call
 
 
@@ -46,7 +45,8 @@ class PydevPluginTests(unittest.TestCase):
         pydev_generate(project, Mock())
 
         self.assertEqual(mock_open.call_args_list,
-                         [call(nc('basedir/.project'), 'w'), call(nc('basedir/.pydevproject'), 'w')])
+                         [call(np(jp(project.basedir, '.project')), 'w'),
+                          call(np(jp(project.basedir, '.pydevproject')), 'w')])
         metadata_file = mock_open.return_value.__enter__.return_value
 
         self.assertEqual(metadata_file.write.call_args_list,

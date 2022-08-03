@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -16,27 +16,19 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pip._vendor.packaging.specifiers import SpecifierSet, InvalidSpecifier
-from pip._vendor.packaging.version import Version, InvalidVersion
-from pip._vendor.pkg_resources import _initialize_master_working_set
+from pkg_resources import packaging
 
-try:
-    from pip.commands.show import search_packages_info
-except ImportError:
-    from pip._internal.commands.show import search_packages_info
+import pkg_resources.extern.packaging.specifiers
+import pkg_resources.extern.packaging.version
+import pkg_resources.extern.packaging.requirements
+import pkg_resources.extern.packaging.utils
 
-pip_working_set_init = _initialize_master_working_set
+SpecifierSet = packaging.specifiers.SpecifierSet
+InvalidSpecifier = packaging.specifiers.InvalidSpecifier
+Version = packaging.version.Version
+InvalidVersion = packaging.version.InvalidVersion
+Requirement = packaging.requirements.Requirement
+InvalidRequirement = packaging.requirements.InvalidRequirement
+canonicalize_name = packaging.utils.canonicalize_name
 
-SpecifierSet = SpecifierSet
-InvalidSpecifier = InvalidSpecifier
-Version = Version
-InvalidVersion = InvalidVersion
-search_packages_info = search_packages_info
-
-
-def _pip_version():
-    import pip
-    return getattr(pip, "__version__", None)
-
-
-pip_version = _pip_version()
+WorkingSet = pkg_resources.WorkingSet

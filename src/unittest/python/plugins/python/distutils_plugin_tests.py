@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -24,11 +24,10 @@ except NameError:
     TYPE_FILE = FileIO
 
 import unittest
-from os.path import normcase as nc
 
 from pybuilder.core import Project, Author, Logger
 from pybuilder.errors import BuildFailedException
-from pybuilder.pip_utils import PIP_EXEC_STANZA
+from pybuilder.pip_utils import PIP_MODULE_STANZA
 from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        build_dependency_links_string,
                                                        build_install_dependencies_string,
@@ -46,12 +45,14 @@ from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        build_binary_distribution,
                                                        _normalize_setup_post_pre_script,
                                                        build_string_from_array,
-                                                       _run_process_and_wait,
                                                        build_setup_keywords,
                                                        )
+from pybuilder.utils import np
 from test_utils import (PyBuilderTestCase,
                         patch,
+                        call,
                         MagicMock,
+                        Mock,
                         ANY
                         )
 
@@ -386,6 +387,7 @@ class RenderSetupScriptTest(PyBuilderTestCase):
         actual_setup_script = render_setup_script(self.project)
 
         self.assert_line_by_line_equal("""#!/usr/bin/env python
+#   -*- coding: utf-8 -*-
 
 from distutils.core import setup, Extension
 from distutils.core.command.install import install as _install
@@ -413,10 +415,26 @@ if __name__ == '__main__':
         version = '1.2.3',
         description = 'This is a simple integration-test for distutils plugin.',
         long_description = 'As you might have guessed we have nothing to say here.',
+        long_description_content_type = None,
+        classifiers = [
+            'Development Status :: 5 - Beta',
+            'Environment :: Console'
+        ],
+        keywords = '',
+
         author = 'Udo Juettner, Michael Gruber',
         author_email = 'udo.juettner@gmail.com, aelgru@gmail.com',
+        maintainer = '',
+        maintainer_email = '',
+
         license = 'WTFPL',
+
         url = 'http://github.com/pybuilder/pybuilder',
+        project_urls = {
+            'a': 'http://a',
+            'b': 'http://b'
+        },
+
         scripts = [
             'spam',
             'eggs'
@@ -433,11 +451,7 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
-        ext_modules = [] + [],
-        classifiers = [
-            'Development Status :: 5 - Beta',
-            'Environment :: Console'
-        ],
+        ext_modules = [],
         entry_points = {},
         data_files = [
             ('dir', ['file1', 'file2'])
@@ -450,7 +464,6 @@ if __name__ == '__main__':
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,
         cmdclass = {'install': install},
-        keywords = '',
         python_requires = '',
         obsoletes = [],
     )
@@ -461,6 +474,7 @@ if __name__ == '__main__':
         self.project.post_install_script("post_install_test()")
         actual_setup_script = render_setup_script(self.project)
         self.assert_line_by_line_equal("""#!/usr/bin/env python
+#   -*- coding: utf-8 -*-
 
 from distutils.core import setup, Extension
 from distutils.core.command.install import install as _install
@@ -488,10 +502,26 @@ if __name__ == '__main__':
         version = '1.2.3',
         description = 'This is a simple integration-test for distutils plugin.',
         long_description = 'As you might have guessed we have nothing to say here.',
+        long_description_content_type = None,
+        classifiers = [
+            'Development Status :: 5 - Beta',
+            'Environment :: Console'
+        ],
+        keywords = '',
+
         author = 'Udo Juettner, Michael Gruber',
         author_email = 'udo.juettner@gmail.com, aelgru@gmail.com',
+        maintainer = '',
+        maintainer_email = '',
+
         license = 'WTFPL',
+
         url = 'http://github.com/pybuilder/pybuilder',
+        project_urls = {
+            'a': 'http://a',
+            'b': 'http://b'
+        },
+
         scripts = [
             'spam',
             'eggs'
@@ -508,11 +538,7 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
-        ext_modules = [] + [],
-        classifiers = [
-            'Development Status :: 5 - Beta',
-            'Environment :: Console'
-        ],
+        ext_modules = [],
         entry_points = {},
         data_files = [
             ('dir', ['file1', 'file2'])
@@ -525,7 +551,6 @@ if __name__ == '__main__':
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,
         cmdclass = {'install': install},
-        keywords = '',
         python_requires = '',
         obsoletes = [],
     )
@@ -575,7 +600,7 @@ if __name__ == '__main__':
         actual_setup_script = build_setup_keywords(self.project)
         self.assertEqual("'a'", actual_setup_script)
 
-        self.project.set_property("distutils_setup_keywords", ("a b"))
+        self.project.set_property("distutils_setup_keywords", ("a b",))
         actual_setup_script = build_setup_keywords(self.project)
         self.assertEqual("'a b'", actual_setup_script)
 
@@ -679,7 +704,7 @@ class RenderManifestFileTest(unittest.TestCase):
         self.assertEqual("""include file1
 include file2
 include %s
-""" % nc("spam/eggs"), actual_manifest_file)
+""" % np("spam/eggs"), actual_manifest_file)
 
 
 class ExecuteDistUtilsTest(PyBuilderTestCase):
@@ -688,34 +713,29 @@ class ExecuteDistUtilsTest(PyBuilderTestCase):
         self.project.set_property("dir_reports", "whatever reports")
         self.project.set_property("dir_dist", "whatever dist")
 
-    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
-    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_should_accept_array_of_simple_commands(self, proc_runner, *args):
-        proc_runner.return_value = 0
-
-        commands = ["a", "b", "c"]
-        execute_distutils(self.project, MagicMock(Logger), commands)
-
-        self.assertEqual(popen_distutils_args(self, 3, proc_runner), [[cmd] for cmd in commands])
+        self.pyb_env = Mock()
+        self.pyb_env.executable = ["a/b"]
+        self.pyb_env.env_dir = "a"
+        self.pyb_env.run_process_and_wait.return_value = 0
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_should_accept_array_of_compound_commands(self, proc_runner, *args):
-        proc_runner.return_value = 0
-
+    def test_should_accept_array_of_simple_commands(self, *_):
         commands = ["a", "b", "c"]
-        execute_distutils(self.project, MagicMock(Logger), [commands])
 
-        self.assertEqual(popen_distutils_args(self, 1, proc_runner), [commands])
+        execute_distutils(self.project, MagicMock(Logger), self.pyb_env, commands)
 
-    @patch("pybuilder.plugins.python.distutils_plugin.subprocess.Popen")
-    def test__run_process_and_wait(self, popen):
+        self.pyb_env.run_process_and_wait.assert_has_calls(
+            [call(self.pyb_env.executable + [ANY, cmd], ANY, ANY) for cmd in commands])
+
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
+    @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
+    def test_should_accept_array_of_compound_commands(self, *_):
         commands = ["a", "b", "c"]
-        _run_process_and_wait(commands, "test cwd", "test stdout", "test_stderr")
-        popen.assert_called_with(commands, cwd="test cwd", stdin=ANY, stdout="test stdout", stderr="test_stderr",
-                                 shell=False)
+
+        execute_distutils(self.project, MagicMock(Logger), self.pyb_env, [commands])
+
+        self.pyb_env.run_process_and_wait.assert_has_calls([call(self.pyb_env.executable + [ANY] + commands, ANY, ANY)])
 
 
 class UploadTests(PyBuilderTestCase):
@@ -724,104 +744,118 @@ class UploadTests(PyBuilderTestCase):
         self.project.set_property("dir_reports", "whatever reports")
         self.project.set_property("dir_dist", "whatever dist")
 
+        self.reactor = Mock()
+        self.pyb_env = Mock()
+        self.pyb_env.executable = ["a/b"]
+        self.pyb_env.env_dir = "a"
+        self.pyb_env.run_process_and_wait.return_value = 0
+        self.reactor.python_env_registry = {"pybuilder": self.pyb_env}
+        self.reactor.pybuilder_venv = self.pyb_env
+
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_upload_with_register(self, proc_runner, walk, *args):
-        proc_runner.return_value = 0
+    def test_upload_with_register(self, walk, *_):
         walk.return_value = [["dist", "", ["a", "b"]]]
 
         self.project.set_property("distutils_upload_register", True)
 
-        upload(self.project, MagicMock(Logger))
-        self.assertEqual(popen_distutils_args(self, 3, proc_runner),
-                         [["twine", "register", nc("/whatever dist/dist/a")],
-                          ["twine", "register", nc("/whatever dist/dist/b")],
-                          ["twine", "upload", nc("/whatever dist/dist/a"), nc("/whatever dist/dist/b")]])
+        upload(self.project, MagicMock(Logger), self.reactor)
+
+        self.pyb_env.run_process_and_wait.assert_has_calls([
+            call(self.pyb_env.executable + ["-m", "twine", "register",
+                                            self.project.expand_path("$dir_dist", "dist", "a")], ANY, ANY),
+            call(self.pyb_env.executable + ["-m", "twine", "register",
+                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY),
+            call(self.pyb_env.executable + ["-m", "twine", "upload",
+                                            self.project.expand_path("$dir_dist", "dist", "a"),
+                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)
+        ])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_upload(self, proc_runner, walk, *args):
-        proc_runner.return_value = 0
+    def test_upload(self, walk, *_):
         walk.return_value = [["dist", "", ["a", "b"]]]
 
-        upload(self.project, MagicMock(Logger))
-        self.assertEqual(popen_distutils_args(self, 1, proc_runner),
-                         [["twine", "upload", nc("/whatever dist/dist/a"), nc("/whatever dist/dist/b")]])
+        upload(self.project, MagicMock(Logger), self.reactor)
+
+        self.pyb_env.run_process_and_wait.assert_has_calls(
+            [call(self.pyb_env.executable + ["-m", "twine", "upload",
+                                             self.project.expand_path("$dir_dist", "dist", "a"),
+                                             self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_upload_with_repo(self, proc_runner, walk, *args):
-        proc_runner.return_value = 0
+    def test_upload_with_repo(self, walk, *_):
         walk.return_value = [["dist", "", ["a", "b"]]]
         self.project.set_property("distutils_upload_repository", "test repo")
 
-        upload(self.project, MagicMock(Logger))
-        self.assertEqual(popen_distutils_args(self, 1, proc_runner),
-                         [["twine", "upload", "--repository-url", "test repo", nc("/whatever dist/dist/a"),
-                           nc("/whatever dist/dist/b")]])
+        upload(self.project, MagicMock(Logger), self.reactor)
+
+        self.pyb_env.run_process_and_wait.assert_has_calls([
+            call(self.pyb_env.executable + ["-m", "twine", "upload", "--repository-url", "test repo",
+                                            self.project.expand_path("$dir_dist", "dist", "a"),
+                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_upload_with_repo_and_repo_key(self, proc_runner, walk, *args):
-        proc_runner.return_value = 0
+    def test_upload_with_repo_and_repo_key(self, walk, *_):
         walk.return_value = [["dist", "", ["a", "b"]]]
         self.project.set_property("distutils_upload_repository", "test repo")
         self.project.set_property("distutils_upload_repository_key", "test repo key")
 
-        upload(self.project, MagicMock(Logger))
-        self.assertEqual(popen_distutils_args(self, 1, proc_runner),
-                         [["twine", "upload", "--repository-url", "test repo", nc("/whatever dist/dist/a"),
-                           nc("/whatever dist/dist/b")]])
+        upload(self.project, MagicMock(Logger), self.reactor)
+
+        self.pyb_env.run_process_and_wait.assert_has_calls([
+            call(self.pyb_env.executable + ["-m", "twine", "upload", "--repository-url", "test repo",
+                                            self.project.expand_path("$dir_dist", "dist", "a"),
+                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_upload_with_repo_key_only(self, proc_runner, walk, *args):
-        proc_runner.return_value = 0
+    def test_upload_with_repo_key_only(self, walk, *_):
         walk.return_value = [["dist", "", ["a", "b"]]]
         self.project.set_property("distutils_upload_repository_key", "test repo key")
 
-        upload(self.project, MagicMock(Logger))
-        self.assertEqual(popen_distutils_args(self, 1, proc_runner),
-                         [["twine", "upload", "--repository", "test repo key", nc("/whatever dist/dist/a"),
-                           nc("/whatever dist/dist/b")]])
+        upload(self.project, MagicMock(Logger), self.reactor)
+
+        self.pyb_env.run_process_and_wait.assert_has_calls([
+            call(self.pyb_env.executable + ["-m", "twine", "upload", "--repository", "test repo key",
+                                            self.project.expand_path("$dir_dist", "dist", "a"),
+                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_upload_with_signature(self, proc_runner, walk, *args):
-        proc_runner.return_value = 0
+    def test_upload_with_signature(self, walk, *_):
         walk.return_value = [["dist", "", ["a", "b"]]]
         self.project.set_property("distutils_upload_sign", True)
 
-        upload(self.project, MagicMock(Logger))
-        self.assertEqual(popen_distutils_args(self, 1, proc_runner),
-                         [["twine", "upload", "--sign", nc("/whatever dist/dist/a"), nc("/whatever dist/dist/b")]])
+        upload(self.project, MagicMock(Logger), self.reactor)
+
+        self.pyb_env.run_process_and_wait.assert_has_calls([
+            call(self.pyb_env.executable + ["-m", "twine", "upload", "--sign",
+                                            self.project.expand_path("$dir_dist", "dist", "a"),
+                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_upload_with_signature_and_identity(self, proc_runner, walk, *args):
-        proc_runner.return_value = 0
+    def test_upload_with_signature_and_identity(self, walk, *_):
         walk.return_value = [["dist", "", ["a", "b"]]]
         self.project.set_property("distutils_upload_sign", True)
         self.project.set_property("distutils_upload_sign_identity", "abcd")
 
-        upload(self.project, MagicMock(Logger))
-        self.assertEqual(popen_distutils_args(self, 1, proc_runner),
-                         [["twine", "upload", "--sign", "--identity", "abcd", nc("/whatever dist/dist/a"),
-                           nc("/whatever dist/dist/b")]])
+        upload(self.project, MagicMock(Logger), self.reactor)
+
+        self.pyb_env.run_process_and_wait.assert_has_calls([
+            call(self.pyb_env.executable + ["-m", "twine", "upload", "--sign", "--identity", "abcd",
+                                            self.project.expand_path("$dir_dist", "dist", "a"),
+                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
 
 
 class TasksTest(PyBuilderTestCase):
@@ -831,48 +865,70 @@ class TasksTest(PyBuilderTestCase):
         self.project.set_property("dir_dist", "whatever dist")
         self.project.set_property("distutils_commands", ["sdist", "bdist_dumb"])
 
-    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
-    @patch("pybuilder.pip_utils.open", create=True)
-    @patch("pybuilder.pip_utils.execute_command")
-    def test_install(self, execute_command, *args):
-        install_distribution(self.project, MagicMock(Logger))
-        execute_command.assert_called_with(PIP_EXEC_STANZA + ["install", "--force-reinstall", nc('/whatever dist')],
-                                           cwd=".", env=ANY,
-                                           outfile_name=ANY, error_file_name=ANY, shell=False)
+        self.reactor = Mock()
+        self.pyb_env = Mock()
+        self.pyb_env.executable = ["a/b"]
+        self.pyb_env.env_dir = "a"
+        self.pyb_env.run_process_and_wait.return_value = 0
+        self.reactor.python_env_registry = {"system": self.pyb_env}
+        self.reactor.pybuilder_venv = self.pyb_env
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.pip_utils.open", create=True)
-    @patch("pybuilder.pip_utils.execute_command")
-    def test_install_with_index_url(self, execute_command, *args):
+    def test_install(self, *_):
+        install_distribution(self.project, MagicMock(Logger), self.reactor)
+
+        self.pyb_env.execute_command.assert_called_with(
+            self.pyb_env.executable + PIP_MODULE_STANZA + ["install", "--force-reinstall",
+                                                           self.project.expand_path("$dir_dist")],
+            cwd=".", env=ANY, outfile_name=ANY, error_file_name=ANY, shell=False, no_path_search=True)
+
+    @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
+    @patch("pybuilder.pip_utils.open", create=True)
+    def test_install_with_index_url(self, *_):
         self.project.set_property("install_dependencies_index_url", "index_url")
         self.project.set_property("install_dependencies_extra_index_url", "extra_index_url")
 
-        install_distribution(self.project, MagicMock(Logger))
-        execute_command.assert_called_with(
-            PIP_EXEC_STANZA + ["install", "--index-url", "index_url", "--extra-index-url", "extra_index_url",
-                               "--force-reinstall", nc('/whatever dist')], cwd=".", env=ANY, outfile_name=ANY,
-            error_file_name=ANY, shell=False)
+        install_distribution(self.project, MagicMock(Logger), self.reactor)
+
+        self.pyb_env.execute_command.assert_called_with(
+            self.pyb_env.executable + PIP_MODULE_STANZA +
+            ["install", "--index-url", "index_url", "--extra-index-url", "extra_index_url", "--force-reinstall",
+             self.project.expand_path("$dir_dist")], cwd=".", env=ANY, outfile_name=ANY, error_file_name=ANY,
+            shell=False,
+            no_path_search=True)
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_binary_distribution(self, proc_runner, *args):
-        proc_runner.return_value = 0
+    @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
+    def test_binary_distribution(self, walk, *_):
+        walk.return_value = [("root", (), ("file1", "file2"))]
 
-        build_binary_distribution(self.project, MagicMock(Logger))
-        self.assertEqual(popen_distutils_args(self, 2, proc_runner),
-                         [["clean", "--all", "sdist"], ["clean", "--all", "bdist_dumb"]])
+        build_binary_distribution(self.project, MagicMock(Logger), self.reactor)
+
+        self.pyb_env.run_process_and_wait.assert_has_calls(
+            [call(self.pyb_env.executable + [ANY, "clean", "--all", "sdist"], ANY, ANY),
+             call(self.pyb_env.executable + [ANY, "clean", "--all", "bdist_dumb"], ANY, ANY),
+             call(self.pyb_env.executable + ["-m", "twine", "check",
+                                             self.project.expand_path("$dir_dist", "dist", "file1"),
+                                             self.project.expand_path("$dir_dist", "dist", "file2")], ANY, ANY)])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    @patch("pybuilder.plugins.python.distutils_plugin._run_process_and_wait")
-    def test_binary_distribution_with_command_options(self, proc_runner, *args):
-        proc_runner.return_value = 0
+    @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
+    def test_binary_distribution_with_command_options(self, walk, *_):
         self.project.set_property("distutils_command_options", {"sdist": ['--formats', 'bztar']})
 
-        build_binary_distribution(self.project, MagicMock(Logger))
-        self.assertEqual(popen_distutils_args(self, 2, proc_runner),
-                         [["clean", "--all", "sdist", "--formats", "bztar"], ["clean", "--all", "bdist_dumb"]])
+        walk.return_value = [("root", (), ("file1", "file2"))]
+
+        build_binary_distribution(self.project, MagicMock(Logger), self.reactor)
+
+        self.pyb_env.run_process_and_wait.assert_has_calls(
+            [call(self.pyb_env.executable + [ANY, "clean", "--all", "sdist", "--formats", "bztar"], ANY, ANY),
+             call(self.pyb_env.executable + [ANY, "clean", "--all", "bdist_dumb"], ANY, ANY),
+             call(self.pyb_env.executable + ["-m", "twine", "check",
+                                             self.project.expand_path("$dir_dist", "dist", "file1"),
+                                             self.project.expand_path("$dir_dist", "dist", "file2")], ANY, ANY)])
 
 
 def popen_distutils_args(self, call_count, proc_runner):
@@ -894,6 +950,9 @@ def create_project():
         Author("Udo Juettner", "udo.juettner@gmail.com"), Author("Michael Gruber", "aelgru@gmail.com")]
     project.license = "WTFPL"
     project.url = "http://github.com/pybuilder/pybuilder"
+    project.urls = {"b": "http://b",
+                    "a": "http://a",
+                    }
     project.explicit_namespaces = ["foo.bar", "quick.brown.fox"]
 
     def return_dummy_list():
@@ -909,4 +968,5 @@ def create_project():
     project.install_file("dir", "file2")
     project.include_file("spam", "eggs")
 
+    project.set_property("distutils_zip_safe", True)
     return project

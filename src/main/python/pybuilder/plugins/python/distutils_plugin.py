@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -16,19 +16,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import io
 import os
 import re
 import string
-import subprocess
-import sys
 from datetime import datetime
 from textwrap import dedent
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
+from pybuilder import pip_utils
 from pybuilder.core import (after,
                             before,
                             use_plugin,
@@ -37,21 +32,20 @@ from pybuilder.core import (after,
                             RequirementsFile,
                             Dependency)
 from pybuilder.errors import BuildFailedException, MissingPrerequisiteException
+from pybuilder.python_utils import StringIO
 from pybuilder.utils import (as_list,
                              is_string,
                              is_notstr_iterable,
                              get_dist_version_string,
                              safe_log_file_name,
-                             assert_can_execute,
                              tail_log)
-# Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
-from pybuilder import pip_utils
 
 use_plugin("python.core")
 
 LEADING_TAB_RE = re.compile(r'^(\t*)')
 DATA_FILES_PROPERTY = "distutils_data_files"
 SETUP_TEMPLATE = string.Template("""#!/usr/bin/env python
+#   -*- coding: utf-8 -*-
 $remove_hardlink_capabilities_for_shared_filesystems
 from $module import setup, Extension
 from $module.command.install import install as _install
@@ -79,25 +73,33 @@ if __name__ == '__main__':
         version = $version,
         description = $summary,
         long_description = $description,
+        long_description_content_type = $description_content_type,
+        classifiers = $classifiers,
+        keywords = $setup_keywords,
+
         author = $author,
         author_email = $author_email,
+        maintainer = $maintainer,
+        maintainer_email = $maintainer_email,
+
         license = $license,
+
         url = $url,
+        project_urls = $project_urls,
+
         scripts = $scripts,
         packages = $packages,
         namespace_packages = $namespace_packages,
         py_modules = $modules,
         ext_modules = $ext_modules,
-        classifiers = $classifiers,
         entry_points = $entry_points,
         data_files = $data_files,
         package_data = $package_data,
         include_package_data = $include_package_data,
         install_requires = $dependencies,
         dependency_links = $dependency_links,
-        zip_safe = True,
+        zip_safe = $zip_safe,
         cmdclass = $cmd_class,
-        keywords = $setup_keywords,
         python_requires = $python_requires,
         obsoletes = $obsoletes,
     )
@@ -117,7 +119,11 @@ def as_str(value):
 @init
 def initialize_distutils_plugin(project):
     project.plugin_depends_on("pypandoc", "~=1.4")
-    project.plugin_depends_on("twine", "~=1.10")
+    project.plugin_depends_on("setuptools", ">=38.6.0")
+    project.plugin_depends_on("twine", ">=1.15.0")
+    project.plugin_depends_on("wheel", ">=0.34.0")
+    if project.get_property("distutils_cython_ext_modules"):
+        project.plugin_depends_on("Cython", "~=0.29.28")
 
     project.set_property_if_unset("distutils_commands", ["sdist", "bdist_wheel"])
     project.set_property_if_unset("distutils_command_options", None)
@@ -130,31 +136,73 @@ def initialize_distutils_plugin(project):
         "Programming Language :: Python"
     ])
     project.set_property_if_unset("distutils_use_setuptools", True)
+
+    project.set_property_if_unset("distutils_fail_on_warnings", False)
+
     project.set_property_if_unset("distutils_upload_register", False)
     project.set_property_if_unset("distutils_upload_repository", None)
     project.set_property_if_unset("distutils_upload_repository_key", None)
     project.set_property_if_unset("distutils_upload_sign", False)
     project.set_property_if_unset("distutils_upload_sign_identity", None)
+    project.set_property_if_unset("distutils_upload_skip_existing", False)
 
     project.set_property_if_unset("distutils_readme_description", False)
     project.set_property_if_unset("distutils_readme_file", "README.md")
+    project.set_property_if_unset("distutils_readme_file_convert", False)
+    project.set_property_if_unset("distutils_readme_file_type", None)
+    project.set_property_if_unset("distutils_readme_file_encoding", None)
+    project.set_property_if_unset("distutils_readme_file_variant", None)
+    project.set_property_if_unset("distutils_summary_overwrite", False)
     project.set_property_if_unset("distutils_description_overwrite", False)
 
     project.set_property_if_unset("distutils_console_scripts", None)
     project.set_property_if_unset("distutils_entry_points", None)
     project.set_property_if_unset("distutils_setup_keywords", None)
+    project.set_property_if_unset("distutils_zip_safe", True)
 
     project.set_property_if_unset("distutils_ext_modules", None)
 
 
 @after("prepare")
-def set_description(project, logger):
+def set_description(project, logger, reactor):
     if project.get_property("distutils_readme_description"):
-        try:
-            assert_can_execute(["pandoc", "--version"], "pandoc", "distutils")
-            doc_convert(project, logger)
-        except (MissingPrerequisiteException, ImportError):
-            logger.warn("Was unable to find pandoc or pypandoc and did not convert the documentation")
+        description = None
+        if project.get_property("distutils_readme_file_convert"):
+            try:
+                reactor.pybuilder_venv.verify_can_execute(["pandoc", "--version"], "pandoc", "distutils")
+                description = doc_convert(project, logger)
+            except (MissingPrerequisiteException, ImportError):
+                logger.warn("Was unable to find pandoc or pypandoc and did not convert the documentation")
+        else:
+            with io.open(project.expand_path("$distutils_readme_file"), "rt",
+                         encoding=project.get_property("distutils_readme_file_encoding")) as f:
+                description = f.read()
+
+        if description:
+            if (not hasattr(project, "summary") or
+                    project.summary is None or
+                    project.get_property("distutils_summary_overwrite")):
+                setattr(project, "summary", description.splitlines()[0].strip())
+
+            if (not hasattr(project, "description") or
+                    project.description is None or
+                    project.get_property("distutils_description_overwrite")):
+                setattr(project, "description", description)
+
+    warn = False
+    if len(project.summary) >= 512:
+        logger.warn("Project summary SHOULD be shorter than 512 characters per PEP-426")
+        warn = True
+
+    if "\n" in project.summary or "\r" in project.summary:
+        logger.warn("Project summary SHOULD NOT contain new-line characters per PEP-426")
+        warn = True
+
+    if len(project.summary) >= 2048:
+        raise BuildFailedException("Project summary MUST NOT be shorter than 2048 characters per PEP-426")
+
+    if warn and project.get_property("distutils_fail_on_warnings"):
+        raise BuildFailedException("Distutil plugin warnings caused a build failure. Please see warnings above.")
 
 
 @after("package")
@@ -162,8 +210,9 @@ def write_setup_script(project, logger):
     setup_script = project.expand_path("$dir_dist", "setup.py")
     logger.info("Writing setup.py as %s", setup_script)
 
-    with open(setup_script, "w") as setup_file:
-        setup_file.write(render_setup_script(project))
+    with io.open(setup_script, "wt", encoding="utf-8") as setup_file:
+        script = render_setup_script(project)
+        setup_file.write(script)
 
     os.chmod(setup_script, 0o755)
 
@@ -171,6 +220,8 @@ def write_setup_script(project, logger):
 def render_setup_script(project):
     author = ", ".join(map(lambda a: a.name, project.authors))
     author_email = ", ".join(map(lambda a: a.email, project.authors))
+    maintainer = ", ".join(map(lambda a: a.name, project.maintainers))
+    maintainer_email = ",".join(map(lambda a: a.email, project.maintainers))
 
     template_values = {
         "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
@@ -181,10 +232,14 @@ def render_setup_script(project):
         "version": as_str(project.dist_version),
         "summary": as_str(default(project.summary)),
         "description": as_str(default(project.description)),
+        "description_content_type": repr(_get_description_content_type(project)),
         "author": as_str(author),
         "author_email": as_str(author_email),
+        "maintainer": as_str(maintainer),
+        "maintainer_email": as_str(maintainer_email),
         "license": as_str(default(project.license)),
         "url": as_str(default(project.url)),
+        "project_urls": build_map_string(project.urls),
         "scripts": build_scripts_string(project),
         "packages": build_packages_string(project),
         "namespace_packages": build_namespace_packages_string(project),
@@ -205,7 +260,8 @@ def render_setup_script(project):
         "postinstall_script": _normalize_setup_post_pre_script(project.setup_postinstall_script or "pass"),
         "setup_keywords": build_setup_keywords(project),
         "python_requires": as_str(default(project.requires_python)),
-        "obsoletes": build_string_from_array(project.obsoletes)
+        "obsoletes": build_string_from_array(project.obsoletes),
+        "zip_safe": project.get_property("distutils_zip_safe")
     }
 
     # If there are modules to be cythonized, do some necessary imports
@@ -275,17 +331,18 @@ def write_manifest_file(project, logger):
 
 
 @before("publish")
-def build_binary_distribution(project, logger):
+def build_binary_distribution(project, logger, reactor):
     logger.info("Building binary distribution in %s",
                 project.expand_path("$dir_dist"))
 
     commands = [build_command_with_options(cmd, project.get_property("distutils_command_options"))
                 for cmd in as_list(project.get_property("distutils_commands"))]
-    execute_distutils(project, logger, commands, True)
+    execute_distutils(project, logger, reactor.pybuilder_venv, commands, True)
+    upload_check(project, logger, reactor)
 
 
 @task("install")
-def install_distribution(project, logger):
+def install_distribution(project, logger, reactor):
     logger.info("Installing project %s-%s", project.name, project.version)
 
     _prepare_reports_dir(project)
@@ -293,18 +350,19 @@ def install_distribution(project, logger):
                                        "pip_install_%s" % datetime.utcnow().strftime("%Y%m%d%H%M%S"))
     pip_utils.pip_install(
         install_targets=project.expand_path("$dir_dist"),
+        python_env=reactor.python_env_registry["system"],
         index_url=project.get_property("install_dependencies_index_url"),
         extra_index_url=project.get_property("install_dependencies_extra_index_url"),
         force_reinstall=True,
         logger=logger,
-        verbose=project.get_property("verbose"),
+        verbose=project.get_property("pip_verbose"),
         cwd=".",
         outfile_name=outfile_name,
         error_file_name=outfile_name)
 
 
 @task("upload", description="Upload a project to PyPi.")
-def upload(project, logger):
+def upload(project, logger, reactor):
     repository = project.get_property("distutils_upload_repository")
     repository_args = []
     if repository:
@@ -315,25 +373,35 @@ def upload(project, logger):
             repository_args = ["--repository", repository_key]
 
     upload_sign = project.get_property("distutils_upload_sign")
+    sign_identity = project.get_property("distutils_upload_sign_identity")
     upload_sign_args = []
     if upload_sign:
         upload_sign_args = ["--sign"]
-        sign_identity = project.get_property("distutils_upload_sign_identity")
         if sign_identity:
             upload_sign_args += ["--identity", sign_identity]
 
     if project.get_property("distutils_upload_register"):
         logger.info("Registering project %s-%s%s", project.name, project.version,
                     (" into repository '%s'" % repository) if repository else "")
-        execute_twine(project, logger, repository_args, True)
+        execute_twine(project, logger, reactor.pybuilder_venv, repository_args, "register")
 
-    logger.info("Uploading project %s-%s%s%s%s", project.name, project.version,
+    skip_existing = project.get_property("distutils_upload_skip_existing")
+    logger.info("Uploading project %s-%s%s%s%s%s", project.name, project.version,
                 (" to repository '%s'" % repository) if repository else "",
                 get_dist_version_string(project, " as version %s"),
-                (" signing%s" % (" with %s" % sign_identity if sign_identity else "")) if upload_sign else "")
+                (" signing%s" % (" with %s" % sign_identity if sign_identity else "")) if upload_sign else "",
+                (", will skip existing" if skip_existing else ""))
 
     upload_cmd_args = repository_args + upload_sign_args
-    execute_twine(project, logger, upload_cmd_args, False)
+    if skip_existing:
+        upload_cmd_args.append("--skip-existing")
+
+    execute_twine(project, logger, reactor.pybuilder_venv, upload_cmd_args, "upload")
+
+
+def upload_check(project, logger, reactor):
+    logger.info("Running Twine check for generated artifacts")
+    execute_twine(project, logger, reactor.pybuilder_venv, [], "check")
 
 
 def render_manifest_file(project):
@@ -360,18 +428,17 @@ def build_command_with_options(command, distutils_command_options=None):
     return commands
 
 
-def execute_distutils(project, logger, distutils_commands, clean=False):
+def execute_distutils(project, logger, python_env, distutils_commands, clean=False):
     reports_dir = _prepare_reports_dir(project)
     setup_script = project.expand_path("$dir_dist", "setup.py")
 
     for command in distutils_commands:
-        logger.debug("Executing distutils command %s", command)
         if is_string(command):
             out_file = os.path.join(reports_dir, safe_log_file_name(command))
         else:
             out_file = os.path.join(reports_dir, safe_log_file_name("__".join(command)))
         with open(out_file, "w") as out_f:
-            commands = [sys.executable, setup_script]
+            commands = python_env.executable + [setup_script]
             if project.get_property("verbose"):
                 commands.append("-v")
             if clean:
@@ -380,38 +447,35 @@ def execute_distutils(project, logger, distutils_commands, clean=False):
                 commands.extend(command.split())
             else:
                 commands.extend(command)
-            return_code = _run_process_and_wait(commands, project.expand_path("$dir_dist"), out_f)
+            logger.debug("Executing distutils command: %s", commands)
+            return_code = python_env.run_process_and_wait(commands, project.expand_path("$dir_dist"), out_f)
             if return_code != 0:
                 raise BuildFailedException(
                     "Error while executing setup command %s. See %s for full details:\n%s",
                     command, out_file, tail_log(out_file))
 
 
-def execute_twine(project, logger, command_args, register):
+def execute_twine(project, logger, python_env, command_args, command):
     reports_dir = _prepare_reports_dir(project)
-    dist_artifact_dir = project.expand_path("$dir_dist", "dist")
+    dist_artifact_dir, artifacts = _get_generated_artifacts(project, logger)
 
-    if register:
-        command = "register"
-    else:
-        command = "upload"
-
-    artifacts = [os.path.join(dist_artifact_dir, artifact) for artifact in list(os.walk(dist_artifact_dir))[0][2]]
-    if register:
+    if command == "register":
         for artifact in artifacts:
             out_file = os.path.join(reports_dir,
                                     safe_log_file_name("twine_%s_%s.log" % (command, os.path.basename(artifact))))
-            _execute_twine(project, logger, [command] + command_args + [artifact], dist_artifact_dir, out_file)
+            _execute_twine(project, logger, python_env,
+                           [command] + command_args + [artifact], dist_artifact_dir, out_file)
     else:
         out_file = os.path.join(reports_dir, safe_log_file_name("twine_%s.log" % command))
-        _execute_twine(project, logger, [command] + command_args + artifacts, dist_artifact_dir, out_file)
+        _execute_twine(project, logger, python_env,
+                       [command] + command_args + artifacts, dist_artifact_dir, out_file)
 
 
-def _execute_twine(project, logger, command, work_dir, out_file):
-    logger.debug("Executing Twine %s", command)
+def _execute_twine(project, logger, python_env, command, work_dir, out_file):
     with open(out_file, "w") as out_f:
-        commands = [sys.executable, "-m", "twine"] + command
-        return_code = _run_process_and_wait(commands, work_dir, out_f)
+        commands = python_env.executable + ["-m", "twine"] + command
+        logger.debug("Executing Twine: %s", commands)
+        return_code = python_env.run_process_and_wait(commands, work_dir, out_f)
         if return_code != 0:
             raise BuildFailedException(
                 "Error while executing Twine %s. See %s for full details:\n%s", command, out_file, tail_log(out_file))
@@ -535,13 +599,13 @@ def build_data_files_string(project):
 
 
 def build_package_data_string(project):
+    package_data = project.package_data
+    if not package_data:
+        return "{}"
+
     indent = 8
 
     sorted_keys = sorted(project.package_data.keys())
-
-    package_data = project.package_data
-    if package_data == {}:
-        return "{}"
 
     result = "{\n"
 
@@ -551,6 +615,26 @@ def build_package_data_string(project):
         result += "['"
         result += "', '".join(package_data[pkgType])
         result += "'],\n"
+
+    result = result[:-2] + "\n"
+    result += " " * indent + "}"
+
+    return result
+
+
+def build_map_string(m):
+    if not m:
+        return "{}"
+
+    indent = 8
+
+    sorted_keys = sorted(m.keys())
+
+    result = "{\n"
+
+    for k in sorted_keys:
+        result += " " * (indent + 4)
+        result += "%r: %r,\n" % (k, m[k])
 
     result = result[:-2] + "\n"
     result += " " * indent + "}"
@@ -592,7 +676,7 @@ def build_ext_modules_string(project):
     ext_modules_final_string = build_string_from_array([mod for mod in ext_modules_strings], quote_item=False)
     cython_ext_modules_final_string = u" + ".join(cython_ext_modules_strings)
     if not cython_ext_modules_final_string:
-        cython_ext_modules_final_string = u"[]"
+        return ext_modules_final_string
     return u" + ".join([ext_modules_final_string, cython_ext_modules_final_string])
 
 
@@ -636,7 +720,7 @@ def build_setup_keywords(project):
 
 
 def build_classifiers_string(project):
-    classifiers = project.get_property('distutils_classifiers', [])
+    classifiers = project.get_property("distutils_classifiers", [])
     return build_string_from_array(classifiers, indent=12)
 
 
@@ -699,14 +783,7 @@ def doc_convert(project, logger):
     import pypandoc
     readme_file = project.expand_path("$distutils_readme_file")
     logger.debug("Converting %s into RST format for PyPi documentation...", readme_file)
-    description = pypandoc.convert_file(readme_file, "rst")
-    if not hasattr(project, "description") or project.description is None or project.get_property(
-            "distutils_description_overwrite"):
-        setattr(project, "description", description)
-
-    if not hasattr(project, "summary") or project.summary is None or project.get_property(
-            "distutils_description_overwrite"):
-        setattr(project, "summary", description.splitlines()[0].strip())
+    return pypandoc.convert_file(readme_file, "rst")
 
 
 def _expand_leading_tabs(s, indent=4):
@@ -722,19 +799,43 @@ def _normalize_setup_post_pre_script(s, indent=8):
                     dedent(_expand_leading_tabs(s)).splitlines(True)])
 
 
-def _run_process_and_wait(commands, cwd, stdout, stderr=None):
-    with open(os.devnull) as devnull:
-        process = subprocess.Popen(commands,
-                                   cwd=cwd,
-                                   stdin=devnull,
-                                   stdout=stdout,
-                                   stderr=stderr or stdout,
-                                   shell=False)
-        return process.wait()
-
-
 def _prepare_reports_dir(project):
     reports_dir = project.expand_path("$dir_reports", "distutils")
     if not os.path.exists(reports_dir):
         os.mkdir(reports_dir)
     return reports_dir
+
+
+def _get_description_content_type(project):
+    file_type = project.get_property("distutils_readme_file_type")
+    file_encoding = project.get_property("distutils_readme_file_encoding")
+    file_variant = project.get_property("distutils_readme_file_variant")
+
+    if not file_type:
+        if project.get_property("distutils_readme_description"):
+            readme_file_ci = project.get_property("distutils_readme_file").lower()
+            if readme_file_ci.endswith("md"):
+                file_type = "text/markdown"
+            elif readme_file_ci.endswith("rst"):
+                file_type = "text/x-rst"
+            else:
+                file_type = "text/plain"
+
+    if file_encoding:
+        file_encoding = file_encoding.upper()
+
+    if file_type == "text/markdown":
+        if file_variant:
+            file_variant = file_variant.upper()
+
+    if file_type:
+        return "%s%s%s" % (file_type,
+                           "; charset=%s" % file_encoding if file_encoding else "",
+                           "; variant=%s" % file_variant if file_variant else "")
+
+
+def _get_generated_artifacts(project, logger):
+    dist_artifact_dir = project.expand_path("$dir_dist", "dist")
+
+    artifacts = [os.path.join(dist_artifact_dir, artifact) for artifact in list(os.walk(dist_artifact_dir))[0][2]]
+    return dist_artifact_dir, artifacts

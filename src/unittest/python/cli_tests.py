@@ -2,7 +2,7 @@
 #
 #   This file is part of PyBuilder
 #
-#   Copyright 2011-2015 PyBuilder Team
+#   Copyright 2011-2020 PyBuilder Team
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -23,8 +23,10 @@ from pybuilder.cli import (parse_options,
                            CommandLineUsageException,
                            StdOutLogger,
                            length_of_longest_string,
-                           print_list_of_tasks)
+                           print_list_of_tasks,
+                           get_failure_message)
 from pybuilder.core import Logger
+from pybuilder.errors import PyBuilderException
 from test_utils import Mock, patch, call
 
 
@@ -93,7 +95,7 @@ class TaskListTests(unittest.TestCase):
 
 class StdOutLoggerTest(unittest.TestCase):
     def setUp(self):
-        self.stdout_logger = StdOutLogger(Logger)
+        self.stdout_logger = StdOutLogger()
 
     def test_should_return_debug_message_when_debug_level_given(self):
         actual_message = self.stdout_logger._level_to_string(Logger.DEBUG)
@@ -114,7 +116,7 @@ class StdOutLoggerTest(unittest.TestCase):
 
 class ColoredStdOutLoggerTest(unittest.TestCase):
     def setUp(self):
-        self.colored_stdout_logger = ColoredStdOutLogger(Logger)
+        self.colored_stdout_logger = ColoredStdOutLogger()
 
     def test_should_return_italic_debug_message_when_debug_level_given(self):
         actual_message = self.colored_stdout_logger._level_to_string(Logger.DEBUG)
@@ -186,6 +188,12 @@ class ParseOptionsTest(unittest.TestCase):
         self.assert_options(options, property_overrides={"spam": "eggs"})
         self.assertEqual([], arguments)
 
+    def test_should_set_property_with_equals_sign(self):
+        options, arguments = parse_options(["-P", "spam==eg=gs"])
+
+        self.assert_options(options, property_overrides={"spam": "=eg=gs"})
+        self.assertEqual([], arguments)
+
     def test_should_set_multiple_properties(self):
         options, arguments = parse_options(["-P", "spam=eggs",
                                             "-P", "foo=bar"])
@@ -221,12 +229,28 @@ class LengthOfLongestStringTests(unittest.TestCase):
     def test_should_return_zero_when_list_is_empty(self):
         self.assertEqual(0, length_of_longest_string([]))
 
+    def test_should_return_one_when_list_contains_string_with_no_characters(self):
+        self.assertEqual(0, length_of_longest_string([""]))
+
     def test_should_return_one_when_list_contains_string_with_single_character(self):
-        self.assertEqual(1, length_of_longest_string(['a']))
+        self.assertEqual(1, length_of_longest_string(["a"]))
 
     def test_should_return_four_when_list_contains_egg_and_spam(self):
-        self.assertEqual(4, length_of_longest_string(['egg', 'spam']))
+        self.assertEqual(4, length_of_longest_string(["egg", "spam"]))
 
     def test_should_return_four_when_list_contains_foo_bar_egg_and_spam(self):
-        self.assertEqual(
-            4, length_of_longest_string(['egg', 'spam', 'foo', 'bar']))
+        self.assertEqual(4, length_of_longest_string(["egg", "spam", "foo", "bar"]))
+
+
+class ErrorHandlingTests(unittest.TestCase):
+    def test_generic_error_message(self):
+        try:
+            raise Exception("test")
+        except Exception:
+            self.assertRegexpMatches(get_failure_message(), r"Exception: test \(cli_tests.py\:\d+\)")
+
+    def test_pyb_error_message(self):
+        try:
+            raise PyBuilderException("test")
+        except Exception:
+            self.assertRegexpMatches(get_failure_message(), r"test \(cli_tests.py\:\d+\)")
