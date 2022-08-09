@@ -204,7 +204,7 @@ importlib_metadata-4.12.0
    limitations under the License.
 
 
-virtualenv-20.16.2
+virtualenv-20.16.3
 ==========
 Copyright (c) 2020-202x The virtualenv developers
 
@@ -493,7 +493,7 @@ importlib_resources-5.9.0
    limitations under the License.
 
 
-setuptools-63.2.0
+setuptools-63.4.2
 ==========
 Copyright Jason R. Coombs
 

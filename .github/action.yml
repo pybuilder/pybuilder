@@ -35,8 +35,7 @@ runs:
       if: |
         !(inputs.with-homebrew == 'true' && runner.os != 'macOS' ||
           inputs.with-homebrew == 'true' && runner.os == 'macOS' &&
-          (inputs.python-version == '3.6' ||
-           contains(inputs.python-version, '-rc') ||
+          (contains(inputs.python-version, '-rc') ||
            contains(inputs.python-version, '-b') ||
            contains(inputs.python-version, 'pypy-')
           )
