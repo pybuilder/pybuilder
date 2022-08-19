@@ -242,7 +242,8 @@ def run_single_test(logger, project, reactor, reports_dir, test, output_test_nam
         "test": name,
         "test_file": test,
         "time": test_time.get_millis(),
-        "success": True
+        "success": True,
+        "exception": None
     }
     if return_code != 0:
         logger.error("Integration test failed: %s, exit code %d", test, return_code)
