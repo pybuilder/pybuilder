@@ -44,8 +44,12 @@ class PythonInfo(object):
             self.pypy_version_info = tuple(u(i) for i in sys.pypy_version_info)
 
         # this is a tuple in earlier, struct later, unify to our own named tuple
-        self.version_info = VersionInfo(*list(u(i) for i in sys.version_info))
+        self.version_info = VersionInfo(*[u(i) for i in sys.version_info])
         self.architecture = 64 if sys.maxsize > 2**32 else 32
+
+        # Used to determine some file names.
+        # See `CPython3Windows.python_zip()`.
+        self.version_nodot = sysconfig.get_config_var("py_version_nodot")
 
         self.version = u(sys.version)
         self.os = u(os.name)
@@ -482,7 +486,7 @@ class PythonInfo(object):
 
         # or at root level
         candidate_folder[inside_folder] = None
-        return list(i for i in candidate_folder.keys() if os.path.exists(i))
+        return [i for i in candidate_folder.keys() if os.path.exists(i)]
 
     def _find_possible_exe_names(self):
         name_candidate = OrderedDict()
@@ -520,4 +524,21 @@ class PythonInfo(object):
 if __name__ == "__main__":
     # dump a JSON representation of the current python
     # noinspection PyProtectedMember
-    print(PythonInfo()._to_json())
+    argv = sys.argv[1:]
+
+    if len(argv) >= 1:
+        start_cookie = argv[0]
+        argv = argv[1:]
+    else:
+        start_cookie = ""
+
+    if len(argv) >= 1:
+        end_cookie = argv[0]
+        argv = argv[1:]
+    else:
+        end_cookie = ""
+
+    sys.argv = sys.argv[:1] + argv
+
+    info = PythonInfo()._to_json()
+    sys.stdout.write("".join((start_cookie[::-1], info, end_cookie[::-1])))
