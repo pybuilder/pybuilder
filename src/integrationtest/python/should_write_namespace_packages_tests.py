@@ -134,6 +134,7 @@ if __name__ == '__main__':
         cmdclass = {'install': install},
         python_requires = '',
         obsoletes = [],
+        setup_requires = [],
     )
 """)
 
