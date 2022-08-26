@@ -282,6 +282,9 @@ def render_setup_script(project):
         # We can't import cython directly in the setup script, so we
         # import it once there's need for it - upon accessing the ext_modules list.
         template_values["cython_imports"] = """
+from setuptools.command.build_py import build_py as _build_py
+import glob
+
 class LazyCythonize(list):
     def __init__(self, ext_modules, cythonize_modules_kwargs):
         self.ext_modules = ext_modules if ext_modules is not None else []
