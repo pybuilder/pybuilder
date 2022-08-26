@@ -42,9 +42,6 @@ def init (project):
     project.depends_on("pyassert", url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz",
         declaration_only = True)
 
-    # build_dir = os.path.join("releases/", "integration-test-1.0.dev0")
-    # project.set_property("dir_dist", build_dir)
-    # project.set_property("filter_resources_target", build_dir)
     project.set_property("filter_resources_target", "$dir_dist")
     project.set_property("filter_resources_glob", [
         os.path.join("**", "__init__.py")
@@ -54,7 +51,6 @@ def init (project):
             "exclude": ["**/__init__.py"],
         }])
     project.set_property("distutils_cython_remove_python_sources", True)
-    # project.set_property("copy_resources_target", build_dir)
     project.set_property("copy_resources_target", "$dir_dist")
 """)
         self.create_directory("src/main/python/spam")
