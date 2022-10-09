@@ -132,5 +132,6 @@ def print_error_line(text=""):
 def print_file_content(file_name, line_prefix="    "):
     print_text_line("File {0}:".format(file_name))
 
-    for line in open(file_name):
-        print_text(line_prefix + line)
+    with open(file_name) as f:
+        for line in f:
+            print_text(line_prefix + line)
