@@ -139,7 +139,8 @@ class Traversable(Protocol):
         accepted by io.TextIOWrapper.
         """
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def name(self) -> str:
         """
         The base name of this object without any parent references.

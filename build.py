@@ -106,7 +106,7 @@ def initialize(project):
                                                 "setuptools>=45.0.0",
                                                 "virtualenv>=20.0.0",
                                                 "importlib-resources>=1.0",
-                                                "importlib-metadata>=0.12",
+                                                "importlib-metadata>=0.12,<5.0",
                                                 "typing-extensions",
                                                 "colorama~=0.4.3"
                                                 ])
