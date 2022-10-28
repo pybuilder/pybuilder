@@ -5,6 +5,8 @@ import itertools
 import contextlib
 import pathlib
 
+from .py310compat import text_encoding
+
 
 __all__ = ['Path']
 
@@ -62,7 +64,25 @@ def _difference(minuend, subtrahend):
     return itertools.filterfalse(set(subtrahend).__contains__, minuend)
 
 
-class CompleteDirs(zipfile.ZipFile):
+class InitializedState:
+    """
+    Mix-in to save the initialization state for pickling.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.__args = args
+        self.__kwargs = kwargs
+        super().__init__(*args, **kwargs)
+
+    def __getstate__(self):
+        return self.__args, self.__kwargs
+
+    def __setstate__(self, state):
+        args, kwargs = state
+        super().__init__(*args, **kwargs)
+
+
+class CompleteDirs(InitializedState, zipfile.ZipFile):
     """
     A ZipFile subclass that ensures that implied directories
     are always included in the namelist.
@@ -239,6 +259,8 @@ class Path:
             if args or kwargs:
                 raise ValueError("encoding args invalid for binary operation")
             return stream
+        else:
+            kwargs["encoding"] = text_encoding(kwargs.get("encoding"))
         return io.TextIOWrapper(stream, *args, **kwargs)
 
     @property
@@ -262,6 +284,7 @@ class Path:
         return pathlib.Path(self.root.filename).joinpath(self.at)
 
     def read_text(self, *args, **kwargs):
+        kwargs["encoding"] = text_encoding(kwargs.get("encoding"))
         with self.open('r', *args, **kwargs) as strm:
             return strm.read()
 
