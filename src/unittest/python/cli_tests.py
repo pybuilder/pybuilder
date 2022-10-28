@@ -24,8 +24,10 @@ from pybuilder.cli import (parse_options,
                            StdOutLogger,
                            length_of_longest_string,
                            print_list_of_tasks,
-                           DEFAULT_LOG_FORMAT)
+                           DEFAULT_LOG_FORMAT,
+                           get_failure_message)
 from pybuilder.core import Logger
+from pybuilder.errors import PyBuilderException
 from test_utils import Mock, patch, call
 
 
@@ -221,6 +223,12 @@ class ParseOptionsTest(unittest.TestCase):
         self.assert_options(options, property_overrides={"spam": "eggs"})
         self.assertEqual([], arguments)
 
+    def test_should_set_property_with_equals_sign(self):
+        options, arguments = parse_options(["-P", "spam==eg=gs"])
+
+        self.assert_options(options, property_overrides={"spam": "=eg=gs"})
+        self.assertEqual([], arguments)
+
     def test_should_set_multiple_properties(self):
         options, arguments = parse_options(["-P", "spam=eggs",
                                             "-P", "foo=bar"])
@@ -293,6 +301,20 @@ class LengthOfLongestStringTests(unittest.TestCase):
 
     def test_should_return_four_when_list_contains_foo_bar_egg_and_spam(self):
         self.assertEqual(4, length_of_longest_string(["egg", "spam", "foo", "bar"]))
+
+
+class ErrorHandlingTests(unittest.TestCase):
+    def test_generic_error_message(self):
+        try:
+            raise Exception("test")
+        except Exception:
+            self.assertRegexpMatches(get_failure_message(), r"Exception: test \(cli_tests.py\:\d+\)")
+
+    def test_pyb_error_message(self):
+        try:
+            raise PyBuilderException("test")
+        except Exception:
+            self.assertRegexpMatches(get_failure_message(), r"test \(cli_tests.py\:\d+\)")
 
 
 if __name__ == '__main__':

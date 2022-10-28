@@ -20,7 +20,6 @@
     The PyBuilder utils module.
     Provides generic utilities that can be used by plugins.
 """
-import collections
 import fnmatch
 import json
 import os
@@ -29,11 +28,17 @@ import subprocess
 import sys
 import tempfile
 import time
+from os.path import normcase, normpath, abspath, realpath, join
 from subprocess import Popen, PIPE
 
 from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
-from pybuilder.python_utils import (is_string, which, makedirs, basestring,
-                                    IS_WIN)
+from pybuilder.python_utils import (is_string, which, makedirs,
+                                    IS_WIN, iglob, escape)
+
+try:
+    from collections import abc
+except ImportError:
+    import collections as abc
 
 
 def get_all_dependencies_for_task(task):
@@ -106,7 +111,7 @@ def remove_leading_slash_or_dot_from_path(path):
 
 def remove_python_source_suffix(file_name):
     if file_name.endswith(".py"):
-        return file_name[0:-len(".py")]
+        return file_name[0:-3]
     return file_name
 
 
@@ -125,22 +130,51 @@ def discover_module_files_matching(source_path, module_glob):
     return result
 
 
-def discover_modules(source_path, suffix=".py"):
-    return discover_modules_matching(source_path, "*{0}".format(suffix))
+def discover_modules(source_path, suffix=".py",
+                     include_packages=True,
+                     include_package_modules=True,
+                     include_namespace_modules=True
+                     ):
+    return discover_modules_matching(source_path, "*{0}".format(suffix),
+                                     include_packages=include_packages,
+                                     include_package_modules=include_package_modules,
+                                     include_namespace_modules=include_namespace_modules)
 
 
-def discover_modules_matching(source_path, module_glob):
+def discover_modules_matching(source_path, module_glob,
+                              include_packages=True,
+                              include_package_modules=True,
+                              include_namespace_modules=True):
     result = []
     if not module_glob.endswith(".py"):
         module_glob += ".py"
-    for module_file_path in discover_files_matching(source_path, module_glob):
-        relative_module_file_path = os.path.relpath(module_file_path, source_path)
-        relative_module_file_path = relative_module_file_path.replace(os.sep, ".")
-        module_file = remove_leading_slash_or_dot_from_path(relative_module_file_path)
-        module_name = remove_python_source_suffix(module_file)
-        if module_name.endswith(".__init__"):
-            module_name = module_name.replace(".__init__", "")
-        result.append(module_name)
+
+    for root, dirs, files in os.walk(source_path, followlinks=True):
+        is_package = False
+        for file_name in files:
+            if file_name == "__init__.py":
+                is_package = True
+                break
+
+        for file_name in files:
+            if fnmatch.fnmatch(file_name, module_glob):
+                module_file_path = jp(root, file_name)
+                relative_module_file_path = os.path.relpath(module_file_path, source_path)
+                relative_module_file_path = relative_module_file_path.replace(os.sep, ".")
+                module_file = remove_leading_slash_or_dot_from_path(relative_module_file_path)
+                module_name = remove_python_source_suffix(module_file)
+
+                add_module = False
+                if file_name == "__init__.py":
+                    if include_packages:
+                        module_name = module_name[:-9]  # len(".__init__")
+                        add_module = True
+                else:
+                    add_module = (not is_package and include_namespace_modules or
+                                  is_package and include_package_modules)
+
+                if add_module:
+                    result.append(module_name)
     return result
 
 
@@ -149,7 +183,7 @@ def discover_files(start_dir, suffix):
 
 
 def discover_files_matching(start_dir, file_glob, exclude_file_glob=None):
-    for root, _, files in os.walk(start_dir):
+    for root, _, files in os.walk(start_dir, followlinks=True):
         for file_name in files:
             if exclude_file_glob:
                 for exclude_pat in as_list(exclude_file_glob):
@@ -236,7 +270,7 @@ def tail(file_path, lines=20):
 
 
 def tail_log(file_path, lines=20):
-    return "\n".join("\t" + l for l in tail(file_path, lines))
+    return "\n".join("\t" + line for line in tail(file_path, lines))
 
 
 def read_file(file_name):
@@ -273,31 +307,15 @@ class Timer(object):
 
 
 def apply_on_files(start_directory, closure, globs, *additional_closure_arguments, **keyword_closure_arguments):
-    glob_expressions = list(map(lambda g: GlobExpression(g), globs))
-
-    for root, _, file_names in os.walk(start_directory):
-        for file_name in file_names:
-            absolute_file_name = os.path.join(root, file_name)
-            relative_file_name = absolute_file_name.replace(start_directory, "")[1:]
-
-            for glob_expression in glob_expressions:
-                if glob_expression.matches(relative_file_name):
-                    closure(absolute_file_name,
-                            relative_file_name,
-                            *additional_closure_arguments,
-                            **keyword_closure_arguments)
-
-
-class GlobExpression(object):
-    def __init__(self, expression):
-        self.expression = expression
-        self.regex = "^" + expression.replace("**", ".+").replace("*", "[^/]*") + "$"
-        self.pattern = re.compile(self.regex)
-
-    def matches(self, path):
-        if self.pattern.match(path):
-            return True
-        return False
+    for glob in globs:
+        for absolute_file_name in iglob(normcase(os.path.join(escape(start_directory), glob)), recursive=True):
+            if os.path.isdir(absolute_file_name):
+                continue
+            relative_file_name = os.path.relpath(absolute_file_name, start_directory)
+            closure(absolute_file_name,
+                    relative_file_name,
+                    *additional_closure_arguments,
+                    **keyword_closure_arguments)
 
 
 def mkdir(directory):
@@ -317,7 +335,7 @@ def mkdir(directory):
 
 def is_notstr_iterable(obj):
     """Checks if obj is iterable, but not a string"""
-    return not isinstance(obj, basestring) and isinstance(obj, collections.Iterable)
+    return not isinstance(obj, str) and isinstance(obj, abc.Iterable)
 
 
 def get_dist_version_string(project, format=" (%s)"):
@@ -328,3 +346,19 @@ def safe_log_file_name(file_name):
     # per https://support.microsoft.com/en-us/kb/177506
     # per https://msdn.microsoft.com/en-us/library/aa365247
     return re.sub(r'\\|/|:|\*|\?|\"|<|>|\|', '_', file_name)
+
+
+nc = normcase
+jp = join
+
+
+def np(path):
+    return nc(normpath(path))
+
+
+def ap(path):
+    return nc(abspath(path))
+
+
+def rp(path):
+    return nc(realpath(path))

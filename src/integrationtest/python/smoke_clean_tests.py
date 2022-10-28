@@ -16,18 +16,17 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import sys
 import unittest
 
 from smoke_itest_support import SmokeIntegrationTestSupport
 
 
 class CleanSmokeTest(SmokeIntegrationTestSupport):
-    def test_clean(self):
-        self.smoke_test("-v", "-X", "clean")
-
     def test_build_then_clean(self):
-        self.smoke_test("-v", "-X", "compile_sources")
-        self.smoke_test("-v", "-X", "clean")
+        if "__pypy__" not in sys.modules and sys.version_info[:2] > (3, 6):
+            self.smoke_test("-v", "-X", "compile_sources")
+            self.smoke_test("-v", "-X", "clean")
 
 
 if __name__ == "__main__":

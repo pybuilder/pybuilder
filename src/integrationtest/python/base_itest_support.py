@@ -22,25 +22,30 @@ import stat
 import sys
 import tempfile
 import unittest
+from io import StringIO
+from uuid import uuid4
 
 try:
-    from StringIO import StringIO
+    from unittest.case import _addError
 except ImportError:
-    from io import StringIO
+    _addError = None
 
 
 class BaseIntegrationTestSupport(unittest.TestCase):
     def setUp(self):
-        self.tmp_directory = tempfile.mkdtemp(prefix="IntegrationTestSupport")
+        self.tmp_directory = tempfile.mkdtemp(prefix="IntegrationTestSupport", suffix=str(uuid4()).replace("-", ""))
 
     def tearDown(self):
         outcomes = self.outcomes()
         if self.tmp_directory and os.path.exists(self.tmp_directory) and not (outcomes[0] or outcomes[1]):
-            shutil.rmtree(self.tmp_directory)
+            shutil.rmtree(self.tmp_directory, ignore_errors=sys.platform in {"win32", "cygwin", "msys"})
 
     def full_path(self, name):
-        parts = [self.tmp_directory] + name.split(os.sep)
-        return os.path.join(*parts)
+        name = os.path.normcase(os.path.normpath(name))
+        if os.path.isabs(name):
+            return name
+        else:
+            return os.path.join(self.tmp_directory, name)
 
     def create_directory(self, name):
         os.makedirs(self.full_path(name))
@@ -89,6 +94,12 @@ class BaseIntegrationTestSupport(unittest.TestCase):
             content = file.read()
             self.assertTrue(expected_content_part in content)
 
+    def assert_file_not_contains(self, name, unexpected_content_part):
+        full_path = self.full_path(name)
+        with open(full_path) as file:
+            content = file.read()
+            self.assertFalse(unexpected_content_part in content)
+
     def assert_file_content(self, name, expected_file_content):
         if expected_file_content == "":
             self.assert_file_empty(name)
@@ -122,13 +133,15 @@ class BaseIntegrationTestSupport(unittest.TestCase):
         result = self._get_result()
         return self._list2reason(result.errors), self._list2reason(result.failures)
 
-    def _get_result(self):
-        if hasattr(self, '_outcome'):  # Python 3.4+
+    if _addError:
+        def _get_result(self):
+            return self._outcome.result
+
+    else:
+        def _get_result(self):
             result = self.defaultTestResult()  # these 2 methods have no side effects
             self._feedErrorsToResult(result, self._outcome.errors)
-        else:  # Python 3.2 - 3.3 or 3.0 - 3.1 and 2.7
-            result = getattr(self, '_outcomeForDoCleanups', self._resultForDoCleanups)
-        return result
+            return result
 
     def _list2reason(self, exc_list):
         if exc_list and exc_list[-1][0] is self:

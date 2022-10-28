@@ -27,8 +27,7 @@ from json import loads
 from os.path import normcase as nc, dirname, join as jp, exists
 
 from pybuilder.errors import PyBuilderException
-from pybuilder.utils import (GlobExpression,
-                             Timer,
+from pybuilder.utils import (Timer,
                              apply_on_files,
                              as_list,
                              discover_files,
@@ -166,26 +165,26 @@ class DiscoverFilesTest(unittest.TestCase):
         expected_result = [nc("spam/spam.py"), nc("spam/eggs.py")]
         actual_result = set(discover_files("spam", ".py"))
         self.assertEqual(set(expected_result), actual_result)
-        walk.assert_called_with("spam")
+        walk.assert_called_with("spam", followlinks=True)
 
     @patch("pybuilder.utils.os.walk", return_value=[("spam", [], fake_dir_contents)])
     def test_should_only_return_py_glob(self, walk):
         expected_result = [nc("spam/readme.md")]
         actual_result = set(discover_files_matching("spam", "readme.?d"))
         self.assertEqual(set(expected_result), actual_result)
-        walk.assert_called_with("spam")
+        walk.assert_called_with("spam", followlinks=True)
 
 
 class DiscoverModulesTest(unittest.TestCase):
     @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["eggs.pi"])])
     def test_should_return_empty_list_when_directory_contains_single_file_not_matching_suffix(self, walk):
         self.assertEqual([], discover_modules("spam", ".py"))
-        walk.assert_called_with("spam")
+        walk.assert_called_with("spam", followlinks=True)
 
     @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["eggs.py"])])
     def test_should_return_list_with_single_module_when_directory_contains_single_file(self, walk):
         self.assertEqual(["eggs"], discover_modules("spam", ".py"))
-        walk.assert_called_with("spam")
+        walk.assert_called_with("spam", followlinks=True)
 
     @patch("pybuilder.utils.os.walk", return_value=[("pet_shop", [],
                                                      ["parrot.txt", "parrot.py", "parrot.pyc", "parrot.py~",
@@ -194,55 +193,67 @@ class DiscoverModulesTest(unittest.TestCase):
         expected_result = ["parrot"]
         actual_result = discover_modules_matching("pet_shop", "*parrot*")
         self.assertEqual(set(expected_result), set(actual_result))
-        walk.assert_called_with("pet_shop")
+        walk.assert_called_with("pet_shop", followlinks=True)
 
     @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["eggs.py"])])
     def test_glob_should_return_list_with_single_module_when_directory_contains_single_file(self, walk):
         self.assertEqual(["eggs"], discover_modules_matching("spam", "*"))
-        walk.assert_called_with("spam")
+        walk.assert_called_with("spam", followlinks=True)
 
     @patch("pybuilder.utils.os.walk", return_value=[("spam", ["eggs"], []),
                                                     ("spam/eggs", [], ["__init__.py"])])
     def test_glob_should_return_list_with_single_module_when_directory_contains_package(self, walk):
         self.assertEqual(["eggs"], discover_modules_matching("spam", "*"))
 
-        walk.assert_called_with("spam")
+        walk.assert_called_with("spam", followlinks=True)
 
-    @patch("pybuilder.utils.discover_files_matching", return_value=['/path/to/tests/reactor_tests.py'])
+    @patch("pybuilder.utils.os.walk", return_value=[("/path/to/tests", [], ["reactor_tests.py"])])
     def test_should_not_eat_first_character_of_modules_when_source_path_ends_with_slash(self, _):
         self.assertEqual(["reactor_tests"], discover_modules_matching("/path/to/tests/", "*"))
 
-    @patch("pybuilder.utils.discover_files_matching", return_value=['/path/to/tests/reactor_tests.py'])
+    @patch("pybuilder.utils.os.walk", return_value=[("/path/to/tests", [], ["reactor_tests.py"])])
     def test_should_honor_suffix_without_stripping_it_from_module_names(self, _):
         self.assertEqual(["reactor_tests"], discover_modules_matching("/path/to/tests/", "*_tests"))
 
+    @patch("pybuilder.utils.os.walk",
+           return_value=[("python", ["a", "b", "name"], []),
+                         ("python/a", ["b"], ["module.py", "__init__.py"]),
+                         ("python/a/b", [], ["module.py", "__init__.py"]),
+                         ("python/b", [], ["module.py", "__init__.py"]),
+                         ("python/name", ["space"], []),
+                         ("python/name/space", ["x"], ["module.py"]),
+                         ("python/name/space/x", [], ["__init__.py", "module.py"])])
+    def test_packages_and_ns_modules_only(self, _):
+        self.assertEqual(["a", "a.b", "b", "name.space.module", "name.space.x"],
+                         discover_modules_matching("python", "*", include_package_modules=False))
 
-class GlobExpressionTest(unittest.TestCase):
-    def test_static_expression_should_match_exact_file_name(self):
-        self.assertTrue(GlobExpression("spam.eggs").matches("spam.eggs"))
+    @patch("pybuilder.utils.os.walk",
+           return_value=[("python", ["a", "b", "name"], []),
+                         ("python/a", ["b"], ["module.py", "__init__.py"]),
+                         ("python/a/b", [], ["module.py", "__init__.py"]),
+                         ("python/b", [], ["module.py", "__init__.py"]),
+                         ("python/name", ["space"], []),
+                         ("python/name/space", ["x"], ["module.py"]),
+                         ("python/name/space/x", [], ["__init__.py", "module.py"])])
+    def test_non_package_modules_and_ns_modules_only(self, _):
+        self.assertEqual(["a.module", "a.b.module", "b.module", "name.space.module", "name.space.x.module"],
+                         discover_modules_matching("python", "*", include_packages=False))
 
-    def test_static_expression_should_not_match_different_file_name(self):
-        self.assertFalse(GlobExpression("spam.eggs").matches("spam.egg"))
-
-    def test_dynamic_file_expression_should_match_any_character(self):
-        self.assertTrue(GlobExpression("spam.egg*").matches("spam.eggs"))
-
-    def test_dynamic_file_expression_should_match_no_character(self):
-        self.assertTrue(GlobExpression("spam.egg*").matches("spam.egg"))
-
-    def test_dynamic_file_expression_should_not_match_different_file_part(self):
-        self.assertFalse(GlobExpression("spam.egg*").matches("foo.spam.egg"))
-
-    def test_dynamic_file_expression_should_not_match_directory_part(self):
-        self.assertFalse(GlobExpression("*spam.egg").matches("foo/spam.egg"))
-
-    def test_dynamic_directory_expression_should_match_file_in_directory(self):
-        self.assertTrue(GlobExpression("**/spam.egg").matches("foo/spam.egg"))
-        self.assertTrue(GlobExpression("**/spam.egg").matches("bar/spam.egg"))
+    @patch("pybuilder.utils.os.walk",
+           return_value=[("python", ["a", "b", "name"], []),
+                         ("python/a", ["b"], ["module.py", "__init__.py"]),
+                         ("python/a/b", [], ["module.py", "__init__.py"]),
+                         ("python/b", [], ["module.py", "__init__.py"]),
+                         ("python/name", ["space"], []),
+                         ("python/name/space", ["x"], ["module.py"]),
+                         ("python/name/space/x", [], ["__init__.py", "module.py"])])
+    def test_packages_and_package_modules_only(self, _):
+        self.assertEqual(["a.module", "a", "a.b.module", "a.b", "b.module", "b", "name.space.x", "name.space.x.module"],
+                         discover_modules_matching("python", "*", include_namespace_modules=False))
 
 
 class ApplyOnFilesTest(unittest.TestCase):
-    @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["a", "b", "c"])])
+    @patch("pybuilder.utils.iglob", return_value=["spam/a", "spam/b", "spam/c"])
     def test_should_apply_callback_to_all_files_when_expression_matches_all_files(self, walk):
         absolute_file_names = []
         relative_file_names = []
@@ -252,12 +263,12 @@ class ApplyOnFilesTest(unittest.TestCase):
             relative_file_names.append(relative_file_name)
 
         apply_on_files("spam", callback, "*")
-        self.assertEqual([nc("spam/a"), nc("spam/b"), nc("spam/c")], absolute_file_names)
+        self.assertEqual(["spam/a", "spam/b", "spam/c"], absolute_file_names)
         self.assertEqual(["a", "b", "c"], relative_file_names)
 
-        walk.assert_called_with("spam")
+        walk.assert_called_with(nc("spam/*"), recursive=True)
 
-    @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["a", "b", "c"])])
+    @patch("pybuilder.utils.iglob", return_value=["spam/a"])
     def test_should_apply_callback_to_one_file_when_expression_matches_one_file(self, walk):
         called_on_file = []
 
@@ -265,11 +276,11 @@ class ApplyOnFilesTest(unittest.TestCase):
             called_on_file.append(absolute_file_name)
 
         apply_on_files("spam", callback, "a")
-        self.assertEqual([nc("spam/a")], called_on_file)
+        self.assertEqual(["spam/a"], called_on_file)
 
-        walk.assert_called_with("spam")
+        walk.assert_called_with(nc("spam/a"), recursive=True)
 
-    @patch("pybuilder.utils.os.walk", return_value=[("spam", [], ["a"])])
+    @patch("pybuilder.utils.iglob", return_value=["spam/a"])
     def test_should_pass_additional_arguments_to_closure(self, walk):
         called_on_file = []
 
@@ -278,9 +289,9 @@ class ApplyOnFilesTest(unittest.TestCase):
             called_on_file.append(absolute_file_name)
 
         apply_on_files("spam", callback, "a", "additional argument")
-        self.assertEqual([nc("spam/a")], called_on_file)
+        self.assertEqual(["spam/a"], called_on_file)
 
-        walk.assert_called_with("spam")
+        walk.assert_called_with(nc("spam/a"), recursive=True)
 
 
 class MkdirTest(unittest.TestCase):

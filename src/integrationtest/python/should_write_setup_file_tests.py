@@ -24,6 +24,8 @@ from itest_support import IntegrationTestSupport
 class Test(IntegrationTestSupport):
     def test(self):
         self.write_build_file("""
+import os
+
 from pybuilder.core import use_plugin, init
 
 use_plugin("python.core")
@@ -39,6 +41,9 @@ def init (project):
         declaration_only = True)
     project.depends_on("eggs", "==0.2.3", declaration_only=True)
     project.build_depends_on("eggy", declaration_only=True)
+
+    project.include_file("project", "descriptors/*/*")
+    project.include_directory(os.path.join("project", "calendars"), "*.yml", package_root="src/main/python")
 """)
         self.create_directory("src/main/python/spam")
         self.write_file("src/main/python/standalone_module.py")
@@ -47,6 +52,14 @@ def init (project):
 def spam ():
     pass
 """)
+        self.create_directory("src/main/python/project/descriptors/a")
+        self.create_directory("src/main/python/project/calendars/acc")
+
+        self.write_file("src/main/python/project/__init__.py", "")
+        self.write_file("src/main/python/project/calendars/__init__.py", "")
+        self.write_file("src/main/python/project/descriptors/a/b.yml", "file: b")
+        self.write_file("src/main/python/project/calendars/2018.yml", "file: 2018")
+        self.write_file("src/main/python/project/calendars/acc/2018.yml", "file: acc_2018")
 
         reactor = self.prepare_reactor()
         reactor.build()
@@ -66,6 +79,7 @@ def spam ():
         self.assert_file_permissions(0o755, setup_py)
 
         self.assert_file_content(setup_py, """#!/usr/bin/env python
+#   -*- coding: utf-8 -*-
 
 from setuptools import setup
 from setuptools.command.install import install as _install
@@ -89,22 +103,38 @@ if __name__ == '__main__':
         name = 'integration-test',
         version = '1.0.dev0',
         description = '',
-        long_description = '',
-        author = '',
-        author_email = '',
-        license = '',
-        url = '',
-        scripts = [],
-        packages = ['spam'],
-        namespace_packages = [],
-        py_modules = ['standalone_module'],
+        long_description = 'integration-test',
+        long_description_content_type = None,
         classifiers = [
             'Development Status :: 3 - Alpha',
             'Programming Language :: Python'
         ],
+        keywords = '',
+
+        author = '',
+        author_email = '',
+        maintainer = '',
+        maintainer_email = '',
+
+        license = '',
+
+        url = '',
+        project_urls = {},
+
+        scripts = [],
+        packages = [
+            'project',
+            'project.calendars',
+            'spam'
+        ],
+        namespace_packages = [],
+        py_modules = ['standalone_module'],
         entry_points = {},
         data_files = [],
-        package_data = {},
+        package_data = {
+            'project': ['descriptors/*/*'],
+            'project.calendars': ['2018.yml', 'acc/2018.yml']
+        },
         install_requires = [
             'eggs==0.2.3',
             'spam'
@@ -112,7 +142,6 @@ if __name__ == '__main__':
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,
         cmdclass = {'install': install},
-        keywords = '',
         python_requires = '',
         obsoletes = [],
     )

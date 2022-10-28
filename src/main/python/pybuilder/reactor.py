@@ -27,7 +27,6 @@ import os
 import os.path
 import sys
 from collections import deque
-from os.path import normcase as nc, join as jp
 
 from pybuilder.core import (TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE, DEPENDENTS_ATTRIBUTE,
                             DESCRIPTION_ATTRIBUTE, AFTER_ATTRIBUTE,
@@ -40,10 +39,10 @@ from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
                                     DownloadingPluginLoader)
 from pybuilder.python_env import PythonEnvRegistry, PythonEnv
-from pybuilder.python_utils import IS_WIN, PY2, odict, patch_mp_pyb_env, add_env_to_path
+from pybuilder.python_utils import odict, patch_mp_pyb_env, prepend_env_to_path
 from pybuilder.utils import (as_list,
                              get_dist_version_string,
-                             basestring)
+                             np, jp)
 
 
 class BuildSummary:
@@ -183,7 +182,8 @@ class Reactor:
                       exclude_tasks=None,
                       exclude_all_optional=False,
                       reset_plugins=False,
-                      offline=False):
+                      offline=False,
+                      no_venvs=False):
         if not property_overrides:
             property_overrides = {}
         Reactor._set_current_instance(self)
@@ -191,18 +191,18 @@ class Reactor:
         project_directory, project_descriptor = self.verify_project_directory(
             project_directory, project_descriptor)
 
+        if no_venvs:
+            self.logger.warn("Python Virtual Environments are DISABLED!")
+            self.logger.warn("This will revert to INCORRECT PyBuilder v0.11 behaviors!")
+            self.logger.warn("Coverage results may be unreliable!")
+
         self.logger.debug("Loading project module from %s", project_descriptor)
 
-        self.project = Project(basedir=project_directory, offline=offline)
+        self.project = Project(basedir=project_directory, offline=offline, no_venvs=no_venvs)
 
-        self._setup_plugin_directory(reset_plugins)
+        self._setup_plugin_directory(reset_plugins, no_venvs)
 
         self._setup_deferred_plugin_import()
-
-        # This is really a way to make sure we can install `billiard` as a dependency
-        # before any of the plugins actually initialize
-        if PY2 and not IS_WIN:
-            self.require_plugin("pypi:billiard", "~=3.6.2", plugin_module_name="pybuilder.plugins.billiard_plugin")
 
         self.project_module = self.load_project_module(project_descriptor)
 
@@ -242,6 +242,8 @@ class Reactor:
 
         if environments:
             self.logger.info("Activated environments: %s", ", ".join(environments))
+
+        self.project._environments = tuple(environments)
 
         self.execution_manager.execute_initializers(environments, logger=self.logger, project=self.project,
                                                     reactor=self)
@@ -320,7 +322,7 @@ class Reactor:
 
         def add_task_dependency(names, depends_on, optional):
             for name in as_list(names):
-                if not isinstance(name, basestring):
+                if not isinstance(name, str):
                     name = self.normalize_candidate_name(name)
                 if name not in injected_task_dependencies:
                     injected_task_dependencies[name] = list()
@@ -399,11 +401,14 @@ class Reactor:
         self.propagate_property("version")
         self.propagate_property("default_task")
         self.propagate_property("summary")
-        self.propagate_property("home_page")
         self.propagate_property("description")
+        self.propagate_property("author")
         self.propagate_property("authors")
+        self.propagate_property("maintainer")
+        self.propagate_property("maintainers")
         self.propagate_property("license")
         self.propagate_property("url")
+        self.propagate_property("urls")
         self.propagate_property("explicit_namespaces")
         self.propagate_property("requires_python")
         self.propagate_property("obsoletes")
@@ -460,27 +465,22 @@ class Reactor:
 
     @staticmethod
     def verify_project_directory(project_directory, project_descriptor):
-        project_directory = os.path.abspath(project_directory)
+        project_directory = np(project_directory)
 
         if not os.path.exists(project_directory):
-            raise PyBuilderException(
-                "Project directory does not exist: %s", project_directory)
+            raise PyBuilderException("Project directory does not exist: %s", project_directory)
 
         if not os.path.isdir(project_directory):
-            raise PyBuilderException(
-                "Project directory is not a directory: %s", project_directory)
+            raise PyBuilderException("Project directory is not a directory: %s", project_directory)
 
-        project_descriptor_full_path = os.path.join(
-            project_directory, project_descriptor)
+        project_descriptor_full_path = jp(project_directory, project_descriptor)
 
         if not os.path.exists(project_descriptor_full_path):
-            raise PyBuilderException(
-                "Project directory does not contain descriptor file: %s",
-                project_descriptor_full_path)
+            raise PyBuilderException("Project directory does not contain descriptor file: %s",
+                                     project_descriptor_full_path)
 
         if not os.path.isfile(project_descriptor_full_path):
-            raise PyBuilderException(
-                "Project descriptor is not a file: %s", project_descriptor_full_path)
+            raise PyBuilderException("Project descriptor is not a file: %s", project_descriptor_full_path)
 
         return project_directory, project_descriptor_full_path
 
@@ -502,22 +502,25 @@ class Reactor:
     def pybuilder_venv(self):
         return self._python_env_registry["pybuilder"]
 
-    def _setup_plugin_directory(self, reset_plugins):
+    def _setup_plugin_directory(self, reset_plugins, no_venvs):
         per = self.python_env_registry
         system_env = per["system"]
-        plugin_dir = self._plugin_dir = jp(nc(self.project.basedir), ".pybuilder", "plugins",
-                                           system_env.versioned_dir_name)
 
-        self.logger.debug("Setting up plugins VEnv at '%s'%s", plugin_dir, " (resetting)" if reset_plugins else "")
-        plugin_env = per["pybuilder"] = PythonEnv(plugin_dir, self).create_venv(with_pip=True,
-                                                                                symlinks=system_env.venv_symlinks,
-                                                                                upgrade=True,
-                                                                                clear=(reset_plugins or
-                                                                                       system_env.is_pypy),
-                                                                                offline=self.project.offline)
+        if not no_venvs:
+            plugin_dir = self._plugin_dir = np(jp(self.project.basedir, ".pybuilder", "plugins",
+                                                  system_env.versioned_dir_name))
 
-        add_env_to_path(plugin_env, sys.path)
-        patch_mp_pyb_env(plugin_env)
+            self.logger.debug("Setting up plugins VEnv at '%s'%s", plugin_dir, " (resetting)" if reset_plugins else "")
+            plugin_env = per["pybuilder"] = PythonEnv(plugin_dir, self).create_venv(with_pip=True,
+                                                                                    symlinks=system_env.venv_symlinks,
+                                                                                    upgrade=True,
+                                                                                    clear=(reset_plugins or
+                                                                                           system_env.is_pypy),
+                                                                                    offline=self.project.offline)
+            prepend_env_to_path(plugin_env, sys.path)
+            patch_mp_pyb_env(plugin_env)
+        else:
+            per["pybuilder"] = system_env
 
     def _setup_deferred_plugin_import(self):
         self._old_import = __import__

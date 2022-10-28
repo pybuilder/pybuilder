@@ -35,6 +35,7 @@ class PdocPluginTests(unittest.TestCase):
         self.reactor = Mock()
         pyb_env = Mock()
         pyb_env.environ = {"PATH": "a"}
+        pyb_env.execute_command.return_value = 0
         self.reactor.python_env_registry = {"pybuilder": pyb_env}
         self.reactor.pybuilder_venv = pyb_env
 
@@ -53,16 +54,18 @@ class PdocPluginTests(unittest.TestCase):
 
         self.assertEqual(self.reactor.pybuilder_venv.verify_can_execute.call_count, 2)
 
+    @patch("pybuilder.plugins.python.pdoc_plugin.tail_log")
     @patch("pybuilder.plugins.python.pdoc_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.pdoc_plugin.os.path.exists")
-    def test_pdoc_requires_module_name(self, os_path_exists, os_mkdir):
+    def test_pdoc_requires_module_name(self, *_):
         pdoc_init(self.project)
 
         self.assertRaises(BuildFailedException, pdoc_compile_docs, self.project, self.logger, self.reactor)
 
+    @patch("pybuilder.plugins.python.pdoc_plugin.tail_log")
     @patch("pybuilder.plugins.python.pdoc_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.pdoc_plugin.os.path.exists")
-    def test_pdoc_html_adds_html_dir(self, os_path_exists, os_mkdir):
+    def test_pdoc_html_adds_html_dir(self, *_):
         pdoc_init(self.project)
         self.project.set_property("pdoc_module_name", "pdoc_module_name_value")
 
@@ -70,23 +73,25 @@ class PdocPluginTests(unittest.TestCase):
         pdoc_compile_docs(self.project, self.logger, self.reactor)
         pyb_env = self.reactor.pybuilder_venv
         pyb_env.execute_command.assert_called_with(
-            ['pdoc', "pdoc_module_name_value"],
+            ["pdoc", "pdoc_module_name_value"],
             cwd=self.project.expand_path("$dir_target", "pdocs"),
             env={
-                'PYTHONPATH': self.project.expand_path("$dir_source_main_python"),
-                'PATH': pyb_env.environ['PATH']
+                "PYTHONPATH": self.project.expand_path("$dir_source_main_python"),
+                "PATH": pyb_env.environ["PATH"]
             },
-            outfile_name=self.project.expand_path('$dir_reports', 'pdoc'))
+            outfile_name=self.project.expand_path("$dir_reports", "pdoc"),
+            error_file_name=self.project.expand_path("$dir_reports", "pdoc.err"))
 
         self.project.set_property("pdoc_command_args", ["--html"])
         pdoc_compile_docs(self.project, self.logger, self.reactor)
         pyb_env.execute_command.assert_called_with(
-            ['pdoc', "--html", "--html-dir", self.project.expand_path('$dir_target', 'pdocs'),
+            ["pdoc", "--html", "--html-dir", self.project.expand_path("$dir_target", "pdocs"),
              "pdoc_module_name_value"],
             cwd=self.project.expand_path("$dir_target", "pdocs"),
             env={
-                'PYTHONPATH': self.project.expand_path("$dir_source_main_python"),
-                'PATH': pyb_env.environ['PATH']
+                "PYTHONPATH": self.project.expand_path("$dir_source_main_python"),
+                "PATH": pyb_env.environ["PATH"]
             },
-            outfile_name=self.project.expand_path('$dir_reports', 'pdoc')
+            outfile_name=self.project.expand_path("$dir_reports", "pdoc"),
+            error_file_name=self.project.expand_path("$dir_reports", "pdoc.err")
         )

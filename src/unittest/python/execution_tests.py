@@ -594,10 +594,13 @@ class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
         one = Mock(name="one", dependencies=[])
         two = Mock(name="two", dependencies=[TaskDependency("one")])
         three = Mock(name="three", dependencies=[TaskDependency("one")])
+        four = Mock(name="four", dependencies=[])
 
         self.execution_manager.register_task(one, two)
         self.execution_manager.register_task(three)
-        self.execution_manager.register_late_task_dependencies({"two": [TaskDependency("three")]})
+        self.execution_manager.register_late_task_dependencies({"two": [TaskDependency("three")],
+                                                                "four": [TaskDependency("two")]})
+        self.execution_manager.register_task(four)
         self.execution_manager.resolve_dependencies()
 
         self.assertEqual([], self.execution_manager._task_dependencies.get("one"))
@@ -630,8 +633,7 @@ class ExecutionManagerResolveDependenciesTest(ExecutionManagerTestBase):
 
         self.execution_manager.register_task(one, two)
         self.execution_manager.register_task(three)
-        self.execution_manager.register_late_task_dependencies(
-            {"four": [TaskDependency("three")]})
+        self.execution_manager.register_late_task_dependencies({"four": [TaskDependency("three")]})
         self.assertRaises(NoSuchTaskException, self.execution_manager.resolve_dependencies)
 
 

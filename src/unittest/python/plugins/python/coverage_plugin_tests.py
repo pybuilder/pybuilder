@@ -16,7 +16,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import sys
 from os.path import join as jp
 from unittest import TestCase
 
@@ -28,10 +27,7 @@ from pybuilder.plugins.python.coverage_plugin import (init_coverage_properties,
                                                       )
 from test_utils import patch, MagicMock, Mock
 
-if sys.version_info[0] < 3:  # if major is less than 3
-    import_patch = "__builtin__.__import__"
-else:
-    import_patch = "builtins.__import__"
+import_patch = "builtins.__import__"
 
 
 class CoveragePluginTests(TestCase):

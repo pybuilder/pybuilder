@@ -1,13 +1,16 @@
-PyBuilder
+[PyBuilder &#x2014; an easy-to-use build automation tool for Python](https://pybuilder.io)
 =========
 
-[PyBuilder](https://pybuilder.io)
+[![Follow PyBuilder on Twitter](https://img.shields.io/twitter/follow/pybuilder_?label=Follow%20PyBuilder&style=social)](https://twitter.com/intent/follow?screen_name=pybuilder_)
+[![Gitter](https://img.shields.io/gitter/room/pybuilder/pybuilder?logo=gitter)](https://gitter.im/pybuilder/pybuilder)
+[![Build Status](https://img.shields.io/github/workflow/status/pybuilder/pybuilder/pybuilder/master)](https://github.com/pybuilder/pybuilder/actions/workflows/pybuilder.yml)
+[![Coverage Status](https://img.shields.io/coveralls/github/pybuilder/pybuilder/master?logo=coveralls)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
 
-
-[![Gitter](https://badges.gitter.im/pybuilder/pybuilder.svg)](https://gitter.im/pybuilder/pybuilder)
-[![Build Status](https://secure.travis-ci.org/pybuilder/pybuilder.png?branch=master)](https://travis-ci.org/pybuilder/pybuilder)
-[![PyPI version](https://badge.fury.io/py/pybuilder.png)](https://pypi.org/project/pybuilder/)
-[![Coverage Status](https://coveralls.io/repos/pybuilder/pybuilder/badge.png?branch=master)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
+[![PyBuilder Version](https://img.shields.io/pypi/v/pybuilder?logo=pypi)](https://pypi.org/project/pybuilder/)
+[![PyBuilder Python Versions](https://img.shields.io/pypi/pyversions/pybuilder?logo=pypi)](https://pypi.org/project/pybuilder/)
+[![PyBuilder Downloads Per Day](https://img.shields.io/pypi/dd/pybuilder?logo=pypi)](https://pypi.org/project/pybuilder/)
+[![PyBuilder Downloads Per Week](https://img.shields.io/pypi/dw/pybuilder?logo=pypi)](https://pypi.org/project/pybuilder/)
+[![PyBuilder Downloads Per Month](https://img.shields.io/pypi/dm/pybuilder?logo=pypi)](https://pypi.org/project/pybuilder/)
 
 PyBuilder is a software build tool written in 100% pure Python, mainly
 targeting Python applications.
@@ -16,9 +19,9 @@ PyBuilder is based on the concept of dependency based programming, but it also
 comes with a powerful plugin mechanism, allowing the construction of build life
 cycles similar to those known from other famous (Java) build tools.
 
-PyBuilder is running on the following versions of Python: 2.7, 3.5, 3.6, 3.7, 3.8, and PyPy 2.7, 3.5 and 3.6.
+PyBuilder is running on the following versions of Python 3.7, 3.8, 3.9, 3.10, 3.11 and PyPy 3.7, 3.8 and 3.9.
 
-See the [Travis Build](https://travis-ci.org/pybuilder/pybuilder) for version specific output.
+See the [GitHub Actions Workflow](https://github.com/pybuilder/pybuilder/actions/workflows/pybuilder.yml) for version specific output.
 
 ## Installing
 
@@ -58,4 +61,4 @@ The release notes can be found [here](https://pybuilder.io/release-notes/).
 There will also be a git tag with each release. Please note that we do not currently promote tags to GitHub "releases".
 
 ## Development
-See [Developing PyBuilder](https://pybuilder.io/documentation/developing-pybuilder.html)
+See [Developing PyBuilder](https://pybuilder.io/documentation/developing-pybuilder)

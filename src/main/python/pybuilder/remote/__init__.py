@@ -21,40 +21,239 @@ from pybuilder.python_utils import patch_mp
 
 patch_mp()
 
+import sys  # noqa: E402
+from textwrap import dedent  # noqa: E402
+
+from types import (MethodType,  # noqa: E402
+                   FunctionType,
+                   BuiltinFunctionType,
+                   )
+
+try:
+    from types import (WrapperDescriptorType,  # noqa: E402
+                       MethodWrapperType,
+                       MethodDescriptorType,
+                       ClassMethodDescriptorType,
+                       )
+except ImportError:
+    WrapperDescriptorType = type(object.__init__)
+    MethodWrapperType = type(object().__str__)
+    MethodDescriptorType = type(str.join)
+    ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
+
+from os.path import normcase as nc, sep  # noqa: E402
 from io import BytesIO, StringIO  # noqa: E402
 from pickle import PickleError, Unpickler, UnpicklingError, HIGHEST_PROTOCOL  # noqa: E402
 from pickletools import dis  # noqa: E402
 
-from pybuilder.python_utils import (mp_get_context,
+from pybuilder.python_utils import (mp_get_context,  # noqa: E402
                                     mp_ForkingPickler as ForkingPickler,
                                     mp_log_to_stderr as log_to_stderr,
-                                    PY2,
-                                    IS_WIN)  # noqa: E402
+                                    IS_WIN)
 
-PICKLE_PROTOCOL_MIN = 2
+PICKLE_PROTOCOL_MIN = 4
 PICKLE_PROTOCOL_MAX = HIGHEST_PROTOCOL
 
-if PY2:
-    ConnectionError = EnvironmentError
+CALLABLE_TYPES = (MethodType,
+                  FunctionType,
+                  BuiltinFunctionType,
+                  MethodWrapperType,
+                  ClassMethodDescriptorType,
+                  WrapperDescriptorType,
+                  MethodDescriptorType,
+                  )
+
+import _compat_pickle  # noqa: E402
 
 ctx = mp_get_context("spawn")
 ctx.allow_connection_pickling()
 logger = ctx.get_logger()
 
 __all__ = ["RemoteObjectPipe", "RemoteObjectError",
-           "ctx", "proxy_members", "PipeShutdownError", "log_to_stderr"]
+           "Process", "proxy_members", "PipeShutdownError", "log_to_stderr"]
+
+BUILTIN_MODULES = set(sys.builtin_module_names)
+
+
+class Process:
+    def __init__(self, pyenv, group=None, target=None, name=None, args=None):
+        self.pyenv = pyenv
+        self.proc = ctx.Process(group=group, target=target, name=name, args=args)
+
+    def start(self):
+        pyenv = self.pyenv
+
+        from multiprocessing import spawn as patch_module
+        if not IS_WIN:
+            try:
+                from multiprocessing import semaphore_tracker as tracker
+            except ImportError:
+                from multiprocessing import resource_tracker as tracker
+        else:
+            tracker = None
+
+        # This is done to prevent polluting tracker's path with our path magic
+        if tracker:
+            tracker.getfd()
+
+        old_python_exe = patch_module.get_executable()
+        patch_module.set_executable(pyenv.executable[0])  # pyenv's actual sys.executable
+
+        old_get_command_line = patch_module.get_command_line
+
+        def patched_get_command_line(**kwds):
+            cmd_line = old_get_command_line(**kwds)
+            result = list(pyenv.executable) + cmd_line[1:]
+            logger.debug("Starting process with %r", result)
+            return result
+
+        patch_module.get_command_line = patched_get_command_line
+
+        old_preparation_data = patch_module.get_preparation_data
+
+        def patched_preparation_data(name):
+            d = old_preparation_data(name)
+            sys_path = d["sys_path"]
+
+            exec_prefix = nc(sys.exec_prefix) + sep
+
+            trailing_paths = []
+            for idx, path in enumerate(sys_path):
+                nc_path = nc(path)
+
+                if nc_path.startswith(exec_prefix):
+                    sys_path[idx] = pyenv.env_dir + sep + path[len(exec_prefix):]
+                    trailing_paths.append(path)
+
+            # Push current exec_prefix paths to the very end
+            sys_path.extend(trailing_paths)
+
+            logger.debug("Process sys.path will be: %r", sys_path)
+            return d
+
+        patch_module.get_preparation_data = patched_preparation_data
+        try:
+            return self.proc.start()
+        finally:
+            patch_module.set_executable(old_python_exe)
+            patch_module.get_command_line = old_get_command_line
+            patch_module.get_preparation_data = old_preparation_data
+
+    def terminate(self):
+        return self.proc.terminate()
+
+    def kill(self):
+        return self.proc.kill()
+
+    def join(self, timeout=None):
+        return self.proc.join(timeout)
+
+    def is_alive(self):
+        return self.proc.is_alive()
+
+    def close(self):
+        return self.proc.close()
+
+    @property
+    def name(self):
+        return self.proc.name
+
+    @name.setter
+    def name(self, name):
+        self.proc.name = name
+
+    @property
+    def daemon(self):
+        return self.proc.daemon
+
+    @daemon.setter
+    def daemon(self, daemonic):
+        self.proc.daemon = daemonic
+
+    @property
+    def authkey(self):
+        return self.proc.authkey
+
+    @authkey.setter
+    def authkey(self, authkey):
+        self.proc.authkey = authkey
+
+    @property
+    def exitcode(self):
+        return self.proc.exitcode
+
+    @property
+    def ident(self):
+        return self.proc.ident
+
+    pid = ident
+
+    @property
+    def sentinel(self):
+        return self.proc.sentinel
+
+    def __repr__(self):
+        return repr(self.proc)
 
 
 class ProxyDef:
-    def __init__(self, remote_id, type_name, methods, fields):
+    def __init__(self, remote_id, module_name, type_name, is_type, methods, fields, spec_fields):
         self.remote_id = remote_id
+        self.module_name = module_name
         self.type_name = type_name
+        self.is_type = is_type
         self.methods = methods
         self.fields = fields
+        self.spec_fields = spec_fields
 
     def __repr__(self):
-        return "ProxyDef[remote_id=%r, type_name=%r, methods=%r, fields=%r]" % (self.remote_id, self.type_name,
-                                                                                self.methods, self.fields)
+        return "ProxyDef[remote_id=%r, module_name=%r, type_name=%r, is_type=%r," \
+               " methods=%r, fields=%r, spec_fields=%r]" % (self.remote_id,
+                                                            self.module_name,
+                                                            self.type_name,
+                                                            self.is_type,
+                                                            self.methods,
+                                                            self.fields,
+                                                            self.spec_fields)
+
+    def make_proxy_type(self):
+        """
+        Return a proxy type whose methods are given by `exposed`
+        """
+
+        remote_id = self.remote_id
+        methods = tuple(self.methods)
+        fields = tuple(self.fields)
+        dic = {}
+
+        body = ""
+        for meth in methods:
+            body += dedent("""
+            def %s(self, *args, **kwargs):
+                return self._BaseProxy__rop.call(%r, %r, args, kwargs)""" % (meth, remote_id, meth))
+
+        for field in fields:
+            body += dedent("""
+            def %s_getter(self):
+                return self._BaseProxy__rop.call_getattr(%r, %r)
+
+            def %s_setter(self, value):
+                return self._BaseProxy__rop.call_setattr(%r, %r, value)
+
+            %s = property(%s_getter, %s_setter)""" % (field, remote_id, field, field,
+                                                      remote_id, field, field, field, field))
+
+        exec(body, dic)
+        if self.is_type:
+            proxy_type = type(self.type_name, (_BaseProxyType, object), dic)
+        else:
+            proxy_type = type(self.type_name, (_BaseProxy, object), dic)
+
+        proxy_type.__module__ = self.module_name
+        proxy_type.__name__ = self.type_name
+        proxy_type.__methods__ = methods
+        proxy_type.__fields__ = fields
+        return proxy_type
 
 
 PICKLE_PID_TYPE_REMOTE_OBJ = 0
@@ -87,34 +286,38 @@ class RemoteObjectUnpickler(Unpickler, object):
 
     @classmethod
     def loads(cls, buf, _rop, *args, **kwargs):
-        file = BytesIO(buf)
-        return cls(file, *args, _rop=_rop, **kwargs).load()
+        f = BytesIO(buf)
+        return cls(f, *args, _rop=_rop, **kwargs).load()
 
 
-_PICKLE_SKIP_PID_CHECK_TYPES = {type(None), type, bool, int, float, str, bytes, bytearray, list, tuple, dict, set}
+_PICKLE_SKIP_PID_CHECK_TYPES = {type(None), bool, int, float, complex, str, bytes, bytearray, list, tuple, dict, set}
 
 
 class RemoteObjectPickler(ForkingPickler, object):
 
     def __init__(self, *args, **kwargs):
         self._rop = kwargs.pop("_rop")  # type: _RemoteObjectPipe
-        if PY2:
-            kwargs["protocol"] = self._rop.pickle_version  # This is for full backwards compatibility with Python 2
-            super(RemoteObjectPickler, self).__init__(*args, **kwargs)
-        else:
-            super(RemoteObjectPickler, self).__init__(args[0], self._rop.pickle_version, *args[1:])
+        self._verify_types = set()
+        self.exc_persisted = []
 
-    def persistent_id(self, obj, exc_persisted=[]):  # Mutable default is intentional here
-        if type(obj) in _PICKLE_SKIP_PID_CHECK_TYPES:
+        super(RemoteObjectPickler, self).__init__(args[0], self._rop.pickle_version, *args[1:])
+
+    def persistent_id(self, obj):  # Mutable default is intentional here
+        t_obj = obj if isinstance(obj, type) else type(obj)
+        if t_obj in _PICKLE_SKIP_PID_CHECK_TYPES:
             return None
 
-        # This is a weird trick. Since we need
+        exc_persisted = self.exc_persisted
+        # This is a weird trick.
         if obj in exc_persisted:
             exc_persisted.remove(obj)
             return None
 
         if isinstance(obj, _BaseProxy):
             return PICKLE_PID_TYPE_REMOTE_BACKREF, obj._BaseProxy__proxy_def.remote_id
+
+        if issubclass(t_obj, _BaseProxyType):
+            return PICKLE_PID_TYPE_REMOTE_BACKREF, t_obj._BaseProxy__proxy_def.remote_id
 
         rop = self._rop
         remote_obj = rop.get_remote(obj)
@@ -125,18 +328,23 @@ class RemoteObjectPickler(ForkingPickler, object):
             exc_persisted.append(obj)
             return PICKLE_PID_TYPE_REMOTE_EXC_TB, reduce_exception(obj)  # exception with traceback
 
+        if t_obj not in rop._verified_types:
+            if t_obj.__module__ not in BUILTIN_MODULES:
+                self._verify_types.add((t_obj.__module__, t_obj.__name__))
+
         return None
 
     @classmethod
     def dumps(cls, obj, _rop, *args, **kwargs):
         buf = BytesIO()
-        cls(buf, *args, _rop=_rop, **kwargs).dump(obj)
+        pickler = cls(buf, *args, _rop=_rop, **kwargs)
+        pickler.dump(obj)
         if logger.getEffectiveLevel() == 1:
             buf.seek(0)
             dis_log = StringIO()
             dis(buf, dis_log)
             logger.debug(dis_log.getvalue())
-        return buf.getvalue()
+        return buf.getvalue(), pickler._verify_types
 
 
 def rebuild_exception(ex, tb):
@@ -149,16 +357,14 @@ def reduce_exception(ex):
     return ex, getattr(ex, "__traceback__", None)
 
 
-#
-# Functions for finding the method names of an object
-#
-
 def proxy_members(obj, public=True, protected=True, add_callable=True, add_str=True):
     '''
     Return a list of names of methods of `obj` which do not start with '_'
     '''
     methods = []
     fields = []
+    spec_fields = {}
+
     for name in dir(obj):
         is_public = name[0] != '_'
         is_protected = name[0] == '_' and (len(name) == 1 or name[1] != '_')
@@ -169,16 +375,30 @@ def proxy_members(obj, public=True, protected=True, add_callable=True, add_str=T
                 is_callable and add_callable or
                 is_str and add_str):
             member = getattr(obj, name)
-            if callable(member):
+            if isinstance(member, CALLABLE_TYPES):
                 methods.append(name)
             else:
                 fields.append(name)
-    return methods, fields
+
+    if isinstance(obj, BaseException):
+        if hasattr(obj, "__cause__"):
+            fields.append("__cause__")
+        if hasattr(obj, "__traceback__"):
+            fields.append("__traceback__")
+        if hasattr(obj, "__context__"):
+            fields.append("__context__")
+        if hasattr(obj, "__suppress_context__"):
+            fields.append("__suppress_context__")
+
+    if isinstance(obj, type):
+        spec_fields["__qualname__"] = obj.__qualname__
+
+    return methods, fields, spec_fields
 
 
 class RemoteObjectPipe:
 
-    def expose(self, name, obj, methods=None, fields=None, remote=True):
+    def expose(self, name, obj, methods=None, fields=None, remote=True, error=False):
         """Same as `RemoteObjectManager.expose`"""
         raise NotImplementedError
 
@@ -212,6 +432,8 @@ class RemoteObjectPipe:
 
 
 def obj_id(obj):
+    if isinstance(obj, type):
+        return obj, id(obj)
     return type(obj), id(obj)
 
 
@@ -277,32 +499,45 @@ class _RemoteObjectSession:
 
         return _RemoteObjectPipe(self)
 
-    def expose(self, name, obj, remote=True, methods=None, fields=None):
+    def expose(self, name, obj, remote=True, methods=None, fields=None, error=False):
         exposed_objs = self._exposed_objs
 
         if name in exposed_objs:
             raise ValueError("%r is already exposed" % name)
+
+        if error:
+            obj = ExposedObjectError(obj)
+
         exposed_objs[name] = obj
-        if remote:
+
+        if not error and remote:
             self.register_remote(obj, methods, fields)
 
     def hide(self, name):
         self._exposed_objs.pop(name)
 
-    def register_remote(self, obj, methods=None, fields=None):
+    def register_remote(self, obj, methods=None, fields=None, spec_fields=None):
         remote_id = self._remote_id
         self._remote_id = remote_id + 1
 
-        if methods is None or fields is None:
-            obj_methods, obj_fields = proxy_members(obj)
+        if methods is None or fields is None or spec_fields is None:
+            obj_methods, obj_fields, obj_spec_fields = proxy_members(obj)
             if methods is None:
                 methods = obj_methods
 
             if fields is None:
                 fields = obj_fields
 
-        obj_type = type(obj)
-        proxy = ProxyDef(remote_id, obj_type.__module__ + "." + obj_type.__name__, methods, fields)
+            if spec_fields is None:
+                spec_fields = obj_spec_fields
+
+        if isinstance(obj, type):
+            obj_type = obj
+        else:
+            obj_type = type(obj)
+
+        proxy = ProxyDef(remote_id, obj_type.__module__, obj_type.__name__, obj_type is obj,
+                         methods, fields, spec_fields)
 
         self._remote_objs[obj] = proxy
         self._remote_objs_ids[remote_id] = obj
@@ -342,15 +577,25 @@ class _RemoteObjectSession:
         if proxy_def:
             return proxy_def
 
-        t_obj = type(obj)
-        if t_obj in self._remote_types:
-            logger.debug("%r is type %r, which will register as remote", obj_id(obj), t_obj)
-            return self.register_remote(obj)
-
-        for remote_type in self._remote_types:
-            if isinstance(obj, remote_type):
-                logger.debug("%r is instance of type %r, which will register as remote", obj_id(obj), remote_type)
+        if not isinstance(obj, type):
+            t_obj = type(obj)
+            if t_obj in self._remote_types:
+                logger.debug("%r is instance of type %r, which will register as remote", obj_id(obj), t_obj)
                 return self.register_remote(obj)
+
+            for remote_type in self._remote_types:
+                if isinstance(obj, remote_type):
+                    logger.debug("%r is instance of type %r, which will register as remote", obj_id(obj), remote_type)
+                    return self.register_remote(obj)
+        else:
+            if obj in self._remote_types:
+                logger.debug("%r will register as remote", obj)
+                return self.register_remote(obj)
+
+            for remote_type in self._remote_types:
+                if issubclass(obj, remote_type):
+                    logger.debug("%r is subtype of type %r, which will register as remote", obj_id(obj), remote_type)
+                    return self.register_remote(obj)
 
 
 class RemoteObjectError(Exception):
@@ -362,40 +607,19 @@ class PipeShutdownError(RemoteObjectError):
         self.cause = cause
 
 
+class ExposedObjectError(RemoteObjectError):
+    def __init__(self, cause=None):
+        self.cause = cause
+
+
 class _BaseProxy:
-    def __init__(self, __rom, __rop, __proxy_def):
-        self.__rom = __rom
+    def __init__(self, __rop, __proxy_def):
         self.__rop = __rop
         self.__proxy_def = __proxy_def
 
 
-def _make_proxy_type(proxy_def):
-    '''
-    Return a proxy type whose methods are given by `exposed`
-    '''
-    remote_id = proxy_def.remote_id
-    methods = tuple(proxy_def.methods)
-    fields = tuple(proxy_def.fields)
-    dic = {}
-
-    for meth in methods:
-        exec('''def %s(self, *args, **kwargs):
-        return self._BaseProxy__rop.call(%r, %r, args, kwargs)''' % (meth, remote_id, meth), dic)
-
-    for field in fields:
-        exec("""
-def %s_getter(self):
-    return self._BaseProxy__rop.call_getattr(%r, %r)
-
-def %s_setter(self, value):
-    return self._BaseProxy__rop.call_setattr(%r, %r, value)
-
-%s = property(%s_getter, %s_setter)""" % (field, remote_id, field, field, remote_id, field, field, field, field), dic)
-
-    proxy_type = type(proxy_def.type_name, (_BaseProxy, object), dic)
-    proxy_type.__methods__ = methods
-    proxy_type.__fields__ = fields
-    return proxy_type
+class _BaseProxyType:
+    pass
 
 
 ROP_CLOSE = 0
@@ -405,17 +629,21 @@ ROP_PICKLE_VERSION = 2
 
 ROP_GET_EXPOSED = 5
 ROP_GET_EXPOSED_RESULT = 6
+ROP_GET_EXPOSED_ERROR = 7
 
-ROP_GET_PROXY_DEF = 7
-ROP_GET_PROXY_DEF_RESULT = 8
+ROP_GET_PROXY_DEF = 10
+ROP_GET_PROXY_DEF_RESULT = 11
 
-ROP_REMOTE_ACTION = 10
-ROP_REMOTE_ACTION_CALL = 11
-ROP_REMOTE_ACTION_GETATTR = 12
-ROP_REMOTE_ACTION_SETATTR = 13
-ROP_REMOTE_ACTION_REMOTE_ERROR = 14
-ROP_REMOTE_ACTION_RETURN = 15
-ROP_REMOTE_ACTION_EXCEPTION = 16
+ROP_VERIFY_TYPES = 14
+ROP_VERIFY_TYPES_RESULT = 15
+
+ROP_REMOTE_ACTION = 20
+ROP_REMOTE_ACTION_CALL = 21
+ROP_REMOTE_ACTION_GETATTR = 22
+ROP_REMOTE_ACTION_SETATTR = 23
+ROP_REMOTE_ACTION_REMOTE_ERROR = 24
+ROP_REMOTE_ACTION_RETURN = 25
+ROP_REMOTE_ACTION_EXCEPTION = 26
 
 
 class _RemoteObjectPipe(RemoteObjectPipe):
@@ -428,16 +656,11 @@ class _RemoteObjectPipe(RemoteObjectPipe):
         self._conn_c = self._conn_p = None
         self._remote_proxy_defs = {}
         self._remote_proxies = {}
+        self._verified_types = set()
 
         self.id = None
         self.conn = None  # type: ctx.Connection
         self.pickle_version = PICKLE_PROTOCOL_MIN
-
-    def __del__(self):  # noqa
-        # DO NOT REMOVE
-        # This is required on Python 2.7 to ensure that the object is properly GC'ed
-        # and that there isn't an attempt to close an FD with a stale object
-        pass
 
     def get_exposed(self, exposed_name):
         self._send_obj((ROP_GET_EXPOSED, exposed_name))
@@ -456,8 +679,18 @@ class _RemoteObjectPipe(RemoteObjectPipe):
         remote_proxies = self._remote_proxies
         remote_proxy = remote_proxies.get(remote_id, None)
         if remote_proxy is None:
-            remote_proxy_type = _make_proxy_type(proxy_def)
-            remote_proxy = remote_proxy_type(self._ros, self, proxy_def)
+            remote_proxy_type = proxy_def.make_proxy_type()
+
+            if proxy_def.is_type:
+                remote_proxy = remote_proxy_type
+                remote_proxy._BaseProxy__rop = self
+                remote_proxy._BaseProxy__proxy_def = proxy_def
+            else:
+                remote_proxy = remote_proxy_type(self, proxy_def)
+
+            for k, v in proxy_def.spec_fields.items():
+                setattr(remote_proxy, k, v)
+
             remote_proxies[remote_id] = remote_proxy
             logger.debug("registered local proxy for remote ID %d: %r", remote_id, remote_proxy)
         return remote_proxy
@@ -468,8 +701,8 @@ class _RemoteObjectPipe(RemoteObjectPipe):
     def get_remote_obj_by_id(self, remote_id):
         return self._ros.get_remote_obj_by_id(remote_id)
 
-    def expose(self, name, obj, remote=True, methods=None, fields=None):
-        return self._ros.expose(name, obj, remote, methods, fields)
+    def expose(self, name, obj, remote=True, methods=None, fields=None, error=False):
+        return self._ros.expose(name, obj, remote, methods, fields, error)
 
     def hide(self, name):
         self._ros.hide(name)
@@ -537,6 +770,7 @@ class _RemoteObjectPipe(RemoteObjectPipe):
 
         self._remote_proxy_defs = {}
         self._remote_proxies = {}
+        self._verified_types = set()
         self._remote_close_cause = None
 
         # Not an error. We HAVE to make sure the first send uses minimally-supported Pickle version
@@ -573,13 +807,18 @@ class _RemoteObjectPipe(RemoteObjectPipe):
                 remote_name = data[2]
                 remote_name_action = data[3]
                 if remote_name_action == ROP_REMOTE_ACTION_CALL:
-                    func = getattr(obj, remote_name, None)
+                    call_args = data[4]
+                    call_kwargs = data[5]
+
+                    if isinstance(obj, type) and remote_name.startswith("__"):
+                        func = getattr(type(obj), remote_name, None)
+                        call_args = [obj] + list(call_args)
+                    else:
+                        func = getattr(obj, remote_name, None)
                     if not callable(func):
                         self._send_obj((ROP_REMOTE_ACTION_REMOTE_ERROR, remote_id,
                                         "%r is not a callable",
                                         (remote_name,)))
-                    call_args = data[4]
-                    call_kwargs = data[5]
 
                     logger.debug("calling %r.%r (remote ID %d) with args=%r, kwargs=%r",
                                  remote_name,
@@ -637,6 +876,42 @@ class _RemoteObjectPipe(RemoteObjectPipe):
                         self._send_obj((ROP_REMOTE_ACTION_RETURN, return_val))
                     continue
 
+            if action_type == ROP_VERIFY_TYPES_RESULT:
+                new_verified = data[1]
+                proxy_types = data[2]
+                verified_types = self._verified_types
+                pickle_version = self.pickle_version
+
+                for module, name in new_verified:
+                    cls = find_class(module, name, pickle_version)
+                    verified_types.add(cls)
+
+                for module, name in proxy_types:
+                    cls = find_class(module, name, pickle_version)
+                    self.register_remote_type(cls)
+
+                return
+
+            if action_type == ROP_VERIFY_TYPES:
+                verify_types = data[1]
+                need_proxy = []
+                new_verified = []
+                if verify_types:
+                    verified_types = self._verified_types
+                    pickle_version = self.pickle_version
+
+                    for module_name in verify_types:
+                        module, name = module_name
+                        try:
+                            cls = find_class(module, name, pickle_version)
+                            verified_types.add(cls)
+                            new_verified.append(module_name)
+                        except Exception:
+                            need_proxy.append(module_name)
+
+                self._send_obj((ROP_VERIFY_TYPES_RESULT, new_verified, need_proxy))
+                continue
+
             if action_type == ROP_REMOTE_ACTION_REMOTE_ERROR:
                 remote_id = data[1]
                 msg = data[2]
@@ -654,11 +929,17 @@ class _RemoteObjectPipe(RemoteObjectPipe):
             if action_type == ROP_GET_EXPOSED:
                 exposed_name = data[1]
                 exposed = self._ros.get_exposed_by_name(exposed_name)
-                self._send_obj((ROP_GET_EXPOSED_RESULT, exposed))
+                if isinstance(exposed, ExposedObjectError):
+                    self._send_obj((ROP_GET_EXPOSED_ERROR, exposed.cause))
+                else:
+                    self._send_obj((ROP_GET_EXPOSED_RESULT, exposed))
                 continue
 
             if action_type == ROP_GET_EXPOSED_RESULT:
                 return data[1]
+
+            if action_type == ROP_GET_EXPOSED_ERROR:
+                raise data[1]
 
             if action_type == ROP_GET_PROXY_DEF:
                 remote_id = data[1]
@@ -720,74 +1001,73 @@ class _RemoteObjectPipe(RemoteObjectPipe):
         if self._remote_close_cause is None:
             self._remote_close_cause = e
 
-    if PY2 and IS_WIN:
-        # Python 2 on Windows uses Python multiprocessing
+    def _dump(self, obj):
+        while True:
+            buf, verify_types = RemoteObjectPickler.dumps(obj, self)
+            if verify_types:
+                self._send_obj((ROP_VERIFY_TYPES, verify_types))
+                self._recv()
+            else:
+                return buf
 
-        def _send_obj(self, obj):
-            """Send a (picklable) object"""
-            logger.debug("sending %r", obj)
-            if self.conn.closed:
-                raise OSError("handle is closed")
+    def _send_obj(self, obj):
+        """Send a (picklable) object"""
+        self.conn._check_closed()
+
+        buf = self._dump(obj)
+        logger.debug("sending %r", obj)
+        try:
+            self.conn._send_bytes(buf)
+        except (ConnectionError, EOFError) as e:
+            logger.debug("failed to send %r", obj, exc_info=e)
             try:
-                self.conn.send_bytes(RemoteObjectPickler.dumps(obj, self))
-            except (ConnectionError, EOFError) as e:
-                logger.debug("failed to send %r", obj, exc_info=e)
-                try:
-                    self._set_remote_close_cause(e)
-                    raise PipeShutdownError()
-                finally:
-                    self._close()
+                self._set_remote_close_cause(e)
+                raise PipeShutdownError()
+            finally:
+                self._close()
 
-        def _recv_obj(self, suppress_error=False):
-            """Receive a (picklable) object"""
-            if self.conn.closed:
-                raise OSError("handle is closed")
+    def _recv_obj(self, suppress_error=False):
+        """Receive a (picklable) object"""
+        self.conn._check_closed()
+        try:
+            buf = self.conn._recv_bytes()
+        except (ConnectionError, EOFError) as e:
+            if suppress_error:
+                return
+
+            logger.debug("receive has failed", exc_info=e)
             try:
-                buf = self.conn.recv_bytes()
-            except (ConnectionError, EOFError) as e:
-                if suppress_error:
-                    return
+                self._set_remote_close_cause(e)
+                raise PipeShutdownError()
+            finally:
+                self._close()
+        obj = RemoteObjectUnpickler.loads(buf.getvalue(), self)
+        logger.debug("received %r", obj)
+        return obj
 
-                logger.debug("receive has failed", exc_info=e)
-                try:
-                    self._set_remote_close_cause(e)
-                    raise PipeShutdownError()
-                finally:
-                    self._close()
-            obj = RemoteObjectUnpickler.loads(buf, self)
-            logger.debug("received %r", obj)
-            return obj
+
+def find_class(module, name, proto):
+    if proto < 3 and _compat_pickle:
+        if (module, name) in _compat_pickle.NAME_MAPPING:
+            module, name = _compat_pickle.NAME_MAPPING[(module, name)]
+        elif module in _compat_pickle.IMPORT_MAPPING:
+            module = _compat_pickle.IMPORT_MAPPING[module]
+    __import__(module, level=0)
+    if proto >= 4:
+        return _getattribute(sys.modules[module], name)[0]
     else:
-        # Python 2 on Linux uses Billiard that is API-compatible with Python 3
-        def _send_obj(self, obj):
-            """Send a (picklable) object"""
-            logger.debug("sending %r", obj)
-            self.conn._check_closed()
-            try:
-                self.conn._send_bytes(RemoteObjectPickler.dumps(obj, self))
-            except (ConnectionError, EOFError) as e:
-                logger.debug("failed to send %r", obj, exc_info=e)
-                try:
-                    self._set_remote_close_cause(e)
-                    raise PipeShutdownError()
-                finally:
-                    self._close()
+        return getattr(sys.modules[module], name)
 
-        def _recv_obj(self, suppress_error=False):
-            """Receive a (picklable) object"""
-            self.conn._check_closed()
-            try:
-                buf = self.conn._recv_bytes()
-            except (ConnectionError, EOFError) as e:
-                if suppress_error:
-                    return
 
-                logger.debug("receive has failed", exc_info=e)
-                try:
-                    self._set_remote_close_cause(e)
-                    raise PipeShutdownError()
-                finally:
-                    self._close()
-            obj = RemoteObjectUnpickler.loads(buf.getvalue(), self)
-            logger.debug("received %r", obj)
-            return obj
+def _getattribute(obj, name):
+    for subpath in name.split('.'):
+        if subpath == '<locals>':
+            raise AttributeError("Can't get local attribute {!r} on {!r}"
+                                 .format(name, obj))
+        try:
+            parent = obj
+            obj = getattr(obj, subpath)
+        except AttributeError:
+            raise AttributeError("Can't get attribute {!r} on {!r}"
+                                 .format(name, obj))
+    return obj, parent

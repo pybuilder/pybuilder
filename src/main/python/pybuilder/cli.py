@@ -23,12 +23,13 @@
 
 import datetime
 import optparse
-import os
 import re
 import sys
 import traceback
+from os.path import sep, normcase as nc
 
 from pybuilder import __version__
+from pybuilder import extern
 from pybuilder.core import Logger
 from pybuilder.errors import PyBuilderException
 from pybuilder.execution import ExecutionManager
@@ -42,6 +43,7 @@ from pybuilder.utils import format_timestamp, get_dist_version_string
 
 PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
 DEFAULT_LOG_FORMAT = '[%Y-%m-%d %H:%M:%S]'
+_extern = extern
 
 
 class CommandLineUsageException(PyBuilderException):
@@ -187,6 +189,12 @@ def parse_options(args):
                              default=False,
                              help="Reset plugins directory prior to running the build")
 
+    project_group.add_option("--no-venvs",
+                             action="store_true",
+                             dest="no_venvs",
+                             default=False,
+                             help="Disables the use of Python Virtual Environments")
+
     parser.add_option_group(project_group)
 
     output_group = optparse.OptionGroup(
@@ -248,7 +256,7 @@ def parse_options(args):
     for pair in options.property_overrides:
         if not PROPERTY_OVERRIDE_PATTERN.match(pair):
             parser.error("%s is not a property definition." % pair)
-        key, val = pair.split("=")
+        key, val = pair.split("=", 1)
         property_overrides[key] = val
 
     options.property_overrides = property_overrides
@@ -279,6 +287,9 @@ def init_logger(options):
     if not should_colorize(options):
         logger = StdOutLogger(threshold, options.log_format)
     else:
+        if IS_WIN:
+            import colorama
+            colorama.init()
         logger = ColoredStdOutLogger(threshold, options.log_format)
 
     return logger
@@ -395,6 +406,33 @@ def print_plan_list_of_tasks(options, arguments, reactor, quiet=False):
     print_task_list(execution_plan, quiet)
 
 
+def get_failure_message():
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+
+    filename = None
+    lineno = None
+
+    while exc_tb.tb_next:
+        exc_tb = exc_tb.tb_next
+
+    frame = exc_tb.tb_frame
+    if hasattr(frame, "f_code"):
+        code = frame.f_code
+        filename = code.co_filename
+        lineno = exc_tb.tb_lineno
+
+        filename = nc(filename)
+        for path in sys.path:
+            path = nc(path)
+            if filename.startswith(path) and len(filename) > len(path) and filename[len(path)] == sep:
+                filename = filename[len(path) + 1:]
+                break
+
+    return "%s%s%s" % ("%s: " % exc_type.__name__ if not isinstance(exc_obj, PyBuilderException) else "",
+                       exc_obj,
+                       " (%s:%d)" % (filename, lineno) if filename else "")
+
+
 def main(*args):
     if not args:
         args = sys.argv[1:]
@@ -406,11 +444,6 @@ def main(*args):
         return 1
 
     start = datetime.datetime.now()
-
-    if IS_WIN:
-        if os.isatty(sys.stdout.fileno()):
-            import pybuilder._vendor.colorama as colorama
-            colorama.init()
 
     logger = init_logger(options)
     reactor = init_reactor(logger)
@@ -428,7 +461,8 @@ def main(*args):
                                   exclude_optional_tasks=options.exclude_optional_tasks,
                                   exclude_tasks=options.exclude_tasks,
                                   exclude_all_optional=options.exclude_all_optional,
-                                  offline=options.offline
+                                  offline=options.offline,
+                                  no_venvs=options.no_venvs
                                   )
             if options.list_tasks:
                 print_list_of_tasks(reactor, quiet=options.very_quiet)
@@ -436,8 +470,8 @@ def main(*args):
             if options.list_plan_tasks:
                 print_plan_list_of_tasks(options, arguments, reactor, quiet=options.very_quiet)
             return 0
-        except PyBuilderException as e:
-            print_build_status(str(e), options, successful=False)
+        except PyBuilderException:
+            print_build_status(get_failure_message(), options, successful=False)
             return 1
 
     if not options.very_quiet:
@@ -458,7 +492,8 @@ def main(*args):
                                   exclude_tasks=options.exclude_tasks,
                                   exclude_all_optional=options.exclude_all_optional,
                                   reset_plugins=options.reset_plugins,
-                                  offline=options.offline
+                                  offline=options.offline,
+                                  no_venvs=options.no_venvs
                                   )
 
             if options.verbose or options.debug:
@@ -471,9 +506,9 @@ def main(*args):
         except KeyboardInterrupt:
             raise PyBuilderException("Build aborted")
 
-    except (Exception, SystemExit) as e:
+    except (Exception, SystemExit):
         successful = False
-        failure_message = str(e)
+        failure_message = get_failure_message()
         if options.debug:
             traceback.print_exc(file=sys.stderr)
 

@@ -333,85 +333,85 @@ class ReactorTest(unittest.TestCase):
             execution_manager_mock.initializer.environments, ["any_environment"])
 
     @patch("pybuilder.reactor.os.path.exists", return_value=False)
-    @patch("pybuilder.reactor.os.path.abspath", return_value="spam")
+    @patch("pybuilder.reactor.np", return_value="spam")
     def test_should_raise_when_verifying_project_directory_and_directory_does_not_exist(self,
-                                                                                        os_path_abspath,
+                                                                                        np,
                                                                                         os_path_exists):
         self.assertRaises(
             PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs")
 
-        os_path_abspath.assert_called_with("spam")
+        np.assert_called_with("spam")
         os_path_exists.assert_called_with("spam")
 
     @patch("pybuilder.reactor.os.path.isdir", return_value=False)
     @patch("pybuilder.reactor.os.path.exists", return_value=True)
-    @patch("pybuilder.reactor.os.path.abspath", return_value="spam")
+    @patch("pybuilder.reactor.np", return_value="spam")
     def test_should_raise_when_verifying_project_directory_and_directory_is_not_a_directory(self,
-                                                                                            os_path_abspath,
+                                                                                            np,
                                                                                             os_path_exists,
                                                                                             os_path_isdir):
         self.assertRaises(
             PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs")
 
-        os_path_abspath.assert_called_with("spam")
+        np.assert_called_with("spam")
         os_path_exists.assert_called_with("spam")
         os_path_isdir.assert_called_with("spam")
 
-    @patch("pybuilder.reactor.os.path.join", side_effect=lambda *x: "/".join(x))
+    @patch("pybuilder.reactor.jp", side_effect=lambda *x: "/".join(x))
     @patch("pybuilder.reactor.os.path.isdir", return_value=True)
     @patch("pybuilder.reactor.os.path.exists", side_effect=lambda x: True if x == "spam" else False)
-    @patch("pybuilder.reactor.os.path.abspath", return_value="spam")
+    @patch("pybuilder.reactor.np", return_value="spam")
     def test_should_raise_when_verifying_project_directory_and_build_descriptor_does_not_exist(self,
-                                                                                               os_path_abspath,
+                                                                                               np,
                                                                                                os_path_exists,
                                                                                                os_path_isdir,
-                                                                                               os_path_join):
+                                                                                               jp):
         self.assertRaises(
             PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs")
 
-        os_path_abspath.assert_called_with("spam")
+        np.assert_called_with("spam")
         os_path_exists.assert_has_calls([call("spam"), call("spam/eggs")])
         os_path_isdir.assert_called_with("spam")
-        os_path_join.assert_called_with("spam", "eggs")
+        jp.assert_called_with("spam", "eggs")
 
     @patch("pybuilder.reactor.os.path.isfile", return_value=False)
-    @patch("pybuilder.reactor.os.path.join", side_effect=lambda *x: "/".join(x))
+    @patch("pybuilder.reactor.jp", side_effect=lambda *x: "/".join(x))
     @patch("pybuilder.reactor.os.path.isdir", return_value=True)
     @patch("pybuilder.reactor.os.path.exists", return_value=True)
-    @patch("pybuilder.reactor.os.path.abspath", return_value="spam")
+    @patch("pybuilder.reactor.np", return_value="spam")
     def test_should_raise_when_verifying_project_directory_and_build_descriptor_is_not_a_file(self,
-                                                                                              os_path_abspath,
+                                                                                              np,
                                                                                               os_path_exists,
                                                                                               os_path_isdir,
-                                                                                              os_path_join,
+                                                                                              jp,
                                                                                               os_path_isfile):
         self.assertRaises(
             PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs")
 
-        os_path_abspath.assert_called_with("spam")
+        np.assert_called_with("spam")
         os_path_exists.assert_has_calls([call("spam"), call("spam/eggs")])
         os_path_isdir.assert_called_with("spam")
-        os_path_join.assert_called_with("spam", "eggs")
+        jp.assert_called_with("spam", "eggs")
         os_path_isfile.assert_called_with("spam/eggs")
 
     @patch("pybuilder.reactor.os.path.isfile", return_value=True)
-    @patch("pybuilder.reactor.os.path.join", side_effect=lambda *x: "/".join(x))
+    @patch("pybuilder.reactor.jp", side_effect=lambda *x: "/".join(x))
     @patch("pybuilder.reactor.os.path.isdir", return_value=True)
     @patch("pybuilder.reactor.os.path.exists", return_value=True)
-    @patch("pybuilder.reactor.os.path.abspath", return_value="/spam")
+    @patch("pybuilder.reactor.np", return_value="/spam")
     def test_should_return_directory_and_full_path_of_descriptor_when_verifying_project_directory(self,
-                                                                                                  os_path_abspath,
+                                                                                                  np,
                                                                                                   os_path_exists,
                                                                                                   os_path_isdir,
-                                                                                                  os_path_join,
+                                                                                                  jp,
                                                                                                   os_path_isfile):
         self.assertEqual(
             ("/spam", "/spam/eggs"), self.reactor.verify_project_directory("spam", "eggs"))
 
-        os_path_abspath.assert_called_with("spam")
+        np.assert_called_with("spam")
         os_path_exists.assert_has_calls([call("/spam"), call("/spam/eggs")])
         os_path_isdir.assert_called_with("/spam")
-        os_path_join.assert_called_with("/spam", "eggs")
+        jp.assert_called_with("/spam", "eggs")
         os_path_isfile.assert_called_with("/spam/eggs")
 
     @patch("pybuilder.reactor.imp.load_source", side_effect=ImportError("spam"))
@@ -433,11 +433,14 @@ class ReactorTest(unittest.TestCase):
         module.version = "version"
         module.default_task = "default_task"
         module.summary = "summary"
-        module.home_page = "home_page"
         module.description = "description"
+        module.author = "author"
         module.authors = "authors"
+        module.maintainer = "maintainer"
+        module.maintainers = "maintainers"
         module.license = "license"
         module.url = "url"
+        module.urls = "urls"
 
         self.reactor.project = Mock()
         self.reactor.project_module = module
@@ -447,11 +450,14 @@ class ReactorTest(unittest.TestCase):
         self.assertEqual("version", self.reactor.project.version)
         self.assertEqual("default_task", self.reactor.project.default_task)
         self.assertEqual("summary", self.reactor.project.summary)
-        self.assertEqual("home_page", self.reactor.project.home_page)
         self.assertEqual("description", self.reactor.project.description)
+        self.assertEqual("author", self.reactor.project.author)
         self.assertEqual("authors", self.reactor.project.authors)
+        self.assertEqual("maintainer", self.reactor.project.maintainer)
+        self.assertEqual("maintainers", self.reactor.project.maintainers)
         self.assertEqual("license", self.reactor.project.license)
         self.assertEqual("url", self.reactor.project.url)
+        self.assertEqual("urls", self.reactor.project.urls)
 
     def test_ensure_project_name_is_set_from_attribute_when_instantiating_project(self):
         module = ModuleType("mock_module")
@@ -486,7 +492,7 @@ class ReactorTest(unittest.TestCase):
 
         call_args = self.logger.debug.call_args
         self.assertEqual(call_args[0][0], "Project properties: %s")
-        self.assertTrue("basedir : spam" in call_args[0][1])
+        self.assertTrue("basedir : %s" % project.basedir in call_args[0][1])
         self.assertTrue("eggs : eggs" in call_args[0][1])
         self.assertTrue("spam : spam" in call_args[0][1])
 

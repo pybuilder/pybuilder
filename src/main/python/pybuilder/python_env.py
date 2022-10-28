@@ -17,29 +17,32 @@
 #   limitations under the License.
 
 import ast
+import logging
 import os
 import subprocess
 import sys
-from os.path import normcase as nc, join as jp, pathsep
-from shutil import rmtree
+from os.path import pathsep
 
 from pybuilder.install_utils import install_dependencies
 from pybuilder.python_utils import is_windows, which
-from pybuilder.utils import assert_can_execute, execute_command
-from pybuilder.vendor import virtualenv
+from pybuilder.utils import assert_can_execute, execute_command, jp, np
 
 __all__ = ["PythonEnv", "PythonEnvRegistry"]
 
 _PYTHON_INFO_SCRIPT = """import platform, sys, os, sysconfig
-_executable = os.path.normcase(os.path.abspath(getattr(sys, "_base_executable", sys.executable)))
+_base_executable = getattr(sys, "_base_executable", None)
+_sys_executable = sys.executable
+_executable = sys.executable
 _platform = sys.platform
 if _platform == "linux2":
     _platform = "linux"
 print({
 "_platform": _platform,
 "_os_name": os.name,
+"_base_executable": (_base_executable, ),
+"_sys_executable": (_sys_executable, ),
 "_executable": (_executable, ),
-"_exec_dir": os.path.normcase(os.path.abspath(os.path.dirname(_executable))),
+"_exec_dir": os.path.dirname(_executable),
 "_name": platform.python_implementation(),
 "_type": platform.python_implementation().lower(),
 "_version": tuple(sys.version_info),
@@ -79,9 +82,9 @@ class PythonEnv(object):
         self._check_populated()
 
         python_exec_path = _venv_python_executable(self._env_dir, self._platform)
-
         result = subprocess.check_output([python_exec_path, "-c", _PYTHON_INFO_SCRIPT], universal_newlines=True)
         python_info = ast.literal_eval(result)
+
         for k, v in python_info.items():
             setattr(self, k, v)
 
@@ -157,6 +160,10 @@ class PythonEnv(object):
         return self._env_dir
 
     @property
+    def exec_dir(self):
+        return self._exec_dir
+
+    @property
     def versioned_dir_name(self):
         self._check_not_populated()
         return self._versioned_dir_name
@@ -199,10 +206,12 @@ class PythonEnv(object):
                     upgrade=False,
                     with_pip=False,
                     prompt=None,
-                    offline=False):
+                    offline=False,
+                    ):
         """Creates VEnv in the designated location. Must not be yet populated."""
 
         self._check_populated()
+
         create_venv(self._env_dir,
                     system_site_packages=system_site_packages,
                     clear=clear,
@@ -210,16 +219,41 @@ class PythonEnv(object):
                     upgrade=upgrade,
                     with_pip=with_pip,
                     prompt=prompt,
-                    offline=offline)
+                    offline=offline,
+                    logger=self.logger)
 
         return self.populate()
+
+    def recreate_venv(self, system_site_packages=False,
+                      clear=False,
+                      symlinks=False,
+                      upgrade=False,
+                      with_pip=False,
+                      prompt=None,
+                      offline=False,
+                      ):
+
+        create_venv(self._env_dir,
+                    system_site_packages=system_site_packages,
+                    clear=clear,
+                    symlinks=symlinks,
+                    upgrade=upgrade,
+                    with_pip=with_pip,
+                    prompt=prompt,
+                    offline=offline,
+                    logger=self.logger)
+
+        return self
 
     def install_dependencies(self, pip_batch,
                              install_log_path=None,
                              local_mapping=None,
                              constraints_file_name=None,
                              log_file_mode="ab",
-                             package_type="dependency"):
+                             package_type="dependency",
+                             target_dir=None,
+                             ignore_installed=False,
+                             ):
 
         install_dependencies(self.logger, self.project,
                              pip_batch,
@@ -228,7 +262,9 @@ class PythonEnv(object):
                              local_mapping=local_mapping,
                              constraints_file_name=constraints_file_name,
                              log_file_mode=log_file_mode,
-                             package_type=package_type)
+                             package_type=package_type,
+                             target_dir=target_dir,
+                             ignore_installed=ignore_installed)
 
     def verify_can_execute(self, command_and_arguments, prerequisite, caller, env=None, no_path_search=False,
                            inherit_env=True):
@@ -271,86 +307,24 @@ class PythonEnv(object):
 
     def _get_site_paths(self):
         prefix = self.env_dir
-        if self.version[0] < 3:
-            if self.platform in ("os2emx", "riscos"):
-                sitedirs = [os.path.join(prefix, "Lib", "site-packages")]
-            elif self.is_pypy:
-                sitedirs = [os.path.join(prefix, "site-packages")]
-            elif sys.platform == "darwin":
-                if prefix.startswith("/System/Library/Frameworks/"):  # Apple's Python
-                    sitedirs = [
-                        os.path.join("/Library/Python", "{}.{}".format(*self.version), "site-packages"),
-                        os.path.join(prefix, "Extras", "lib", "python"),
-                    ]
-                else:  # any other Python distros on OSX work this way
-                    sitedirs = [os.path.join(prefix, "lib", "python{}.{}".format(*self.version), "site-packages")]
-            elif os.sep == "/":
-                sitedirs = [
-                    os.path.join(prefix, "lib", "python{}.{}".format(*self.version), "site-packages"),
-                    os.path.join(prefix, "lib", "site-python"),
-                    os.path.join(prefix, "python{}.{}".format(*self.version), "lib-dynload"),
-                ]
-                lib64_dir = os.path.join(prefix, "lib64", "python{}.{}".format(*self.version), "site-packages")
-                if os.path.exists(lib64_dir) and os.path.realpath(lib64_dir) not in [
-                    os.path.realpath(p) for p in sitedirs
-                ]:
-                    if self.is_64bit:
-                        sitedirs.insert(0, lib64_dir)
-                    else:
-                        sitedirs.append(lib64_dir)
-                try:
-                    # sys.getobjects only available in --with-pydebug build
-                    sys.getobjects
-                    sitedirs.insert(0, os.path.join(sitedirs[0], "debug"))
-                except AttributeError:
-                    pass
-                # Debian-specific dist-packages directories:
-                sitedirs.append(
-                    os.path.join(prefix, "local/lib", "python{}.{}".format(*self.version), "dist-packages")
-                )
-                if self.version[0] == 2:
-                    sitedirs.append(
-                        os.path.join(prefix, "lib", "python{}.{}".format(*self.version), "dist-packages")
-                    )
-                else:
-                    sitedirs.append(
-                        os.path.join(prefix, "lib", "python{}".format(self.version[0]), "dist-packages")
-                    )
-                sitedirs.append(os.path.join(prefix, "lib", "dist-python"))
-            else:
-                sitedirs = [prefix, os.path.join(prefix, "lib", "site-packages")]
-
-            if self.platform == "darwin":
-                # for framework builds *only* we add the standard Apple
-                # locations. Currently only per-user, but /Library and
-                # /Network/Library could be added too
-                if "Python.framework" in prefix or "Python3.framework" in prefix:
-                    home = self.environ.get("HOME")
-                    if home:
-                        sitedirs.append(
-                            os.path.join(home, "Library", "Python", "{}.{}".format(*self.version), "site-packages")
-                        )
-            for sitedir in sitedirs:
-                if os.path.isdir(sitedir):
-                    yield sitedir
+        if self.is_pypy:
+            yield os.path.join(prefix, "lib", "pypy%d.%d" % self.version[:2], "site-packages")
+            yield os.path.join(prefix, "site-packages")
+        elif os.sep == "/":
+            yield os.path.join(prefix, "lib",
+                               "python%d.%d" % self.version[:2],
+                               "site-packages")
         else:
-            if self.is_pypy:
-                yield os.path.join(prefix, "site-packages")
-            elif os.sep == "/":
-                yield os.path.join(prefix, "lib",
-                                   "python%d.%d" % self.version[:2],
-                                   "site-packages")
-            else:
-                yield prefix
-                yield os.path.join(prefix, "lib", "site-packages")
+            yield prefix
+            yield os.path.join(prefix, "lib", "site-packages")
 
-            if self.platform == "darwin":
-                # for framework builds *only* we add the standard Apple
-                # locations.
-                framework = self._darwin_python_framework
-                if framework:
-                    yield os.path.join("/Library", framework,
-                                       "%d.%d" % self.version[:2], "site-packages")
+        if self.platform == "darwin":
+            # for framework builds *only* we add the standard Apple
+            # locations.
+            framework = self._darwin_python_framework
+            if framework:
+                yield os.path.join("/Library", framework,
+                                   "%d.%d" % self.version[:2], "site-packages")
 
 
 class PythonEnvRegistry(object):
@@ -410,40 +384,64 @@ def create_venv(home_dir,
                 upgrade=False,
                 with_pip=False,
                 prompt=None,
-                offline=False):
-    if clear:
-        if os.path.exists(home_dir):
-            rmtree(home_dir)
+                offline=False,
+                logger=None):
+    import virtualenv
 
-    with virtualenv.virtualenv_support_dirs() as search_dirs:
-        virtualenv.create_environment(
-            home_dir,
-            site_packages=system_site_packages,
-            prompt=prompt,
-            search_dirs=search_dirs,
-            download=upgrade and (not offline),
-            no_setuptools=False,
-            no_pip=not with_pip,
-            no_wheel=False,
-            symlink=symlinks
-        )
+    args = [home_dir, "--no-periodic-update", "-p", sys.executable]
+
+    if upgrade and (not offline):
+        pass
+    #        args_upgrade = list(args)
+    #        args_upgrade.append("--download")
+    #        args_upgrade.append("--upgrade-embed-wheels")
+    #        try:
+    #            virtualenv.cli_run(args_upgrade, setup_logging=False)
+    #        except SystemExit as e:
+    #            if e.code:
+    #                raise RuntimeError("VirtualEnv upgrade has not completed successfully", e)
+
+    if clear:
+        args.append("--clear")
+
+    # if logger.level < logger.WARNING:
+    #    args += ["-v"]
+
+    if symlinks:
+        args.append("--symlinks")
+    else:
+        args.append("--copies")
+    if not with_pip:
+        args.append("--no-pip")
+    if system_site_packages:
+        args.append("--system-site-packages")
+    if prompt:
+        args += ["--prompt", prompt]
+
+    logging.getLogger("filelock").setLevel(logging.INFO)
+    virtualenv.cli_run(args, setup_logging=False)
 
 
 _, _venv_python_exename = os.path.split(os.path.abspath(getattr(sys, "_base_executable", sys.executable)))
 venv_symlinks = os.name == "posix"
 
+# On Windows python.exe could be in PythonXY/ or venv/Scripts/
+# python[3[.x]].exe may also not be available, only python.exe
+_windows_exec_candidates = (lambda env_dir: jp(env_dir, "Scripts", _venv_python_exename),
+                            lambda env_dir: jp(env_dir, _venv_python_exename),
+                            lambda env_dir: jp(env_dir, "Scripts", "python.exe"),
+                            lambda env_dir: jp(env_dir, "python.exe"),
+                            )
+
 
 def _venv_python_executable(env_dir, platform):
     """Binary Python executable for a specific virtual environment"""
     if is_windows(platform):
-        candidate = jp(env_dir, "Scripts", _venv_python_exename)
-
-        # On Windows python.exe could be in PythonXY/ or venv/Scripts/
-        if not os.path.exists(candidate):
-            alternative = jp(env_dir, _venv_python_exename)
-            if os.path.exists(alternative):
-                candidate = alternative
+        for candidate_func in _windows_exec_candidates:
+            candidate = candidate_func(env_dir)
+            if os.path.exists(candidate):
+                break
     else:
         candidate = jp(env_dir, "bin", _venv_python_exename)
 
-    return nc(candidate)
+    return np(candidate)

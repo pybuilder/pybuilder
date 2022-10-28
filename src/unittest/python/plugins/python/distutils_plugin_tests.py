@@ -24,7 +24,6 @@ except NameError:
     TYPE_FILE = FileIO
 
 import unittest
-from os.path import normcase as nc
 
 from pybuilder.core import Project, Author, Logger
 from pybuilder.errors import BuildFailedException
@@ -48,6 +47,7 @@ from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        build_string_from_array,
                                                        build_setup_keywords,
                                                        )
+from pybuilder.utils import np
 from test_utils import (PyBuilderTestCase,
                         patch,
                         call,
@@ -387,6 +387,7 @@ class RenderSetupScriptTest(PyBuilderTestCase):
         actual_setup_script = render_setup_script(self.project)
 
         self.assert_line_by_line_equal("""#!/usr/bin/env python
+#   -*- coding: utf-8 -*-
 
 from distutils.core import setup
 from distutils.core.command.install import install as _install
@@ -411,10 +412,26 @@ if __name__ == '__main__':
         version = '1.2.3',
         description = 'This is a simple integration-test for distutils plugin.',
         long_description = 'As you might have guessed we have nothing to say here.',
+        long_description_content_type = None,
+        classifiers = [
+            'Development Status :: 5 - Beta',
+            'Environment :: Console'
+        ],
+        keywords = '',
+
         author = 'Udo Juettner, Michael Gruber',
         author_email = 'udo.juettner@gmail.com, aelgru@gmail.com',
+        maintainer = '',
+        maintainer_email = '',
+
         license = 'WTFPL',
+
         url = 'http://github.com/pybuilder/pybuilder',
+        project_urls = {
+            'a': 'http://a',
+            'b': 'http://b'
+        },
+
         scripts = [
             'spam',
             'eggs'
@@ -431,10 +448,6 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
-        classifiers = [
-            'Development Status :: 5 - Beta',
-            'Environment :: Console'
-        ],
         entry_points = {},
         data_files = [
             ('dir', ['file1', 'file2'])
@@ -446,7 +459,6 @@ if __name__ == '__main__':
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,
         cmdclass = {'install': install},
-        keywords = '',
         python_requires = '',
         obsoletes = [],
     )
@@ -457,6 +469,7 @@ if __name__ == '__main__':
         self.project.post_install_script("post_install_test()")
         actual_setup_script = render_setup_script(self.project)
         self.assert_line_by_line_equal("""#!/usr/bin/env python
+#   -*- coding: utf-8 -*-
 
 from distutils.core import setup
 from distutils.core.command.install import install as _install
@@ -481,10 +494,26 @@ if __name__ == '__main__':
         version = '1.2.3',
         description = 'This is a simple integration-test for distutils plugin.',
         long_description = 'As you might have guessed we have nothing to say here.',
+        long_description_content_type = None,
+        classifiers = [
+            'Development Status :: 5 - Beta',
+            'Environment :: Console'
+        ],
+        keywords = '',
+
         author = 'Udo Juettner, Michael Gruber',
         author_email = 'udo.juettner@gmail.com, aelgru@gmail.com',
+        maintainer = '',
+        maintainer_email = '',
+
         license = 'WTFPL',
+
         url = 'http://github.com/pybuilder/pybuilder',
+        project_urls = {
+            'a': 'http://a',
+            'b': 'http://b'
+        },
+
         scripts = [
             'spam',
             'eggs'
@@ -501,10 +530,6 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
-        classifiers = [
-            'Development Status :: 5 - Beta',
-            'Environment :: Console'
-        ],
         entry_points = {},
         data_files = [
             ('dir', ['file1', 'file2'])
@@ -516,7 +541,6 @@ if __name__ == '__main__':
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,
         cmdclass = {'install': install},
-        keywords = '',
         python_requires = '',
         obsoletes = [],
     )
@@ -566,7 +590,7 @@ if __name__ == '__main__':
         actual_setup_script = build_setup_keywords(self.project)
         self.assertEqual("'a'", actual_setup_script)
 
-        self.project.set_property("distutils_setup_keywords", ("a b"))
+        self.project.set_property("distutils_setup_keywords", ("a b",))
         actual_setup_script = build_setup_keywords(self.project)
         self.assertEqual("'a b'", actual_setup_script)
 
@@ -670,7 +694,7 @@ class RenderManifestFileTest(unittest.TestCase):
         self.assertEqual("""include file1
 include file2
 include %s
-""" % nc("spam/eggs"), actual_manifest_file)
+""" % np("spam/eggs"), actual_manifest_file)
 
 
 class ExecuteDistUtilsTest(PyBuilderTestCase):
@@ -729,10 +753,13 @@ class UploadTests(PyBuilderTestCase):
         upload(self.project, MagicMock(Logger), self.reactor)
 
         self.pyb_env.run_process_and_wait.assert_has_calls([
-            call(self.pyb_env.executable + ["-m", "twine", "register", nc("/whatever dist/dist/a")], ANY, ANY),
-            call(self.pyb_env.executable + ["-m", "twine", "register", nc("/whatever dist/dist/b")], ANY, ANY),
-            call(self.pyb_env.executable + ["-m", "twine", "upload", nc("/whatever dist/dist/a"),
-                                            nc("/whatever dist/dist/b")], ANY, ANY)
+            call(self.pyb_env.executable + ["-m", "twine", "register",
+                                            self.project.expand_path("$dir_dist", "dist", "a")], ANY, ANY),
+            call(self.pyb_env.executable + ["-m", "twine", "register",
+                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY),
+            call(self.pyb_env.executable + ["-m", "twine", "upload",
+                                            self.project.expand_path("$dir_dist", "dist", "a"),
+                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)
         ])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
@@ -744,8 +771,9 @@ class UploadTests(PyBuilderTestCase):
         upload(self.project, MagicMock(Logger), self.reactor)
 
         self.pyb_env.run_process_and_wait.assert_has_calls(
-            [call(self.pyb_env.executable + ["-m", "twine", "upload", nc("/whatever dist/dist/a"),
-                                             nc("/whatever dist/dist/b")], ANY, ANY)])
+            [call(self.pyb_env.executable + ["-m", "twine", "upload",
+                                             self.project.expand_path("$dir_dist", "dist", "a"),
+                                             self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -758,8 +786,8 @@ class UploadTests(PyBuilderTestCase):
 
         self.pyb_env.run_process_and_wait.assert_has_calls([
             call(self.pyb_env.executable + ["-m", "twine", "upload", "--repository-url", "test repo",
-                                            nc("/whatever dist/dist/a"),
-                                            nc("/whatever dist/dist/b")], ANY, ANY)])
+                                            self.project.expand_path("$dir_dist", "dist", "a"),
+                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -773,8 +801,8 @@ class UploadTests(PyBuilderTestCase):
 
         self.pyb_env.run_process_and_wait.assert_has_calls([
             call(self.pyb_env.executable + ["-m", "twine", "upload", "--repository-url", "test repo",
-                                            nc("/whatever dist/dist/a"),
-                                            nc("/whatever dist/dist/b")], ANY, ANY)])
+                                            self.project.expand_path("$dir_dist", "dist", "a"),
+                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -787,8 +815,8 @@ class UploadTests(PyBuilderTestCase):
 
         self.pyb_env.run_process_and_wait.assert_has_calls([
             call(self.pyb_env.executable + ["-m", "twine", "upload", "--repository", "test repo key",
-                                            nc("/whatever dist/dist/a"),
-                                            nc("/whatever dist/dist/b")], ANY, ANY)])
+                                            self.project.expand_path("$dir_dist", "dist", "a"),
+                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -800,8 +828,9 @@ class UploadTests(PyBuilderTestCase):
         upload(self.project, MagicMock(Logger), self.reactor)
 
         self.pyb_env.run_process_and_wait.assert_has_calls([
-            call(self.pyb_env.executable + ["-m", "twine", "upload", "--sign", nc("/whatever dist/dist/a"),
-                                            nc("/whatever dist/dist/b")], ANY, ANY)])
+            call(self.pyb_env.executable + ["-m", "twine", "upload", "--sign",
+                                            self.project.expand_path("$dir_dist", "dist", "a"),
+                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -815,8 +844,8 @@ class UploadTests(PyBuilderTestCase):
 
         self.pyb_env.run_process_and_wait.assert_has_calls([
             call(self.pyb_env.executable + ["-m", "twine", "upload", "--sign", "--identity", "abcd",
-                                            nc("/whatever dist/dist/a"),
-                                            nc("/whatever dist/dist/b")], ANY, ANY)])
+                                            self.project.expand_path("$dir_dist", "dist", "a"),
+                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
 
 
 class TasksTest(PyBuilderTestCase):
@@ -840,7 +869,8 @@ class TasksTest(PyBuilderTestCase):
         install_distribution(self.project, MagicMock(Logger), self.reactor)
 
         self.pyb_env.execute_command.assert_called_with(
-            self.pyb_env.executable + PIP_MODULE_STANZA + ["install", "--force-reinstall", nc('/whatever dist')],
+            self.pyb_env.executable + PIP_MODULE_STANZA + ["install", "--force-reinstall",
+                                                           self.project.expand_path("$dir_dist")],
             cwd=".", env=ANY, outfile_name=ANY, error_file_name=ANY, shell=False, no_path_search=True)
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
@@ -854,28 +884,41 @@ class TasksTest(PyBuilderTestCase):
         self.pyb_env.execute_command.assert_called_with(
             self.pyb_env.executable + PIP_MODULE_STANZA +
             ["install", "--index-url", "index_url", "--extra-index-url", "extra_index_url", "--force-reinstall",
-             nc('/whatever dist')], cwd=".", env=ANY, outfile_name=ANY, error_file_name=ANY, shell=False,
+             self.project.expand_path("$dir_dist")], cwd=".", env=ANY, outfile_name=ANY, error_file_name=ANY,
+            shell=False,
             no_path_search=True)
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    def test_binary_distribution(self, *_):
+    @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
+    def test_binary_distribution(self, walk, *_):
+        walk.return_value = [("root", (), ("file1", "file2"))]
+
         build_binary_distribution(self.project, MagicMock(Logger), self.reactor)
 
         self.pyb_env.run_process_and_wait.assert_has_calls(
             [call(self.pyb_env.executable + [ANY, "clean", "--all", "sdist"], ANY, ANY),
-             call(self.pyb_env.executable + [ANY, "clean", "--all", "bdist_dumb"], ANY, ANY)])
+             call(self.pyb_env.executable + [ANY, "clean", "--all", "bdist_dumb"], ANY, ANY),
+             call(self.pyb_env.executable + ["-m", "twine", "check",
+                                             self.project.expand_path("$dir_dist", "dist", "file1"),
+                                             self.project.expand_path("$dir_dist", "dist", "file2")], ANY, ANY)])
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    def test_binary_distribution_with_command_options(self, *_):
+    @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
+    def test_binary_distribution_with_command_options(self, walk, *_):
         self.project.set_property("distutils_command_options", {"sdist": ['--formats', 'bztar']})
+
+        walk.return_value = [("root", (), ("file1", "file2"))]
 
         build_binary_distribution(self.project, MagicMock(Logger), self.reactor)
 
         self.pyb_env.run_process_and_wait.assert_has_calls(
             [call(self.pyb_env.executable + [ANY, "clean", "--all", "sdist", "--formats", "bztar"], ANY, ANY),
-             call(self.pyb_env.executable + [ANY, "clean", "--all", "bdist_dumb"], ANY, ANY)])
+             call(self.pyb_env.executable + [ANY, "clean", "--all", "bdist_dumb"], ANY, ANY),
+             call(self.pyb_env.executable + ["-m", "twine", "check",
+                                             self.project.expand_path("$dir_dist", "dist", "file1"),
+                                             self.project.expand_path("$dir_dist", "dist", "file2")], ANY, ANY)])
 
 
 def popen_distutils_args(self, call_count, proc_runner):
@@ -897,6 +940,9 @@ def create_project():
         Author("Udo Juettner", "udo.juettner@gmail.com"), Author("Michael Gruber", "aelgru@gmail.com")]
     project.license = "WTFPL"
     project.url = "http://github.com/pybuilder/pybuilder"
+    project.urls = {"b": "http://b",
+                    "a": "http://a",
+                    }
     project.explicit_namespaces = ["foo.bar", "quick.brown.fox"]
 
     def return_dummy_list():
@@ -912,4 +958,5 @@ def create_project():
     project.install_file("dir", "file2")
     project.include_file("spam", "eggs")
 
+    project.set_property("distutils_zip_safe", True)
     return project

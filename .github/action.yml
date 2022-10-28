@@ -1,0 +1,60 @@
+name: 'PyBuilder Action'
+description: 'PyBuilder Internal Build Action'
+inputs:
+  python-version:
+    description: 'Python version to use, if installing'
+    required: true
+  with-venv:
+    description: 'Whether to use Virtualenv during a build'
+    required: true
+  with-homebrew:
+    description: 'Whether to install Python with Homebrew'
+    required: true
+  deploy-on-os:
+    description: 'Deploy on OSes'
+    required: true
+  deploy-on-python:
+    description: 'Deploy on Pythons'
+    required: true
+  deploy-on-branch:
+    description: 'Deploy on Branches'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Configure
+      if: |
+        contains(fromJSON(inputs.deploy-on-os), runner.os) &&
+        contains(fromJSON(inputs.deploy-on-python), inputs.python-version) &&
+        contains(fromJSON(inputs.deploy-on-branch), github.ref) &&
+        inputs.with-venv == 'true'
+      shell: bash
+      run: |
+        echo "PYB_EXTRA_ARGS=+upload" >> $GITHUB_ENV
+    - name: Build
+      if: |
+        !(inputs.with-homebrew == 'true' && runner.os != 'macOS' ||
+          inputs.with-homebrew == 'true' && runner.os == 'macOS' &&
+          (contains(inputs.python-version, '-rc') ||
+           contains(inputs.python-version, '-b') ||
+           contains(inputs.python-version, 'pypy-')
+          )
+         )
+      uses: pybuilder/build@master
+      with:
+        checkout: 'false'
+        python-version: '${{ inputs.python-version }}'
+        homebrew-python: '${{ inputs.with-homebrew }}'
+        with-venv: '${{ inputs.with-venv }}'
+        install-pyb: 'false'
+        pyb-command: $PYTHON build.py
+        pyb-extra-args: +install ${{ env.PYB_EXTRA_ARGS }}
+    - name: Print Logs on Failure
+      if: failure()
+      shell: bash
+      run: |
+        for f in $(find . -name \*.log); do
+            echo ">>>>>> $f"
+            cat "$f"
+        done
+        exit 1

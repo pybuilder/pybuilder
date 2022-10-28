@@ -21,134 +21,38 @@ import platform
 import sys
 import traceback
 from collections import OrderedDict
-
-try:
-    basestring = basestring
-except NameError:
-    basestring = str
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-StringIO = StringIO
+from io import StringIO
 
 
 def is_windows(platform=sys.platform, win_platforms={"win32", "cygwin", "msys"}):
     return platform in win_platforms
 
 
-PY2 = sys.version_info[0] < 3
+StringIO = StringIO
 IS_PYPY = '__pypy__' in sys.builtin_module_names
 IS_WIN = is_windows()
 
 
-def _py2_makedirs(name, mode=0o777, exist_ok=False):
-    return os.makedirs(name, mode)
+def raise_exception(ex, tb):
+    raise ex.with_traceback(tb)
 
 
-def _py2_which(cmd, mode=os.F_OK | os.X_OK, path=None):
-    """Given a command, mode, and a PATH string, return the path which
-    conforms to the given mode on the PATH, or None if there is no such
-    file.
-
-    `mode` defaults to os.F_OK | os.X_OK. `path` defaults to the result
-    of os.environ.get("PATH"), or can be overridden with a custom search
-    path.
-
-    """
-
-    # Check that a given file can be accessed with the correct mode.
-    # Additionally check that `file` is not a directory, as on Windows
-    # directories pass the os.access check.
-    def _access_check(fn, mode):
-        return (os.path.exists(fn) and os.access(fn, mode)
-                and not os.path.isdir(fn))
-
-    # If we're given a path with a directory part, look it up directly rather
-    # than referring to PATH directories. This includes checking relative to the
-    # current directory, e.g. ./script
-    if os.path.dirname(cmd):
-        if _access_check(cmd, mode):
-            return cmd
-        return None
-
-    if path is None:
-        path = os.environ.get("PATH", os.defpath)
-    if not path:
-        return None
-    path = path.split(os.pathsep)
-
-    if IS_WIN:
-        # The current directory takes precedence on Windows.
-        if os.curdir not in path:
-            path.insert(0, os.curdir)
-
-        # PATHEXT is necessary to check on Windows.
-        pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
-        # See if the given file matches any of the expected path extensions.
-        # This will allow us to short circuit when given "python.exe".
-        # If it does match, only test that one, otherwise we have to try
-        # others.
-        if any(cmd.lower().endswith(ext.lower()) for ext in pathext):
-            files = [cmd]
-        else:
-            files = [cmd + ext for ext in pathext]
-    else:
-        # On other platforms you don't have things like PATHEXT to tell you
-        # what file suffixes are executable, so just pass on cmd as-is.
-        files = [cmd]
-
-    seen = set()
-    for dir in path:
-        normdir = os.path.normcase(dir)
-        if normdir not in seen:
-            seen.add(normdir)
-            for thefile in files:
-                name = os.path.join(dir, thefile)
-                if _access_check(name, mode):
-                    return name
-    return None
+def is_string(val):
+    return isinstance(val, str)
 
 
-if PY2:  # if major is less than 3
-    from .excp_util_2 import raise_exception, is_string
+from shutil import which  # noqa: E402
 
 
-    def save_tb(ex):
-        tb = sys.exc_info()[2]
-        setattr(ex, "__traceback__", tb)
+def save_tb(ex):
+    pass
 
 
-    is_string = is_string
-
-    makedirs = _py2_makedirs
-    which = _py2_which
-else:
-    from .excp_util_3 import raise_exception, is_string
-
-    from shutil import which
-
-
-    def save_tb(ex):
-        pass
-
-
-    is_string = is_string
-    makedirs = os.makedirs
-    which = which
+is_string = is_string
+makedirs = os.makedirs
+which = which
 
 odict = OrderedDict
-
-
-def _mp_get_context_win32_py2(context_name):
-    if context_name != "spawn":
-        raise RuntimeError("only spawn is supported")
-
-    import multiprocessing
-    return multiprocessing
-
 
 _mp_get_context = None  # This will be patched at runtime
 mp_ForkingPickler = None  # This will be patched at runtime
@@ -158,22 +62,8 @@ _mp_billiard_pyb_env = None  # This will be patched at runtime
 _old_billiard_spawn_passfds = None  # This will be patched at runtime
 _installed_tblib = False
 
-# Billiard doesn't work on Win32
-if PY2:
-    if IS_WIN:
-        # Python 2.7 on Windows already only works with spawn
-
-        from multiprocessing import log_to_stderr as mp_log_to_stderr
-        from multiprocessing.reduction import ForkingPickler as mp_ForkingPickler
-
-        _mp_get_context = _mp_get_context_win32_py2
-
-    # Python 2 on *nix uses Billiard to be patched later
-else:
-    # On all of Python 3s use multiprocessing
-
-    from multiprocessing import log_to_stderr as mp_log_to_stderr, get_context as _mp_get_context
-    from multiprocessing.reduction import ForkingPickler as mp_ForkingPickler
+from multiprocessing import log_to_stderr as mp_log_to_stderr, get_context as _mp_get_context  # noqa: E402
+from multiprocessing.reduction import ForkingPickler as mp_ForkingPickler  # noqa: E402
 
 
 def patch_mp_pyb_env(pyb_env):
@@ -193,41 +83,8 @@ def install_tblib():
         _installed_tblib = True
 
 
-def _patched_billiard_spawnv_passfds(path, args, passfds):
-    global _mp_billiard_plugin_dir, _old_billiard_spawn_passfds
-
-    try:
-        script_index = args.index("-c") + 1
-        script = args[script_index]
-        additional_path = []
-        add_env_to_path(_mp_billiard_pyb_env, additional_path)
-        args[script_index] = ";".join(("import sys", "sys.path.extend(%r)" % additional_path, script))
-    except ValueError:
-        # We were unable to find the "-c", which means we likely don't care
-        pass
-
-    return _old_billiard_spawn_passfds(path, args, passfds)
-
-
 def patch_mp():
     install_tblib()
-
-    global _mp_get_context
-
-    if not _mp_get_context:
-        if PY2 and not IS_WIN:
-            from billiard import get_context, log_to_stderr, compat, popen_spawn_posix as popen_spawn
-            from billiard.reduction import ForkingPickler
-
-            global mp_ForkingPickler, mp_log_to_stderr, _old_billiard_spawn_passfds
-
-            _mp_get_context = get_context
-            mp_ForkingPickler = ForkingPickler
-            mp_log_to_stderr = log_to_stderr
-
-            _old_billiard_spawn_passfds = compat.spawnv_passfds
-            compat.spawnv_passfds = _patched_billiard_spawnv_passfds
-            popen_spawn.spawnv_passfds = _patched_billiard_spawnv_passfds
 
 
 def mp_get_context(context):
@@ -285,6 +142,15 @@ def spawn_process(target=None, args=(), kwargs={}, group=None, name=None):
         raise_exception(ex, result.args[1])
 
 
+def prepend_env_to_path(python_env, sys_path):
+    """type: (PythonEnv, List(str)) -> None
+    Prepend venv directories to sys.path-like collection
+    """
+    for path in reversed(python_env.site_paths):
+        if path not in sys_path:
+            sys_path.insert(0, path)
+
+
 def add_env_to_path(python_env, sys_path):
     """type: (PythonEnv, List(str)) -> None
     Adds venv directories to sys.path-like collection
@@ -294,9 +160,17 @@ def add_env_to_path(python_env, sys_path):
             sys_path.append(path)
 
 
+from glob import glob, iglob, escape  # noqa: E402
+
+from os import symlink  # noqa: E402
+
+symlink = symlink
+
 sys_executable_suffix = sys.executable[len(sys.exec_prefix) + 1:]
 
 python_specific_dir_name = "%s-%s" % (platform.python_implementation().lower(),
                                       ".".join(str(f) for f in sys.version_info))
 
 _, _venv_python_exename = os.path.split(os.path.abspath(getattr(sys, "_base_executable", sys.executable)))
+
+__all__ = ["glob", "iglob", "escape"]

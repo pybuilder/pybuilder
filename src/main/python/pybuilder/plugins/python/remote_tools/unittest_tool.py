@@ -16,25 +16,39 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import sys
+
 from pybuilder.plugins.python.remote_tools import start_tool, RemoteObjectPipe, Tool, logger, PipeShutdownError
 
 __all__ = ["start_unittest_tool", "PipeShutdownError", logger]
 
 
 class UnitTestTool(Tool):
-    def __init__(self, test_modules, test_method_prefix):
+    def __init__(self, sys_paths, test_modules, test_method_prefix):
+        self.sys_paths = sys_paths
         self.test_modules = test_modules
         self.test_method_prefix = test_method_prefix
 
     def start(self, pipe):
         # type: (RemoteObjectPipe) -> None
+        for path in reversed(self.sys_paths):
+            sys.path.insert(0, path)
+
         import unittest
         loader = unittest.defaultTestLoader
         if self.test_method_prefix:
             loader.testMethodPrefix = self.test_method_prefix
-        tests = loader.loadTestsFromNames(self.test_modules)
 
-        pipe.expose("unittest_tests", tests)
+        try:
+            tests = loader.loadTestsFromNames(self.test_modules)
+            pipe.expose("unittest_tests", tests)
+        except SystemExit as e:
+            raise e
+        except KeyboardInterrupt as e:
+            raise e
+        except Exception as e:
+            pipe.expose("unittest_tests", e, error=True)
+
         pipe.register_remote_type(unittest.BaseTestSuite)
         pipe.register_remote_type(unittest.TestCase)
 
@@ -42,6 +56,6 @@ class UnitTestTool(Tool):
         pipe.hide("unittest_tests")
 
 
-def start_unittest_tool(tools, test_modules, test_method_prefix, logging=0):
-    tool = UnitTestTool(test_modules, test_method_prefix)
-    return start_tool(tools + [tool], name="unittest", logging=logging)
+def start_unittest_tool(pyenv, tools, sys_paths, test_modules, test_method_prefix, logging=0, tracing=0):
+    tool = UnitTestTool(sys_paths, test_modules, test_method_prefix)
+    return start_tool(pyenv, tools + [tool], name="unittest", logging=logging, tracing=tracing)

@@ -16,16 +16,18 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
 import types
 import unittest
-from os.path import normcase as nc
 
+from pybuilder import extern
 from pybuilder.core import (Project, Logger, init, INITIALIZER_ATTRIBUTE,
                             ENVIRONMENTS_ATTRIBUTE, task, description,
                             Dependency, RequirementsFile)
 from pybuilder.errors import MissingPropertyException
+from pybuilder.utils import np, jp
 from test_utils import patch
+
+_extern = extern
 
 
 class ProjectTest(unittest.TestCase):
@@ -90,15 +92,14 @@ class ProjectTest(unittest.TestCase):
     def test_expand_path_should_return_expanded_path(self):
         self.project.set_property("spam", "spam")
         self.project.set_property("eggs", "eggs")
-        self.assertEqual(nc(os.path.join("/imaginary", "spam", "eggs")),
+        self.assertEqual(np(jp(self.project.basedir, "spam", "eggs")),
                          self.project.expand_path("$spam/$eggs"))
 
     def test_expand_path_should_return_expanded_path_and_additional_parts_when_additional_parts_are_given(self):
         self.project.set_property("spam", "spam")
         self.project.set_property("eggs", "eggs")
-        self.assertEqual(
-            nc(os.path.join("/imaginary", "spam", "eggs", "foo", "bar")),
-            self.project.expand_path("$spam/$eggs", "foo", "bar"))
+        self.assertEqual(np(jp(self.project.basedir, "spam", "eggs", "foo", "bar")),
+                         self.project.expand_path("$spam/$eggs", "foo", "bar"))
 
     def test_should_raise_exception_when_getting_mandatory_propert_and_property_is_not_found(self):
         self.assertRaises(MissingPropertyException,
@@ -227,7 +228,17 @@ class ProjectPackageDataTests(unittest.TestCase):
         self.assertEqual(
             {"monty": ["ham"], "spam": ["eggs"]}, self.project.package_data)
         self.assertEqual(
-            [nc("spam/eggs"), nc("monty/ham")], self.project.manifest_included_files)
+            [np("spam/eggs"), np("monty/ham")], self.project.manifest_included_files)
+
+    @patch("pybuilder.core.os.walk")
+    def test_should_add_pattern_to_list_of_included_filed_for_package_spam(self, walk):
+        walk.return_value = [[jp(self.project.basedir, "spam"),
+                              ("foo", "bar"),
+                              ("bacon.eggs", "bacon.noeggs")],
+                             ]
+        self.project.include_directory("spam", "*.eggs")
+
+        self.assertEqual({"spam": ["bacon.eggs"]}, self.project.package_data)
 
 
 class ProjectDataFilesTests(unittest.TestCase):

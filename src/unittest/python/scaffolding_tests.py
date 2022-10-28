@@ -79,12 +79,11 @@ def set_properties(project):
         scaffolding.dir_source_unittest_python = 'test'
         scaffolding.dir_source_main_python = 'src'
 
-        self.assertEqual(scaffolding.render_build_descriptor(), '''\
+        self.assertEqual(scaffolding.render_build_descriptor(), '''#   -*- coding: utf-8 -*-
 from pybuilder.core import use_plugin, init
 
 use_plugin("python.core")
 use_plugin("python.unittest")
-use_plugin("python.install_dependencies")
 
 
 name = "some-project"
@@ -100,12 +99,11 @@ def set_properties(project):
     def test_should_render_build_descriptor_without_custom_dirs(self):
         scaffolding = PythonProjectScaffolding('some-project')
 
-        self.assertEqual(scaffolding.render_build_descriptor(), '''\
+        self.assertEqual(scaffolding.render_build_descriptor(), '''#   -*- coding: utf-8 -*-
 from pybuilder.core import use_plugin, init
 
 use_plugin("python.core")
 use_plugin("python.unittest")
-use_plugin("python.install_dependencies")
 
 
 name = "some-project"

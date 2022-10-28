@@ -16,8 +16,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from __future__ import unicode_literals
-
 import sys
 import unittest
 from functools import reduce
@@ -28,7 +26,7 @@ from pybuilder.core import init, task, description, use_plugin, before
 from pybuilder.errors import BuildFailedException
 from pybuilder.plugins.python.remote_tools.unittest_tool import start_unittest_tool, PipeShutdownError, \
     logger as tool_logger
-from pybuilder.python_utils import PY2, StringIO
+from pybuilder.python_utils import StringIO
 from pybuilder.terminal import print_text_line
 from pybuilder.utils import discover_modules_matching, render_report
 
@@ -37,15 +35,14 @@ use_plugin("python.core")
 
 @init
 def init_test_source_directory(project):
-    project.plugin_depends_on("unittest-xml-reporting", "~=2.5.2")
-    if PY2:
-        project.plugin_depends_on("mock")
+    project.plugin_depends_on("unittest-xml-reporting", "~=3.0.4")
 
     project.set_property_if_unset("dir_source_unittest_python", "src/unittest/python")
     project.set_property_if_unset("unittest_breaks_build", True)
     project.set_property_if_unset("unittest_module_glob", "*_tests")
     project.set_property_if_unset("unittest_file_suffix", None)  # deprecated, use unittest_module_glob.
     project.set_property_if_unset("unittest_test_method_prefix", None)
+    project.set_property_if_unset("unittest_python_env", "build")
     project.set_property_if_unset("unittest_runner", (
         lambda stream: __import__("xmlrunner").XMLTestRunner(output=project.expand_path("$dir_target/reports"),
                                                              stream=stream), "_make_result"))
@@ -59,6 +56,7 @@ def coverage_init(project, logger, reactor):
         project.get_property("_coverage_tasks").append(run_unit_tests)
         project.get_property("_coverage_config_prefixes")[run_unit_tests] = "ut"
         project.set_property("ut_coverage_name", "Python unit test")
+        # project.set_property("ut_coverage_python_env", project.get_property("unittest_python_env"))
 
 
 @task
@@ -69,7 +67,8 @@ def run_unit_tests(project, logger, reactor):
 
 def run_tests(project, logger, reactor, execution_prefix, execution_name):
     logger.info("Running %s", execution_name)
-    test_dir = _register_test_and_source_path_and_return_test_dir(project, sys.path, execution_prefix)
+    test_dir = project.expand_path("$dir_source_%s_python" % execution_prefix)
+    src_dir = project.expand_path("$dir_source_main_python")
 
     file_suffix = project.get_property("%s_file_suffix" % execution_prefix)
     if file_suffix is not None:
@@ -88,9 +87,12 @@ def run_tests(project, logger, reactor, execution_prefix, execution_name):
     try:
         test_method_prefix = project.get_property("%s_test_method_prefix" % execution_prefix)
         runner_generator = project.get_property("%s_runner" % execution_prefix)
-        result, console_out = execute_tests_matching(reactor.tools, runner_generator, logger, test_dir, module_glob,
-                                                     test_method_prefix,
-                                                     project.get_property("remote_debug"))
+        result, console_out = execute_tests_matching(
+            reactor.python_env_registry[project.get_property("unittest_python_env")],
+            reactor.tools, runner_generator, logger, test_dir, module_glob, [test_dir, src_dir],
+            test_method_prefix,
+            project.get_property("remote_debug"),
+            project.get_property("remote_tracing"))
 
         if result.testsRun == 0:
             logger.warn("No %s executed.", execution_name)
@@ -119,13 +121,14 @@ def run_tests(project, logger, reactor, execution_prefix, execution_name):
         raise BuildFailedException("Unable to execute %s." % execution_name)
 
 
-def execute_tests(tools, runner_generator, logger, test_source, suffix, test_method_prefix=None, remote_debug=0):
-    return execute_tests_matching(tools, runner_generator, logger, test_source, "*{0}".format(suffix),
-                                  test_method_prefix, remote_debug=remote_debug)
+def execute_tests(pyenv, tools, runner_generator, logger, test_source, suffix, sys_paths, test_method_prefix=None,
+                  remote_debug=0, remote_tracing=0):
+    return execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, "*{0}".format(suffix),
+                                  test_method_prefix, remote_debug=remote_debug, remote_tracing=remote_tracing)
 
 
-def execute_tests_matching(tools, runner_generator, logger, test_source, file_glob, test_method_prefix=None,
-                           remote_debug=0):
+def execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, file_glob, sys_paths,
+                           test_method_prefix=None, remote_debug=0, remote_tracing=0):
     output_log_file = StringIO()
     try:
         test_modules = discover_modules_matching(test_source, file_glob)
@@ -133,8 +136,10 @@ def execute_tests_matching(tools, runner_generator, logger, test_source, file_gl
                                     logger,
                                     _create_runner(runner_generator, output_log_file))
 
+        exit_code = None
         try:
-            proc, pipe = start_unittest_tool(tools, test_modules, test_method_prefix, logging=remote_debug)
+            proc, pipe = start_unittest_tool(pyenv, tools, sys_paths, test_modules, test_method_prefix,
+                                             logging=remote_debug, tracing=remote_tracing)
             try:
                 pipe.register_remote(runner)
                 pipe.register_remote_type(unittest.result.TestResult)
@@ -149,8 +154,16 @@ def execute_tests_matching(tools, runner_generator, logger, test_source, file_gl
                     try:
                         proc.join()
                     finally:
-                        if sys.version_info[:2] >= (3, 7):
-                            proc.close()
+                        try:
+                            exit_code = proc.exitcode
+                        finally:
+                            try:
+                                proc.close()
+                            except AttributeError:
+                                pass
+
+            if exit_code:
+                raise BuildFailedException("Unittest tool failed with exit code %s", exit_code)
 
             remote_closed_cause = pipe.remote_close_cause()
             if remote_closed_cause is not None:
@@ -200,7 +213,7 @@ def _instrument_result(logger, result):
     old_addFailure = result.addFailure
 
     def startTest(self, test):
-        self.test_names.append(test)
+        self.test_names.append(str(test))
         self.logger.debug("starting %s", test)
         old_startTest(test)
 
@@ -225,6 +238,7 @@ def _instrument_result(logger, result):
 
 
 def _register_test_and_source_path_and_return_test_dir(project, system_path, execution_prefix):
+    """This function is deprecated and will be removed and should not be used by any new code"""
     test_dir = project.expand_path("$dir_source_%s_python" % execution_prefix)
     system_path.insert(0, test_dir)
     system_path.insert(0, project.expand_path("$dir_source_main_python"))

@@ -18,8 +18,9 @@
 
 import ast
 import copy
+from os.path import dirname, join
+
 import sys
-from os.path import join as jp, dirname, abspath, normcase as nc
 
 from pybuilder.core import init, use_plugin, task, depends, dependents, optional
 from pybuilder.errors import BuildFailedException
@@ -27,7 +28,7 @@ from pybuilder.execution import ExecutionManager
 from pybuilder.plugins.python._coverage_util import patch_coverage
 from pybuilder.plugins.python.remote_tools.coverage_tool import CoverageTool
 from pybuilder.python_utils import StringIO, IS_WIN
-from pybuilder.utils import discover_module_files, discover_modules, render_report, as_list
+from pybuilder.utils import discover_module_files, discover_modules, render_report, as_list, jp, ap, nc
 
 if IS_WIN:
     from fnmatch import fnmatch
@@ -40,7 +41,7 @@ use_plugin("analysis")
 
 @init
 def init_coverage_properties(project):
-    project.plugin_depends_on("coverage", "~=5.0")
+    project.plugin_depends_on("coverage", "~=6.0")
 
     # These settings are for aggregate coverage
     project.set_property_if_unset("coverage_threshold_warn", 70)
@@ -49,6 +50,7 @@ def init_coverage_properties(project):
     project.set_property_if_unset("coverage_break_build", True)
     project.set_property_if_unset("coverage_exceptions", [])
     project.set_property_if_unset("coverage_concurrency", ["thread"])
+    project.set_property_if_unset("coverage_debug", [])
     project.set_property_if_unset("coverage_source_path", "$dir_source_main_python")
     project.set_property_if_unset("coverage_name", project.name.capitalize())
 
@@ -104,6 +106,9 @@ def coverage(project, logger, reactor):
 
     source_path = nc(project.expand_path(project.get_property("coverage_source_path")))
 
+    # Add a trailing / or \ if not present, for correct `coverage` path interpretation
+    source_path = join(source_path, "")
+
     module_names = discover_modules(source_path)
     module_file_suffixes = discover_module_files(source_path)
 
@@ -119,6 +124,7 @@ def coverage(project, logger, reactor):
                            cover_pylib=False,
                            config_file=False,
                            branch=True,
+                           debug=as_list(project.get_property("coverage_debug")),
                            context=project.name)
 
     project.set_property("__coverage_config", coverage_config)
@@ -180,7 +186,10 @@ def run_coverage(project, logger, reactor, covered_task, source_path, module_nam
                            config_file=False,
                            branch=True,
                            context=str(covered_task),
-                           concurrency=project.get_property("%scoverage_concurrency" % config_prefix))
+                           debug=as_list(project.get_property("%scoverage_debug" % config_prefix,
+                                                              project.get_property("coverage_debug"))),
+                           concurrency=project.get_property("%scoverage_concurrency" % config_prefix,
+                                                            project.get_property("coverage_concurrency")))
 
     from coverage import coverage as coverage_factory
 
@@ -228,13 +237,12 @@ def run_coverage(project, logger, reactor, covered_task, source_path, module_nam
 
 def _override_python_env_for_coverage(current_python_env, coverage_config, source_path, omit_patterns):
     import coverage as cov_module
-    cov_parent_dir = abspath(jp(dirname(cov_module.__file__), ".."))
+    cov_parent_dir = ap(jp(dirname(cov_module.__file__), ".."))
 
     new_python_env = copy.copy(current_python_env)
     new_python_env.overwrite("executable", tuple(
         current_python_env.executable +
-        [nc(abspath(jp(dirname(sys.modules[_override_python_env_for_coverage.__module__].__file__),
-                       "_coverage_shim.py"))),
+        [ap(jp(dirname(sys.modules[_override_python_env_for_coverage.__module__].__file__), "_coverage_shim.py")),
          repr({"cov_parent_dir": cov_parent_dir,
                "cov_kwargs": coverage_config,
                "cov_source_path": source_path,

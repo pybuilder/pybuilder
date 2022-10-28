@@ -28,6 +28,8 @@ from pybuilder.utils import discover_files_matching, Timer, read_file
 
 use_plugin("core")
 
+from pybuilder.plugins.python.core_plugin import create_venv  # noqa: E402
+
 
 @init
 def initialize_integrationtest_plugin(project):
@@ -42,6 +44,7 @@ def initialize_integrationtest_plugin(project):
     project.set_property_if_unset("integrationtest_always_verbose", False)
     project.set_property_if_unset("integrationtest_cpu_scaling_factor", 4)
     project.set_property_if_unset("integrationtest_python_env", "test")
+    project.set_property_if_unset("integrationtest_python_env_recreate", False)
 
     project.set_property_if_unset("integrationtest_file_suffix", None)  # deprecated, use integrationtest_file_glob.
 
@@ -219,7 +222,10 @@ def run_single_test(logger, project, reactor, reports_dir, test, output_test_nam
     if output_test_names:
         logger.info("Running integration test %s", name)
 
-    python_env = reactor.python_env_registry[project.get_property("integrationtest_python_env")]
+    venv_name = project.get_property("integrationtest_python_env")
+    python_env = reactor.python_env_registry[venv_name]
+    create_venv(project, logger, reactor, venv_name, True,
+                recreate_if_exists=project.get_property("integrationtest_python_env_recreate"))
     env = prepare_environment(project)
     command_and_arguments = python_env.executable + [test]
     command_and_arguments += additional_integrationtest_commandline
@@ -239,14 +245,15 @@ def run_single_test(logger, project, reactor, reports_dir, test, output_test_nam
         "success": True
     }
     if return_code != 0:
-        logger.error("Integration test failed: %s", test)
+        logger.error("Integration test failed: %s, exit code %d", test, return_code)
         report_item["success"] = False
+        report_item["exception"] = ''.join(read_file(error_file_name)).replace('\'', '')
 
         if project.get_property("verbose") or project.get_property("integrationtest_always_verbose"):
             print_file_content(report_file_name)
             print_text_line()
             print_file_content(error_file_name)
-            report_item["exception"] = ''.join(read_file(error_file_name)).replace('\'', '')
+
     elif project.get_property("integrationtest_always_verbose"):
         print_file_content(report_file_name)
         print_text_line()

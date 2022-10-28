@@ -31,7 +31,7 @@ use_plugin("python.coverage")
 
 @init(environments="ci")
 def init_coveralls_properties(project):
-    project.plugin_depends_on("coveralls", "~=1.11")
+    project.plugin_depends_on("coveralls", "~=3.0")
 
     project.set_property_if_unset("coveralls_dry_run", False)
     project.set_property_if_unset("coveralls_report", False)
@@ -92,10 +92,23 @@ def finalize_coveralls(project, logger, reactor):
                 if staging:
                     return
 
-                result = pyb_coveralls.wear()
+                try:
+                    report_result = pyb_coveralls.wear()
+                except CoverallsException as e:
+                    # https://github.com/TheKevJames/coveralls-python/issues/252
+                    if (pyb_coveralls.config["service_name"] == "github-actions" and
+                            hasattr(e.__cause__, "response") and
+                            hasattr(e.__cause__.response, "status_code") and
+                            e.__cause__.response.status_code == 422):
+                        pyb_coveralls = PybCoveralls(token_required=token_required, service_name="github")
+                        report_result = pyb_coveralls.wear()
+                    else:
+                        raise
 
-                logger.debug("Coveralls result: %r", result)
-                logger.info("Coveralls coverage successfully submitted! %s @ %s", result["message"], result["url"])
+                logger.debug("Coveralls result: %r", report_result)
+                logger.info("Coveralls coverage successfully submitted! %s @ %s",
+                            report_result["message"],
+                            report_result["url"])
             except CoverallsException as e:
                 raise BuildFailedException("Failed to upload Coveralls coverage: %s", e)
         finally:

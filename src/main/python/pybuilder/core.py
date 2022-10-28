@@ -22,21 +22,22 @@
     build.py project descriptor.
 """
 import fnmatch
+import os
+import string
+from os.path import isdir, isfile, basename, relpath, sep
+
 import itertools
 import logging
-import os
 import re
-import string
 import sys
 from datetime import datetime
-from os.path import sep as PATH_SEPARATOR, normcase as nc, join as jp, isdir, isfile, basename
 
 # Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
-from pybuilder import pip_common
 from pybuilder.errors import MissingPropertyException, UnspecifiedPluginNameException
-from pybuilder.utils import as_list
+from pybuilder.utils import as_list, np, ap, jp
+from pybuilder.python_utils import OrderedDict
 
-PATH_SEP_RE = re.compile("[\\/]")
+PATH_SEP_RE = re.compile(r"[/\\]")
 
 INITIALIZER_ATTRIBUTE = "_pybuilder_initializer"
 FINALIZER_ATTRIBUTE = "_pybuilder_finalizer"
@@ -273,8 +274,7 @@ class Dependency(object):
     """
 
     def __init__(self, name, version=None, url=None, declaration_only=False):
-        self.name = name
-
+        from pybuilder import pip_common
         if version:
             try:
                 version = ">=" + str(pip_common.Version(version))
@@ -284,7 +284,16 @@ class Dependency(object):
                     version = str(pip_common.SpecifierSet(version))
                 except pip_common.InvalidSpecifier:
                     raise ValueError("'%s' must be either PEP 0440 version or a version specifier set" % version)
+        else:
+            try:
+                req = pip_common.Requirement(name)
+                name = req.name
+                version = version or str(req.specifier) or None
+                url = url or req.url
+            except pip_common.InvalidRequirement:
+                pass
 
+        self.name = name
         self.version = version
         self.url = url
         self.declaration_only = declaration_only
@@ -412,25 +421,31 @@ class Project(object):
     as well as some convenience methods to access these properties.
     """
 
-    def __init__(self, basedir, version="1.0.dev0", name=None, offline=False):
+    def __init__(self, basedir, version="1.0.dev0", name=None, offline=False, no_venvs=False):
         self.name = name
         self._version = None
         self._dist_version = None
         self.offline = offline
+        self.no_venvs = no_venvs
         self.version = version
-        self.basedir = basedir
+        self.basedir = ap(basedir)
         if not self.name:
             self.name = basename(basedir)
 
         self.default_task = None
 
         self.summary = ""
-        self.home_page = ""
         self.description = ""
+
         self.author = ""
         self.authors = []
+        self.maintainer = ""
+        self.maintainers = []
+
         self.license = ""
         self.url = ""
+        self.urls = {}
+
         self._requires_python = ""
         self._obsoletes = []
         self._explicit_namespaces = []
@@ -440,10 +455,11 @@ class Project(object):
         self._plugin_dependencies = set()
         self._manifest_included_files = []
         self._manifest_included_directories = []
-        self._package_data = {}
+        self._package_data = OrderedDict()
         self._files_to_install = []
         self._preinstall_script = None
         self._postinstall_script = None
+        self._environments = ()
 
     def __str__(self):
         return "[Project name=%s basedir=%s]" % (self.name, self.basedir)
@@ -465,6 +481,7 @@ class Project(object):
 
     @requires_python.setter
     def requires_python(self, value):
+        from pybuilder import pip_common
         spec_set = pip_common.SpecifierSet(value)
         self._requires_python = str(spec_set)
 
@@ -558,6 +575,10 @@ class Project(object):
         self._plugin_dependencies.add(Dependency(name, version, url, declaration_only))
 
     @property
+    def environments(self):
+        return self._environments
+
+    @property
     def setup_preinstall_script(self):
         return self._preinstall_script
 
@@ -607,13 +628,10 @@ class Project(object):
         if not filename or filename.strip() == "":
             raise ValueError("Missing argument filename.")
 
-        full_filename = jp(package_name, filename)
+        full_filename = np(jp(package_name.replace(".", sep), filename))
         self._manifest_include(full_filename)
 
-        if package_name not in self._package_data:
-            self._package_data[package_name] = [filename]
-            return
-        self._package_data[package_name].append(filename)
+        self._add_package_data(package_name, filename)
 
     def include_directory(self, package_path, patterns_list, package_root=""):
         if not package_path or package_path.strip() == "":
@@ -621,19 +639,24 @@ class Project(object):
 
         if not patterns_list:
             raise ValueError("Missing argument patterns_list.")
+        patterns_list = as_list(patterns_list)
 
-        package_name = package_path.replace(PATH_SEPARATOR, '.')
+        package_name = PATH_SEP_RE.sub(".", package_path)
         self._manifest_include_directory(package_path, patterns_list)
 
-        package_full_path = jp(package_root, package_path)
+        package_full_path = self.expand_path(package_root, package_path)
 
         for root, dirnames, filenames in os.walk(package_full_path):
             filenames = list(fnmatch.filter(filenames, pattern) for pattern in patterns_list)
 
             for filename in itertools.chain.from_iterable(filenames):
-                full_path = jp(root, filename)
-                relative_path = full_path.replace(package_full_path, '', 1).lstrip(PATH_SEPARATOR)
-                self._package_data.setdefault(package_name, []).append(relative_path)
+                full_path = np(jp(root, filename))
+                relative_path = relpath(full_path, package_full_path)
+                self._add_package_data(package_name, relative_path)
+
+    def _add_package_data(self, package_name, filename):
+        filename = filename.replace("\\", "/")
+        self._package_data.setdefault(package_name, []).append(filename)
 
     @property
     def files_to_install(self):
@@ -677,7 +700,7 @@ class Project(object):
         elements = [self.basedir]
         elements += list(PATH_SEP_RE.split(self.expand(format_string)))
         elements += list(additional_path_elements)
-        return nc(jp(*elements))
+        return np(jp(*elements))
 
     def get_property(self, key, default_value=None):
         return self.properties.get(key, default_value)

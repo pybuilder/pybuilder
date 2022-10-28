@@ -19,9 +19,9 @@
 import os
 import shutil
 from functools import partial
-from os.path import join as jp
 
 from pybuilder.core import init, task, description, depends, optional
+from pybuilder.utils import jp
 
 
 @init
@@ -31,6 +31,7 @@ def init(project):
     project.set_property("dir_logs", jp("$dir_target", "logs"))
 
     project.set_property_if_unset("remote_debug", 0)
+    project.set_property_if_unset("remote_tracing", 0)
 
     project.write_report = partial(write_report, project)
 
