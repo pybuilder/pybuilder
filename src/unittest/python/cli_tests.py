@@ -24,7 +24,7 @@ from pybuilder.cli import (parse_options,
                            StdOutLogger,
                            length_of_longest_string,
                            print_list_of_tasks,
-                           DEFAULT_LOG_FORMAT,
+                           DEFAULT_LOG_TIME_FORMAT,
                            get_failure_message)
 from pybuilder.core import Logger
 from pybuilder.errors import PyBuilderException
@@ -111,9 +111,9 @@ class FormattedTimestampLoggerTest(unittest.TestCase):
             self.text += text
 
     def setUp(self):
-        self.stdout_logger = StdOutLogger(log_format=FormattedTimestampLoggerTest.DEFAULT_LOG_FORMAT)
+        self.stdout_logger = StdOutLogger(log_time_format=FormattedTimestampLoggerTest.DEFAULT_LOG_FORMAT)
 
-    def test_if_log_line_contains_log_format(self):
+    def test_if_log_line_contains_log_time_format(self):
         import sys
 
         original = sys.stdout
@@ -184,8 +184,8 @@ class ParseOptionsTest(unittest.TestCase):
                          overrides.get("property_overrides", {}))
         self.assertEqual(options.start_project,
                          overrides.get("start_project", False))
-        self.assertEqual(options.log_format,
-                         overrides.get("log_format", None))
+        self.assertEqual(options.log_time_format,
+                         overrides.get("log_time_format", None))
 
     def test_should_parse_empty_arguments(self):
         options, arguments = parse_options([])
@@ -259,30 +259,30 @@ class ParseOptionsTest(unittest.TestCase):
         self.assert_options(options, environments=[])
         self.assertEqual([], arguments)
 
-    def test_setting_of_default_log_format(self):
+    def test_setting_of_default_log_time_format(self):
         options, arguments = parse_options(['-f'])
 
-        self.assert_options(options, log_format=DEFAULT_LOG_FORMAT)
+        self.assert_options(options, log_time_format=DEFAULT_LOG_TIME_FORMAT)
         self.assertEqual([], arguments)
 
-    def test_setting_of_a_log_format(self):
+    def test_setting_of_a_log_time_format(self):
         test_this_format = '%Y-%m-%d'
         left_over_argument = 'abc'
         options, arguments = parse_options(['-f', test_this_format, left_over_argument])
 
-        self.assert_options(options, log_format=test_this_format)
+        self.assert_options(options, log_time_format=test_this_format)
         self.assertEqual([left_over_argument], arguments)
 
-    def test_setting_of_default_log_format_with_other_parameter_single_dash(self):
+    def test_setting_of_default_log_time_format_with_other_parameter_single_dash(self):
         options, arguments = parse_options(['-f', '-X'])
 
-        self.assert_options(options, log_format=DEFAULT_LOG_FORMAT, debug=True)
+        self.assert_options(options, log_time_format=DEFAULT_LOG_TIME_FORMAT, debug=True)
         self.assertEqual([], arguments)
 
-    def test_setting_of_default_log_format_with_other_parameter_double_dash(self):
+    def test_setting_of_default_log_time_format_with_other_parameter_double_dash(self):
         options, arguments = parse_options(['-f', '--debug'])
 
-        self.assert_options(options, log_format=DEFAULT_LOG_FORMAT, debug=True)
+        self.assert_options(options, log_time_format=DEFAULT_LOG_TIME_FORMAT, debug=True)
         self.assertEqual([], arguments)
 
 

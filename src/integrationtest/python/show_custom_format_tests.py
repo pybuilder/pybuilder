@@ -38,21 +38,21 @@ def any_task (project):
     pass
 """)
 
-        def _prepare(log_format=None) -> str:
+        def _prepare(log_time_format=None) -> str:
             f = StringIO()
             with contextlib.redirect_stdout(f):
-                reactor = self.prepare_reactor(log_format=log_format)
+                reactor = self.prepare_reactor(log_time_format=log_time_format)
                 reactor.build()
             f.seek(0)
             return f.read()
 
-        run_without_log_format = _prepare(None).splitlines()[0]
-        run_with_log_format = _prepare('%Y-%m-%d %H:%M:%S').splitlines()[0]
+        run_without_log_time_format = _prepare(None).splitlines()[0]
+        run_with_log_time_format = _prepare('%Y-%m-%d %H:%M:%S').splitlines()[0]
 
-        self.assertIn(run_without_log_format, run_with_log_format)
-        self.assertNotIn(run_with_log_format, run_without_log_format)
+        self.assertIn(run_without_log_time_format, run_with_log_time_format)
+        self.assertNotIn(run_with_log_time_format, run_without_log_time_format)
 
-        should_be_format = run_with_log_format.replace(run_without_log_format, '').strip()
+        should_be_format = run_with_log_time_format.replace(run_without_log_time_format, '').strip()
         self.assertRegex(should_be_format, '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}')
 
 

@@ -42,7 +42,7 @@ from pybuilder.terminal import (BOLD, BROWN, RED, GREEN, bold, styled_text,
 from pybuilder.utils import format_timestamp, get_dist_version_string
 
 PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
-DEFAULT_LOG_FORMAT = '[%Y-%m-%d %H:%M:%S]'
+DEFAULT_LOG_TIME_FORMAT = '[%Y-%m-%d %H:%M:%S]'
 _extern = extern
 
 
@@ -65,7 +65,10 @@ class StdOutLogger(Logger):
     def _do_log(self, level, message, *arguments):
         formatted_message = self._format_message(message, *arguments)
         log_level = self._level_to_string(level)
-        timestamp = (datetime.datetime.now().strftime(self.log_format) + ' ') if self.log_format is not None else ''
+        if self.log_time_format is not None:
+            timestamp = datetime.datetime.now().strftime(self.log_time_format) + ' '
+        else:
+            timestamp = ''
         print_text_line("{0}{1} {2}".format(timestamp, log_level, formatted_message))
 
 
@@ -80,9 +83,9 @@ class ColoredStdOutLogger(StdOutLogger):
         return styled_text("[ERROR]", BOLD, fg(RED))
 
 
-def _log_format_argument__check_if_timestamp_passed(option, opt_str, value, parser):
+def _log_time_format_argument__check_if_timestamp_passed(option, opt_str, value, parser):
     assert value is None
-    value = DEFAULT_LOG_FORMAT
+    value = DEFAULT_LOG_TIME_FORMAT
 
     for arg in parser.rargs:
         # stop on --foo like options
@@ -236,10 +239,10 @@ def parse_options(args):
                             default=False,
                             help="Disable colored output")
 
-    output_group.add_option("-f", "--log-format",
+    output_group.add_option("-f", "--log-time-format",
                             action='callback',
-                            callback=_log_format_argument__check_if_timestamp_passed,
-                            dest="log_format",
+                            callback=_log_time_format_argument__check_if_timestamp_passed,
+                            dest="log_time_format",
                             help="Define the format of timestamp in the log (default: no timestamps)",
                             default=None)
 
@@ -285,12 +288,12 @@ def init_logger(options):
         threshold = Logger.WARN
 
     if not should_colorize(options):
-        logger = StdOutLogger(threshold, options.log_format)
+        logger = StdOutLogger(threshold, options.log_time_format)
     else:
         if IS_WIN:
             import colorama
             colorama.init()
-        logger = ColoredStdOutLogger(threshold, options.log_format)
+        logger = ColoredStdOutLogger(threshold, options.log_time_format)
 
     return logger
 

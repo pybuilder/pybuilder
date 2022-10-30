@@ -730,9 +730,9 @@ class Logger(logging.Handler):
     INFO = 20
     DEBUG = 10
 
-    def __init__(self, level=INFO, log_format=None):
+    def __init__(self, level=INFO, log_time_format=None):
         super(Logger, self).__init__(level)
-        self.log_format = log_format
+        self.log_time_format = log_time_format
 
     def emit(self, record):
         self._do_log(record.levelno, record.getMessage())
