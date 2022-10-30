@@ -315,7 +315,3 @@ class ErrorHandlingTests(unittest.TestCase):
             raise PyBuilderException("test")
         except Exception:
             self.assertRegexpMatches(get_failure_message(), r"test \(cli_tests.py\:\d+\)")
-
-
-if __name__ == '__main__':
-    unittest.main()
