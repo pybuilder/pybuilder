@@ -48,7 +48,9 @@ print({
 "_version": tuple(sys.version_info),
 "_is_pypy": "__pypy__" in sys.builtin_module_names,
 "_is_64bit": (getattr(sys, "maxsize", None) or getattr(sys, "maxint")) > 2 ** 32,
-"_versioned_dir_name": "%s-%s" % (platform.python_implementation().lower(), ".".join(str(f) for f in sys.version_info)),
+"_versioned_dir_name": "%s-%s%s" % (platform.python_implementation().lower(),
+                                  ".".join(str(f) for f in sys.version_info),
+                                  "-debug" if hasattr(sys, "abiflags") and "d" in sys.abiflags else ""),
 "_environ": dict(os.environ),
 "_darwin_python_framework": sysconfig.get_config_var("PYTHONFRAMEWORK")
 })
