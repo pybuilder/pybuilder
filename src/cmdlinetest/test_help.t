@@ -56,11 +56,12 @@ Usage:
     Output Options:
       Modifies the messages printed during a build.
   
-      -X, --debug            Print debug messages
-      -v, --verbose          Enable verbose output
-      -q, --quiet            Quiet mode; print only warnings and errors
-      -Q, --very-quiet       Very quiet mode; print only errors
-      -c, --color            Force colored output
-      -C, --no-color         Disable colored output
-      -f, --log-time-format  Define the format of timestamp in the log (default: no
-                             timestamps)
+      -X, --debug         Print debug messages
+      -v, --verbose       Enable verbose output
+      -q, --quiet         Quiet mode; print only warnings and errors
+      -Q, --very-quiet    Very quiet mode; print only errors
+      -c, --color         Force colored output
+      -C, --no-color      Disable colored output
+      -f, --log-time-format
+                          Define the format of timestamp in the log (default: no
+                          timestamps)
