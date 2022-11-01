@@ -16,8 +16,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 import contextlib
-import logging
-import textwrap
 import unittest
 from io import StringIO
 
@@ -53,7 +51,7 @@ def any_task (project):
         self.assertNotIn(run_with_log_time_format, run_without_log_time_format)
 
         should_be_format = run_with_log_time_format.replace(run_without_log_time_format, '').strip()
-        self.assertRegex(should_be_format, '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}')
+        self.assertRegex(should_be_format, r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}')
 
 
 if __name__ == "__main__":
