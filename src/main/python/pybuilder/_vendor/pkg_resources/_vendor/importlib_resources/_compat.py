@@ -1,8 +1,8 @@
 # flake8: noqa
 
 import abc
-import sys
 import pathlib
+import sys
 from contextlib import suppress
 
 if sys.version_info >= (3, 10):
@@ -42,7 +42,7 @@ class TraversableResourcesLoader:
         return self.spec.origin
 
     def get_resource_reader(self, name):
-        from . import readers, _adapters
+        from . import _adapters, readers
 
         def _zip_reader(spec):
             with suppress(AttributeError):
@@ -58,7 +58,7 @@ class TraversableResourcesLoader:
 
         def _native_reader(spec):
             reader = _available_reader(spec)
-            return reader if hasattr(reader, 'files') else None
+            return reader if hasattr(reader, "files") else None
 
         def _file_reader(spec):
             try:

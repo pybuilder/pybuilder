@@ -24,27 +24,32 @@ from datetime import datetime
 from textwrap import dedent
 
 from pybuilder import pip_utils
-from pybuilder.core import (after,
-                            before,
-                            use_plugin,
-                            init,
-                            task,
-                            RequirementsFile,
-                            Dependency)
+from pybuilder.core import (
+    Dependency,
+    RequirementsFile,
+    after,
+    before,
+    init,
+    task,
+    use_plugin,
+)
 from pybuilder.errors import BuildFailedException, MissingPrerequisiteException
 from pybuilder.python_utils import StringIO
-from pybuilder.utils import (as_list,
-                             is_string,
-                             is_notstr_iterable,
-                             get_dist_version_string,
-                             safe_log_file_name,
-                             tail_log)
+from pybuilder.utils import (
+    as_list,
+    get_dist_version_string,
+    is_notstr_iterable,
+    is_string,
+    safe_log_file_name,
+    tail_log,
+)
 
 use_plugin("python.core")
 
-LEADING_TAB_RE = re.compile(r'^(\t*)')
+LEADING_TAB_RE = re.compile(r"^(\t*)")
 DATA_FILES_PROPERTY = "distutils_data_files"
-SETUP_TEMPLATE = string.Template("""#!/usr/bin/env python
+SETUP_TEMPLATE = string.Template(
+    """#!/usr/bin/env python
 #   -*- coding: utf-8 -*-
 $remove_hardlink_capabilities_for_shared_filesystems
 from $module import setup
@@ -98,7 +103,8 @@ if __name__ == '__main__':
         python_requires = $python_requires,
         obsoletes = $obsoletes,
     )
-""")
+"""
+)
 
 
 def default(value, default=""):
@@ -124,10 +130,10 @@ def initialize_distutils_plugin(project):
     # Workaround for http://bugs.python.org/issue8876 , unable to build a bdist
     # on a filesystem that does not support hardlinks
     project.set_property_if_unset("distutils_issue8876_workaround_enabled", False)
-    project.set_property_if_unset("distutils_classifiers", [
-        "Development Status :: 3 - Alpha",
-        "Programming Language :: Python"
-    ])
+    project.set_property_if_unset(
+        "distutils_classifiers",
+        ["Development Status :: 3 - Alpha", "Programming Language :: Python"],
+    )
     project.set_property_if_unset("distutils_use_setuptools", True)
 
     project.set_property_if_unset("distutils_fail_on_warnings", False)
@@ -160,28 +166,38 @@ def set_description(project, logger, reactor):
         description = None
         if project.get_property("distutils_readme_file_convert"):
             try:
-                reactor.pybuilder_venv.verify_can_execute(["pandoc", "--version"], "pandoc", "distutils")
+                reactor.pybuilder_venv.verify_can_execute(
+                    ["pandoc", "--version"], "pandoc", "distutils"
+                )
                 description = doc_convert(project, logger)
             except (MissingPrerequisiteException, ImportError):
-                logger.warn("Was unable to find pandoc or pypandoc and did not convert the documentation")
+                logger.warn(
+                    "Was unable to find pandoc or pypandoc and did not convert the documentation"
+                )
         else:
-            with io.open(project.expand_path("$distutils_readme_file"), "rt",
-                         encoding=project.get_property("distutils_readme_file_encoding")) as f:
+            with io.open(
+                project.expand_path("$distutils_readme_file"),
+                "rt",
+                encoding=project.get_property("distutils_readme_file_encoding"),
+            ) as f:
                 description = f.read()
 
         if description:
-            if (not hasattr(project, "summary") or
-                    project.summary is None or
-                    project.get_property("distutils_summary_overwrite")):
+            if (
+                not hasattr(project, "summary")
+                or project.summary is None
+                or project.get_property("distutils_summary_overwrite")
+            ):
                 setattr(project, "summary", description.splitlines()[0].strip())
 
-            if (not hasattr(project, "description") or
-                    project.description is None or
-                    project.get_property("distutils_description_overwrite")):
+            if (
+                not hasattr(project, "description")
+                or project.description is None
+                or project.get_property("distutils_description_overwrite")
+            ):
                 setattr(project, "description", description)
 
-    if (not hasattr(project, "description") or
-            not project.description):
+    if not hasattr(project, "description") or not project.description:
         if hasattr(project, "summary") and project.summary:
             description = project.summary
         else:
@@ -195,14 +211,20 @@ def set_description(project, logger, reactor):
         warn = True
 
     if "\n" in project.summary or "\r" in project.summary:
-        logger.warn("Project summary SHOULD NOT contain new-line characters per PEP-426")
+        logger.warn(
+            "Project summary SHOULD NOT contain new-line characters per PEP-426"
+        )
         warn = True
 
     if len(project.summary) >= 2048:
-        raise BuildFailedException("Project summary MUST NOT be shorter than 2048 characters per PEP-426")
+        raise BuildFailedException(
+            "Project summary MUST NOT be shorter than 2048 characters per PEP-426"
+        )
 
     if warn and project.get_property("distutils_fail_on_warnings"):
-        raise BuildFailedException("Distutil plugin warnings caused a build failure. Please see warnings above.")
+        raise BuildFailedException(
+            "Distutil plugin warnings caused a build failure. Please see warnings above."
+        )
 
 
 @after("package")
@@ -224,7 +246,9 @@ def render_setup_script(project):
     maintainer_email = ",".join(map(lambda a: a.email, project.maintainers))
 
     template_values = {
-        "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
+        "module": "setuptools"
+        if project.get_property("distutils_use_setuptools")
+        else "distutils.core",
         "name": as_str(project.name),
         "version": as_str(project.dist_version),
         "summary": as_str(default(project.summary)),
@@ -250,13 +274,18 @@ def render_setup_script(project):
         "remove_hardlink_capabilities_for_shared_filesystems": (
             "import os\ndel os.link"
             if project.get_property("distutils_issue8876_workaround_enabled")
-            else ""),
-        "preinstall_script": _normalize_setup_post_pre_script(project.setup_preinstall_script or "pass"),
-        "postinstall_script": _normalize_setup_post_pre_script(project.setup_postinstall_script or "pass"),
+            else ""
+        ),
+        "preinstall_script": _normalize_setup_post_pre_script(
+            project.setup_preinstall_script or "pass"
+        ),
+        "postinstall_script": _normalize_setup_post_pre_script(
+            project.setup_postinstall_script or "pass"
+        ),
         "setup_keywords": build_setup_keywords(project),
         "python_requires": as_str(default(project.requires_python)),
         "obsoletes": build_string_from_array(project.obsoletes),
-        "zip_safe": project.get_property("distutils_zip_safe")
+        "zip_safe": project.get_property("distutils_zip_safe"),
     }
 
     return SETUP_TEMPLATE.substitute(template_values)
@@ -264,12 +293,14 @@ def render_setup_script(project):
 
 @after("package")
 def write_manifest_file(project, logger):
-    if len(project.manifest_included_files) == 0 and len(project.manifest_included_directories) == 0:
+    if (
+        len(project.manifest_included_files) == 0
+        and len(project.manifest_included_directories) == 0
+    ):
         logger.debug("No data to write into MANIFEST.in")
         return
 
-    logger.debug("Files included in MANIFEST.in: %s" %
-                 project.manifest_included_files)
+    logger.debug("Files included in MANIFEST.in: %s" % project.manifest_included_files)
 
     manifest_filename = project.expand_path("$dir_dist", "MANIFEST.in")
     logger.info("Writing MANIFEST.in as %s", manifest_filename)
@@ -282,11 +313,14 @@ def write_manifest_file(project, logger):
 
 @before("publish")
 def build_binary_distribution(project, logger, reactor):
-    logger.info("Building binary distribution in %s",
-                project.expand_path("$dir_dist"))
+    logger.info("Building binary distribution in %s", project.expand_path("$dir_dist"))
 
-    commands = [build_command_with_options(cmd, project.get_property("distutils_command_options"))
-                for cmd in as_list(project.get_property("distutils_commands"))]
+    commands = [
+        build_command_with_options(
+            cmd, project.get_property("distutils_command_options")
+        )
+        for cmd in as_list(project.get_property("distutils_commands"))
+    ]
     execute_distutils(project, logger, reactor.pybuilder_venv, commands, True)
     upload_check(project, logger, reactor)
 
@@ -296,8 +330,11 @@ def install_distribution(project, logger, reactor):
     logger.info("Installing project %s-%s", project.name, project.version)
 
     _prepare_reports_dir(project)
-    outfile_name = project.expand_path("$dir_reports", "distutils",
-                                       "pip_install_%s" % datetime.utcnow().strftime("%Y%m%d%H%M%S"))
+    outfile_name = project.expand_path(
+        "$dir_reports",
+        "distutils",
+        "pip_install_%s" % datetime.utcnow().strftime("%Y%m%d%H%M%S"),
+    )
     pip_utils.pip_install(
         install_targets=project.expand_path("$dir_dist"),
         python_env=reactor.python_env_registry["system"],
@@ -308,7 +345,8 @@ def install_distribution(project, logger, reactor):
         verbose=project.get_property("pip_verbose"),
         cwd=".",
         outfile_name=outfile_name,
-        error_file_name=outfile_name)
+        error_file_name=outfile_name,
+    )
 
 
 @task("upload", description="Upload a project to PyPi.")
@@ -331,16 +369,28 @@ def upload(project, logger, reactor):
             upload_sign_args += ["--identity", sign_identity]
 
     if project.get_property("distutils_upload_register"):
-        logger.info("Registering project %s-%s%s", project.name, project.version,
-                    (" into repository '%s'" % repository) if repository else "")
-        execute_twine(project, logger, reactor.pybuilder_venv, repository_args, "register")
+        logger.info(
+            "Registering project %s-%s%s",
+            project.name,
+            project.version,
+            (" into repository '%s'" % repository) if repository else "",
+        )
+        execute_twine(
+            project, logger, reactor.pybuilder_venv, repository_args, "register"
+        )
 
     skip_existing = project.get_property("distutils_upload_skip_existing")
-    logger.info("Uploading project %s-%s%s%s%s%s", project.name, project.version,
-                (" to repository '%s'" % repository) if repository else "",
-                get_dist_version_string(project, " as version %s"),
-                (" signing%s" % (" with %s" % sign_identity if sign_identity else "")) if upload_sign else "",
-                (", will skip existing" if skip_existing else ""))
+    logger.info(
+        "Uploading project %s-%s%s%s%s%s",
+        project.name,
+        project.version,
+        (" to repository '%s'" % repository) if repository else "",
+        get_dist_version_string(project, " as version %s"),
+        (" signing%s" % (" with %s" % sign_identity if sign_identity else ""))
+        if upload_sign
+        else "",
+        (", will skip existing" if skip_existing else ""),
+    )
 
     upload_cmd_args = repository_args + upload_sign_args
     if skip_existing:
@@ -361,7 +411,7 @@ def render_manifest_file(project):
         manifest_content.write("include %s\n" % included_file)
 
     for directory, pattern_list in project.manifest_included_directories:
-        patterns = ' '.join(pattern_list)
+        patterns = " ".join(pattern_list)
         manifest_content.write("recursive-include %s %s\n" % (directory, patterns))
 
     return manifest_content.getvalue()
@@ -398,11 +448,16 @@ def execute_distutils(project, logger, python_env, distutils_commands, clean=Fal
             else:
                 commands.extend(command)
             logger.debug("Executing distutils command: %s", commands)
-            return_code = python_env.run_process_and_wait(commands, project.expand_path("$dir_dist"), out_f)
+            return_code = python_env.run_process_and_wait(
+                commands, project.expand_path("$dir_dist"), out_f
+            )
             if return_code != 0:
                 raise BuildFailedException(
                     "Error while executing setup command %s. See %s for full details:\n%s",
-                    command, out_file, tail_log(out_file))
+                    command,
+                    out_file,
+                    tail_log(out_file),
+                )
 
 
 def execute_twine(project, logger, python_env, command_args, command):
@@ -411,14 +466,32 @@ def execute_twine(project, logger, python_env, command_args, command):
 
     if command == "register":
         for artifact in artifacts:
-            out_file = os.path.join(reports_dir,
-                                    safe_log_file_name("twine_%s_%s.log" % (command, os.path.basename(artifact))))
-            _execute_twine(project, logger, python_env,
-                           [command] + command_args + [artifact], dist_artifact_dir, out_file)
+            out_file = os.path.join(
+                reports_dir,
+                safe_log_file_name(
+                    "twine_%s_%s.log" % (command, os.path.basename(artifact))
+                ),
+            )
+            _execute_twine(
+                project,
+                logger,
+                python_env,
+                [command] + command_args + [artifact],
+                dist_artifact_dir,
+                out_file,
+            )
     else:
-        out_file = os.path.join(reports_dir, safe_log_file_name("twine_%s.log" % command))
-        _execute_twine(project, logger, python_env,
-                       [command] + command_args + artifacts, dist_artifact_dir, out_file)
+        out_file = os.path.join(
+            reports_dir, safe_log_file_name("twine_%s.log" % command)
+        )
+        _execute_twine(
+            project,
+            logger,
+            python_env,
+            [command] + command_args + artifacts,
+            dist_artifact_dir,
+            out_file,
+        )
 
 
 def _execute_twine(project, logger, python_env, command, work_dir, out_file):
@@ -428,12 +501,19 @@ def _execute_twine(project, logger, python_env, command, work_dir, out_file):
         return_code = python_env.run_process_and_wait(commands, work_dir, out_f)
         if return_code != 0:
             raise BuildFailedException(
-                "Error while executing Twine %s. See %s for full details:\n%s", command, out_file, tail_log(out_file))
+                "Error while executing Twine %s. See %s for full details:\n%s",
+                command,
+                out_file,
+                tail_log(out_file),
+            )
 
 
 def strip_comments(requirements):
-    return [requirement for requirement in requirements
-            if not requirement.strip().startswith("#")]
+    return [
+        requirement
+        for requirement in requirements
+        if not requirement.strip().startswith("#")
+    ]
 
 
 def quote(requirements):
@@ -445,31 +525,47 @@ def is_editable_requirement(requirement):
 
 
 def flatten_and_quote(requirements_file):
-    with open(requirements_file.name, 'r') as requirements_file:
-        requirements = [requirement.strip("\n") for requirement in requirements_file.readlines()]
+    with open(requirements_file.name, "r") as requirements_file:
+        requirements = [
+            requirement.strip("\n") for requirement in requirements_file.readlines()
+        ]
         requirements = [requirement for requirement in requirements if requirement]
         return quote(strip_comments(requirements))
 
 
 def format_single_dependency(dependency):
-    return '%s%s' % (dependency.name, pip_utils.build_dependency_version_string(dependency))
+    return "%s%s" % (
+        dependency.name,
+        pip_utils.build_dependency_version_string(dependency),
+    )
 
 
 def build_install_dependencies_string(project):
     dependencies = [
-        dependency for dependency in project.dependencies
-        if isinstance(dependency, Dependency) and not dependency.url]
+        dependency
+        for dependency in project.dependencies
+        if isinstance(dependency, Dependency) and not dependency.url
+    ]
     requirements = [
-        requirement for requirement in project.dependencies
-        if isinstance(requirement, RequirementsFile)]
+        requirement
+        for requirement in project.dependencies
+        if isinstance(requirement, RequirementsFile)
+    ]
     if not dependencies and not requirements:
         return "[]"
 
     dependencies = [format_single_dependency(dependency) for dependency in dependencies]
-    requirements = [strip_comments(flatten_and_quote(requirement)) for requirement in requirements]
-    flattened_requirements = [dependency for dependency_list in requirements for dependency in dependency_list]
+    requirements = [
+        strip_comments(flatten_and_quote(requirement)) for requirement in requirements
+    ]
+    flattened_requirements = [
+        dependency for dependency_list in requirements for dependency in dependency_list
+    ]
     flattened_requirements_without_editables = [
-        requirement for requirement in flattened_requirements if not is_editable_requirement(requirement)]
+        requirement
+        for requirement in flattened_requirements
+        if not is_editable_requirement(requirement)
+    ]
 
     dependencies.extend(flattened_requirements_without_editables)
 
@@ -482,25 +578,39 @@ def build_install_dependencies_string(project):
 
 def build_dependency_links_string(project):
     dependency_links = [
-        dependency for dependency in project.dependencies
-        if isinstance(dependency, Dependency) and dependency.url]
+        dependency
+        for dependency in project.dependencies
+        if isinstance(dependency, Dependency) and dependency.url
+    ]
     requirements = [
-        requirement for requirement in project.dependencies
-        if isinstance(requirement, RequirementsFile)]
+        requirement
+        for requirement in project.dependencies
+        if isinstance(requirement, RequirementsFile)
+    ]
 
     editable_links_from_requirements = []
     for requirement in requirements:
-        editables = [editable for editable in flatten_and_quote(requirement) if is_editable_requirement(editable)]
+        editables = [
+            editable
+            for editable in flatten_and_quote(requirement)
+            if is_editable_requirement(editable)
+        ]
         editable_links_from_requirements.extend(
-            [editable.replace("--editable ", "").replace("-e ", "") for editable in editables])
+            [
+                editable.replace("--editable ", "").replace("-e ", "")
+                for editable in editables
+            ]
+        )
 
     if not dependency_links and not requirements:
         return "[]"
 
     def format_single_dependency(dependency):
-        return '%s' % dependency.url
+        return "%s" % dependency.url
 
-    all_dependency_links = [link for link in map(format_single_dependency, dependency_links)]
+    all_dependency_links = [
+        link for link in map(format_single_dependency, dependency_links)
+    ]
     all_dependency_links.extend(editable_links_from_requirements)
 
     for i, dep in enumerate(all_dependency_links):
@@ -515,7 +625,7 @@ def build_scripts_string(project):
 
     scripts_dir = project.get_property("dir_dist_scripts")
     if scripts_dir:
-        scripts = list(map(lambda s: '{}/{}'.format(scripts_dir, s), scripts))
+        scripts = list(map(lambda s: "{}/{}".format(scripts_dir, s), scripts))
 
     return build_string_from_array(scripts)
 
@@ -529,7 +639,7 @@ def build_data_files_string(project):
     """
     data_files = project.files_to_install
     if not len(data_files):
-        return '[]'
+        return "[]"
 
     result = "[\n"
 
@@ -600,26 +710,32 @@ def build_modules_string(project):
 
 
 def build_entry_points_string(project):
-    console_scripts = project.get_property('distutils_console_scripts')
-    entry_points = project.get_property('distutils_entry_points')
+    console_scripts = project.get_property("distutils_console_scripts")
+    entry_points = project.get_property("distutils_entry_points")
     if console_scripts is not None and entry_points is not None:
-        raise BuildFailedException("'distutils_console_scripts' cannot be combined with 'distutils_entry_points'")
+        raise BuildFailedException(
+            "'distutils_console_scripts' cannot be combined with 'distutils_entry_points'"
+        )
 
     if entry_points is None:
-        entry_points = dict()
+        entry_points = []
 
     if console_scripts is not None:
-        entry_points['console_scripts'] = console_scripts
+        entry_points["console_scripts"] = console_scripts
 
     if len(entry_points) == 0:
-        return '{}'
+        return "{}"
 
     indent = 8
     result = "{\n"
 
     for k in sorted(entry_points.keys()):
         result += " " * (indent + 4)
-        result += "'%s': %s" % (k, build_string_from_array(as_list(entry_points[k]), indent + 8)) + ",\n"
+        result += (
+            "'%s': %s"
+            % (k, build_string_from_array(as_list(entry_points[k]), indent + 8))
+            + ",\n"
+        )
 
     result = result[:-2] + "\n"
     result += (" " * indent) + "}"
@@ -656,20 +772,22 @@ def build_string_from_array(arr, indent=12):
             else:
                 result += "['%s']" % arr[0]
         else:
-            result = '[[]]'
+            result = "[[]]"
     elif len(arr) > 1:
         result = "[\n"
 
         for item in arr:
             if is_notstr_iterable(item):
-                result += (" " * indent) + build_string_from_array(item, indent + 4) + ",\n"
+                result += (
+                    (" " * indent) + build_string_from_array(item, indent + 4) + ",\n"
+                )
             else:
                 result += (" " * indent) + "'" + item + "',\n"
         result = result[:-2] + "\n"
         result += " " * (indent - 4)
         result += "]"
     else:
-        result = '[]'
+        result = "[]"
 
     return result
 
@@ -697,6 +815,7 @@ def build_string_from_dict(d, indent=12):
 
 def doc_convert(project, logger):
     import pypandoc
+
     readme_file = project.expand_path("$distutils_readme_file")
     logger.debug("Converting %s into RST format for PyPi documentation...", readme_file)
     return pypandoc.convert_file(readme_file, "rst")
@@ -706,13 +825,19 @@ def _expand_leading_tabs(s, indent=4):
     def replace_tabs(match):
         return " " * (len(match.groups(0)) * indent)
 
-    return "".join([LEADING_TAB_RE.sub(replace_tabs, line) for line in s.splitlines(True)])
+    return "".join(
+        [LEADING_TAB_RE.sub(replace_tabs, line) for line in s.splitlines(True)]
+    )
 
 
 def _normalize_setup_post_pre_script(s, indent=8):
     indent_str = " " * indent
-    return "".join([indent_str + line if len(str.rstrip(line)) > 0 else line for line in
-                    dedent(_expand_leading_tabs(s)).splitlines(True)])
+    return "".join(
+        [
+            indent_str + line if len(str.rstrip(line)) > 0 else line
+            for line in dedent(_expand_leading_tabs(s)).splitlines(True)
+        ]
+    )
 
 
 def _prepare_reports_dir(project):
@@ -745,13 +870,18 @@ def _get_description_content_type(project):
             file_variant = file_variant.upper()
 
     if file_type:
-        return "%s%s%s" % (file_type,
-                           "; charset=%s" % file_encoding if file_encoding else "",
-                           "; variant=%s" % file_variant if file_variant else "")
+        return "%s%s%s" % (
+            file_type,
+            "; charset=%s" % file_encoding if file_encoding else "",
+            "; variant=%s" % file_variant if file_variant else "",
+        )
 
 
 def _get_generated_artifacts(project, logger):
     dist_artifact_dir = project.expand_path("$dir_dist", "dist")
 
-    artifacts = [os.path.join(dist_artifact_dir, artifact) for artifact in list(os.walk(dist_artifact_dir))[0][2]]
+    artifacts = [
+        os.path.join(dist_artifact_dir, artifact)
+        for artifact in list(os.walk(dist_artifact_dir))[0][2]
+    ]
     return dist_artifact_dir, artifacts

@@ -3,8 +3,7 @@ import os
 import pathlib
 import types
 import warnings
-
-from typing import Union, Iterable, ContextManager, BinaryIO, TextIO, Any
+from typing import Any, BinaryIO, ContextManager, Iterable, TextIO, Union
 
 from . import _common
 
@@ -35,14 +34,14 @@ def normalize_path(path: Any) -> str:
     str_path = str(path)
     parent, file_name = os.path.split(str_path)
     if parent:
-        raise ValueError(f'{path!r} must be only a file name')
+        raise ValueError(f"{path!r} must be only a file name")
     return file_name
 
 
 @deprecated
 def open_binary(package: Package, resource: Resource) -> BinaryIO:
     """Return a file-like object opened for binary reading of the resource."""
-    return (_common.files(package) / normalize_path(resource)).open('rb')
+    return (_common.files(package) / normalize_path(resource)).open("rb")
 
 
 @deprecated
@@ -55,12 +54,12 @@ def read_binary(package: Package, resource: Resource) -> bytes:
 def open_text(
     package: Package,
     resource: Resource,
-    encoding: str = 'utf-8',
-    errors: str = 'strict',
+    encoding: str = "utf-8",
+    errors: str = "strict",
 ) -> TextIO:
     """Return a file-like object opened for text reading of the resource."""
     return (_common.files(package) / normalize_path(resource)).open(
-        'r', encoding=encoding, errors=errors
+        "r", encoding=encoding, errors=errors
     )
 
 
@@ -68,8 +67,8 @@ def open_text(
 def read_text(
     package: Package,
     resource: Resource,
-    encoding: str = 'utf-8',
-    errors: str = 'strict',
+    encoding: str = "utf-8",
+    errors: str = "strict",
 ) -> str:
     """Return the decoded string of the resource.
 

@@ -3,9 +3,8 @@ from contextlib import contextmanager
 from subprocess import Popen
 
 from ...discovery.cached_py_info import LogCmd
-from .base_embed import BaseEmbed
-
 from ..wheels import Version, get_wheel, pip_wheel_env_run
+from .base_embed import BaseEmbed
 
 
 class PipInvoke(BaseEmbed):
@@ -31,7 +30,16 @@ class PipInvoke(BaseEmbed):
 
     @contextmanager
     def get_pip_install_cmd(self, exe, for_py_version):
-        cmd = [str(exe), "-m", "pip", "-q", "install", "--only-binary", ":all:", "--disable-pip-version-check"]
+        cmd = [
+            str(exe),
+            "-m",
+            "pip",
+            "-q",
+            "install",
+            "--only-binary",
+            ":all:",
+            "--disable-pip-version-check",
+        ]
         if not self.download:
             cmd.append("--no-index")
         folders = set()

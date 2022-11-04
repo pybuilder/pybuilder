@@ -18,43 +18,51 @@
 
 import unittest
 
-from pybuilder.plugins.python.python_plugin_helper import (log_report,
-                                                           discover_affected_files,
-                                                           discover_affected_dirs,
-                                                           execute_tool_on_source_files,
-                                                           _if_property_set_and_dir_exists)
 from test_utils import Mock, call, patch
+
+from pybuilder.plugins.python.python_plugin_helper import (
+    _if_property_set_and_dir_exists,
+    discover_affected_dirs,
+    discover_affected_files,
+    execute_tool_on_source_files,
+    log_report,
+)
 
 
 class LogReportsTest(unittest.TestCase):
     def test_should_not_warn_when_report_lines_is_empty(self):
         logger = Mock()
-        log_report(logger, 'name', [])
+        log_report(logger, "name", [])
 
         self.assertFalse(logger.warn.called)
 
     def test_should_warn_when_report_lines_present(self):
         logger = Mock()
-        log_report(logger, 'name', ['line1 ', 'line 2 '])
+        log_report(logger, "name", ["line1 ", "line 2 "])
 
-        self.assertEqual(logger.warn.call_args_list,
-                         [call('name: line1'), call('name: line 2')])
+        self.assertEqual(
+            logger.warn.call_args_list, [call("name: line1"), call("name: line 2")]
+        )
 
 
 class DiscoverAffectedFilesTest(unittest.TestCase):
-    @patch('pybuilder.plugins.python.python_plugin_helper.discover_python_files')
-    def test_should_discover_source_files_when_test_sources_not_included(self, discover_python_files):
+    @patch("pybuilder.plugins.python.python_plugin_helper.discover_python_files")
+    def test_should_discover_source_files_when_test_sources_not_included(
+        self, discover_python_files
+    ):
         project = Mock()
-        project.get_property.return_value = 'source_directory'
-        project.expand_path.return_value = '$source_directory'
-        discover_python_files.return_value = ['foo.py', 'bar.py']
+        project.get_property.return_value = "source_directory"
+        project.expand_path.return_value = "$source_directory"
+        discover_python_files.return_value = ["foo.py", "bar.py"]
 
         files = discover_affected_files(False, False, project)
-        discover_python_files.assert_called_with('$source_directory')
-        self.assertEqual(files, ['foo.py', 'bar.py'])
+        discover_python_files.assert_called_with("$source_directory")
+        self.assertEqual(files, ["foo.py", "bar.py"])
 
-    @patch('pybuilder.plugins.python.python_plugin_helper.discover_python_files')
-    def test_should_discover_source_files_when_test_sources_are_included(self, discover_python_files):
+    @patch("pybuilder.plugins.python.python_plugin_helper.discover_python_files")
+    def test_should_discover_source_files_when_test_sources_are_included(
+        self, discover_python_files
+    ):
         project = Mock()
 
         project.get_property.side_effect = lambda _property: _property
@@ -62,14 +70,20 @@ class DiscoverAffectedFilesTest(unittest.TestCase):
 
         discover_affected_files(True, False, project)
 
-        self.assertEqual(discover_python_files.call_args_list,
-                         [call('$dir_source_main_python'),
-                          call('$dir_source_unittest_python'),
-                          call('$dir_source_integrationtest_python')])
+        self.assertEqual(
+            discover_python_files.call_args_list,
+            [
+                call("$dir_source_main_python"),
+                call("$dir_source_unittest_python"),
+                call("$dir_source_integrationtest_python"),
+            ],
+        )
 
-    @patch('pybuilder.plugins.python.python_plugin_helper.discover_python_files')
-    @patch('pybuilder.plugins.python.python_plugin_helper.discover_files_matching')
-    def test_should_discover_source_files_when_scripts_are_included(self, discover_files_matching, _):
+    @patch("pybuilder.plugins.python.python_plugin_helper.discover_python_files")
+    @patch("pybuilder.plugins.python.python_plugin_helper.discover_files_matching")
+    def test_should_discover_source_files_when_scripts_are_included(
+        self, discover_files_matching, _
+    ):
         project = Mock()
 
         project.get_property.return_value = True
@@ -78,68 +92,86 @@ class DiscoverAffectedFilesTest(unittest.TestCase):
 
         discover_affected_files(False, True, project)
 
-        discover_files_matching.assert_called_with('$dir_source_main_scripts', '*')
+        discover_files_matching.assert_called_with("$dir_source_main_scripts", "*")
 
-    @patch('pybuilder.plugins.python.python_plugin_helper.discover_python_files')
-    def test_should_discover_source_files_when_test_sources_are_included_and_only_unittests(self,
-                                                                                            discover_python_files):
+    @patch("pybuilder.plugins.python.python_plugin_helper.discover_python_files")
+    def test_should_discover_source_files_when_test_sources_are_included_and_only_unittests(
+        self, discover_python_files
+    ):
         project = Mock()
 
         project.get_property.side_effect = lambda _property: (
-            _property if _property != 'dir_source_integrationtest_python' else None)
+            _property if _property != "dir_source_integrationtest_python" else None
+        )
 
         project.expand_path.side_effect = lambda _property: (
-            _property if _property != '$dir_source_integrationtest_python' else None)
+            _property if _property != "$dir_source_integrationtest_python" else None
+        )
 
         discover_affected_files(True, False, project)
 
-        self.assertEqual(discover_python_files.call_args_list,
-                         [call('$dir_source_main_python'),
-                          call('$dir_source_unittest_python')])
+        self.assertEqual(
+            discover_python_files.call_args_list,
+            [call("$dir_source_main_python"), call("$dir_source_unittest_python")],
+        )
 
-    @patch('pybuilder.plugins.python.python_plugin_helper.discover_python_files')
-    def test_should_discover_source_files_when_test_sources_are_included_and_only_integrationtests(self,
-                                                                                                   discover_python_files):
+    @patch("pybuilder.plugins.python.python_plugin_helper.discover_python_files")
+    def test_should_discover_source_files_when_test_sources_are_included_and_only_integrationtests(
+        self, discover_python_files
+    ):
         project = Mock()
 
         project.get_property.side_effect = lambda _property: (
-            _property if _property != 'dir_source_unittest_python' else None)
+            _property if _property != "dir_source_unittest_python" else None
+        )
 
         project.expand_path.side_effect = lambda _property: (
-            _property if _property != '$dir_source_unittest_python' else None)
+            _property if _property != "$dir_source_unittest_python" else None
+        )
 
         discover_affected_files(True, False, project)
 
-        self.assertEqual(discover_python_files.call_args_list,
-                         [call('$dir_source_main_python'),
-                          call('$dir_source_integrationtest_python')])
+        self.assertEqual(
+            discover_python_files.call_args_list,
+            [
+                call("$dir_source_main_python"),
+                call("$dir_source_integrationtest_python"),
+            ],
+        )
 
-    @patch('pybuilder.plugins.python.python_plugin_helper.discover_python_files')
-    def test_should_discover_source_files_when_test_sources_are_included_and_no_tests(self, discover_python_files):
+    @patch("pybuilder.plugins.python.python_plugin_helper.discover_python_files")
+    def test_should_discover_source_files_when_test_sources_are_included_and_no_tests(
+        self, discover_python_files
+    ):
         project = Mock()
 
         project.get_property.side_effect = lambda _property: (
-            _property if _property == 'dir_source_main_python' else None)
+            _property if _property == "dir_source_main_python" else None
+        )
 
         project.expand_path.side_effect = lambda _property: (
-            _property if _property == '$dir_source_main_python' else None)
+            _property if _property == "$dir_source_main_python" else None
+        )
 
         discover_affected_files(True, False, project)
 
-        self.assertEqual(discover_python_files.call_args_list,
-                         [call('$dir_source_main_python')])
+        self.assertEqual(
+            discover_python_files.call_args_list, [call("$dir_source_main_python")]
+        )
 
 
 class DiscoverAffectedDirsTest(unittest.TestCase):
     def test_should_discover_source_dirs_when_test_sources_not_included(self):
         project = Mock()
-        project.get_property.return_value = 'source_directory'
-        project.expand_path.return_value = '$source_directory'
+        project.get_property.return_value = "source_directory"
+        project.expand_path.return_value = "$source_directory"
 
         files = discover_affected_dirs(False, False, project)
-        self.assertEqual(files, ['$source_directory'])
+        self.assertEqual(files, ["$source_directory"])
 
-    @patch('pybuilder.plugins.python.python_plugin_helper.os.path.isdir', return_value=True)
+    @patch(
+        "pybuilder.plugins.python.python_plugin_helper.os.path.isdir", return_value=True
+    )
     def test_should_discover_source_dirs_when_test_sources_are_included(self, _):
         project = Mock()
 
@@ -148,127 +180,167 @@ class DiscoverAffectedDirsTest(unittest.TestCase):
 
         files = discover_affected_dirs(True, False, project)
 
-        self.assertEqual(project.expand_path.call_args_list,
-                         [call('$dir_source_main_python'),
-                          call('$dir_source_unittest_python'),
-                          call('$dir_source_integrationtest_python'),
-                          ])
-        self.assertEqual(files,
-                         ['$dir_source_main_python',
-                          '$dir_source_unittest_python',
-                          '$dir_source_integrationtest_python'])
+        self.assertEqual(
+            project.expand_path.call_args_list,
+            [
+                call("$dir_source_main_python"),
+                call("$dir_source_unittest_python"),
+                call("$dir_source_integrationtest_python"),
+            ],
+        )
+        self.assertEqual(
+            files,
+            [
+                "$dir_source_main_python",
+                "$dir_source_unittest_python",
+                "$dir_source_integrationtest_python",
+            ],
+        )
 
-    @patch('pybuilder.plugins.python.python_plugin_helper.os.path.isdir', return_value=True)
-    def test_should_discover_source_dirs_when_test_sources_are_included_no_unittests(self, _):
+    @patch(
+        "pybuilder.plugins.python.python_plugin_helper.os.path.isdir", return_value=True
+    )
+    def test_should_discover_source_dirs_when_test_sources_are_included_no_unittests(
+        self, _
+    ):
         project = Mock()
 
         project.get_property.side_effect = lambda _property: (
-            _property if _property != 'dir_source_unittest_python' else None)
+            _property if _property != "dir_source_unittest_python" else None
+        )
 
         project.expand_path.side_effect = lambda _property: (
-            _property if _property != '$dir_source_unittest_python' else None)
+            _property if _property != "$dir_source_unittest_python" else None
+        )
 
         files = discover_affected_dirs(True, False, project)
 
-        self.assertEqual(project.expand_path.call_args_list,
-                         [call('$dir_source_main_python'),
-                          call('$dir_source_integrationtest_python'),
-                          ])
-        self.assertEqual(files,
-                         ['$dir_source_main_python', '$dir_source_integrationtest_python'])
+        self.assertEqual(
+            project.expand_path.call_args_list,
+            [
+                call("$dir_source_main_python"),
+                call("$dir_source_integrationtest_python"),
+            ],
+        )
+        self.assertEqual(
+            files, ["$dir_source_main_python", "$dir_source_integrationtest_python"]
+        )
 
-    @patch('pybuilder.plugins.python.python_plugin_helper.os.path.isdir', return_value=True)
-    def test_should_discover_source_dirs_when_test_sources_are_included_no_integrationtests(self, _):
+    @patch(
+        "pybuilder.plugins.python.python_plugin_helper.os.path.isdir", return_value=True
+    )
+    def test_should_discover_source_dirs_when_test_sources_are_included_no_integrationtests(
+        self, _
+    ):
         project = Mock()
 
         project.get_property.side_effect = lambda _property: (
-            _property if _property != 'dir_source_integrationtest_python' else None)
+            _property if _property != "dir_source_integrationtest_python" else None
+        )
 
         project.expand_path.side_effect = lambda _property: (
-            _property if _property != '$dir_source_integrationtest_python' else None)
+            _property if _property != "$dir_source_integrationtest_python" else None
+        )
 
         files = discover_affected_dirs(True, False, project)
 
-        self.assertEqual(project.expand_path.call_args_list,
-                         [call('$dir_source_main_python'),
-                          call('$dir_source_unittest_python')])
-        self.assertEqual(files,
-                         ['$dir_source_main_python', '$dir_source_unittest_python'])
+        self.assertEqual(
+            project.expand_path.call_args_list,
+            [call("$dir_source_main_python"), call("$dir_source_unittest_python")],
+        )
+        self.assertEqual(
+            files, ["$dir_source_main_python", "$dir_source_unittest_python"]
+        )
 
-    @patch('pybuilder.plugins.python.python_plugin_helper.os.path.isdir', return_value=True)
+    @patch(
+        "pybuilder.plugins.python.python_plugin_helper.os.path.isdir", return_value=True
+    )
     def test_should_discover_source_dirs_when_script_sources_are_included(self, _):
         project = Mock()
 
         project.get_property.side_effect = lambda _property: (
-            _property if _property != 'dir_source_integrationtest_python' else None)
+            _property if _property != "dir_source_integrationtest_python" else None
+        )
 
         project.expand_path.side_effect = lambda _property: (
-            _property if _property != '$dir_source_integrationtest_python' else None)
+            _property if _property != "$dir_source_integrationtest_python" else None
+        )
 
         files = discover_affected_dirs(False, True, project)
 
-        self.assertEqual(project.expand_path.call_args_list,
-                         [call('$dir_source_main_python'),
-                          call('$dir_source_main_scripts')])
-        self.assertEqual(files,
-                         ['$dir_source_main_python', '$dir_source_main_scripts'])
+        self.assertEqual(
+            project.expand_path.call_args_list,
+            [call("$dir_source_main_python"), call("$dir_source_main_scripts")],
+        )
+        self.assertEqual(files, ["$dir_source_main_python", "$dir_source_main_scripts"])
 
-    @patch('pybuilder.plugins.python.python_plugin_helper.os.path.isdir', return_value=True)
+    @patch(
+        "pybuilder.plugins.python.python_plugin_helper.os.path.isdir", return_value=True
+    )
     def test_if_property_set_and_dir_exists(self, exists):
-        self.assertTrue(_if_property_set_and_dir_exists('test'))
-        exists.assert_called_once_with('test')
+        self.assertTrue(_if_property_set_and_dir_exists("test"))
+        exists.assert_called_once_with("test")
 
-    @patch('pybuilder.plugins.python.python_plugin_helper.os.path.isdir', return_value=False)
+    @patch(
+        "pybuilder.plugins.python.python_plugin_helper.os.path.isdir",
+        return_value=False,
+    )
     def test_if_property_set_and_dir_not_exists(self, exists):
-        self.assertFalse(_if_property_set_and_dir_exists('test'))
-        exists.assert_called_once_with('test')
+        self.assertFalse(_if_property_set_and_dir_exists("test"))
+        exists.assert_called_once_with("test")
 
-    @patch('pybuilder.plugins.python.python_plugin_helper.os.path.isdir', return_value=False)
+    @patch(
+        "pybuilder.plugins.python.python_plugin_helper.os.path.isdir",
+        return_value=False,
+    )
     def test_if_property_not_set_and_dir_not_exists(self, exists):
         self.assertFalse(_if_property_set_and_dir_exists(None))
         exists.assert_not_called()
 
 
 class ExecuteToolOnSourceFilesTest(unittest.TestCase):
-    @patch('pybuilder.plugins.python.python_plugin_helper.log_report')
-    @patch('pybuilder.plugins.python.python_plugin_helper.read_file')
-    @patch('pybuilder.plugins.python.python_plugin_helper.discover_affected_files')
-    def test_should_execute_tool_on_source_files(self, affected,
-                                                 read, log):
+    @patch("pybuilder.plugins.python.python_plugin_helper.log_report")
+    @patch("pybuilder.plugins.python.python_plugin_helper.read_file")
+    @patch("pybuilder.plugins.python.python_plugin_helper.discover_affected_files")
+    def test_should_execute_tool_on_source_files(self, affected, read, log):
         project = Mock()
-        project.expand_path.return_value = '/path/to/report'
-        affected.return_value = ['file1', 'file2']
+        project.expand_path.return_value = "/path/to/report"
+        affected.return_value = ["file1", "file2"]
         pyb_env = Mock()
 
-        execute_tool_on_source_files(project, 'name', pyb_env, 'foo --bar')
+        execute_tool_on_source_files(project, "name", pyb_env, "foo --bar")
 
-        pyb_env.execute_command.assert_called_with(['foo --bar', 'file1', 'file2'], '/path/to/report')
+        pyb_env.execute_command.assert_called_with(
+            ["foo --bar", "file1", "file2"], "/path/to/report"
+        )
 
-    @patch('pybuilder.plugins.python.python_plugin_helper.log_report')
-    @patch('pybuilder.plugins.python.python_plugin_helper.read_file')
-    @patch('pybuilder.plugins.python.python_plugin_helper.discover_affected_dirs')
-    def test_should_execute_tool_on_source_dirs(self, affected,
-                                                read, log):
+    @patch("pybuilder.plugins.python.python_plugin_helper.log_report")
+    @patch("pybuilder.plugins.python.python_plugin_helper.read_file")
+    @patch("pybuilder.plugins.python.python_plugin_helper.discover_affected_dirs")
+    def test_should_execute_tool_on_source_dirs(self, affected, read, log):
         project = Mock()
-        project.expand_path.return_value = '/path/to/report'
-        affected.return_value = ['/dir1', '/dir2']
+        project.expand_path.return_value = "/path/to/report"
+        affected.return_value = ["/dir1", "/dir2"]
         pyb_env = Mock()
 
-        execute_tool_on_source_files(project, 'name', pyb_env, 'foo --bar', include_dirs_only=True)
+        execute_tool_on_source_files(
+            project, "name", pyb_env, "foo --bar", include_dirs_only=True
+        )
 
-        pyb_env.execute_command.assert_called_with(['foo --bar', '/dir1', '/dir2'], '/path/to/report')
+        pyb_env.execute_command.assert_called_with(
+            ["foo --bar", "/dir1", "/dir2"], "/path/to/report"
+        )
 
-    @patch('pybuilder.plugins.python.python_plugin_helper.log_report')
-    @patch('pybuilder.plugins.python.python_plugin_helper.read_file')
-    @patch('pybuilder.plugins.python.python_plugin_helper.discover_affected_files')
-    def test_should_give_verbose_output(self, affected,
-                                        read, log):
+    @patch("pybuilder.plugins.python.python_plugin_helper.log_report")
+    @patch("pybuilder.plugins.python.python_plugin_helper.read_file")
+    @patch("pybuilder.plugins.python.python_plugin_helper.discover_affected_files")
+    def test_should_give_verbose_output(self, affected, read, log):
         project = Mock()
         project.get_property.return_value = True  # flake8_verbose_output == True
         logger = Mock()
-        read.return_value = ['error', 'warning']
+        read.return_value = ["error", "warning"]
         pyb_env = Mock()
 
-        execute_tool_on_source_files(project, 'flake8', pyb_env, 'foo --bar', logger)
+        execute_tool_on_source_files(project, "flake8", pyb_env, "foo --bar", logger)
 
-        log.assert_called_with(logger, 'flake8', ['error', 'warning'])
+        log.assert_called_with(logger, "flake8", ["error", "warning"])

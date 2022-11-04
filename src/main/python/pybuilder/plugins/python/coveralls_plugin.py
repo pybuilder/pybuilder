@@ -19,7 +19,7 @@
 import logging
 from os.path import normcase as nc
 
-from pybuilder.core import init, use_plugin, finalize
+from pybuilder.core import finalize, init, use_plugin
 from pybuilder.errors import BuildFailedException
 from pybuilder.execution import ExecutionManager
 from pybuilder.plugins.python._coverage_util import patch_coverage
@@ -47,8 +47,8 @@ def finalize_coveralls(project, logger, reactor):
 
     patch_coverage()
 
-    from coveralls.api import Coveralls, CoverallReporter, CoverallsException
     from coverage import coverage, files
+    from coveralls.api import CoverallReporter, Coveralls, CoverallsException
 
     class PybCoveralls(Coveralls):
         def get_coverage(self):
@@ -57,7 +57,7 @@ def finalize_coveralls(project, logger, reactor):
             workman = coverage(**coverage_config)
             workman.load()
 
-            if hasattr(workman, '_harvest_data'):
+            if hasattr(workman, "_harvest_data"):
                 workman._harvest_data()  # pylint: disable=W0212
             else:
                 workman.get_data()
@@ -70,16 +70,24 @@ def finalize_coveralls(project, logger, reactor):
     try:
         dry_run = project.get_property("coveralls_dry_run")
         report = project.get_property("coveralls_report")
-        token_required = project.get_property("coveralls_token_required") and not dry_run and not report
+        token_required = (
+            project.get_property("coveralls_token_required")
+            and not dry_run
+            and not report
+        )
 
         old_relative_dir = files.RELATIVE_DIR
-        files.RELATIVE_DIR = nc(project.expand_path(project.get_property("coverage_source_path")))
+        files.RELATIVE_DIR = nc(
+            project.expand_path(project.get_property("coverage_source_path"))
+        )
         try:
             pyb_coveralls = PybCoveralls(token_required=token_required)
             try:
                 staging = False
                 if report:
-                    report_file = project.expand_path("$dir_reports", "%s.coveralls.json" % project.name)
+                    report_file = project.expand_path(
+                        "$dir_reports", "%s.coveralls.json" % project.name
+                    )
                     pyb_coveralls.save_report(report_file)
                     logger.info("Written Coveralls report into %r", report_file)
                     staging = True
@@ -96,19 +104,25 @@ def finalize_coveralls(project, logger, reactor):
                     report_result = pyb_coveralls.wear()
                 except CoverallsException as e:
                     # https://github.com/TheKevJames/coveralls-python/issues/252
-                    if (pyb_coveralls.config["service_name"] == "github-actions" and
-                            hasattr(e.__cause__, "response") and
-                            hasattr(e.__cause__.response, "status_code") and
-                            e.__cause__.response.status_code == 422):
-                        pyb_coveralls = PybCoveralls(token_required=token_required, service_name="github")
+                    if (
+                        pyb_coveralls.config["service_name"] == "github-actions"
+                        and hasattr(e.__cause__, "response")
+                        and hasattr(e.__cause__.response, "status_code")
+                        and e.__cause__.response.status_code == 422
+                    ):
+                        pyb_coveralls = PybCoveralls(
+                            token_required=token_required, service_name="github"
+                        )
                         report_result = pyb_coveralls.wear()
                     else:
                         raise
 
                 logger.debug("Coveralls result: %r", report_result)
-                logger.info("Coveralls coverage successfully submitted! %s @ %s",
-                            report_result["message"],
-                            report_result["url"])
+                logger.info(
+                    "Coveralls coverage successfully submitted! %s @ %s",
+                    report_result["message"],
+                    report_result["url"],
+                )
             except CoverallsException as e:
                 raise BuildFailedException("Failed to upload Coveralls coverage: %s", e)
         finally:

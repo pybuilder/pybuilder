@@ -23,7 +23,8 @@ from itest_support import IntegrationTestSupport
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import init, task
 
 name = "integration-test"
@@ -36,7 +37,8 @@ def initialize ():
 @task
 def any_task (): pass
 
-""")
+"""
+        )
 
         reactor = self.prepare_reactor()
         reactor.build()

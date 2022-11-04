@@ -1,14 +1,12 @@
-import functools
-import time
-import inspect
 import collections
-import types
+import functools
+import inspect
 import itertools
-
-from .... import pkg_resources
-
+import time
+import types
 from typing import Callable, TypeVar
 
+from .... import pkg_resources
 
 CallableT = TypeVar("CallableT", bound=Callable[..., object])
 
@@ -89,11 +87,11 @@ def once(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        if not hasattr(wrapper, 'saved_result'):
+        if not hasattr(wrapper, "saved_result"):
             wrapper.saved_result = func(*args, **kwargs)
         return wrapper.saved_result
 
-    wrapper.reset = lambda: vars(wrapper).__delitem__('saved_result')
+    wrapper.reset = lambda: vars(wrapper).__delitem__("saved_result")
     return wrapper
 
 
@@ -199,11 +197,11 @@ def _special_method_cache(method, cache_wrapper):
     https://github.com/jaraco/jaraco.functools/issues/5
     """
     name = method.__name__
-    special_names = '__getattr__', '__getitem__'
+    special_names = "__getattr__", "__getitem__"
     if name not in special_names:
         return
 
-    wrapper_name = '__cached' + name
+    wrapper_name = "__cached" + name
 
     def proxy(self, *args, **kwargs):
         if wrapper_name not in vars(self):
@@ -291,7 +289,7 @@ class Throttler:
     Rate-limit a function (or other callable)
     """
 
-    def __init__(self, func, max_rate=float('Inf')):
+    def __init__(self, func, max_rate=float("Inf")):
         if isinstance(func, Throttler):
             func = func.func
         self.func = func
@@ -337,7 +335,7 @@ def retry_call(func, cleanup=lambda: None, retries=0, trap=()):
     exception. On the final attempt, allow any exceptions
     to propagate.
     """
-    attempts = itertools.count() if retries == float('inf') else range(retries)
+    attempts = itertools.count() if retries == float("inf") else range(retries)
     for attempt in attempts:
         try:
             return func()
@@ -473,11 +471,11 @@ def save_method_args(method):
     >>> my_ob._saved_method.args
     ()
     """
-    args_and_kwargs = collections.namedtuple('args_and_kwargs', 'args kwargs')
+    args_and_kwargs = collections.namedtuple("args_and_kwargs", "args kwargs")
 
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
-        attr_name = '_saved_' + method.__name__
+        attr_name = "_saved_" + method.__name__
         attr = args_and_kwargs(args, kwargs)
         setattr(self, attr_name, attr)
         return method(self, *args, **kwargs)

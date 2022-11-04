@@ -23,8 +23,14 @@ from smoke_itest_support import SmokeIntegrationTestSupport
 
 class SphinxWithApiSmokeTest(SmokeIntegrationTestSupport):
     def test_smoke_sphinx_pyb_quickstart_with_api_doc(self):
-        self.smoke_test("-v", "-X", "-P", "sphinx_run_apidoc=True", "sphinx_pyb_quickstart",
-                        "sphinx_generate_documentation")
+        self.smoke_test(
+            "-v",
+            "-X",
+            "-P",
+            "sphinx_run_apidoc=True",
+            "sphinx_pyb_quickstart",
+            "sphinx_generate_documentation",
+        )
 
 
 if __name__ == "__main__":

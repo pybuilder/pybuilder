@@ -22,20 +22,19 @@
     build.py project descriptor.
 """
 import fnmatch
-import os
-import string
-from os.path import isdir, isfile, basename, relpath, sep
-
 import itertools
 import logging
+import os
 import re
+import string
 import sys
 from datetime import datetime
+from os.path import basename, isdir, isfile, relpath, sep
 
 # Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
 from pybuilder.errors import MissingPropertyException, UnspecifiedPluginNameException
-from pybuilder.utils import as_list, np, ap, jp
 from pybuilder.python_utils import OrderedDict
+from pybuilder.utils import ap, as_list, jp, np
 
 PATH_SEP_RE = re.compile(r"[/\\]")
 
@@ -88,7 +87,11 @@ def init(*possible_callable, **additional_arguments):
         setattr(callable_, INITIALIZER_ATTRIBUTE, True)
 
         if "environments" in additional_arguments:
-            setattr(callable_, ENVIRONMENTS_ATTRIBUTE, as_list(additional_arguments["environments"]))
+            setattr(
+                callable_,
+                ENVIRONMENTS_ATTRIBUTE,
+                as_list(additional_arguments["environments"]),
+            )
 
         return callable_
 
@@ -127,7 +130,11 @@ def finalize(*possible_callable, **additional_arguments):
         setattr(callable_, FINALIZER_ATTRIBUTE, True)
 
         if "environments" in additional_arguments:
-            setattr(callable_, ENVIRONMENTS_ATTRIBUTE, as_list(additional_arguments["environments"]))
+            setattr(
+                callable_,
+                ENVIRONMENTS_ATTRIBUTE,
+                as_list(additional_arguments["environments"]),
+            )
 
         return callable_
 
@@ -145,6 +152,7 @@ def task(callable_or_string=None, description=None):
     a string argument, which overrides the default name.
     """
     if isinstance(callable_or_string, str):
+
         def set_name_and_task_attribute(callable_):
             setattr(callable_, TASK_ATTRIBUTE, True)
             setattr(callable_, NAME_ATTRIBUTE, callable_or_string)
@@ -153,30 +161,29 @@ def task(callable_or_string=None, description=None):
             return callable_
 
         return set_name_and_task_attribute
-    else:
-        if not description:
-            if callable_or_string is not None:
-                setattr(callable_or_string, TASK_ATTRIBUTE, True)
-                setattr(callable_or_string, NAME_ATTRIBUTE, callable_or_string.__name__)
-                return callable_or_string
-            else:
-                def set_task_and_description_attribute(callable_):
-                    setattr(callable_, TASK_ATTRIBUTE, True)
-                    setattr(callable_, NAME_ATTRIBUTE, callable_.__name__)
-                    return callable_
+    if not description:
+        if callable_or_string is not None:
+            setattr(callable_or_string, TASK_ATTRIBUTE, True)
+            setattr(callable_or_string, NAME_ATTRIBUTE, callable_or_string.__name__)
+            return callable_or_string
 
-                return set_task_and_description_attribute
-        else:
-            def set_task_and_description_attribute(callable_):
-                setattr(callable_, TASK_ATTRIBUTE, True)
-                setattr(callable_, NAME_ATTRIBUTE, callable_.__name__)
-                setattr(callable_, DESCRIPTION_ATTRIBUTE, description)
-                return callable_
+        def set_task_and_description_attribute(callable_):
+            setattr(callable_, TASK_ATTRIBUTE, True)
+            setattr(callable_, NAME_ATTRIBUTE, callable_.__name__)
+            return callable_
 
-            return set_task_and_description_attribute
+        return set_task_and_description_attribute
+
+    def set_task_and_description_attribute(callable_):
+        setattr(callable_, TASK_ATTRIBUTE, True)
+        setattr(callable_, NAME_ATTRIBUTE, callable_.__name__)
+        setattr(callable_, DESCRIPTION_ATTRIBUTE, description)
+        return callable_
+
+    return set_task_and_description_attribute
 
 
-class description(object):
+class description():
     def __init__(self, description):
         self._description = description
 
@@ -185,7 +192,7 @@ class description(object):
         return callable_
 
 
-class depends(object):
+class depends():
     def __init__(self, *depends):
         self._depends = depends
 
@@ -194,7 +201,7 @@ class depends(object):
         return callable_
 
 
-class dependents(object):
+class dependents():
     def __init__(self, *dependents):
         self._dependents = dependents
 
@@ -203,7 +210,7 @@ class dependents(object):
         return callable_
 
 
-class optional(object):
+class optional():
     def __init__(self, *names):
         self._names = names
 
@@ -211,7 +218,7 @@ class optional(object):
         return self._names
 
 
-class BaseAction(object):
+class BaseAction():
     def __init__(self, attribute, only_once, tasks, teardown=False):
         self.tasks = tasks
         self.attribute = attribute
@@ -230,12 +237,12 @@ class BaseAction(object):
 
 class before(BaseAction):
     def __init__(self, tasks, only_once=False):
-        super(before, self).__init__(BEFORE_ATTRIBUTE, only_once, tasks)
+        super().__init__(BEFORE_ATTRIBUTE, only_once, tasks)
 
 
 class after(BaseAction):
     def __init__(self, tasks, only_once=False, teardown=False):
-        super(after, self).__init__(AFTER_ATTRIBUTE, only_once, tasks, teardown)
+        super().__init__(AFTER_ATTRIBUTE, only_once, tasks, teardown)
 
 
 def use_bldsup(build_support_dir="bldsup"):
@@ -245,28 +252,32 @@ def use_bldsup(build_support_dir="bldsup"):
 
     WARNING: The BUILD_SUPPORT_DIR must exist and must have an __init__.py file in it.
     """
-    assert isdir(build_support_dir), "use_bldsup('{0}'): The {0} directory must exist!".format(
-        build_support_dir)
+    assert isdir(
+        build_support_dir
+    ), "use_bldsup('{0}'): The {0} directory must exist!".format(build_support_dir)
     init_file = jp(build_support_dir, "__init__.py")
-    assert isfile(init_file), "use_bldsup('{0}'): The {1} file must exist!".format(build_support_dir, init_file)
+    assert isfile(init_file), "use_bldsup('{0}'): The {1} file must exist!".format(
+        build_support_dir, init_file
+    )
     sys.path.insert(0, build_support_dir)
 
 
 def use_plugin(name, version=None, plugin_module_name=None):
     from pybuilder.reactor import Reactor
+
     reactor = Reactor.current_instance()
     if reactor is not None:
         reactor.require_plugin(name, version, plugin_module_name)
 
 
-class Author(object):
+class Author():
     def __init__(self, name, email=None, roles=None):
         self.name = name
         self.email = email
         self.roles = roles or []
 
 
-class Dependency(object):
+class Dependency():
     """
     Defines a dependency to another module. Use the
         depends_on
@@ -275,6 +286,7 @@ class Dependency(object):
 
     def __init__(self, name, version=None, url=None, declaration_only=False):
         from pybuilder import pip_common
+
         if version:
             try:
                 version = ">=" + str(pip_common.Version(version))
@@ -283,7 +295,10 @@ class Dependency(object):
                 try:
                     version = str(pip_common.SpecifierSet(version))
                 except pip_common.InvalidSpecifier:
-                    raise ValueError("'%s' must be either PEP 0440 version or a version specifier set" % version)
+                    raise ValueError(
+                        "'%s' must be either PEP 0440 version or a version specifier set"
+                        % version
+                    )
         else:
             try:
                 req = pip_common.Requirement(name)
@@ -301,10 +316,14 @@ class Dependency(object):
     def __eq__(self, other):
         if not isinstance(other, Dependency):
             return False
-        return self.name == other.name and self.version == other.version and self.url == other.url
+        return (
+            self.name == other.name
+            and self.version == other.version
+            and self.url == other.url
+        )
 
     def __ne__(self, other):
-        return not (self == other)
+        return not self == other
 
     def __hash__(self):
         return 13 * hash(self.name) + 17 * hash(self.version)
@@ -321,13 +340,15 @@ class Dependency(object):
         return str(self)
 
     def __repr__(self):
-        return (self.name +
-                ("," + self.version if self.version else "") +
-                ("," + self.url if self.url else "") +
-                (" (declaration only)" if self.declaration_only else ""))
+        return (
+            self.name
+            + ("," + self.version if self.version else "")
+            + ("," + self.url if self.url else "")
+            + (" (declaration only)" if self.declaration_only else "")
+        )
 
 
-class RequirementsFile(object):
+class RequirementsFile():
     """
     Represents all dependencies in a requirements file (requirements.txt).
     """
@@ -343,7 +364,7 @@ class RequirementsFile(object):
         return self.name == other.name
 
     def __ne__(self, other):
-        return not (self == other)
+        return not self == other
 
     def __lt__(self, other):
         if not isinstance(other, RequirementsFile):
@@ -400,13 +421,20 @@ class PluginDef:
         return self._dep
 
     def __repr__(self):
-        return "PluginDef [name=%r, version=%r, plugin_module_name=%r]" % (self.name,
-                                                                           self.version,
-                                                                           self.plugin_module_name)
+        return "PluginDef [name=%r, version=%r, plugin_module_name=%r]" % (
+            self.name,
+            self.version,
+            self.plugin_module_name,
+        )
 
     def __str__(self):
-        return "%s%s%s" % (self.name, " version %s" % self.version if self.version else "",
-                           ", module name '%s'" % self.plugin_module_name if self.plugin_module_name else "")
+        return "%s%s%s" % (
+            self.name,
+            " version %s" % self.version if self.version else "",
+            ", module name '%s'" % self.plugin_module_name
+            if self.plugin_module_name
+            else "",
+        )
 
     def __eq__(self, other):
         return isinstance(other, PluginDef) and other._val == self._val
@@ -415,13 +443,15 @@ class PluginDef:
         return self._val.__hash__()
 
 
-class Project(object):
+class Project():
     """
     Descriptor for a project to be built. A project has a number of attributes
     as well as some convenience methods to access these properties.
     """
 
-    def __init__(self, basedir, version="1.0.dev0", name=None, offline=False, no_venvs=False):
+    def __init__(
+        self, basedir, version="1.0.dev0", name=None, offline=False, no_venvs=False
+    ):
         self.name = name
         self._version = None
         self._dist_version = None
@@ -471,7 +501,7 @@ class Project(object):
     @version.setter
     def version(self, value):
         self._version = value
-        if value.endswith('.dev'):
+        if value.endswith(".dev"):
             value += datetime.utcnow().strftime("%Y%m%d%H%M%S")
         self._dist_version = value
 
@@ -482,6 +512,7 @@ class Project(object):
     @requires_python.setter
     def requires_python(self, value):
         from pybuilder import pip_common
+
         spec_set = pip_common.SpecifierSet(value)
         self._requires_python = str(spec_set)
 
@@ -522,7 +553,10 @@ class Project(object):
         for dependency in self.build_dependencies:
             if dependency.name in build_dependencies_found:
                 if build_dependencies_found[dependency.name] == 1:
-                    result.append("Build dependency '%s' has been defined multiple times." % dependency.name)
+                    result.append(
+                        "Build dependency '%s' has been defined multiple times."
+                        % dependency.name
+                    )
                 build_dependencies_found[dependency.name] += 1
             else:
                 build_dependencies_found[dependency.name] = 1
@@ -532,12 +566,18 @@ class Project(object):
         for dependency in self.dependencies:
             if dependency.name in runtime_dependencies_found:
                 if runtime_dependencies_found[dependency.name] == 1:
-                    result.append("Runtime dependency '%s' has been defined multiple times." % dependency.name)
+                    result.append(
+                        "Runtime dependency '%s' has been defined multiple times."
+                        % dependency.name
+                    )
                 runtime_dependencies_found[dependency.name] += 1
             else:
                 runtime_dependencies_found[dependency.name] = 1
             if dependency.name in build_dependencies_found:
-                result.append("Runtime dependency '%s' has also been given as build dependency." % dependency.name)
+                result.append(
+                    "Runtime dependency '%s' has also been given as build dependency."
+                    % dependency.name
+                )
 
         return result
 
@@ -566,7 +606,9 @@ class Project(object):
         self._build_dependencies.add(Dependency(name, version, url, declaration_only))
 
     def depends_on_requirements(self, file, declaration_only=False):
-        self._install_dependencies.add(RequirementsFile(file, declaration_only=declaration_only))
+        self._install_dependencies.add(
+            RequirementsFile(file, declaration_only=declaration_only)
+        )
 
     def build_depends_on_requirements(self, file):
         self._build_dependencies.add(RequirementsFile(file))
@@ -647,7 +689,9 @@ class Project(object):
         package_full_path = self.expand_path(package_root, package_path)
 
         for root, dirnames, filenames in os.walk(package_full_path):
-            filenames = list(fnmatch.filter(filenames, pattern) for pattern in patterns_list)
+            filenames = list(
+                fnmatch.filter(filenames, pattern) for pattern in patterns_list
+            )
 
             for filename in itertools.chain.from_iterable(filenames):
                 full_path = np(jp(root, filename))
@@ -731,7 +775,7 @@ class Logger(logging.Handler):
     DEBUG = 10
 
     def __init__(self, level=INFO, log_time_format=None):
-        super(Logger, self).__init__(level)
+        super().__init__(level)
         self.log_time_format = log_time_format
 
     def emit(self, record):

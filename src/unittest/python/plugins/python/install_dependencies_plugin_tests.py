@@ -19,14 +19,16 @@
 
 import unittest
 
-from pybuilder.core import (Project,
-                            Logger)
+from test_utils import ANY, Mock, call, patch
+
+from pybuilder.core import Logger, Project
 from pybuilder.pip_utils import PIP_MODULE_STANZA
-from pybuilder.plugins.python.install_dependencies_plugin import (initialize_install_dependencies_plugin,
-                                                                  install_runtime_dependencies,
-                                                                  install_build_dependencies,
-                                                                  install_dependencies)
-from test_utils import Mock, ANY, patch, call
+from pybuilder.plugins.python.install_dependencies_plugin import (
+    initialize_install_dependencies_plugin,
+    install_build_dependencies,
+    install_dependencies,
+    install_runtime_dependencies,
+)
 
 __author__ = "Alexander Metzner, Arcadiy Ivanov"
 
@@ -52,8 +54,7 @@ class InstallRuntimeDependenciesTest(unittest.TestCase):
     @patch("pybuilder.install_utils.open")
     @patch("pybuilder.install_utils.create_constraint_file")
     @patch("pybuilder.install_utils.get_packages_info", return_value={})
-    def test_should_install_multiple_dependencies(self,
-                                                  *_):
+    def test_should_install_multiple_dependencies(self, *_):
         self.project.depends_on("spam")
         self.project.depends_on("eggs")
         self.project.depends_on_requirements("requirements.txt")
@@ -61,45 +62,71 @@ class InstallRuntimeDependenciesTest(unittest.TestCase):
         install_runtime_dependencies(self.logger, self.project, self.reactor)
 
         exec_cmd = self.pyb_env.execute_command
-        call_stanza = self.pyb_env.executable + PIP_MODULE_STANZA + ["install", "-c", ANY]
-        exec_cmd.assert_called_with(call_stanza +
-                                    ["eggs", "spam", "-r", "requirements.txt"],
-                                    outfile_name=ANY,
-                                    error_file_name=ANY,
-                                    env=ANY, cwd=None, shell=False, no_path_search=True)
+        call_stanza = (
+            self.pyb_env.executable + PIP_MODULE_STANZA + ["install", "-c", ANY]
+        )
+        exec_cmd.assert_called_with(
+            call_stanza + ["eggs", "spam", "-r", "requirements.txt"],
+            outfile_name=ANY,
+            error_file_name=ANY,
+            env=ANY,
+            cwd=None,
+            shell=False,
+            no_path_search=True,
+        )
 
     @patch("pybuilder.install_utils.tail_log")
     @patch("pybuilder.install_utils.open")
     @patch("pybuilder.install_utils.create_constraint_file")
     @patch("pybuilder.install_utils.get_packages_info", return_value={})
-    def test_should_install_multiple_dependencies_locally(self,
-                                                          *_):
+    def test_should_install_multiple_dependencies_locally(self, *_):
         self.project.depends_on("spam")
         self.project.depends_on("eggs")
         self.project.depends_on("foo")
-        self.project.set_property("install_dependencies_local_mapping", {
-            "spam": "any-dir",
-            "eggs": "any-other-dir"
-        })
+        self.project.set_property(
+            "install_dependencies_local_mapping",
+            {"spam": "any-dir", "eggs": "any-other-dir"},
+        )
 
         install_runtime_dependencies(self.logger, self.project, self.reactor)
 
         exec_cmd = self.pyb_env.execute_command
-        call_stanza = self.pyb_env.executable + PIP_MODULE_STANZA + ["install", "-c", ANY]
+        call_stanza = (
+            self.pyb_env.executable + PIP_MODULE_STANZA + ["install", "-c", ANY]
+        )
 
-        exec_cmd.assert_has_calls([call(call_stanza + ["-t", "any-other-dir", "eggs"],
-                                        outfile_name=ANY,
-                                        error_file_name=ANY,
-                                        env=ANY, cwd=None, shell=False, no_path_search=True),
-                                   call(call_stanza + ["-t", "any-dir", "spam"],
-                                        outfile_name=ANY,
-                                        error_file_name=ANY,
-                                        env=ANY, cwd=None, shell=False, no_path_search=True),
-                                   call(call_stanza + ["foo"],
-                                        outfile_name=ANY,
-                                        error_file_name=ANY,
-                                        env=ANY, cwd=None, shell=False, no_path_search=True)
-                                   ], any_order=True)
+        exec_cmd.assert_has_calls(
+            [
+                call(
+                    call_stanza + ["-t", "any-other-dir", "eggs"],
+                    outfile_name=ANY,
+                    error_file_name=ANY,
+                    env=ANY,
+                    cwd=None,
+                    shell=False,
+                    no_path_search=True,
+                ),
+                call(
+                    call_stanza + ["-t", "any-dir", "spam"],
+                    outfile_name=ANY,
+                    error_file_name=ANY,
+                    env=ANY,
+                    cwd=None,
+                    shell=False,
+                    no_path_search=True,
+                ),
+                call(
+                    call_stanza + ["foo"],
+                    outfile_name=ANY,
+                    error_file_name=ANY,
+                    env=ANY,
+                    cwd=None,
+                    shell=False,
+                    no_path_search=True,
+                ),
+            ],
+            any_order=True,
+        )
 
 
 class InstallBuildDependenciesTest(unittest.TestCase):
@@ -123,8 +150,7 @@ class InstallBuildDependenciesTest(unittest.TestCase):
     @patch("pybuilder.install_utils.open")
     @patch("pybuilder.install_utils.create_constraint_file")
     @patch("pybuilder.install_utils.get_packages_info", return_value={})
-    def test_should_install_multiple_dependencies(self,
-                                                  *_):
+    def test_should_install_multiple_dependencies(self, *_):
         self.project.build_depends_on("spam")
         self.project.build_depends_on("eggs")
         self.project.build_depends_on_requirements("requirements-dev.txt")
@@ -132,13 +158,19 @@ class InstallBuildDependenciesTest(unittest.TestCase):
         install_build_dependencies(self.logger, self.project, self.reactor)
 
         exec_cmd = self.pyb_env.execute_command
-        call_stanza = self.pyb_env.executable + PIP_MODULE_STANZA + ["install", "-c", ANY]
+        call_stanza = (
+            self.pyb_env.executable + PIP_MODULE_STANZA + ["install", "-c", ANY]
+        )
 
-        exec_cmd.assert_called_with(call_stanza +
-                                    ["eggs", "spam", "-r", "requirements-dev.txt"],
-                                    outfile_name=ANY,
-                                    error_file_name=ANY,
-                                    env=ANY, cwd=None, shell=False, no_path_search=True)
+        exec_cmd.assert_called_with(
+            call_stanza + ["eggs", "spam", "-r", "requirements-dev.txt"],
+            outfile_name=ANY,
+            error_file_name=ANY,
+            env=ANY,
+            cwd=None,
+            shell=False,
+            no_path_search=True,
+        )
 
 
 class InstallDependenciesTest(unittest.TestCase):
@@ -162,18 +194,23 @@ class InstallDependenciesTest(unittest.TestCase):
     @patch("pybuilder.install_utils.open")
     @patch("pybuilder.install_utils.create_constraint_file")
     @patch("pybuilder.install_utils.get_packages_info", return_value={})
-    def test_should_install_single_dependency_without_version(self,
-                                                              *_):
+    def test_should_install_single_dependency_without_version(self, *_):
         self.project.depends_on("spam")
         self.project.build_depends_on("eggs")
 
         install_dependencies(self.logger, self.project, self.reactor)
 
         exec_cmd = self.pyb_env.execute_command
-        call_stanza = self.pyb_env.executable + PIP_MODULE_STANZA + ["install", "-c", ANY]
+        call_stanza = (
+            self.pyb_env.executable + PIP_MODULE_STANZA + ["install", "-c", ANY]
+        )
 
-        exec_cmd.assert_called_with(call_stanza +
-                                    ["eggs", "spam"],
-                                    outfile_name=ANY,
-                                    error_file_name=ANY,
-                                    env=ANY, cwd=None, shell=False, no_path_search=True)
+        exec_cmd.assert_called_with(
+            call_stanza + ["eggs", "spam"],
+            outfile_name=ANY,
+            error_file_name=ANY,
+            env=ANY,
+            cwd=None,
+            shell=False,
+            no_path_search=True,
+        )

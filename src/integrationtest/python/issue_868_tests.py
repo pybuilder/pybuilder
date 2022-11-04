@@ -20,13 +20,16 @@ import textwrap
 import unittest
 
 from itest_support import IntegrationTestSupport
+
 from pybuilder.core import Logger
 from pybuilder.errors import BuildFailedException
 
 
 class Issue868Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file(textwrap.dedent("""
+        self.write_build_file(
+            textwrap.dedent(
+                """
             from pybuilder.core import init, use_plugin
 
             use_plugin("python.core")
@@ -37,19 +40,26 @@ class Issue868Test(IntegrationTestSupport):
             @init
             def init(project):
                 project.set_property("integrationtest_breaks_build", True)
-        """))
+        """
+            )
+        )
 
         self.create_directory("src/main/python/code")
         self.create_directory("src/integrationtest/python")
 
-        self.write_file("src/main/python/code/__init__.py", textwrap.dedent(
-            """
+        self.write_file(
+            "src/main/python/code/__init__.py",
+            textwrap.dedent(
+                """
             def return_one():
                 return 1
             """
-        ))
-        self.write_file("src/integrationtest/python/code_tests.py", textwrap.dedent(
-            """
+            ),
+        )
+        self.write_file(
+            "src/integrationtest/python/code_tests.py",
+            textwrap.dedent(
+                """
             import unittest
             import code
 
@@ -60,7 +70,9 @@ class Issue868Test(IntegrationTestSupport):
 
             if __name__ == "__main__":
                 unittest.main()
-            """))
+            """
+            ),
+        )
 
         reactor = self.prepare_reactor(log_level=Logger.DEBUG)
         reactor.project.set_property("verbose", True)

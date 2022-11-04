@@ -24,7 +24,8 @@ from itest_support import IntegrationTestSupport
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import use_plugin, init
 
 use_plugin("python.core")
@@ -33,14 +34,17 @@ use_plugin("python.distutils")
 @init
 def init (project):
     pass
-        """)
+        """
+        )
 
         self.create_directory("src/main/python")
         self.create_directory("common/symlinked")
         self.write_file("common/symlinked/cargo.py")
-        os.symlink(self.full_path("common/symlinked"),
-                   self.full_path("src/main/python/symlinked"),
-                   target_is_directory=True)
+        os.symlink(
+            self.full_path("common/symlinked"),
+            self.full_path("src/main/python/symlinked"),
+            target_is_directory=True,
+        )
 
         reactor = self.prepare_reactor()
         reactor.build("publish")
@@ -48,8 +52,13 @@ def init (project):
 
         self.assert_file_exists(project.expand_path("$dir_dist/symlinked/cargo.py"))
         self.assert_file_exists(project.expand_path("$dir_dist/setup.py"))
-        self.assert_file_contains(project.expand_path("$dir_dist/setup.py"), """py_modules = ['symlinked.cargo']""")
-        self.assert_file_contains(project.expand_path("$dir_dist/setup.py"), """packages = []""")
+        self.assert_file_contains(
+            project.expand_path("$dir_dist/setup.py"),
+            """py_modules = ['symlinked.cargo']""",
+        )
+        self.assert_file_contains(
+            project.expand_path("$dir_dist/setup.py"), """packages = []"""
+        )
 
 
 if __name__ == "__main__":

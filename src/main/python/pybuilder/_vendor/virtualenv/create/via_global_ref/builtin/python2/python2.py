@@ -3,11 +3,10 @@ import json
 import os
 from pathlib import Path
 
-from ....describe import Python2Supports
-from ..ref import PathRefToDest
 from .....info import IS_ZIPAPP
 from .....util.zipapp import read as read_from_zipapp
-
+from ....describe import Python2Supports
+from ..ref import PathRefToDest
 from ..via_global_self_do import ViaGlobalRefVirtualenvBuiltin
 
 HERE = Path(os.path.abspath(__file__)).parent
@@ -22,7 +21,10 @@ class Python2(ViaGlobalRefVirtualenvBuiltin, Python2Supports, metaclass=abc.ABCM
         sys_std_plat = Path(self.interpreter.system_stdlib_platform)
         site_py_in = (
             self.stdlib_platform
-            if ((sys_std_plat / "site.py").exists() or (sys_std_plat / "site.pyc").exists())
+            if (
+                (sys_std_plat / "site.py").exists()
+                or (sys_std_plat / "site.pyc").exists()
+            )
             else self.stdlib
         )
         site_py = site_py_in / "site.py"
@@ -32,15 +34,25 @@ class Python2(ViaGlobalRefVirtualenvBuiltin, Python2Supports, metaclass=abc.ABCM
             custom_site_text = read_from_zipapp(custom_site)
         else:
             custom_site_text = custom_site.read_text()
-        expected = json.dumps([os.path.relpath(str(i), str(site_py)) for i in self.libs])
+        expected = json.dumps(
+            [os.path.relpath(str(i), str(site_py)) for i in self.libs]
+        )
 
-        custom_site_text = custom_site_text.replace("___EXPECTED_SITE_PACKAGES___", expected)
+        custom_site_text = custom_site_text.replace(
+            "___EXPECTED_SITE_PACKAGES___", expected
+        )
 
-        reload_code = os.linesep.join(f"    {i}" for i in self.reload_code.splitlines()).lstrip()
+        reload_code = os.linesep.join(
+            f"    {i}" for i in self.reload_code.splitlines()
+        ).lstrip()
         custom_site_text = custom_site_text.replace("# ___RELOAD_CODE___", reload_code)
 
-        skip_rewrite = os.linesep.join(f"            {i}" for i in self.skip_rewrite.splitlines()).lstrip()
-        custom_site_text = custom_site_text.replace("# ___SKIP_REWRITE____", skip_rewrite)
+        skip_rewrite = os.linesep.join(
+            f"            {i}" for i in self.skip_rewrite.splitlines()
+        ).lstrip()
+        custom_site_text = custom_site_text.replace(
+            "# ___SKIP_REWRITE____", skip_rewrite
+        )
 
         site_py.write_text(custom_site_text)
 
@@ -62,8 +74,12 @@ class Python2(ViaGlobalRefVirtualenvBuiltin, Python2Supports, metaclass=abc.ABCM
             cls.needs_stdlib_py_module(),
         )
         for req in cls.modules():
-            module_file, to_module, module_exists = cls.from_stdlib(mappings, f"{req}.py")
-            compiled_file, to_compiled, compiled_exists = cls.from_stdlib(mappings, f"{req}.pyc")
+            module_file, to_module, module_exists = cls.from_stdlib(
+                mappings, f"{req}.py"
+            )
+            compiled_file, to_compiled, compiled_exists = cls.from_stdlib(
+                mappings, f"{req}.pyc"
+            )
             if needs_py_module or module_exists or not compiled_exists:
                 yield PathRefToDest(module_file, dest=to_module)
             if compiled_exists:

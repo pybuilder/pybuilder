@@ -17,18 +17,22 @@
 #   limitations under the License.
 
 from unittest import TestCase
+
 from pybuilder.graph_utils import Graph
 
 
 class GraphUtilsTests(TestCase):
-
     def test_should_find_trivial_cycle_in_graph_when_there_is_one(self):
         graph_with_trivial_cycle = Graph({"a": "a"})
-        self.assertIsNotNone(graph_with_trivial_cycle.assert_no_trivial_cycles_present())
+        self.assertIsNotNone(
+            graph_with_trivial_cycle.assert_no_trivial_cycles_present()
+        )
 
     def test_should_find_trivial_cycle_in_graph_when_there_are_two(self):
         graph_with_trivial_cycles = Graph({"a": "a", "b": "b"})
-        self.assertIsNotNone(graph_with_trivial_cycles.assert_no_trivial_cycles_present())
+        self.assertIsNotNone(
+            graph_with_trivial_cycles.assert_no_trivial_cycles_present()
+        )
 
     def test_should_find_trivial_cycle_in_graph_when_searching_for_cycles(self):
         graph_with_trivial_cycle = Graph({"a": "a"})
@@ -51,5 +55,7 @@ class GraphUtilsTests(TestCase):
         self.assertIsNotNone(graph_with_long_cycle.assert_no_cycles_present())
 
     def test_should_find_long_nontrivial_cycle_in_graph_when_there_are_two(self):
-        graph_with_long_cycle = Graph({"a": "b", "b": "c", "c": "a", "d": "e", "e": "f", "f": "d"})
+        graph_with_long_cycle = Graph(
+            {"a": "b", "b": "c", "c": "a", "d": "e", "e": "f", "f": "d"}
+        )
         self.assertIsNotNone(graph_with_long_cycle.assert_no_cycles_present())

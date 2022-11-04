@@ -20,12 +20,13 @@ import unittest
 
 from itest_support import IntegrationTestSupport
 
-__author__ = 'arcivanov'
+__author__ = "arcivanov"
 
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import task, before, after
 
 @task
@@ -40,7 +41,8 @@ def teardown1_foo(project):
 def teardown2_foo(project):
     project.set_property("teardown2_foo completed", True)
 
-        """)
+        """
+        )
         reactor = self.prepare_reactor()
         project = reactor.project
 

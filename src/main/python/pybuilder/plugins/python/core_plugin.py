@@ -21,14 +21,13 @@ import shutil
 from functools import partial
 from itertools import chain
 from os import sep, walk
-from os.path import isdir, exists, relpath
+from os.path import exists, isdir, relpath
 
-from pybuilder.core import description
-from pybuilder.core import task, use_plugin, init
+from pybuilder.core import description, init, task, use_plugin
 from pybuilder.python_env import PythonEnv
-from pybuilder.utils import as_list, mkdir, makedirs, jp
+from pybuilder.utils import as_list, jp, makedirs, mkdir
 
-HIDDEN_FILE_NAME_PATTERN = re.compile(r'^\..*$')
+HIDDEN_FILE_NAME_PATTERN = re.compile(r"^\..*$")
 
 PYTHON_SOURCES_PROPERTY = "dir_source_main_python"
 SCRIPTS_SOURCES_PROPERTY = "dir_source_main_scripts"
@@ -43,8 +42,10 @@ def init_python_directories(project):
     project.set_property_if_unset(PYTHON_SOURCES_PROPERTY, "src/main/python")
     project.set_property_if_unset(SCRIPTS_SOURCES_PROPERTY, "src/main/scripts")
     project.set_property_if_unset(SCRIPTS_TARGET_PROPERTY, "scripts")
-    project.set_property_if_unset(DISTRIBUTION_PROPERTY,
-                                  "$dir_target/dist/{0}-{1}".format(project.name, project.version))
+    project.set_property_if_unset(
+        DISTRIBUTION_PROPERTY,
+        "$dir_target/dist/{0}-{1}".format(project.name, project.version),
+    )
 
     project.set_property_if_unset("refresh_venvs", False)
     project.set_property_if_unset("pip_verbose", 0)
@@ -53,7 +54,9 @@ def init_python_directories(project):
     project.set_property_if_unset("install_dependencies_index_url", None)
     project.set_property_if_unset("install_dependencies_extra_index_url", None)
     project.set_property_if_unset("install_dependencies_trusted_host", None)
-    project.set_property_if_unset("install_dependencies_constraints", "constraints_file")
+    project.set_property_if_unset(
+        "install_dependencies_constraints", "constraints_file"
+    )
     # Deprecated - has no effect
     project.set_property_if_unset("install_dependencies_upgrade", False)
     project.set_property_if_unset("install_dependencies_insecure_installation", [])
@@ -78,7 +81,9 @@ def create_venvs(logger, project, reactor):
     if not project.no_venvs:
         venv_dependencies_map = project.get_property("venv_dependencies")
         if "build" not in venv_dependencies_map:
-            venv_dependencies_map["build"] = as_list(project.build_dependencies) + as_list(project.dependencies)
+            venv_dependencies_map["build"] = as_list(
+                project.build_dependencies
+            ) + as_list(project.dependencies)
         if "test" not in venv_dependencies_map:
             venv_dependencies_map["test"] = as_list(project.dependencies)
 
@@ -97,25 +102,38 @@ def create_venv(project, logger, reactor, venv_name, clear, recreate_if_exists=F
     per = reactor.python_env_registry
     system_env = per["system"]
     venv_dependencies_map = project.get_property("venv_dependencies")
-    venv_dir = project.expand_path("$dir_target/venv", venv_name,
-                                   system_env.versioned_dir_name)
+    venv_dir = project.expand_path(
+        "$dir_target/venv", venv_name, system_env.versioned_dir_name
+    )
 
     try:
         current_env = per[venv_name]
         if not recreate_if_exists:
             logger.info("Reusing target '%s' VEnv in '%s'", venv_name, venv_dir)
             return
-        logger.info("Recreating target '%s' VEnv in '%s'%s", venv_name, venv_dir, " (refreshing)" if clear else "")
+        logger.info(
+            "Recreating target '%s' VEnv in '%s'%s",
+            venv_name,
+            venv_dir,
+            " (refreshing)" if clear else "",
+        )
         venv_func = current_env.recreate_venv
     except KeyError:
-        logger.info("Creating target '%s' VEnv in '%s'%s", venv_name, venv_dir, " (refreshing)" if clear else "")
+        logger.info(
+            "Creating target '%s' VEnv in '%s'%s",
+            venv_name,
+            venv_dir,
+            " (refreshing)" if clear else "",
+        )
         current_env = PythonEnv(venv_dir, reactor)
         venv_func = current_env.create_venv
 
-    venv_func(with_pip=True,
-              symlinks=system_env.venv_symlinks,
-              clear=clear,
-              offline=project.offline)
+    venv_func(
+        with_pip=True,
+        symlinks=system_env.venv_symlinks,
+        clear=clear,
+        offline=project.offline,
+    )
 
     try:
         per[venv_name] = current_env
@@ -124,12 +142,16 @@ def create_venv(project, logger, reactor, venv_name, clear, recreate_if_exists=F
 
     venv_dependencies = venv_dependencies_map.get(venv_name)
     if venv_dependencies:
-        install_log_path = project.expand_path("$dir_install_logs", "venv_%s_install_logs" % venv_name)
+        install_log_path = project.expand_path(
+            "$dir_install_logs", "venv_%s_install_logs" % venv_name
+        )
         constraints_file_name = project.get_property("install_dependencies_constraints")
-        current_env.install_dependencies(venv_dependencies,
-                                         install_log_path=install_log_path,
-                                         local_mapping={},
-                                         constraints_file_name=constraints_file_name)
+        current_env.install_dependencies(
+            venv_dependencies,
+            install_log_path=install_log_path,
+            local_mapping={},
+            constraints_file_name=constraints_file_name,
+        )
 
 
 def list_packages(project):
@@ -154,7 +176,11 @@ def list_modules(project):
         for file in files:
             potential_module_file = file
             if potential_module_file.endswith(".py"):
-                result.append(relpath(jp(root, potential_module_file), source_path).replace(sep, ".")[:-3])
+                result.append(
+                    relpath(jp(root, potential_module_file), source_path).replace(
+                        sep, "."
+                    )[:-3]
+                )
 
     return sorted(result)
 
@@ -178,7 +204,11 @@ def list_scripts(project):
 def package(project, logger):
     init_dist_target(project, logger)
 
-    logger.info("Building distribution in {0}".format(project.expand_path("$" + DISTRIBUTION_PROPERTY)))
+    logger.info(
+        "Building distribution in {0}".format(
+            project.expand_path("$" + DISTRIBUTION_PROPERTY)
+        )
+    )
 
     copy_python_sources(project, logger)
     copy_scripts(project, logger)
@@ -187,7 +217,9 @@ def package(project, logger):
 def copy_scripts(project, logger):
     scripts_target = project.expand_path("$" + DISTRIBUTION_PROPERTY)
     if project.get_property(SCRIPTS_TARGET_PROPERTY):
-        scripts_target = project.expand_path("$" + DISTRIBUTION_PROPERTY + "/$" + SCRIPTS_TARGET_PROPERTY)
+        scripts_target = project.expand_path(
+            "$" + DISTRIBUTION_PROPERTY + "/$" + SCRIPTS_TARGET_PROPERTY
+        )
 
     if not exists(scripts_target):
         mkdir(scripts_target)
@@ -204,7 +236,9 @@ def copy_scripts(project, logger):
 
 
 def copy_python_sources(project, logger):
-    for root, dirs, files in walk(project.expand_path("$" + PYTHON_SOURCES_PROPERTY), followlinks=True):
+    for root, dirs, files in walk(
+        project.expand_path("$" + PYTHON_SOURCES_PROPERTY), followlinks=True
+    ):
         for pkg in chain(dirs, files):
             if HIDDEN_FILE_NAME_PATTERN.match(pkg):
                 continue
@@ -212,9 +246,12 @@ def copy_python_sources(project, logger):
             source = project.expand_path("$" + PYTHON_SOURCES_PROPERTY, pkg)
             target = project.expand_path("$" + DISTRIBUTION_PROPERTY, pkg)
             if isdir(source):
-                shutil.copytree(source, target,
-                                symlinks=False,
-                                ignore=shutil.ignore_patterns("*.pyc", ".*"))
+                shutil.copytree(
+                    source,
+                    target,
+                    symlinks=False,
+                    ignore=shutil.ignore_patterns("*.pyc", ".*"),
+                )
             else:
                 shutil.copyfile(source, target)
         break

@@ -16,7 +16,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pybuilder.core import use_plugin, task, after, init
+from pybuilder.core import after, init, task, use_plugin
 from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_source_files
 from pybuilder.utils import read_file
 
@@ -31,7 +31,9 @@ def init_pep8_properties(project):
 @after("prepare")
 def check_pep8_available(project, logger, reactor):
     logger.debug("Checking availability of pep8")
-    reactor.python_env_registry["pybuilder"].verify_can_execute(["pep8"], "pep8", "plugin python.pep8")
+    reactor.python_env_registry["pybuilder"].verify_can_execute(
+        ["pep8"], "pep8", "plugin python.pep8"
+    )
 
 
 @task
@@ -42,5 +44,8 @@ def analyze(project, logger):
     reports = read_file(report_file)
 
     if len(reports) > 0:
-        logger.warn("Found %d warning%s produced by pep8",
-                    len(reports), "" if len(reports) == 1 else "s")
+        logger.warn(
+            "Found %d warning%s produced by pep8",
+            len(reports),
+            "" if len(reports) == 1 else "s",
+        )

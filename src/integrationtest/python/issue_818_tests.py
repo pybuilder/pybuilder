@@ -20,12 +20,14 @@ import textwrap
 import unittest
 
 from itest_support import IntegrationTestSupport
+
 from pybuilder.errors import BuildFailedException
 
 
 class Issue818Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import use_plugin, init
 
 use_plugin("python.core")
@@ -35,26 +37,43 @@ use_plugin("python.pylint")
 def init (project):
     project.set_property("verbose", True)
     project.set_property("pylint_break_build", True)
-        """)
+        """
+        )
 
         self.create_directory("src/main/python/a")
         self.create_directory("src/main/python/name/space")
-        self.write_file("src/main/python/a/__init__.py", textwrap.dedent(
-            """
+        self.write_file(
+            "src/main/python/a/__init__.py",
+            textwrap.dedent(
+                """
             print("Hello from the package")
-            """))
-        self.write_file("src/main/python/a/module.py", textwrap.dedent(
             """
+            ),
+        )
+        self.write_file(
+            "src/main/python/a/module.py",
+            textwrap.dedent(
+                """
             print("Hello from the module")
-            """))
-        self.write_file("src/main/python/name/space/__init__.py", textwrap.dedent(
             """
+            ),
+        )
+        self.write_file(
+            "src/main/python/name/space/__init__.py",
+            textwrap.dedent(
+                """
             print("Hello from the namespace package")
-            """))
-        self.write_file("src/main/python/name/space/module.py", textwrap.dedent(
             """
+            ),
+        )
+        self.write_file(
+            "src/main/python/name/space/module.py",
+            textwrap.dedent(
+                """
             print("Hello from the namespace module")
-            """))
+            """
+            ),
+        )
         reactor = self.prepare_reactor()
 
         with self.assertRaises(BuildFailedException) as raised_e:

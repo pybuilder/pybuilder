@@ -22,9 +22,9 @@ from itest_support import IntegrationTestSupport
 
 
 class Test(IntegrationTestSupport):
-
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import use_plugin
 
 use_plugin("python.core")
@@ -33,7 +33,8 @@ use_plugin("python.distutils")
 name = "integration-test"
 default_task = "publish"
 
-""")
+"""
+        )
         self.create_directory("src/main/python/spam")
         self.write_file("src/main/python/spam/__init__.py", "")
 

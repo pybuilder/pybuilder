@@ -19,17 +19,19 @@
 import itertools
 import os
 
-from pybuilder.utils import (discover_modules,
-                             discover_files_matching,
-                             as_list,
-                             read_file)
+from pybuilder.utils import (
+    as_list,
+    discover_files_matching,
+    discover_modules,
+    read_file,
+)
 
 
 def log_report(logger, name, report_lines):
     count_of_warnings = len(report_lines)
     if count_of_warnings > 0:
         for report_line in report_lines:
-            logger.warn(name + ': ' + report_line[:-1])
+            logger.warn(name + ": " + report_line[:-1])
 
 
 def discover_python_files(directory, exclude_glob=None):
@@ -45,13 +47,16 @@ def discover_affected_files(include_test_sources, include_scripts, project):
             unittest_dir = project.expand_path("$dir_source_unittest_python")
             files = itertools.chain(files, discover_python_files(unittest_dir))
         if project.get_property("dir_source_integrationtest_python"):
-            integrationtest_dir = project.expand_path("$dir_source_integrationtest_python")
+            integrationtest_dir = project.expand_path(
+                "$dir_source_integrationtest_python"
+            )
             files = itertools.chain(files, discover_python_files(integrationtest_dir))
 
     if include_scripts and project.get_property("dir_source_main_scripts"):
         scripts_dir = project.expand_path("$dir_source_main_scripts")
-        files = itertools.chain(files,
-                                discover_files_matching(scripts_dir, "*"))  # we have no idea how scripts might look
+        files = itertools.chain(
+            files, discover_files_matching(scripts_dir, "*")
+        )  # we have no idea how scripts might look
 
     return files
 
@@ -59,12 +64,18 @@ def discover_affected_files(include_test_sources, include_scripts, project):
 def discover_affected_dirs(include_test_sources, include_scripts, project):
     files = [project.expand_path("$dir_source_main_python")]
     if include_test_sources:
-        if _if_property_set_and_dir_exists(project.get_property("dir_source_unittest_python")):
+        if _if_property_set_and_dir_exists(
+            project.get_property("dir_source_unittest_python")
+        ):
             files.append(project.expand_path("$dir_source_unittest_python"))
-        if _if_property_set_and_dir_exists(project.get_property("dir_source_integrationtest_python")):
+        if _if_property_set_and_dir_exists(
+            project.get_property("dir_source_integrationtest_python")
+        ):
             files.append(project.expand_path("$dir_source_integrationtest_python"))
 
-    if include_scripts and _if_property_set_and_dir_exists(project.get_property("dir_source_main_scripts")):
+    if include_scripts and _if_property_set_and_dir_exists(
+        project.get_property("dir_source_main_scripts")
+    ):
         files.append(project.expand_path("$dir_source_main_scripts"))
 
     return files
@@ -74,8 +85,16 @@ def _if_property_set_and_dir_exists(property_value):
     return property_value and os.path.isdir(property_value)
 
 
-def execute_tool_on_source_files(project, name, python_env, command_and_arguments, logger=None,
-                                 include_test_sources=False, include_scripts=False, include_dirs_only=False):
+def execute_tool_on_source_files(
+    project,
+    name,
+    python_env,
+    command_and_arguments,
+    logger=None,
+    include_test_sources=False,
+    include_scripts=False,
+    include_dirs_only=False,
+):
     if include_dirs_only:
         files = discover_affected_dirs(include_test_sources, include_scripts, project)
     else:
@@ -96,16 +115,23 @@ def execute_tool_on_source_files(project, name, python_env, command_and_argument
     return execution_result
 
 
-def execute_tool_on_modules(project, name, python_env, command_and_arguments,
-                            extend_pythonpath=True,
-                            include_packages=True,
-                            include_package_modules=True,
-                            include_namespace_modules=True):
+def execute_tool_on_modules(
+    project,
+    name,
+    python_env,
+    command_and_arguments,
+    extend_pythonpath=True,
+    include_packages=True,
+    include_package_modules=True,
+    include_namespace_modules=True,
+):
     source_dir = project.expand_path("$dir_source_main_python")
-    modules = discover_modules(source_dir,
-                               include_packages=include_packages,
-                               include_package_modules=include_package_modules,
-                               include_namespace_modules=include_namespace_modules)
+    modules = discover_modules(
+        source_dir,
+        include_packages=include_packages,
+        include_package_modules=include_package_modules,
+        include_namespace_modules=include_namespace_modules,
+    )
     command = as_list(command_and_arguments) + modules
 
     report_file = project.expand_path("$dir_reports/%s" % name)

@@ -27,17 +27,17 @@ import re
 import sys
 from itertools import chain
 from os import sep, unlink, walk
-from os.path import exists, relpath, isdir, splitext, basename, dirname
+from os.path import basename, dirname, exists, isdir, relpath, splitext
 from shutil import rmtree
 
-from pybuilder.core import task, init, use_plugin, depends, Dependency
+from pybuilder.core import Dependency, depends, init, task, use_plugin
 from pybuilder.python_utils import iglob
-from pybuilder.utils import as_list, makedirs, jp, np
+from pybuilder.utils import as_list, jp, makedirs, np
 
 __author__ = "Arcadiy Ivanov"
 
 _RE_FROM_IMPORT = re.compile(r"from\s+(\S+)\s+import\s+")
-_RE_DECODE_PY = re.compile(rb'^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+)')
+_RE_DECODE_PY = re.compile(rb"^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+)")
 
 use_plugin("python.core")
 
@@ -45,33 +45,46 @@ use_plugin("python.core")
 @init
 def initialize_vendorize_plugin(project):
     project.set_property_if_unset("vendorize_packages", [])
-    project.set_property_if_unset("vendorize_target_dir", "$dir_source_main_python/_vendor")
+    project.set_property_if_unset(
+        "vendorize_target_dir", "$dir_source_main_python/_vendor"
+    )
     project.set_property_if_unset("vendorize_clean_target_dir", True)
     project.set_property_if_unset("vendorize_cleanup_globs", [])
     project.set_property_if_unset("vendorize_preserve_metadata", [])
     project.set_property_if_unset("vendorize_collect_licenses", True)
-    project.set_property_if_unset("vendorize_licenses", "$vendorize_target_dir/LICENSES")
+    project.set_property_if_unset(
+        "vendorize_licenses", "$vendorize_target_dir/LICENSES"
+    )
 
 
 @task
 @depends("prepare")
 def vendorize(project, reactor, logger):
     target_dir = project.expand_path("$vendorize_target_dir")
-    packages = [Dependency(p) for p in as_list(project.get_property("vendorize_packages"))]
+    packages = [
+        Dependency(p) for p in as_list(project.get_property("vendorize_packages"))
+    ]
     clean = project.get_property("vendorize_clean_target_dir")
     logfile = project.expand_path("$dir_logs", "vendorize.log")
 
-    logger.info("Will vendorize packages %r into %r%s", packages, target_dir, " (cleaning)" if clean else "")
+    logger.info(
+        "Will vendorize packages %r into %r%s",
+        packages,
+        target_dir,
+        " (cleaning)" if clean else "",
+    )
 
     if clean:
         rmtree(target_dir, ignore_errors=False)
     makedirs(target_dir, exist_ok=True)
 
-    reactor.pybuilder_venv.install_dependencies(packages,
-                                                install_log_path=logfile,
-                                                package_type="vendorized",
-                                                target_dir=target_dir,
-                                                ignore_installed=True)
+    reactor.pybuilder_venv.install_dependencies(
+        packages,
+        install_log_path=logfile,
+        package_type="vendorized",
+        target_dir=target_dir,
+        ignore_installed=True,
+    )
 
     # Vendorize
     _vendorize(target_dir, logger)
@@ -127,8 +140,12 @@ def vendorize(project, reactor, logger):
             logger.debug("Preserving metadata %s", p)
 
     # Populate names after cleanup
-    cleaned_up_packages = list(chain((basename(dirname(f)) for f in iglob(jp(target_dir, "*", "__init__.py"))),
-                                     (basename(f)[:-3] for f in iglob(jp(target_dir, "*.py")))))
+    cleaned_up_packages = list(
+        chain(
+            (basename(dirname(f)) for f in iglob(jp(target_dir, "*", "__init__.py"))),
+            (basename(f)[:-3] for f in iglob(jp(target_dir, "*.py"))),
+        )
+    )
     with open(jp(target_dir, "__init__.py"), "wt") as init_py:
         init_py.write("__names__ = %r\n" % sorted(cleaned_up_packages))
 
@@ -156,7 +173,8 @@ def _path_to_package(path):
 
 
 if sys.version_info[:2] < (3, 8):
-    class NodeVisitor(object):
+
+    class NodeVisitor():
         def __init__(self):
             self._count = 0
             self._q = []
@@ -183,7 +201,7 @@ if sys.version_info[:2] < (3, 8):
             sl = self.source_lines
 
             for idx, node in enumerate(q):
-                method = 'visit_' + node.__class__.__name__
+                method = "visit_" + node.__class__.__name__
                 visitor = getattr(self, method, None)
                 if visitor:
                     next_idx = idx + 1
@@ -194,19 +212,24 @@ if sys.version_info[:2] < (3, 8):
                             node.end_col_offset = next_node.col_offset - 1
                         else:
                             node.end_lineno = next_node.lineno - 1
-                            node.end_col_offset = sl[node.end_lineno] - sl[node.end_lineno - 1]
+                            node.end_col_offset = (
+                                sl[node.end_lineno] - sl[node.end_lineno - 1]
+                            )
                     else:
                         node.end_lineno = len(sl) - 1
-                        node.end_col_offset = sl[node.end_lineno] - sl[node.end_lineno - 1]
+                        node.end_col_offset = (
+                            sl[node.end_lineno] - sl[node.end_lineno - 1]
+                        )
 
                     visitor(node)
+
 else:
     NodeVisitor = ast.NodeVisitor
 
 
 class ImportTransformer(NodeVisitor):
     def __init__(self, source_path, source, vendor_path, vendorized_packages, results):
-        super(ImportTransformer, self).__init__()
+        super().__init__()
         self.source_path = source_path
         self.source = source
         self.source_lines = _source_line_offsets(source)
@@ -234,8 +257,8 @@ class ImportTransformer(NodeVisitor):
             import_stmt, offset_start, offset_end = self.extract_source(node)
 
             ts = self.transformed_source
-            ts_prefix = ts[:offset_start + self.offset]
-            ts_postfix = ts[offset_end + self.offset:]
+            ts_prefix = ts[: offset_start + self.offset]
+            ts_postfix = ts[offset_end + self.offset :]
 
             inject = "from " + import_changes + " "
             self.offset += len(inject)
@@ -259,8 +282,8 @@ class ImportTransformer(NodeVisitor):
                     m = _RE_FROM_IMPORT.match(import_stmt)
 
                     ts = self.transformed_source
-                    ts_prefix = ts[:offset_start + m.start(1) + self.offset]
-                    ts_postfix = ts[offset_start + self.offset + m.end(1):]
+                    ts_prefix = ts[: offset_start + m.start(1) + self.offset]
+                    ts_postfix = ts[offset_start + self.offset + m.end(1) :]
                     inject = import_changes
                     self.transformed_source = ts_prefix + inject + ts_postfix
                     self.offset += len(inject) - len(m.group(1))
@@ -284,7 +307,9 @@ def _vendorize(vendorized_path, logger):
             source_encoding, source = _decode_py(source_b)
 
             parsed_ast = ast.parse(source, filename=py_path)
-            it = ImportTransformer(py_path, source, vendorized_path, vendorized_packages, [])
+            it = ImportTransformer(
+                py_path, source, vendorized_path, vendorized_packages, []
+            )
             it.visit(parsed_ast)
 
             if source != it.transformed_source:
@@ -296,7 +321,10 @@ def _vendorize(vendorized_path, logger):
 
 
 def _list_metadata_dirs(vendorized_path):
-    return chain(iglob(jp(vendorized_path, "*.egg-info")), iglob(jp(vendorized_path, "*.dist-info")))
+    return chain(
+        iglob(jp(vendorized_path, "*.egg-info")),
+        iglob(jp(vendorized_path, "*.dist-info")),
+    )
 
 
 def _list_top_level_packages(vendorized_path):
@@ -319,9 +347,9 @@ def _source_line_offsets(source):
         idx += 1
         started_line = False
         # Keep \r\n together
-        if c == '\r' and idx < len(source) and source[idx] == '\n':
+        if c == "\r" and idx < len(source) and source[idx] == "\n":
             idx += 1
-        if c in '\r\n':
+        if c in "\r\n":
             lines.append(idx)
             started_line = True
 
@@ -348,7 +376,7 @@ def _extract_source(source_lines, node):
 
 def _decode_py(source_b):
     encoding = "utf-8"
-    if source_b.startswith(b'\xef\xbb\xbf'):
+    if source_b.startswith(b"\xef\xbb\xbf"):
         encoding = "utf-8"
     else:
         source_b_lines = source_b.splitlines()
@@ -360,4 +388,4 @@ def _decode_py(source_b):
                 encoding = match.group(1).decode("utf-8")
                 break
 
-    return encoding, source_b.decode(encoding, errors='strict')
+    return encoding, source_b.decode(encoding, errors="strict")

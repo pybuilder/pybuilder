@@ -23,7 +23,9 @@ from smoke_itest_support import SmokeIntegrationTestSupport
 
 class SphinxSmokeTest(SmokeIntegrationTestSupport):
     def test_smoke_sphinx_pyb_quickstart(self):
-        self.smoke_test("-v", "-X", "sphinx_pyb_quickstart", "sphinx_generate_documentation")
+        self.smoke_test(
+            "-v", "-X", "sphinx_pyb_quickstart", "sphinx_generate_documentation"
+        )
 
 
 if __name__ == "__main__":

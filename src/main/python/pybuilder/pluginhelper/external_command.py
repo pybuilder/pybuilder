@@ -20,8 +20,15 @@ from pybuilder.plugins.python.python_plugin_helper import execute_tool_on_source
 from pybuilder.utils import read_file
 
 
-class ExternalCommandResult(object):
-    def __init__(self, exit_code, report_file, report_lines, error_report_file, error_report_lines):
+class ExternalCommandResult():
+    def __init__(
+        self,
+        exit_code,
+        report_file,
+        report_lines,
+        error_report_file,
+        error_report_lines,
+    ):
         self.exit_code = exit_code
         self.report_file = report_file
         self.report_lines = report_lines
@@ -29,7 +36,7 @@ class ExternalCommandResult(object):
         self.error_report_lines = error_report_lines
 
 
-class ExternalCommandBuilder(object):
+class ExternalCommandBuilder():
     def __init__(self, command_name, project, reactor, python_env_name="pybuilder"):
         self.command_name = command_name
         self.parts = [command_name]
@@ -51,7 +58,9 @@ class ExternalCommandBuilder(object):
         return self
 
     def formatted_with_truthy_property(self, property_name):
-        return self.formatted_with_property(property_name).only_if_property_is_truthy(property_name)
+        return self.formatted_with_property(property_name).only_if_property_is_truthy(
+            property_name
+        )
 
     def only_if_property_is_truthy(self, property_name):
         property_value = self.project.get_property(property_name)
@@ -61,7 +70,7 @@ class ExternalCommandBuilder(object):
 
     @property
     def as_string(self):
-        return ' '.join(self.parts)
+        return " ".join(self.parts)
 
     def run(self, outfile_name):
         error_file_name = "{0}.err".format(outfile_name)
@@ -69,33 +78,41 @@ class ExternalCommandBuilder(object):
         error_file_lines = read_file(error_file_name)
         outfile_lines = read_file(outfile_name)
 
-        return ExternalCommandResult(return_code,
-                                     outfile_name, outfile_lines,
-                                     error_file_name, error_file_lines)
+        return ExternalCommandResult(
+            return_code, outfile_name, outfile_lines, error_file_name, error_file_lines
+        )
 
-    def run_on_production_source_files(self, logger,
-                                       include_test_sources=False,
-                                       include_scripts=False,
-                                       include_dirs_only=False):
-        execution_result = execute_tool_on_source_files(project=self.project,
-                                                        name=self.command_name,
-                                                        python_env=self._env,
-                                                        command_and_arguments=self.parts,
-                                                        include_test_sources=include_test_sources,
-                                                        include_scripts=include_scripts,
-                                                        logger=logger,
-                                                        include_dirs_only=include_dirs_only)
+    def run_on_production_source_files(
+        self,
+        logger,
+        include_test_sources=False,
+        include_scripts=False,
+        include_dirs_only=False,
+    ):
+        execution_result = execute_tool_on_source_files(
+            project=self.project,
+            name=self.command_name,
+            python_env=self._env,
+            command_and_arguments=self.parts,
+            include_test_sources=include_test_sources,
+            include_scripts=include_scripts,
+            logger=logger,
+            include_dirs_only=include_dirs_only,
+        )
         exit_code, report_file = execution_result
         report_lines = read_file(report_file)
-        error_report_file = '{0}.err'.format(report_file)  # TODO @mriehl not dry, execute_tool... should return this
+        error_report_file = "{0}.err".format(
+            report_file
+        )  # TODO @mriehl not dry, execute_tool... should return this
         error_report_lines = read_file(error_report_file)
-        return ExternalCommandResult(exit_code, report_file, report_lines, error_report_file, error_report_lines)
+        return ExternalCommandResult(
+            exit_code, report_file, report_lines, error_report_file, error_report_lines
+        )
 
     def run_on_production_and_test_source_files(self, logger):
-        return self.run_on_production_source_files(logger,
-                                                   include_test_sources=True)
+        return self.run_on_production_source_files(logger, include_test_sources=True)
 
     def run_on_production_and_test_source_files_and_scripts(self, logger):
-        return self.run_on_production_source_files(logger,
-                                                   include_test_sources=True,
-                                                   include_scripts=True)
+        return self.run_on_production_source_files(
+            logger, include_test_sources=True, include_scripts=True
+        )

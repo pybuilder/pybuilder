@@ -33,19 +33,27 @@ except ImportError:
 
 class BaseIntegrationTestSupport(unittest.TestCase):
     def setUp(self):
-        self.tmp_directory = tempfile.mkdtemp(prefix="IntegrationTestSupport", suffix=str(uuid4()).replace("-", ""))
+        self.tmp_directory = tempfile.mkdtemp(
+            prefix="IntegrationTestSupport", suffix=str(uuid4()).replace("-", "")
+        )
 
     def tearDown(self):
         outcomes = self.outcomes()
-        if self.tmp_directory and os.path.exists(self.tmp_directory) and not (outcomes[0] or outcomes[1]):
-            shutil.rmtree(self.tmp_directory, ignore_errors=sys.platform in {"win32", "cygwin", "msys"})
+        if (
+            self.tmp_directory
+            and os.path.exists(self.tmp_directory)
+            and not outcomes[0] or outcomes[1]
+        ):
+            shutil.rmtree(
+                self.tmp_directory,
+                ignore_errors=sys.platform in {"win32", "cygwin", "msys"},
+            )
 
     def full_path(self, name):
         name = os.path.normcase(os.path.normpath(name))
         if os.path.isabs(name):
             return name
-        else:
-            return os.path.join(self.tmp_directory, name)
+        return os.path.join(self.tmp_directory, name)
 
     def create_directory(self, name):
         os.makedirs(self.full_path(name))
@@ -63,16 +71,22 @@ class BaseIntegrationTestSupport(unittest.TestCase):
 
     def assert_directory_exists(self, name):
         full_path = self.full_path(name)
-        self.assertTrue(os.path.exists(full_path), msg="Directory does not exist: %s" % full_path)
+        self.assertTrue(
+            os.path.exists(full_path), msg="Directory does not exist: %s" % full_path
+        )
         self.assertTrue(os.path.isdir(full_path), msg="Not a directory: %s" % full_path)
 
     def assert_file_does_not_exist(self, name):
         full_path = self.full_path(name)
-        self.assertFalse(os.path.exists(full_path), msg="File should NOT exist: %s" % full_path)
+        self.assertFalse(
+            os.path.exists(full_path), msg="File should NOT exist: %s" % full_path
+        )
 
     def assert_file_exists(self, name):
         full_path = self.full_path(name)
-        self.assertTrue(os.path.exists(full_path), msg="File does not exist: %s" % full_path)
+        self.assertTrue(
+            os.path.exists(full_path), msg="File does not exist: %s" % full_path
+        )
         self.assertTrue(os.path.isfile(full_path), msg="Not a file: %s" % full_path)
 
     def assert_file_permissions(self, expected_permissions, name):
@@ -86,7 +100,9 @@ class BaseIntegrationTestSupport(unittest.TestCase):
     def assert_file_empty(self, name):
         self.assert_file_exists(name)
         full_path = self.full_path(name)
-        self.assertEqual(0, os.path.getsize(full_path), msg="File %s is not empty." % full_path)
+        self.assertEqual(
+            0, os.path.getsize(full_path), msg="File %s is not empty." % full_path
+        )
 
     def assert_file_contains(self, name, expected_content_part):
         full_path = self.full_path(name)
@@ -121,10 +137,15 @@ class BaseIntegrationTestSupport(unittest.TestCase):
                 actual_line_showing_escaped_new_line = actual_line.replace("\n", "\\n")
 
                 expected_line = expected_content.readline()
-                expected_line_showing_escaped_new_line = expected_line.replace("\n", "\\n")
+                expected_line_showing_escaped_new_line = expected_line.replace(
+                    "\n", "\\n"
+                )
 
                 message = 'line {0} is not as expected.\n   expected: "{1}"\n    but got: "{2}"'.format(
-                    actual_line_number, expected_line_showing_escaped_new_line, actual_line_showing_escaped_new_line)
+                    actual_line_number,
+                    expected_line_showing_escaped_new_line,
+                    actual_line_showing_escaped_new_line,
+                )
                 self.assertEqual(expected_line, actual_line, message)
 
         self.assertEqual(expected_lines, actual_line_number)
@@ -134,10 +155,12 @@ class BaseIntegrationTestSupport(unittest.TestCase):
         return self._list2reason(result.errors), self._list2reason(result.failures)
 
     if _addError:
+
         def _get_result(self):
             return self._outcome.result
 
     else:
+
         def _get_result(self):
             result = self.defaultTestResult()  # these 2 methods have no side effects
             self._feedErrorsToResult(result, self._outcome.errors)

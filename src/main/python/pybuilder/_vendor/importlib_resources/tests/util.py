@@ -1,17 +1,14 @@
 import abc
 import importlib
 import io
+import pathlib
 import sys
 import types
-import pathlib
-
-from . import data01
-from . import zipdata01
-from ..abc import ResourceReader
-from ._compat import import_helper
-
-
 from importlib.machinery import ModuleSpec
+
+from ..abc import ResourceReader
+from . import data01, zipdata01
+from ._compat import import_helper
 
 
 class Reader(ResourceReader):
@@ -39,7 +36,7 @@ class Reader(ResourceReader):
             raise self.path
 
         def part(entry):
-            return entry.split('/')
+            return entry.split("/")
 
         return any(
             len(parts) == 1 and parts[0] == path_ for parts in map(part, self._contents)
@@ -52,9 +49,9 @@ class Reader(ResourceReader):
 
 
 def create_package_from_loader(loader, is_package=True):
-    name = 'testingpackage'
+    name = "testingpackage"
     module = types.ModuleType(name)
-    spec = ModuleSpec(name, loader, origin='does-not-exist', is_package=is_package)
+    spec = ModuleSpec(name, loader, origin="does-not-exist", is_package=is_package)
     module.__spec__ = spec
     module.__loader__ = loader
     return module
@@ -81,51 +78,51 @@ class CommonTests(metaclass=abc.ABCMeta):
 
     def test_package_name(self):
         # Passing in the package name should succeed.
-        self.execute(data01.__name__, 'utf-8.file')
+        self.execute(data01.__name__, "utf-8.file")
 
     def test_package_object(self):
         # Passing in the package itself should succeed.
-        self.execute(data01, 'utf-8.file')
+        self.execute(data01, "utf-8.file")
 
     def test_string_path(self):
         # Passing in a string for the path should succeed.
-        path = 'utf-8.file'
+        path = "utf-8.file"
         self.execute(data01, path)
 
     def test_pathlib_path(self):
         # Passing in a pathlib.PurePath object for the path should succeed.
-        path = pathlib.PurePath('utf-8.file')
+        path = pathlib.PurePath("utf-8.file")
         self.execute(data01, path)
 
     def test_importing_module_as_side_effect(self):
         # The anchor package can already be imported.
         del sys.modules[data01.__name__]
-        self.execute(data01.__name__, 'utf-8.file')
+        self.execute(data01.__name__, "utf-8.file")
 
     def test_missing_path(self):
         # Attempting to open or read or request the path for a
         # non-existent path should succeed if open_resource
         # can return a viable data stream.
-        bytes_data = io.BytesIO(b'Hello, world!')
+        bytes_data = io.BytesIO(b"Hello, world!")
         package = create_package(file=bytes_data, path=FileNotFoundError())
-        self.execute(package, 'utf-8.file')
-        self.assertEqual(package.__loader__._path, 'utf-8.file')
+        self.execute(package, "utf-8.file")
+        self.assertEqual(package.__loader__._path, "utf-8.file")
 
     def test_extant_path(self):
         # Attempting to open or read or request the path when the
         # path does exist should still succeed. Does not assert
         # anything about the result.
-        bytes_data = io.BytesIO(b'Hello, world!')
+        bytes_data = io.BytesIO(b"Hello, world!")
         # any path that exists
         path = __file__
         package = create_package(file=bytes_data, path=path)
-        self.execute(package, 'utf-8.file')
-        self.assertEqual(package.__loader__._path, 'utf-8.file')
+        self.execute(package, "utf-8.file")
+        self.assertEqual(package.__loader__._path, "utf-8.file")
 
     def test_useless_loader(self):
         package = create_package(file=FileNotFoundError(), path=FileNotFoundError())
         with self.assertRaises(FileNotFoundError):
-            self.execute(package, 'utf-8.file')
+            self.execute(package, "utf-8.file")
 
 
 class ZipSetupBase:
@@ -135,9 +132,9 @@ class ZipSetupBase:
     def setUpClass(cls):
         data_path = pathlib.Path(cls.ZIP_MODULE.__file__)
         data_dir = data_path.parent
-        cls._zip_path = str(data_dir / 'ziptestdata.zip')
+        cls._zip_path = str(data_dir / "ziptestdata.zip")
         sys.path.append(cls._zip_path)
-        cls.data = importlib.import_module('ziptestdata')
+        cls.data = importlib.import_module("ziptestdata")
 
     @classmethod
     def tearDownClass(cls):

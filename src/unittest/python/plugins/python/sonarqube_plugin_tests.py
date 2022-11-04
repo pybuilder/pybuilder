@@ -19,17 +19,19 @@
 from os.path import normcase as nc
 from unittest import TestCase
 
+from test_utils import Mock, patch
+
 from pybuilder.core import Project
 from pybuilder.errors import BuildFailedException
-from pybuilder.plugins.python.sonarqube_plugin import (SonarCommandBuilder,
-                                                       build_sonar_scanner,
-                                                       run_sonar_analysis)
+from pybuilder.plugins.python.sonarqube_plugin import (
+    SonarCommandBuilder,
+    build_sonar_scanner,
+    run_sonar_analysis,
+)
 from pybuilder.reactor import Reactor
-from test_utils import Mock, patch
 
 
 class RunSonarAnalysisTest(TestCase):
-
     def setUp(self):
         self.project = Project("any-project")
         self.project.version = "0.0.1"
@@ -43,28 +45,34 @@ class RunSonarAnalysisTest(TestCase):
         self.reactor.python_env_registry = {"pybuilder": pyb_env}
 
     def test_should_build_sonar_scanner_for_project(self):
-        self.assertEqual(build_sonar_scanner(self.project, self.reactor).as_string,
-                         "sonar-scanner -Dsonar.projectKey=project_key "
-                         "-Dsonar.projectName=project_name "
-                         "-Dsonar.projectVersion=0.0.1 "
-                         "-Dsonar.sources=src/main/python "
-                         "-Dsonar.python.coverage.reportPath=%s" % nc("target/reports/coverage*.xml"))
+        self.assertEqual(
+            build_sonar_scanner(self.project, self.reactor).as_string,
+            "sonar-scanner -Dsonar.projectKey=project_key "
+            "-Dsonar.projectName=project_name "
+            "-Dsonar.projectVersion=0.0.1 "
+            "-Dsonar.sources=src/main/python "
+            "-Dsonar.python.coverage.reportPath=%s"
+            % nc("target/reports/coverage*.xml"),
+        )
 
     @patch("pybuilder.plugins.python.sonarqube_plugin.SonarCommandBuilder.run")
     def test_should_break_build_when_sonar_scanner_fails(self, run_sonar_command):
         run_sonar_command.return_value = Mock(exit_code=1)
 
-        self.assertRaises(BuildFailedException, run_sonar_analysis, self.project, Mock(), self.reactor)
+        self.assertRaises(
+            BuildFailedException, run_sonar_analysis, self.project, Mock(), self.reactor
+        )
 
     @patch("pybuilder.plugins.python.sonarqube_plugin.SonarCommandBuilder.run")
-    def test_should_not_break_build_when_sonar_scanner_succeeds(self, run_sonar_command):
+    def test_should_not_break_build_when_sonar_scanner_succeeds(
+        self, run_sonar_command
+    ):
         run_sonar_command.return_value = Mock(exit_code=0)
 
         run_sonar_analysis(self.project, Mock(), self.reactor)
 
 
 class SonarCommandBuilderTests(TestCase):
-
     def setUp(self):
         self.project = Project("any-project")
         self.reactor = Mock()
@@ -81,11 +89,20 @@ class SonarCommandBuilderTests(TestCase):
         self.assertEqual(self.sonar_builder.as_string, "sonar -DanySonarKey=anyValue")
 
     def test_should_set_sonar_key_to_two_specific_values(self):
-        self.sonar_builder.set_sonar_key("anySonarKey").to("anyValue").set_sonar_key("other").to("otherValue")
+        self.sonar_builder.set_sonar_key("anySonarKey").to("anyValue").set_sonar_key(
+            "other"
+        ).to("otherValue")
 
-        self.assertEqual(self.sonar_builder.as_string, "sonar -DanySonarKey=anyValue -Dother=otherValue")
+        self.assertEqual(
+            self.sonar_builder.as_string,
+            "sonar -DanySonarKey=anyValue -Dother=otherValue",
+        )
 
     def test_should_set_sonar_key_to_property_value(self):
-        self.sonar_builder.set_sonar_key("anySonarKey").to_property_value("any-property-name")
+        self.sonar_builder.set_sonar_key("anySonarKey").to_property_value(
+            "any-property-name"
+        )
 
-        self.assertEqual(self.sonar_builder.as_string, "sonar -DanySonarKey=any-property-value")
+        self.assertEqual(
+            self.sonar_builder.as_string, "sonar -DanySonarKey=any-property-value"
+        )

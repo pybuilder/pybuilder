@@ -1,15 +1,9 @@
 # testing.py
 
-from contextlib import contextmanager
 import typing
+from contextlib import contextmanager
 
-from .core import (
-    ParserElement,
-    ParseException,
-    Keyword,
-    __diag__,
-    __compat__,
-)
+from .core import Keyword, ParseException, ParserElement, __compat__, __diag__
 
 
 class pyparsing_test:

@@ -20,9 +20,9 @@ A module containing utilities for operations on a directed graph
 """
 
 
-class Graph(object):
+class Graph():
     """
-        A graph using an edge dictionary as an internal representation.
+    A graph using an edge dictionary as an internal representation.
     """
 
     def __init__(self, edges):

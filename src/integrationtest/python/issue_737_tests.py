@@ -24,7 +24,8 @@ from itest_support import IntegrationTestSupport
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import use_plugin, init
 import sys
 from os.path import join as jp, normcase as nc, dirname
@@ -44,9 +45,12 @@ default_task = ["task2"]
 @init
 def init (project):
     pass
-""")
+"""
+        )
         self.create_directory("src/main/python")
-        self.write_file("src/main/python/issue_737_plugin_1.py", r"""
+        self.write_file(
+            "src/main/python/issue_737_plugin_1.py",
+            r"""
 from pybuilder.core import init, task, depends
 
 @task
@@ -57,8 +61,11 @@ def task1():
 @depends("task1")
 def task2():
     pass
-""")
-        self.write_file("src/main/python/issue_737_plugin_2.py", r"""
+""",
+        )
+        self.write_file(
+            "src/main/python/issue_737_plugin_2.py",
+            r"""
 from pybuilder.core import init, use_plugin, task, depends, dependents, optional
 
 @task
@@ -66,7 +73,8 @@ from pybuilder.core import init, use_plugin, task, depends, dependents, optional
 @dependents(optional("task2"))
 def taskX():
     pass
-""")
+""",
+        )
         reactor = self.prepare_reactor()
         reactor.build()
 

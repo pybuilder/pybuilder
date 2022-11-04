@@ -23,33 +23,30 @@ patch_mp()
 
 import sys  # noqa: E402
 from textwrap import dedent  # noqa: E402
-
-from types import (MethodType,  # noqa: E402
-                   FunctionType,
-                   BuiltinFunctionType,
-                   )
+from types import MethodType  # noqa: E402
+from types import BuiltinFunctionType, FunctionType
 
 try:
-    from types import (WrapperDescriptorType,  # noqa: E402
-                       MethodWrapperType,
-                       MethodDescriptorType,
-                       ClassMethodDescriptorType,
-                       )
+    from types import WrapperDescriptorType  # noqa: E402
+    from types import (ClassMethodDescriptorType, MethodDescriptorType,
+                       MethodWrapperType)
 except ImportError:
     WrapperDescriptorType = type(object.__init__)
     MethodWrapperType = type(object().__str__)
     MethodDescriptorType = type(str.join)
     ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
 
-from os.path import normcase as nc, sep  # noqa: E402
 from io import BytesIO, StringIO  # noqa: E402
-from pickle import PickleError, Unpickler, UnpicklingError, HIGHEST_PROTOCOL  # noqa: E402
+from os.path import normcase as nc  # noqa: E402
+from os.path import sep
+from pickle import (HIGHEST_PROTOCOL, PickleError, Unpickler,  # noqa: E402
+                    UnpicklingError)
 from pickletools import dis  # noqa: E402
 
-from pybuilder.python_utils import (mp_get_context,  # noqa: E402
-                                    mp_ForkingPickler as ForkingPickler,
-                                    mp_log_to_stderr as log_to_stderr,
-                                    IS_WIN)
+from pybuilder.python_utils import mp_get_context  # noqa: E402
+from pybuilder.python_utils import IS_WIN
+from pybuilder.python_utils import mp_ForkingPickler as ForkingPickler
+from pybuilder.python_utils import mp_log_to_stderr as log_to_stderr
 
 PICKLE_PROTOCOL_MIN = 4
 PICKLE_PROTOCOL_MAX = HIGHEST_PROTOCOL
@@ -483,10 +480,10 @@ class _RemoteObjectSession:
         self._remote_id = 0
 
         # Mapping name (str): object
-        self._exposed_objs = dict()
+        self._exposed_objs = []
 
         # Mapping remote ID (int): object
-        self._remote_objs_ids = dict()
+        self._remote_objs_ids = []
 
         # Mapping object: ProxyDef
         self._remote_objs = id_dict()  # instances to be proxied

@@ -11,7 +11,16 @@ from .periodic_update import add_wheel_to_update_log
 from .util import Version, Wheel, discover_wheels
 
 
-def get_wheel(distribution, version, for_py_version, search_dirs, download, app_data, do_periodic_update, env):
+def get_wheel(
+    distribution,
+    version,
+    for_py_version,
+    search_dirs,
+    download,
+    app_data,
+    do_periodic_update,
+    env,
+):
     """
     Get a wheel with the given distribution-version-for_py_version trio, by using the extra search dir + download
     """
@@ -20,7 +29,15 @@ def get_wheel(distribution, version, for_py_version, search_dirs, download, app_
 
     if not download or version != Version.bundle:
         # 1. acquire from bundle
-        wheel = from_bundle(distribution, version, for_py_version, search_dirs, app_data, do_periodic_update, env)
+        wheel = from_bundle(
+            distribution,
+            version,
+            for_py_version,
+            search_dirs,
+            app_data,
+            do_periodic_update,
+            env,
+        )
 
     if download and wheel is None and version != Version.embed:
         # 2. download from the internet
@@ -39,7 +56,9 @@ def get_wheel(distribution, version, for_py_version, search_dirs, download, app_
     return wheel
 
 
-def download_wheel(distribution, version_spec, for_py_version, search_dirs, app_data, to_folder, env):
+def download_wheel(
+    distribution, version_spec, for_py_version, search_dirs, app_data, to_folder, env
+):
     to_download = f"{distribution}{version_spec or ''}"
     logging.debug("download wheel %s %s to %s", to_download, for_py_version, to_folder)
     cmd = [
@@ -65,7 +84,9 @@ def download_wheel(distribution, version_spec, for_py_version, search_dirs, app_
     if process.returncode != 0:
         kwargs = {"output": out, "stderr": err}
         raise CalledProcessError(process.returncode, cmd, **kwargs)
-    result = _find_downloaded_wheel(distribution, version_spec, for_py_version, to_folder, out)
+    result = _find_downloaded_wheel(
+        distribution, version_spec, for_py_version, to_folder, out
+    )
     logging.debug("downloaded wheel %s", result.name)
     return result
 
@@ -77,7 +98,9 @@ def _find_downloaded_wheel(distribution, version_spec, for_py_version, to_folder
             if line.startswith(marker):
                 return Wheel(Path(line[len(marker) :]).absolute())
     # if for some reason the output does not match fallback to the latest version with that spec
-    return find_compatible_in_house(distribution, version_spec, for_py_version, to_folder)
+    return find_compatible_in_house(
+        distribution, version_spec, for_py_version, to_folder
+    )
 
 
 def find_compatible_in_house(distribution, version_spec, for_py_version, in_folder):
@@ -91,7 +114,10 @@ def find_compatible_in_house(distribution, version_spec, for_py_version, in_fold
         else:
             raise ValueError(version_spec)
         version = Wheel.as_version_tuple(version_spec[from_pos:])
-        start = next((at for at, w in enumerate(wheels) if op(w.version_tuple, version)), len(wheels))
+        start = next(
+            (at for at, w in enumerate(wheels) if op(w.version_tuple, version)),
+            len(wheels),
+        )
 
     return None if start == end else wheels[start]
 

@@ -18,9 +18,10 @@
 
 import sys
 from os import chdir, getcwd
-from os.path import join as jp, dirname, exists, isfile, isdir
-from runpy import run_path, run_module
-from shutil import copytree, copy2
+from os.path import dirname, exists, isdir, isfile
+from os.path import join as jp
+from runpy import run_module, run_path
+from shutil import copy2, copytree
 
 import base_itest_support
 
@@ -33,7 +34,7 @@ class SmokeIntegrationTestSupport(base_itest_support.BaseIntegrationTestSupport)
     PROJECT_FILES = ["build.py", "src", "README.md", "LICENSE"]
 
     def setUp(self):
-        super(SmokeIntegrationTestSupport, self).setUp()
+        super().setUp()
         cur_dir = dirname(base_itest_support.__file__)
         prev_dir = None
 
@@ -112,4 +113,4 @@ class SmokeIntegrationTestSupport(base_itest_support.BaseIntegrationTestSupport)
         try:
             pass
         finally:
-            super(SmokeIntegrationTestSupport, self).tearDown()
+            super().tearDown()

@@ -1,20 +1,11 @@
-import railroad
-import pyparsing
-import typing
-from typing import (
-    List,
-    NamedTuple,
-    Generic,
-    TypeVar,
-    Dict,
-    Callable,
-    Set,
-    Iterable,
-)
-from jinja2 import Template
-from io import StringIO
 import inspect
+import typing
+from io import StringIO
+from typing import Callable, Dict, Generic, Iterable, List, NamedTuple, Set, TypeVar
 
+import pyparsing
+import railroad
+from jinja2 import Template
 
 jinja2_template_source = """\
 <!DOCTYPE html>
@@ -154,12 +145,11 @@ def resolve_partial(partial: "EditablePartial[T]") -> T:
         partial.args = resolve_partial(partial.args)
         partial.kwargs = resolve_partial(partial.kwargs)
         return partial()
-    elif isinstance(partial, list):
+    if isinstance(partial, list):
         return [resolve_partial(x) for x in partial]
-    elif isinstance(partial, dict):
+    if isinstance(partial, dict):
         return {key: resolve_partial(x) for key, x in partial.items()}
-    else:
-        return partial
+    return partial
 
 
 def to_railroad(
@@ -228,8 +218,7 @@ def _should_vertical(
     """
     if specification is None:
         return False
-    else:
-        return len(_visible_exprs(exprs)) >= specification
+    return len(_visible_exprs(exprs)) >= specification
 
 
 class ElementState:
@@ -508,7 +497,7 @@ def _to_diagram_element(
             ret = EditablePartial.from_call(railroad.NonTerminal, text=looked_up.name)
             return ret
 
-        elif el_id in lookup.diagrams:
+        if el_id in lookup.diagrams:
             # If we have seen the element at least twice before, and have already extracted it into a subdiagram, we
             # just put in a marker element that refers to the sub-diagram
             ret = EditablePartial.from_call(

@@ -1,10 +1,10 @@
-import os
-import subprocess
 import contextlib
 import functools
-import tempfile
-import shutil
 import operator
+import os
+import shutil
+import subprocess
+import tempfile
 
 
 @contextlib.contextmanager
@@ -26,23 +26,23 @@ def tarball_context(url, target_dir=None, runner=None, pushd=pushd):
     `pushd` is a context manager for changing the directory.
     """
     if target_dir is None:
-        target_dir = os.path.basename(url).replace('.tar.gz', '').replace('.tgz', '')
+        target_dir = os.path.basename(url).replace(".tar.gz", "").replace(".tgz", "")
     if runner is None:
         runner = functools.partial(subprocess.check_call, shell=True)
     # In the tar command, use --strip-components=1 to strip the first path and
     #  then
     #  use -C to cause the files to be extracted to {target_dir}. This ensures
     #  that we always know where the files were extracted.
-    runner('mkdir {target_dir}'.format(**vars()))
+    runner("mkdir {target_dir}".format(**vars()))
     try:
-        getter = 'wget {url} -O -'
-        extract = 'tar x{compression} --strip-components=1 -C {target_dir}'
-        cmd = ' | '.join((getter, extract))
+        getter = "wget {url} -O -"
+        extract = "tar x{compression} --strip-components=1 -C {target_dir}"
+        cmd = " | ".join((getter, extract))
         runner(cmd.format(compression=infer_compression(url), **vars()))
         with pushd(target_dir):
             yield target_dir
     finally:
-        runner('rm -Rf {target_dir}'.format(**vars()))
+        runner("rm -Rf {target_dir}".format(**vars()))
 
 
 def infer_compression(url):
@@ -51,9 +51,9 @@ def infer_compression(url):
     """
     # cheat and just assume it's the last two characters
     compression_indicator = url[-2:]
-    mapping = dict(gz='z', bz='j', xz='J')
+    mapping = dict(gz="z", bz="j", xz="J")
     # Assume 'z' (gzip) if no match
-    return mapping.get(compression_indicator, 'z')
+    return mapping.get(compression_indicator, "z")
 
 
 @contextlib.contextmanager
@@ -77,12 +77,12 @@ def repo_context(url, branch=None, quiet=True, dest_ctx=temp_dir):
     If dest_ctx is supplied, it should be a context manager
     to yield the target directory for the check out.
     """
-    exe = 'git' if 'git' in url else 'hg'
+    exe = "git" if "git" in url else "hg"
     with dest_ctx() as repo_dir:
-        cmd = [exe, 'clone', url, repo_dir]
+        cmd = [exe, "clone", url, repo_dir]
         if branch:
-            cmd.extend(['--branch', branch])
-        devnull = open(os.path.devnull, 'w')
+            cmd.extend(["--branch", branch])
+        devnull = open(os.path.devnull, "w")
         stdout = devnull if quiet else None
         subprocess.check_call(cmd, stdout=stdout)
         yield repo_dir

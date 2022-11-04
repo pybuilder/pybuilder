@@ -23,9 +23,9 @@ from itest_support import IntegrationTestSupport
 
 
 class Test(IntegrationTestSupport):
-
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import init, task
 
 name = "integration-test"
@@ -34,7 +34,8 @@ default_task = "any_task"
 @task
 def any_task (project):
     pass
-""")
+"""
+        )
 
         def _prepare(log_time_format=None) -> str:
             f = StringIO()
@@ -45,13 +46,15 @@ def any_task (project):
             return f.read()
 
         run_without_log_time_format = _prepare(None).splitlines()[0]
-        run_with_log_time_format = _prepare('%Y-%m-%d %H:%M:%S').splitlines()[0]
+        run_with_log_time_format = _prepare("%Y-%m-%d %H:%M:%S").splitlines()[0]
 
         self.assertIn(run_without_log_time_format, run_with_log_time_format)
         self.assertNotIn(run_with_log_time_format, run_without_log_time_format)
 
-        should_be_format = run_with_log_time_format.replace(run_without_log_time_format, '').strip()
-        self.assertRegex(should_be_format, r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}')
+        should_be_format = run_with_log_time_format.replace(
+            run_without_log_time_format, ""
+        ).strip()
+        self.assertRegex(should_be_format, r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}")
 
 
 if __name__ == "__main__":

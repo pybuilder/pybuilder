@@ -28,8 +28,20 @@ def get_value(key, value_name):
 def discover_pythons():
     for hive, hive_name, key, flags, default_arch in [
         (winreg.HKEY_CURRENT_USER, "HKEY_CURRENT_USER", r"Software\Python", 0, 64),
-        (winreg.HKEY_LOCAL_MACHINE, "HKEY_LOCAL_MACHINE", r"Software\Python", winreg.KEY_WOW64_64KEY, 64),
-        (winreg.HKEY_LOCAL_MACHINE, "HKEY_LOCAL_MACHINE", r"Software\Python", winreg.KEY_WOW64_32KEY, 32),
+        (
+            winreg.HKEY_LOCAL_MACHINE,
+            "HKEY_LOCAL_MACHINE",
+            r"Software\Python",
+            winreg.KEY_WOW64_64KEY,
+            64,
+        ),
+        (
+            winreg.HKEY_LOCAL_MACHINE,
+            "HKEY_LOCAL_MACHINE",
+            r"Software\Python",
+            winreg.KEY_WOW64_32KEY,
+            32,
+        ),
     ]:
         yield from process_set(hive, hive_name, key, flags, default_arch)
 
@@ -82,8 +94,7 @@ def load_exe(hive_name, company, company_key, tag):
                 if exe is not None and os.path.exists(exe):
                     args = get_value(ip_key, "ExecutableArguments")
                     return exe, args
-                else:
-                    msg(key_path, f"could not load exe with value {exe}")
+                msg(key_path, f"could not load exe with value {exe}")
     except OSError:
         msg(f"{key_path}/InstallPath", "missing")
     return None

@@ -19,7 +19,7 @@
 import os
 import sys
 
-from pybuilder.core import use_plugin, task
+from pybuilder.core import task, use_plugin
 from pybuilder.errors import PyBuilderException
 
 use_plugin("python.core")
@@ -39,10 +39,13 @@ def django_run_server(project, logger):
         raise PyBuilderException("Error when importing settings module: " + str(e))
 
     from django import VERSION as DJANGO_VERSION
+
     if DJANGO_VERSION < (1, 4, 0):
         from django.core.management import execute_manager
+
         execute_manager(sys.modules[settings_module_name], ["", "runserver"])
     else:
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", settings_module_name)
         from django.core.management import execute_from_command_line
+
         execute_from_command_line(["", "runserver"])

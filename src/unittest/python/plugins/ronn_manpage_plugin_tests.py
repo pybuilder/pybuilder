@@ -20,30 +20,31 @@ from logging import Logger
 from os.path import normcase as nc
 from unittest import TestCase
 
+from test_utils import Mock
+
 from pybuilder.core import Project
 from pybuilder.plugins.ronn_manpage_plugin import (
+    assert_gzip_is_executable,
+    assert_ronn_is_executable,
     build_generate_manpages_command,
     init_ronn_manpage_plugin,
-    assert_ronn_is_executable,
-    assert_gzip_is_executable
 )
-from test_utils import Mock
 
 
 class RonnManpagePluginTests(TestCase):
-
     def test_should_generate_command_abiding_to_configuration(self):
-        project = Project('egg')
+        project = Project("egg")
         project.set_property("dir_manpages", nc("docs/man"))
         project.set_property("manpage_source", "README.md")
         project.set_property("manpage_section", 1)
 
-        self.assertEqual(build_generate_manpages_command(project),
-                         'ronn -r --pipe README.md | gzip -9 > ' + nc('docs/man/egg.1.gz'))
+        self.assertEqual(
+            build_generate_manpages_command(project),
+            "ronn -r --pipe README.md | gzip -9 > " + nc("docs/man/egg.1.gz"),
+        )
 
 
 class RonnPluginInitializationTests(TestCase):
-
     def setUp(self):
         self.project = Project("basedir")
         self.logger = Mock(Logger)
@@ -57,7 +58,7 @@ class RonnPluginInitializationTests(TestCase):
         expected_properties = {
             "dir_manpages": "foo",
             "manpage_source": "bar",
-            "manpage_section": 1
+            "manpage_section": 1,
         }
 
         for property_name, property_value in expected_properties.items():
@@ -71,13 +72,15 @@ class RonnPluginInitializationTests(TestCase):
     def test_should_check_that_ronn_is_executable(self):
         assert_ronn_is_executable(self.project, self.logger, self.reactor)
         self.pyb_env.verify_can_execute.assert_called_with(
-            caller='plugin ronn_manpage_plugin',
-            command_and_arguments=['ronn', '--version'],
-            prerequisite='ronn')
+            caller="plugin ronn_manpage_plugin",
+            command_and_arguments=["ronn", "--version"],
+            prerequisite="ronn",
+        )
 
     def test_should_check_that_gzip_is_executable(self):
         assert_gzip_is_executable(self.project, self.logger, self.reactor)
         self.pyb_env.verify_can_execute.assert_called_with(
             caller="plugin ronn_manpage_plugin",
             command_and_arguments=["gzip", "--version"],
-            prerequisite="gzip")
+            prerequisite="gzip",
+        )

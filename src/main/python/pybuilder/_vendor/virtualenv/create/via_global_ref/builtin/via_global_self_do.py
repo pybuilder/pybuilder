@@ -1,10 +1,9 @@
 from abc import ABCMeta
 
-from .ref import ExePathRefToDest, RefMust, RefWhen
 from ....util.path import ensure_dir
-
 from ..api import ViaGlobalRefApi, ViaGlobalRefMeta
 from .builtin_way import VirtualenvBuiltin
+from .ref import ExePathRefToDest, RefMust, RefWhen
 
 
 class BuiltinViaGlobalRefMeta(ViaGlobalRefMeta):
@@ -13,10 +12,14 @@ class BuiltinViaGlobalRefMeta(ViaGlobalRefMeta):
         self.sources = []
 
 
-class ViaGlobalRefVirtualenvBuiltin(ViaGlobalRefApi, VirtualenvBuiltin, metaclass=ABCMeta):
+class ViaGlobalRefVirtualenvBuiltin(
+    ViaGlobalRefApi, VirtualenvBuiltin, metaclass=ABCMeta
+):
     def __init__(self, options, interpreter):
         super().__init__(options, interpreter)
-        self._sources = getattr(options.meta, "sources", None)  # if we're created as a describer this might be missing
+        self._sources = getattr(
+            options.meta, "sources", None
+        )  # if we're created as a describer this might be missing
 
     @classmethod
     def can_create(cls, interpreter):
@@ -58,7 +61,9 @@ class ViaGlobalRefVirtualenvBuiltin(ViaGlobalRefApi, VirtualenvBuiltin, metaclas
     @classmethod
     def sources(cls, interpreter):
         for host_exe, targets, must, when in cls._executables(interpreter):
-            yield ExePathRefToDest(host_exe, dest=cls.to_bin, targets=targets, must=must, when=when)
+            yield ExePathRefToDest(
+                host_exe, dest=cls.to_bin, targets=targets, must=must, when=when
+            )
 
     def to_bin(self, src):
         return self.bin_dir / src.name
@@ -70,7 +75,12 @@ class ViaGlobalRefVirtualenvBuiltin(ViaGlobalRefApi, VirtualenvBuiltin, metaclas
     def create(self):
         dirs = self.ensure_directories()
         for directory in list(dirs):
-            if any(i for i in dirs if i is not directory and directory.parts == i.parts[: len(directory.parts)]):
+            if any(
+                i
+                for i in dirs
+                if i is not directory
+                and directory.parts == i.parts[: len(directory.parts)]
+            ):
                 dirs.remove(directory)
         for directory in sorted(dirs):
             ensure_dir(directory)

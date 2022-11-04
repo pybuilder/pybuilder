@@ -19,25 +19,28 @@
 from unittest import TestCase
 from unittest.mock import call
 
-from pybuilder.core import Project, Logger
-from pybuilder.errors import BuildFailedException
-from pybuilder.plugins.python.pylint_plugin import (check_pylint_availability,
-                                                    init_pylint,
-                                                    execute_pylint,
-                                                    DEFAULT_PYLINT_OPTIONS)
 from test_utils import Mock, patch
 
+from pybuilder.core import Logger, Project
+from pybuilder.errors import BuildFailedException
+from pybuilder.plugins.python.pylint_plugin import (
+    DEFAULT_PYLINT_OPTIONS,
+    check_pylint_availability,
+    execute_pylint,
+    init_pylint,
+)
+
 PYLINT_ERROR_OUTPUT = [
-    '************* Module mode.file',
-    'src/main/python/module/file.py:34:0: C0301: Line too long (365/100) (line-too-long)',
+    "************* Module mode.file",
+    "src/main/python/module/file.py:34:0: C0301: Line too long (365/100) (line-too-long)",
     'src/main/python/module/file.py:34:0: R1705: Unnecessary "else" after "return" (no-else-return)',
-    'Your code has been rated at 9.79/10 (previous run: 9.79/10, +0.00)',
-    ''
+    "Your code has been rated at 9.79/10 (previous run: 9.79/10, +0.00)",
+    "",
 ]
 
 PYLINT_NORMAL_OUTPUT = [
-    'Your code has been rated at 9.79/10 (previous run: 9.79/10, +0.00)',
-    ''
+    "Your code has been rated at 9.79/10 (previous run: 9.79/10, +0.00)",
+    "",
 ]
 
 
@@ -58,9 +61,11 @@ class PylintPluginTests(TestCase):
 
         check_pylint_availability(self.project, mock_logger, self.reactor)
 
-        self.reactor.pybuilder_venv.verify_can_execute.assert_called_with(['pylint'], 'pylint', 'plugin python.pylint')
+        self.reactor.pybuilder_venv.verify_can_execute.assert_called_with(
+            ["pylint"], "pylint", "plugin python.pylint"
+        )
 
-    @patch('pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder')
+    @patch("pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder")
     def test_should_run_pylint_with_default_options(self, ecb):
         init_pylint(self.project)
 
@@ -71,10 +76,12 @@ class PylintPluginTests(TestCase):
 
         execute_pylint(self.project, Mock(Logger), self.reactor)
 
-        self.assertEqual(ecb().use_argument.call_args_list,
-                         [call(arg) for arg in DEFAULT_PYLINT_OPTIONS])
+        self.assertEqual(
+            ecb().use_argument.call_args_list,
+            [call(arg) for arg in DEFAULT_PYLINT_OPTIONS],
+        )
 
-    @patch('pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder')
+    @patch("pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder")
     def test_should_run_pylint_with_custom_options(self, ecb):
         init_pylint(self.project)
 
@@ -87,10 +94,12 @@ class PylintPluginTests(TestCase):
 
         execute_pylint(self.project, Mock(Logger), self.reactor)
 
-        self.assertEqual(ecb().use_argument.call_args_list,
-                         [call(arg) for arg in ["--test", "-f", "--x=y"]])
+        self.assertEqual(
+            ecb().use_argument.call_args_list,
+            [call(arg) for arg in ["--test", "-f", "--x=y"]],
+        )
 
-    @patch('pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder')
+    @patch("pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder")
     def test_should_break_build_when_warnings_and_set(self, ecb):
         init_pylint(self.project)
 
@@ -104,7 +113,7 @@ class PylintPluginTests(TestCase):
         with self.assertRaises(BuildFailedException):
             execute_pylint(self.project, Mock(Logger), self.reactor)
 
-    @patch('pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder')
+    @patch("pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder")
     def test_should_not_break_build_when_warnings_and_not_set(self, ecb):
         init_pylint(self.project)
 
@@ -117,7 +126,7 @@ class PylintPluginTests(TestCase):
 
         execute_pylint(self.project, Mock(Logger), self.reactor)
 
-    @patch('pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder')
+    @patch("pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder")
     def test_should_not_break_build_when_no_warnings_and_set(self, ecb):
         init_pylint(self.project)
 
@@ -130,7 +139,7 @@ class PylintPluginTests(TestCase):
 
         execute_pylint(self.project, Mock(Logger), self.reactor)
 
-    @patch('pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder')
+    @patch("pybuilder.plugins.python.pylint_plugin.ExternalCommandBuilder")
     def test_should_not_break_build_when_no_warnings_and_not_set(self, ecb):
         init_pylint(self.project)
 

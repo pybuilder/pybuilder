@@ -22,11 +22,12 @@
 """
 
 import os
-from pybuilder.utils import execute_command_and_capture_output
+
 from pybuilder.errors import PyBuilderException
+from pybuilder.utils import execute_command_and_capture_output
 
 
-class VCSRevision(object):
+class VCSRevision():
     """
     An object representing the VCS revision of the current working directory.
     """
@@ -43,7 +44,8 @@ class VCSRevision(object):
             return self.get_svn_revision_count()
 
         raise PyBuilderException(
-            "Cannot determine VCS revision: project is neither a git nor a svn repo.")
+            "Cannot determine VCS revision: project is neither a git nor a svn repo."
+        )
 
     @property
     def description(self):
@@ -54,52 +56,76 @@ class VCSRevision(object):
             return self.get_git_description()
 
         if self.is_a_svn_repo():
-            raise PyBuilderException(
-                "'description' is not implemented for svn repos")
+            raise PyBuilderException("'description' is not implemented for svn repos")
 
         raise PyBuilderException(
-            "Cannot determine VCS revision: project is neither a git nor a svn repo.")
+            "Cannot determine VCS revision: project is neither a git nor a svn repo."
+        )
 
     def get_git_hash(self, abbreviate=7):
         if self.is_a_git_repo():
             exit_code, stdout, stderr = execute_command_and_capture_output(
-                "git", "rev-parse", "--short={0}".format(abbreviate), "HEAD")
+                "git", "rev-parse", "--short={0}".format(abbreviate), "HEAD"
+            )
             if exit_code != 0:
-                raise PyBuilderException("Cannot determine git hash: git rev-parse HEAD failed:\n{0}".
-                                         format(stderr))
-            else:
-                return stdout.strip()
-        else:
-            raise PyBuilderException("Cannot determine git hash: project is not a git repo.")
+                raise PyBuilderException(
+                    "Cannot determine git hash: git rev-parse HEAD failed:\n{0}".format(
+                        stderr
+                    )
+                )
+            return stdout.strip()
+        raise PyBuilderException(
+            "Cannot determine git hash: project is not a git repo."
+        )
 
     def get_git_revision_count(self):
         # NOTE: git rev-list HEAD --count does not work on RHEL6, hence we count ourselves.
         exit_code, stdout, stderr = execute_command_and_capture_output(
-            "git", "rev-list", "HEAD")
+            "git", "rev-list", "HEAD"
+        )
         if exit_code != 0:
-            raise PyBuilderException("Cannot determine git revision: git rev-list HEAD failed:\n{0}".
-                                     format(stderr))
+            raise PyBuilderException(
+                "Cannot determine git revision: git rev-list HEAD failed:\n{0}".format(
+                    stderr
+                )
+            )
         return str(len(stdout.splitlines()))
 
     def get_git_description(self):
         if self.is_a_git_repo():
             exit_code, stdout, stderr = execute_command_and_capture_output(
-                "git", "describe", "--always", "--tags", "--dirty")
+                "git", "describe", "--always", "--tags", "--dirty"
+            )
             if exit_code != 0:
-                raise PyBuilderException("Cannot determine git description: git describe failed:\n{0}".
-                                         format(stderr))
-            else:
-                return stdout.strip()
-        else:
-            raise PyBuilderException("Cannot determine git description: project is not a git repo.")
+                raise PyBuilderException(
+                    "Cannot determine git description: git describe failed:\n{0}".format(
+                        stderr
+                    )
+                )
+            return stdout.strip()
+        raise PyBuilderException(
+            "Cannot determine git description: project is not a git repo."
+        )
 
     def get_svn_revision_count(self):
-        exit_code, stdout, stderr = execute_command_and_capture_output(
-            "svnversion")
-        if exit_code != 0 or "Unversioned directory" in stdout or "Uncommitted" in stdout:
-            raise PyBuilderException("Cannot determine svn revision: svnversion failed or unversioned directory:\n{0}".
-                                     format(stderr))
-        return stdout.strip().replace("M", "").replace("S", "").replace("P", "").split(":")[0]
+        exit_code, stdout, stderr = execute_command_and_capture_output("svnversion")
+        if (
+            exit_code != 0
+            or "Unversioned directory" in stdout
+            or "Uncommitted" in stdout
+        ):
+            raise PyBuilderException(
+                "Cannot determine svn revision: svnversion failed or unversioned directory:\n{0}".format(
+                    stderr
+                )
+            )
+        return (
+            stdout.strip()
+            .replace("M", "")
+            .replace("S", "")
+            .replace("P", "")
+            .split(":", maxsplit=1)[0]
+        )
 
     def is_a_git_repo(self):
         exit_code, _, __ = execute_command_and_capture_output("git", "status")
@@ -116,11 +142,12 @@ class VCSRevision(object):
 
 
 def count_travis():
-    """ Version number derived from commit count and travis build number. """
-    return '{0}.{1}'.format(VCSRevision().count,
-                            os.environ.get('TRAVIS_BUILD_NUMBER', 0))
+    """Version number derived from commit count and travis build number."""
+    return "{0}.{1}".format(
+        VCSRevision().count, os.environ.get("TRAVIS_BUILD_NUMBER", 0)
+    )
 
 
 def description():
-    """  Human readable revision description. """
+    """Human readable revision description."""
     return VCSRevision().description

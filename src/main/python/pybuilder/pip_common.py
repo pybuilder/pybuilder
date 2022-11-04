@@ -16,12 +16,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pkg_resources import packaging
-
-import pkg_resources.extern.packaging.specifiers
-import pkg_resources.extern.packaging.version
 import pkg_resources.extern.packaging.requirements
+import pkg_resources.extern.packaging.specifiers
 import pkg_resources.extern.packaging.utils
+import pkg_resources.extern.packaging.version
+from pkg_resources import packaging
 
 SpecifierSet = packaging.specifiers.SpecifierSet
 InvalidSpecifier = packaging.specifiers.InvalidSpecifier

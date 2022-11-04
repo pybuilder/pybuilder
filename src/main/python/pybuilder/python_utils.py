@@ -29,7 +29,7 @@ def is_windows(platform=sys.platform, win_platforms={"win32", "cygwin", "msys"})
 
 
 StringIO = StringIO
-IS_PYPY = '__pypy__' in sys.builtin_module_names
+IS_PYPY = "__pypy__" in sys.builtin_module_names
 IS_WIN = is_windows()
 
 
@@ -62,7 +62,8 @@ _mp_billiard_pyb_env = None  # This will be patched at runtime
 _old_billiard_spawn_passfds = None  # This will be patched at runtime
 _installed_tblib = False
 
-from multiprocessing import log_to_stderr as mp_log_to_stderr, get_context as _mp_get_context  # noqa: E402
+from multiprocessing import get_context as _mp_get_context
+from multiprocessing import log_to_stderr as mp_log_to_stderr  # noqa: E402
 from multiprocessing.reduction import ForkingPickler as mp_ForkingPickler  # noqa: E402
 
 
@@ -124,7 +125,13 @@ def spawn_process(target=None, args=(), kwargs={}, group=None, name=None):
     ctx = mp_get_context("spawn")
 
     q = ctx.SimpleQueue()
-    p = ctx.Process(group=group, target=_instrumented_target, name=name, args=[q, target] + list(args), kwargs=kwargs)
+    p = ctx.Process(
+        group=group,
+        target=_instrumented_target,
+        name=name,
+        args=[q, target] + list(args),
+        kwargs=kwargs,
+    )
     p.start()
     result = q.get()
     p.join()
@@ -132,14 +139,15 @@ def spawn_process(target=None, args=(), kwargs={}, group=None, name=None):
         if result[1]:
             raise_exception(result[1], result[2])
         return p.exitcode, result[0]
-    else:
-        msg = "Fatal error occurred in the forked process %s: %s" % (p, result.args[0])
-        if result.args[2]:
-            chained_message = "This error masked the send error '%s':\n%s" % (
-                result.args[2], "".join(traceback.format_tb(result.args[3])))
-            msg += "\n" + chained_message
-        ex = Exception(msg)
-        raise_exception(ex, result.args[1])
+    msg = "Fatal error occurred in the forked process %s: %s" % (p, result.args[0])
+    if result.args[2]:
+        chained_message = "This error masked the send error '%s':\n%s" % (
+            result.args[2],
+            "".join(traceback.format_tb(result.args[3])),
+        )
+        msg += "\n" + chained_message
+    ex = Exception(msg)
+    raise_exception(ex, result.args[1])
 
 
 def prepend_env_to_path(python_env, sys_path):
@@ -160,17 +168,20 @@ def add_env_to_path(python_env, sys_path):
             sys_path.append(path)
 
 
-from glob import glob, iglob, escape  # noqa: E402
-
+from glob import escape, glob, iglob  # noqa: E402
 from os import symlink  # noqa: E402
 
 symlink = symlink
 
-sys_executable_suffix = sys.executable[len(sys.exec_prefix) + 1:]
+sys_executable_suffix = sys.executable[len(sys.exec_prefix) + 1 :]
 
-python_specific_dir_name = "%s-%s" % (platform.python_implementation().lower(),
-                                      ".".join(str(f) for f in sys.version_info))
+python_specific_dir_name = "%s-%s" % (
+    platform.python_implementation().lower(),
+    ".".join(str(f) for f in sys.version_info),
+)
 
-_, _venv_python_exename = os.path.split(os.path.abspath(getattr(sys, "_base_executable", sys.executable)))
+_, _venv_python_exename = os.path.split(
+    os.path.abspath(getattr(sys, "_base_executable", sys.executable))
+)
 
 __all__ = ["glob", "iglob", "escape"]

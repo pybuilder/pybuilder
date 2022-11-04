@@ -2,14 +2,15 @@ import abc
 from pathlib import Path
 
 from ..ref import PathRefToDest, RefMust, RefWhen
-
 from ..via_global_self_do import ViaGlobalRefVirtualenvBuiltin
 
 
 class PyPy(ViaGlobalRefVirtualenvBuiltin, metaclass=abc.ABCMeta):
     @classmethod
     def can_describe(cls, interpreter):
-        return interpreter.implementation == "PyPy" and super().can_describe(interpreter)
+        return interpreter.implementation == "PyPy" and super().can_describe(
+            interpreter
+        )
 
     @classmethod
     def _executables(cls, interpreter):

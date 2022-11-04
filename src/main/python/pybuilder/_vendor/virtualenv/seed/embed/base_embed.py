@@ -12,7 +12,9 @@ class BaseEmbed(Seeder, metaclass=ABCMeta):
         super().__init__(options, enabled=options.no_seed is False)
 
         self.download = options.download
-        self.extra_search_dir = [i.resolve() for i in options.extra_search_dir if i.exists()]
+        self.extra_search_dir = [
+            i.resolve() for i in options.extra_search_dir if i.exists()
+        ]
 
         self.pip_version = options.pip
         self.setuptools_version = options.setuptools
@@ -96,7 +98,9 @@ class BaseEmbed(Seeder, metaclass=ABCMeta):
         result = self.__class__.__name__
         result += "("
         if self.extra_search_dir:
-            result += f"extra_search_dir={', '.join(str(i) for i in self.extra_search_dir)},"
+            result += (
+                f"extra_search_dir={', '.join(str(i) for i in self.extra_search_dir)},"
+            )
         result += f"download={self.download},"
         for distribution in self.distributions():
             if getattr(self, f"no_{distribution}"):

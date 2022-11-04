@@ -18,7 +18,10 @@
 
 
 import sys
-from os.path import relpath, join as jp, exists, normcase as nc
+from os.path import exists
+from os.path import join as jp
+from os.path import normcase as nc
+from os.path import relpath
 
 if sys.platform in {"win32", "cygwin", "msys"}:
     from fnmatch import fnmatch
@@ -34,8 +37,7 @@ def patched_abs_file(path):
 
 
 def patch_coverage():
-    from coverage import files
-    from coverage import control
+    from coverage import control, files
 
     if files.abs_file == patched_abs_file:
         return
@@ -79,8 +81,7 @@ def save_normalized_coverage(coverage, source_path, omit_patterns, paths=None):
             if exists(final_candidate):
                 return final_candidate
             return best_candidate
-        else:
-            return path
+        return path
 
     collector = coverage._collector
     collector.file_mapper = file_mapper

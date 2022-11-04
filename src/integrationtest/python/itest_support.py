@@ -17,6 +17,7 @@
 #   limitations under the License.
 
 from base_itest_support import BaseIntegrationTestSupport
+
 from pybuilder.cli import StdOutLogger
 from pybuilder.core import Logger
 from pybuilder.execution import ExecutionManager

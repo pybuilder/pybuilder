@@ -23,7 +23,8 @@ from itest_support import IntegrationTestSupport
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import init, task
 
 name = "integration-test"
@@ -38,7 +39,8 @@ def any_task (project):
     if not hasattr(project, "INITIALIZER_EXECUTED"):
         raise Exception("Initializer has not been executed")
 
-""")
+"""
+        )
 
         reactor = self.prepare_reactor()
         reactor.build(environments=["test_environment"])

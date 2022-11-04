@@ -31,7 +31,9 @@ class Android(PlatformDirsABC):
         """
         :return: config directory tied to the user, e.g. ``/data/user/<userid>/<packagename>/shared_prefs/<AppName>``
         """
-        return self._append_app_name_and_version(cast(str, _android_folder()), "shared_prefs")
+        return self._append_app_name_and_version(
+            cast(str, _android_folder()), "shared_prefs"
+        )
 
     @property
     def site_config_dir(self) -> str:
@@ -92,7 +94,7 @@ def _android_folder() -> str | None:
         pattern = re.compile(r"/data/(data|user/\d+)/(.+)/files")
         for path in sys.path:
             if pattern.match(path):
-                result = path.split("/files")[0]
+                result = path.split("/files", maxsplit=1)[0]
                 break
         else:
             result = None
@@ -108,7 +110,9 @@ def _android_documents_folder() -> str:
 
         Context = autoclass("android.content.Context")  # noqa: N806
         Environment = autoclass("android.os.Environment")  # noqa: N806
-        documents_dir: str = Context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS).getAbsolutePath()
+        documents_dir: str = Context.getExternalFilesDir(
+            Environment.DIRECTORY_DOCUMENTS
+        ).getAbsolutePath()
     except Exception:
         documents_dir = "/storage/emulated/0/Documents"
 

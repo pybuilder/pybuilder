@@ -5,7 +5,7 @@ import typing
 
 from . import __diag__
 from .core import *
-from .util import _bslash, _flatten, _escape_regex_range_chars
+from .util import _bslash, _escape_regex_range_chars, _flatten
 
 
 #
@@ -64,8 +64,7 @@ def delimited_list(
 
     if combine:
         return Combine(delimited_list_expr).set_name(dlName)
-    else:
-        return delimited_list_expr.set_name(dlName)
+    return delimited_list_expr.set_name(dlName)
 
 
 def counted_array(
@@ -280,7 +279,7 @@ def one_of(
                 if isequal(other, cur):
                     del symbols[i + j + 1]
                     break
-                elif masks(cur, other):
+                if masks(cur, other):
                     del symbols[i + j + 1]
                     symbols.insert(i, other)
                     break

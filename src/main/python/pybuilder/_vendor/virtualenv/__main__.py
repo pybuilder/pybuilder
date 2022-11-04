@@ -37,11 +37,15 @@ class LogSession:
         if self.session.seeder.enabled:
             lines.append(f"  seeder {str(self.session.seeder)}")
             path = self.session.creator.purelib.iterdir()
-            packages = sorted("==".join(i.stem.split("-")) for i in path if i.suffix == ".dist-info")
+            packages = sorted(
+                "==".join(i.stem.split("-")) for i in path if i.suffix == ".dist-info"
+            )
             lines.append(f"    added seed packages: {', '.join(packages)}")
 
         if self.session.activators:
-            lines.append(f"  activators {','.join(i.__class__.__name__ for i in self.session.activators)}")
+            lines.append(
+                f"  activators {','.join(i.__class__.__name__ for i in self.session.activators)}"
+            )
         return "\n".join(lines)
 
 
@@ -56,11 +60,10 @@ def run_with_catch(args=None, env=None):
         try:
             if getattr(options, "with_traceback", False):
                 raise
-            else:
-                if not (isinstance(exception, SystemExit) and exception.code == 0):
-                    logging.error("%s: %s", type(exception).__name__, exception)
-                code = exception.code if isinstance(exception, SystemExit) else 1
-                sys.exit(code)
+            if not (isinstance(exception, SystemExit) and exception.code == 0):
+                logging.error("%s: %s", type(exception).__name__, exception)
+            code = exception.code if isinstance(exception, SystemExit) else 1
+            sys.exit(code)
         finally:
             logging.shutdown()  # force flush of log messages before the trace is printed
 

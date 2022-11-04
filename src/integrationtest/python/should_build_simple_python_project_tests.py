@@ -23,34 +23,39 @@ from itest_support import IntegrationTestSupport
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import use_plugin
 
 use_plugin("python.core")
 
 name = "integration-test"
 default_task = "publish"
-""")
+"""
+        )
         self.create_directory("src/main/python/spam")
         self.write_file("src/main/python/spam/__init__.py", "")
-        self.write_file("src/main/python/spam/eggs.py", """
+        self.write_file(
+            "src/main/python/spam/eggs.py",
+            """
 def spam ():
     pass
-""")
+""",
+        )
 
         reactor = self.prepare_reactor()
         reactor.build()
 
-        self.assert_directory_exists(
-            "target/dist/integration-test-1.0.dev0")
-        self.assert_directory_exists(
-            "target/dist/integration-test-1.0.dev0/spam")
-        self.assert_file_empty(
-            "target/dist/integration-test-1.0.dev0/spam/__init__.py")
-        self.assert_file_content("target/dist/integration-test-1.0.dev0/spam/eggs.py", """
+        self.assert_directory_exists("target/dist/integration-test-1.0.dev0")
+        self.assert_directory_exists("target/dist/integration-test-1.0.dev0/spam")
+        self.assert_file_empty("target/dist/integration-test-1.0.dev0/spam/__init__.py")
+        self.assert_file_content(
+            "target/dist/integration-test-1.0.dev0/spam/eggs.py",
+            """
 def spam ():
     pass
-""")
+""",
+        )
 
 
 if __name__ == "__main__":

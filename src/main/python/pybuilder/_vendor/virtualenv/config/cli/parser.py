@@ -3,7 +3,6 @@ from argparse import SUPPRESS, ArgumentDefaultsHelpFormatter, ArgumentParser, Na
 from collections import OrderedDict
 
 from ..convert import get_type
-
 from ..env_var import get_env_var
 from ..ini import IniConfig
 
@@ -68,9 +67,15 @@ class VirtualEnvConfigParser(ArgumentParser):
                 self._fixed.add(action_id)
 
     def _fix_default(self, action):
-        if hasattr(action, "default") and hasattr(action, "dest") and action.default != SUPPRESS:
+        if (
+            hasattr(action, "default")
+            and hasattr(action, "dest")
+            and action.default != SUPPRESS
+        ):
             as_type = get_type(action)
-            names = OrderedDict((i.lstrip("-").replace("-", "_"), None) for i in action.option_strings)
+            names = OrderedDict(
+                (i.lstrip("-").replace("-", "_"), None) for i in action.option_strings
+            )
             outcome = None
             for name in names:
                 outcome = get_env_var(name, as_type, self.env)
@@ -89,7 +94,13 @@ class VirtualEnvConfigParser(ArgumentParser):
 
     def enable_help(self):
         self._fix_defaults()
-        self.add_argument("-h", "--help", action="help", default=SUPPRESS, help="show this help message and exit")
+        self.add_argument(
+            "-h",
+            "--help",
+            action="help",
+            default=SUPPRESS,
+            help="show this help message and exit",
+        )
 
     def parse_known_args(self, args=None, namespace=None):
         if namespace is None:

@@ -4,9 +4,8 @@ import os
 from pathlib import Path
 
 from ....describe import PosixSupports, WindowsSupports
-from ..ref import PathRefToDest
-
 from ..python2.python2 import Python2
+from ..ref import PathRefToDest
 from .common import PyPy
 
 
@@ -23,7 +22,9 @@ class PyPy2(PyPy, Python2, metaclass=abc.ABCMeta):
         # include folder needed on Python 2 as we don't have pyenv.cfg
         host_include_marker = cls.host_include_marker(interpreter)
         if host_include_marker.exists():
-            yield PathRefToDest(host_include_marker.parent, dest=lambda self, _: self.include)  # noqa: U101
+            yield PathRefToDest(
+                host_include_marker.parent, dest=lambda self, _: self.include
+            )  # noqa: U101
 
     @classmethod
     def needs_stdlib_py_module(cls):
@@ -61,7 +62,10 @@ class PyPy2(PyPy, Python2, metaclass=abc.ABCMeta):
         if host_include_marker.exists():
             dirs.add(self.include.parent)
         else:
-            logging.debug("no include folders as can't find include marker %s", host_include_marker)
+            logging.debug(
+                "no include folders as can't find include marker %s",
+                host_include_marker,
+            )
         return dirs
 
     @property
@@ -114,7 +118,10 @@ class Pypy2Windows(PyPy2, WindowsSupports):
     @classmethod
     def sources(cls, interpreter):
         yield from super().sources(interpreter)
-        yield PathRefToDest(Path(interpreter.system_prefix) / "libs", dest=lambda self, s: self.dest / s.name)
+        yield PathRefToDest(
+            Path(interpreter.system_prefix) / "libs",
+            dest=lambda self, s: self.dest / s.name,
+        )
 
 
 __all__ = [

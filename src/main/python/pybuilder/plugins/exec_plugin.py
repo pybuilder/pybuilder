@@ -27,68 +27,72 @@ use_plugin("core")
 
 @task
 def run_unit_tests(project, logger):
-    run_command('run_unit_tests', project, logger)
+    run_command("run_unit_tests", project, logger)
 
 
 @task
 def run_integration_tests(project, logger):
-    run_command('run_integration_tests', project, logger)
+    run_command("run_integration_tests", project, logger)
 
 
 @task
 def analyze(project, logger):
-    run_command('analyze', project, logger)
+    run_command("analyze", project, logger)
 
 
 @task
 def package(project, logger):
-    run_command('package', project, logger)
+    run_command("package", project, logger)
 
 
 @task
 def publish(project, logger):
-    run_command('publish', project, logger)
+    run_command("publish", project, logger)
 
 
-def _write_command_report(project, stdout, stderr, command_line, phase, process_return_code):
-    project.write_report('exec_%s' % phase, stdout)
-    project.write_report('exec_%s.err' % phase, stderr)
+def _write_command_report(
+    project, stdout, stderr, command_line, phase, process_return_code
+):
+    project.write_report("exec_%s" % phase, stdout)
+    project.write_report("exec_%s.err" % phase, stderr)
 
 
 def _log_quoted_output(logger, output_type, output, phase):
-    separator = '-' * 5
-    logger.info('{0} verbatim {1} output of {2} {0}'.format(separator, output_type, phase))
-    for line in output.split('\n'):
+    separator = "-" * 5
+    logger.info(
+        "{0} verbatim {1} output of {2} {0}".format(separator, output_type, phase)
+    )
+    for line in output.split("\n"):
         logger.info(line)
-    logger.info('{0} end of verbatim {1} output {0}'.format(separator, output_type))
+    logger.info("{0} end of verbatim {1} output {0}".format(separator, output_type))
 
 
 def run_command(phase, project, logger):
-    command_line = project.get_property('%s_command' % phase)
+    command_line = project.get_property("%s_command" % phase)
 
     if not command_line:
         return
 
     process_handle = Popen(command_line, stdout=PIPE, stderr=PIPE, shell=True)
     stdout, stderr = process_handle.communicate()
-    stdout, stderr = stdout.decode(sys.stdout.encoding or 'utf-8'), stderr.decode(sys.stderr.encoding or 'utf-8')
+    stdout, stderr = stdout.decode(sys.stdout.encoding or "utf-8"), stderr.decode(
+        sys.stderr.encoding or "utf-8"
+    )
     process_return_code = process_handle.returncode
 
-    _write_command_report(project,
-                          stdout,
-                          stderr,
-                          command_line,
-                          phase,
-                          process_return_code)
+    _write_command_report(
+        project, stdout, stderr, command_line, phase, process_return_code
+    )
 
-    if project.get_property('%s_propagate_stdout' % phase) and stdout:
-        _log_quoted_output(logger, '', stdout, phase)
+    if project.get_property("%s_propagate_stdout" % phase) and stdout:
+        _log_quoted_output(logger, "", stdout, phase)
 
-    if project.get_property('%s_propagate_stderr' % phase) and stderr:
-        _log_quoted_output(logger, 'error', stderr, phase)
+    if project.get_property("%s_propagate_stderr" % phase) and stderr:
+        _log_quoted_output(logger, "error", stderr, phase)
 
     if process_return_code != 0:
         raise BuildFailedException(
-            'exec plugin command {0} for {1} exited with nonzero code {2}'.format(command_line,
-                                                                                  phase,
-                                                                                  process_return_code))
+            "exec plugin command {0} for {1} exited with nonzero code {2}".format(
+                command_line, phase, process_return_code
+            )
+        )

@@ -19,13 +19,15 @@
 from os.path import join as jp
 from unittest import TestCase
 
-from pybuilder.core import Project, Logger
-from pybuilder.plugins.python.coverage_plugin import (init_coverage_properties,
-                                                      _build_module_report,
-                                                      _build_coverage_report,
-                                                      _optimize_omit_module_files,
-                                                      )
-from test_utils import patch, MagicMock, Mock
+from test_utils import MagicMock, Mock, patch
+
+from pybuilder.core import Logger, Project
+from pybuilder.plugins.python.coverage_plugin import (
+    _build_coverage_report,
+    _build_module_report,
+    _optimize_omit_module_files,
+    init_coverage_properties,
+)
 
 import_patch = "builtins.__import__"
 
@@ -43,7 +45,7 @@ class CoveragePluginTests(TestCase):
             "coverage_break_build": False,
             "coverage_reload_modules": False,
             "coverage_exceptions": ["foo"],
-            "coverage_fork": True
+            "coverage_fork": True,
         }
 
         for property_name, property_value in expected_properties.items():
@@ -53,10 +55,16 @@ class CoveragePluginTests(TestCase):
 
         for property_name, property_value in expected_properties.items():
             self.assertEqual(self.project.get_property("coverage_threshold_warn"), 120)
-            self.assertEqual(self.project.get_property("coverage_branch_threshold_warn"), 120)
-            self.assertEqual(self.project.get_property("coverage_branch_partial_threshold_warn"), 120)
+            self.assertEqual(
+                self.project.get_property("coverage_branch_threshold_warn"), 120
+            )
+            self.assertEqual(
+                self.project.get_property("coverage_branch_partial_threshold_warn"), 120
+            )
             self.assertEqual(self.project.get_property("coverage_break_build"), False)
-            self.assertEqual(self.project.get_property("coverage_reload_modules"), False)
+            self.assertEqual(
+                self.project.get_property("coverage_reload_modules"), False
+            )
             self.assertEqual(self.project.get_property("coverage_exceptions"), ["foo"])
             self.assertEqual(self.project.get_property("coverage_fork"), True)
 
@@ -121,9 +129,20 @@ class CoveragePluginTests(TestCase):
         module_names = []
         module_files = []
         project.get_property.side_effect = [70, 70, 70, [], False, False, False]
-        self.assertTrue(_build_coverage_report(project, MagicMock(Logger), execution_description, execution_name,
-                                               config_prefix, coverage, source_path, module_names,
-                                               module_files) is None)
+        self.assertTrue(
+            _build_coverage_report(
+                project,
+                MagicMock(Logger),
+                execution_description,
+                execution_name,
+                config_prefix,
+                coverage,
+                source_path,
+                module_names,
+                module_files,
+            )
+            is None
+        )
 
     @patch("pybuilder.plugins.python.coverage_plugin.render_report")
     @patch("coverage.coverage")
@@ -163,28 +182,41 @@ class CoveragePluginTests(TestCase):
         n.n_missing_branches = 3
 
         coverage._analyze.side_effect = [module_a_coverage, module_b_coverage]
-        self.assertTrue(_build_coverage_report(project, MagicMock(Logger), execution_description, execution_name,
-                                               config_prefix, coverage, source_path, module_names,
-                                               module_files) is None)
+        self.assertTrue(
+            _build_coverage_report(
+                project,
+                MagicMock(Logger),
+                execution_description,
+                execution_name,
+                config_prefix,
+                coverage,
+                source_path,
+                module_names,
+                module_files,
+            )
+            is None
+        )
         report = render_report.call_args[0][0]
         self.assertEqual(report["overall_coverage"], 50)
         self.assertEqual(report["overall_branch_coverage"], 50)
         self.assertEqual(report["overall_branch_partial_coverage"], 50)
 
     def test__optimize_omit_module_files(self):
-        module_files = ["/a/b/c/d/x.py",
-                        "/a/b/c/d/y.py",
-                        "/a/x/z.py",
-                        "/a/b/o.py"
-                        ]
+        module_files = ["/a/b/c/d/x.py", "/a/b/c/d/y.py", "/a/x/z.py", "/a/b/o.py"]
 
-        self.assertEqual(_optimize_omit_module_files(module_files, ["/a/b/c/d/x.py",
-                                                                    "/a/b/c/d/y.py"]),
-                         [jp("/a/b/c", "*")])
+        self.assertEqual(
+            _optimize_omit_module_files(
+                module_files, ["/a/b/c/d/x.py", "/a/b/c/d/y.py"]
+            ),
+            [jp("/a/b/c", "*")],
+        )
 
-        self.assertEqual(_optimize_omit_module_files(module_files, ["/a/z.py",
-                                                                    "/a/b/o.py"]),
-                         ["/a/b/o.py", "/a/z.py"])
+        self.assertEqual(
+            _optimize_omit_module_files(module_files, ["/a/z.py", "/a/b/o.py"]),
+            ["/a/b/o.py", "/a/z.py"],
+        )
 
-        self.assertEqual(_optimize_omit_module_files(module_files, ["/a/b/c/d/x.py"]),
-                         ["/a/b/c/d/x.py"])
+        self.assertEqual(
+            _optimize_omit_module_files(module_files, ["/a/b/c/d/x.py"]),
+            ["/a/b/c/d/x.py"],
+        )

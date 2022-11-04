@@ -20,19 +20,22 @@ import sys
 from os.path import relpath
 from unittest import TestCase
 
-from pybuilder.core import Project, Author, Logger
-from pybuilder.plugins.python.sphinx_plugin import (assert_sphinx_is_available,
-                                                    assert_sphinx_quickstart_is_available,
-                                                    get_sphinx_build_command,
-                                                    get_sphinx_quickstart_command,
-                                                    initialize_sphinx_plugin,
-                                                    run_sphinx_build,
-                                                    get_sphinx_apidoc_command,
-                                                    sphinx_pyb_quickstart_generate,
-                                                    sphinx_generate,
-                                                    generate_sphinx_apidocs)
-from pybuilder.utils import np, jp
-from test_utils import Mock, patch, call, ANY
+from test_utils import ANY, Mock, call, patch
+
+from pybuilder.core import Author, Logger, Project
+from pybuilder.plugins.python.sphinx_plugin import (
+    assert_sphinx_is_available,
+    assert_sphinx_quickstart_is_available,
+    generate_sphinx_apidocs,
+    get_sphinx_apidoc_command,
+    get_sphinx_build_command,
+    get_sphinx_quickstart_command,
+    initialize_sphinx_plugin,
+    run_sphinx_build,
+    sphinx_generate,
+    sphinx_pyb_quickstart_generate,
+)
+from pybuilder.utils import jp, np
 
 
 class CheckSphinxAvailableTests(TestCase):
@@ -48,8 +51,16 @@ class CheckSphinxAvailableTests(TestCase):
 
         pyb_env.verify_can_execute.assert_has_calls(
             [
-                call(["sphinx-build", "--version"], "sphinx-build", "plugin python.sphinx"),
-                call(["sphinx-apidoc", "--version"], "sphinx-apidoc", "plugin python.sphinx")
+                call(
+                    ["sphinx-build", "--version"],
+                    "sphinx-build",
+                    "plugin python.sphinx",
+                ),
+                call(
+                    ["sphinx-apidoc", "--version"],
+                    "sphinx-apidoc",
+                    "plugin python.sphinx",
+                ),
             ]
         )
 
@@ -64,7 +75,10 @@ class CheckSphinxAvailableTests(TestCase):
         assert_sphinx_quickstart_is_available(mock_project, mock_logger, reactor)
 
         pyb_env.verify_can_execute.assert_called_with(
-            ["sphinx-quickstart", "--version"], "sphinx-quickstart", "plugin python.sphinx")
+            ["sphinx-quickstart", "--version"],
+            "sphinx-quickstart",
+            "plugin python.sphinx",
+        )
 
 
 class SphinxPluginInitializationTests(TestCase):
@@ -80,7 +94,7 @@ class SphinxPluginInitializationTests(TestCase):
             "sphinx_doc_author": "author",
             "sphinx_doc_builder": "doc_builder",
             "sphinx_project_name": "project_name",
-            "sphinx_project_version": "project_version"
+            "sphinx_project_version": "project_version",
         }
 
         for property_name, property_value in expected_properties.items():
@@ -89,34 +103,29 @@ class SphinxPluginInitializationTests(TestCase):
             initialize_sphinx_plugin(self.project)
 
         for property_name, property_value in expected_properties.items():
-            self.assertEqual(
-
-                self.project.get_property(property_name),
-                property_value)
+            self.assertEqual(self.project.get_property(property_name), property_value)
 
     def test_should_set_default_values_when_initializing_plugin(self):
         self.project.authors = [
             Author("John Doe", "John.doe@example.com"),
-            Author("Jane Doe", "Jane.doe@example.com")]
+            Author("Jane Doe", "Jane.doe@example.com"),
+        ]
         initialize_sphinx_plugin(self.project)
 
         self.project.set_property("sphinx_project_name", "foo")
         self.project.set_property("sphinx_project_version", "1.0")
 
+        self.assertEqual(self.project.get_property("sphinx_source_dir"), "docs")
         self.assertEqual(
-            self.project.get_property("sphinx_source_dir"), "docs")
+            self.project.get_property("sphinx_output_dir"), np("docs/_build/")
+        )
+        self.assertEqual(self.project.get_property("sphinx_config_path"), "docs")
         self.assertEqual(
-            self.project.get_property("sphinx_output_dir"), np("docs/_build/"))
-        self.assertEqual(
-            self.project.get_property("sphinx_config_path"), "docs")
-        self.assertEqual(
-            self.project.get_property("sphinx_doc_author"), "John Doe, Jane Doe")
-        self.assertEqual(
-            self.project.get_property("sphinx_doc_builder"), "html")
-        self.assertEqual(
-            self.project.get_property("sphinx_project_name"), "foo")
-        self.assertEqual(
-            self.project.get_property("sphinx_project_version"), "1.0")
+            self.project.get_property("sphinx_doc_author"), "John Doe, Jane Doe"
+        )
+        self.assertEqual(self.project.get_property("sphinx_doc_builder"), "html")
+        self.assertEqual(self.project.get_property("sphinx_project_name"), "foo")
+        self.assertEqual(self.project.get_property("sphinx_project_version"), "1.0")
 
 
 class SphinxBuildCommandTests(TestCase):
@@ -129,7 +138,7 @@ class SphinxBuildCommandTests(TestCase):
         self.reactor.pybuilder_venv = pyb_env
 
         pyb_env.execute_command.return_value = 0
-        pyb_env.version = (2, 7, 12, 'final', 0)
+        pyb_env.version = (2, 7, 12, "final", 0)
         pyb_env.executable = ["/a/b"]
         pyb_env.exec_dir = "/a"
 
@@ -141,10 +150,16 @@ class SphinxBuildCommandTests(TestCase):
 
         sphinx_build_command = get_sphinx_build_command(self.project, Mock(), "JSONx")
 
-        self.assertEqual(sphinx_build_command,
-                         [ANY, "-b", "JSONx",
-                          np(jp(self.project.basedir, "docs/")),
-                          np(jp(self.project.basedir, "docs/_build/"))])
+        self.assertEqual(
+            sphinx_build_command,
+            [
+                ANY,
+                "-b",
+                "JSONx",
+                np(jp(self.project.basedir, "docs/")),
+                np(jp(self.project.basedir, "docs/_build/")),
+            ],
+        )
 
     def test_should_generate_sphinx_build_command_verbose(self):
         self.project.set_property("sphinx_config_path", "docs/")
@@ -155,10 +170,17 @@ class SphinxBuildCommandTests(TestCase):
 
         sphinx_build_command = get_sphinx_build_command(self.project, Mock(), "JSONx")
 
-        self.assertEqual(sphinx_build_command,
-                         [ANY, "-b", "JSONx", "-v",
-                          np(jp(self.project.basedir, "docs/")),
-                          np(jp(self.project.basedir, "docs/_build/"))])
+        self.assertEqual(
+            sphinx_build_command,
+            [
+                ANY,
+                "-b",
+                "JSONx",
+                "-v",
+                np(jp(self.project.basedir, "docs/")),
+                np(jp(self.project.basedir, "docs/_build/")),
+            ],
+        )
 
     def test_should_generate_sphinx_build_command_debug(self):
         self.project.set_property("sphinx_config_path", "docs/")
@@ -172,10 +194,17 @@ class SphinxBuildCommandTests(TestCase):
 
         sphinx_build_command = get_sphinx_build_command(self.project, logger, "JSONx")
 
-        self.assertEqual(sphinx_build_command,
-                         [ANY, "-b", "JSONx", "-vvvv",
-                          np(jp(self.project.basedir, "docs/")),
-                          np(jp(self.project.basedir, "docs/_build/"))])
+        self.assertEqual(
+            sphinx_build_command,
+            [
+                ANY,
+                "-b",
+                "JSONx",
+                "-vvvv",
+                np(jp(self.project.basedir, "docs/")),
+                np(jp(self.project.basedir, "docs/_build/")),
+            ],
+        )
 
     def test_should_generate_sphinx_build_command_forced_builder_dir(self):
         self.project.set_property("sphinx_config_path", "docs/")
@@ -186,10 +215,16 @@ class SphinxBuildCommandTests(TestCase):
 
         sphinx_build_command = get_sphinx_build_command(self.project, Mock(), "JSONx")
 
-        self.assertEqual(sphinx_build_command,
-                         [ANY, "-b", "JSONx",
-                          np(jp(self.project.basedir, "docs/")),
-                          np(jp(self.project.basedir, "docs/_build/JSONx"))])
+        self.assertEqual(
+            sphinx_build_command,
+            [
+                ANY,
+                "-b",
+                "JSONx",
+                np(jp(self.project.basedir, "docs/")),
+                np(jp(self.project.basedir, "docs/_build/JSONx")),
+            ],
+        )
 
     def test_should_generate_sphinx_build_command_builder_dir(self):
         self.project.set_property("sphinx_config_path", "docs/")
@@ -199,11 +234,16 @@ class SphinxBuildCommandTests(TestCase):
 
         sphinx_build_command = get_sphinx_build_command(self.project, Mock(), "JSONx")
 
-        self.assertEqual(sphinx_build_command,
-                         [ANY, "-b", "JSONx",
-                          np(jp(self.project.basedir, "docs/")),
-                          np(jp(self.project.basedir, "docs/_build/JSONx"))
-                          ])
+        self.assertEqual(
+            sphinx_build_command,
+            [
+                ANY,
+                "-b",
+                "JSONx",
+                np(jp(self.project.basedir, "docs/")),
+                np(jp(self.project.basedir, "docs/_build/JSONx")),
+            ],
+        )
 
     def test_should_generate_sphinx_quickstart_command_with_project_properties(self):
         self.project.set_property("sphinx_doc_author", "bar")
@@ -213,10 +253,20 @@ class SphinxBuildCommandTests(TestCase):
 
         sphinx_quickstart_command = get_sphinx_quickstart_command(self.project)
 
-        self.assertEqual(sphinx_quickstart_command,
-                         [ANY, "-q", "-p", "foo", "-a", "bar", "-v", "3",
-                          np(jp(self.project.basedir, "docs/"))
-                          ])
+        self.assertEqual(
+            sphinx_quickstart_command,
+            [
+                ANY,
+                "-q",
+                "-p",
+                "foo",
+                "-a",
+                "bar",
+                "-v",
+                "3",
+                np(jp(self.project.basedir, "docs/")),
+            ],
+        )
 
     def test_should_execute_command_regardless_of_verbose(self):
         self.project.set_property("verbose", True)
@@ -238,15 +288,17 @@ class SphinxBuildCommandTests(TestCase):
             self.project.set_property("dir_source_main_python", "dir_source")
             self.project.set_property("sphinx_project_name", "project_name")
 
-            self.assertEqual(get_sphinx_apidoc_command(self.project, self.reactor),
-                             [ANY,
-                              "-H",
-                              "project_name",
-                              "-o",
-                              np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc")),
-                              np(jp(self.project.basedir, "dir_source"))
-                              ]
-                             )
+            self.assertEqual(
+                get_sphinx_apidoc_command(self.project, self.reactor),
+                [
+                    ANY,
+                    "-H",
+                    "project_name",
+                    "-o",
+                    np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc")),
+                    np(jp(self.project.basedir, "dir_source")),
+                ],
+            )
         finally:
             del sys.modules["sphinx"]
 
@@ -262,25 +314,30 @@ class SphinxBuildCommandTests(TestCase):
             self.project.set_property("dir_source_main_python", "dir_source")
             self.project.set_property("sphinx_project_name", "project_name")
 
-            self.assertEqual(get_sphinx_apidoc_command(self.project, self.reactor),
-                             [ANY,
-                              "-H",
-                              "project_name",
-                              "-o",
-                              np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc")),
-                              np(jp(self.project.basedir, "dir_source"))
-                              ]
-                             )
-            self.reactor.pybuilder_venv.version = (3, 5, 6, 'final', 0)
-            self.assertEqual(get_sphinx_apidoc_command(self.project, self.reactor),
-                             [ANY,
-                              "-H",
-                              "project_name",
-                              "--implicit-namespaces",
-                              "-o",
-                              np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc")),
-                              np(jp(self.project.basedir, "dir_source"))
-                              ])
+            self.assertEqual(
+                get_sphinx_apidoc_command(self.project, self.reactor),
+                [
+                    ANY,
+                    "-H",
+                    "project_name",
+                    "-o",
+                    np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc")),
+                    np(jp(self.project.basedir, "dir_source")),
+                ],
+            )
+            self.reactor.pybuilder_venv.version = (3, 5, 6, "final", 0)
+            self.assertEqual(
+                get_sphinx_apidoc_command(self.project, self.reactor),
+                [
+                    ANY,
+                    "-H",
+                    "project_name",
+                    "--implicit-namespaces",
+                    "-o",
+                    np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc")),
+                    np(jp(self.project.basedir, "dir_source")),
+                ],
+            )
         finally:
             del sys.modules["sphinx"]
 
@@ -289,13 +346,7 @@ class SphinxBuildCommandTests(TestCase):
     @patch("pybuilder.plugins.python.sphinx_plugin.exists")
     @patch("pybuilder.plugins.python.sphinx_plugin.mkdir")
     @patch("pybuilder.plugins.python.sphinx_plugin.symlink")
-    def test_sphinx_pyb_quickstart_generate(self,
-                                            symlink,
-                                            mkdir,
-                                            exists,
-                                            rmtree,
-                                            open
-                                            ):
+    def test_sphinx_pyb_quickstart_generate(self, symlink, mkdir, exists, rmtree, open):
         exists.return_value = False
 
         self.project.set_property("sphinx_source_dir", "sphinx_source_dir")
@@ -306,7 +357,8 @@ class SphinxBuildCommandTests(TestCase):
 
         sphinx_pyb_quickstart_generate(self.project, Mock(), self.reactor)
 
-        open().__enter__().write.assert_called_with("""\
+        open().__enter__().write.assert_called_with(
+            """\
 # Automatically generated by PyB
 import sys
 from os.path import normcase as nc, normpath as np, join as jp, dirname, exists
@@ -323,22 +375,26 @@ if not exists(sphinx_pyb_module_file):
 from sphinx_pyb_conf import *
 
 # Overwrite PyB-settings here statically if that's the thing that you want
-""" % relpath(np(jp(self.project.basedir, "../dir_target/sphinx_pyb")), self.project.basedir))
-        symlink.assert_called_with(relpath(np(jp(self.project.basedir, "../dir_target/sphinx_pyb/apidoc")),
-                                           self.project.basedir),
-                                   np(jp(self.project.basedir, "sphinx_source_dir/apidoc")),
-                                   target_is_directory=True)
+"""
+            % relpath(
+                np(jp(self.project.basedir, "../dir_target/sphinx_pyb")),
+                self.project.basedir,
+            )
+        )
+        symlink.assert_called_with(
+            relpath(
+                np(jp(self.project.basedir, "../dir_target/sphinx_pyb/apidoc")),
+                self.project.basedir,
+            ),
+            np(jp(self.project.basedir, "sphinx_source_dir/apidoc")),
+            target_is_directory=True,
+        )
 
     @patch("pybuilder.plugins.python.sphinx_plugin.open", create=True)
     @patch("pybuilder.plugins.python.sphinx_plugin.rmtree")
     @patch("pybuilder.plugins.python.sphinx_plugin.exists")
     @patch("pybuilder.plugins.python.sphinx_plugin.mkdir")
-    def test_sphinx_generate(self,
-                             mkdir,
-                             exists,
-                             rmtree,
-                             open
-                             ):
+    def test_sphinx_generate(self, mkdir, exists, rmtree, open):
         exists.return_value = True
 
         sphinx_mock = Mock()
@@ -361,37 +417,77 @@ from sphinx_pyb_conf import *
         finally:
             del sys.modules["sphinx"]
 
-        exists.assert_called_with(np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc")))
-        rmtree.assert_called_with(np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc")))
-        mkdir.assert_called_with(np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc")))
+        exists.assert_called_with(
+            np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc"))
+        )
+        rmtree.assert_called_with(
+            np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc"))
+        )
+        mkdir.assert_called_with(
+            np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc"))
+        )
 
-        open().__enter__().write.assert_has_calls([call("a = 1\n"), call("b = 'foo'\n"), call(
-            "\nimport sys\nsys.path.insert(0, %r)\n" % np(jp(self.project.basedir, "dir_source")))], any_order=True)
-        self.pyb_env.execute_command.assert_has_calls([
-            call(self.reactor.pybuilder_venv.executable + ["-c", ANY,
-                                                           "-H", "project_name", "-o",
-                                                           np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc")),
-                                                           np(jp(self.project.basedir, "dir_source"))],
-                 np(jp(self.project.basedir, "dir_target/reports/sphinx-apidoc")), shell=False),
-            call(self.reactor.pybuilder_venv.executable + ["-c", ANY, "-b", "JSONx",
-                                                           np(jp(self.project.basedir, "sphinx_config_path")),
-                                                           np(jp(self.project.basedir, "sphinx_output_dir/JSONx"))],
-                 np(jp(self.project.basedir, "dir_target/reports/sphinx_JSONx")), shell=False),
-            call(self.reactor.pybuilder_venv.executable + ["-c", ANY, "-b", "pdf",
-                                                           np(jp(self.project.basedir, "sphinx_config_path")),
-                                                           np(jp(self.project.basedir, "sphinx_output_dir/pdf"))],
-                 np(jp(self.project.basedir, "dir_target/reports/sphinx_pdf")), shell=False)])
+        open().__enter__().write.assert_has_calls(
+            [
+                call("a = 1\n"),
+                call("b = 'foo'\n"),
+                call(
+                    "\nimport sys\nsys.path.insert(0, %r)\n"
+                    % np(jp(self.project.basedir, "dir_source"))
+                ),
+            ],
+            any_order=True,
+        )
+        self.pyb_env.execute_command.assert_has_calls(
+            [
+                call(
+                    self.reactor.pybuilder_venv.executable
+                    + [
+                        "-c",
+                        ANY,
+                        "-H",
+                        "project_name",
+                        "-o",
+                        np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc")),
+                        np(jp(self.project.basedir, "dir_source")),
+                    ],
+                    np(jp(self.project.basedir, "dir_target/reports/sphinx-apidoc")),
+                    shell=False,
+                ),
+                call(
+                    self.reactor.pybuilder_venv.executable
+                    + [
+                        "-c",
+                        ANY,
+                        "-b",
+                        "JSONx",
+                        np(jp(self.project.basedir, "sphinx_config_path")),
+                        np(jp(self.project.basedir, "sphinx_output_dir/JSONx")),
+                    ],
+                    np(jp(self.project.basedir, "dir_target/reports/sphinx_JSONx")),
+                    shell=False,
+                ),
+                call(
+                    self.reactor.pybuilder_venv.executable
+                    + [
+                        "-c",
+                        ANY,
+                        "-b",
+                        "pdf",
+                        np(jp(self.project.basedir, "sphinx_config_path")),
+                        np(jp(self.project.basedir, "sphinx_output_dir/pdf")),
+                    ],
+                    np(jp(self.project.basedir, "dir_target/reports/sphinx_pdf")),
+                    shell=False,
+                ),
+            ]
+        )
 
     @patch("pybuilder.plugins.python.sphinx_plugin.open", create=True)
     @patch("pybuilder.plugins.python.sphinx_plugin.rmtree")
     @patch("pybuilder.plugins.python.sphinx_plugin.exists")
     @patch("pybuilder.plugins.python.sphinx_plugin.mkdir")
-    def test_apidoc_does_not_run_when_off(self,
-                                          mkdir,
-                                          exists,
-                                          rmtree,
-                                          open
-                                          ):
+    def test_apidoc_does_not_run_when_off(self, mkdir, exists, rmtree, open):
         self.project.set_property("sphinx_run_apidoc", False)
 
         generate_sphinx_apidocs(self.project, Mock(), self.reactor)

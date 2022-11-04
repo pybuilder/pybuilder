@@ -12,8 +12,13 @@ class PythonActivator(ViaTemplateActivator):
 
     def replacements(self, creator, dest_folder):
         replacements = super().replacements(creator, dest_folder)
-        lib_folders = OrderedDict((os.path.relpath(str(i), str(dest_folder)), None) for i in creator.libs)
-        win_py2 = creator.interpreter.platform == "win32" and creator.interpreter.version_info.major == 2
+        lib_folders = OrderedDict(
+            (os.path.relpath(str(i), str(dest_folder)), None) for i in creator.libs
+        )
+        win_py2 = (
+            creator.interpreter.platform == "win32"
+            and creator.interpreter.version_info.major == 2
+        )
         replacements.update(
             {
                 "__LIB_FOLDERS__": os.pathsep.join(lib_folders.keys()),
@@ -25,7 +30,9 @@ class PythonActivator(ViaTemplateActivator):
     @staticmethod
     def _repr_unicode(creator, value):
         py2 = creator.interpreter.version_info.major == 2
-        if py2:  # on Python 2 we need to encode this into explicit utf-8, py3 supports unicode literals
+        if (
+            py2
+        ):  # on Python 2 we need to encode this into explicit utf-8, py3 supports unicode literals
             start = 2 if sys.version_info[0] == 3 else 1
             value = repr(value.encode("utf-8"))[start:-1]
         return value

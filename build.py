@@ -18,7 +18,9 @@
 #   limitations under the License.
 
 import sys
-from os.path import dirname, join as jp, normcase as nc
+from os.path import dirname
+from os.path import join as jp
+from os.path import normcase as nc
 
 # This is only necessary in PyBuilder sources for bootstrap
 build_sources = nc(jp(dirname(__file__), "src/main/python"))
@@ -69,23 +71,25 @@ allows the construction of build life-cycles similar to those known from other f
 Apache Maven and Gradle.
 """
 
-authors = [Author("Arcadiy Ivanov", "arcadiy@ivanov.biz"),
-           Author("Alexander Metzner", "alexander.metzner@gmail.com"),
-           Author("Maximilien Riehl", "max@riehl.io"),
-           Author("Michael Gruber", "aelgru@gmail.com"),
-           Author("Udo Juettner", "udo.juettner@gmail.com"),
-           Author("Marcel Wolf", "marcel.wolf@me.com"),
-           Author("Valentin Haenel", "valentin@haenel.co"),
-           ]
+authors = [
+    Author("Arcadiy Ivanov", "arcadiy@ivanov.biz"),
+    Author("Alexander Metzner", "alexander.metzner@gmail.com"),
+    Author("Maximilien Riehl", "max@riehl.io"),
+    Author("Michael Gruber", "aelgru@gmail.com"),
+    Author("Udo Juettner", "udo.juettner@gmail.com"),
+    Author("Marcel Wolf", "marcel.wolf@me.com"),
+    Author("Valentin Haenel", "valentin@haenel.co"),
+]
 
 maintainers = [Author("Arcadiy Ivanov", "arcadiy@ivanov.biz")]
 
 url = "https://pybuilder.io"
-urls = {"Bug Tracker": "https://github.com/pybuilder/pybuilder/issues",
-        "Source Code": "https://github.com/pybuilder/pybuilder",
-        "Documentation": "https://pybuilder.io/documentation",
-        "Twitter": "https://twitter.com/pybuilder_",
-        }
+urls = {
+    "Bug Tracker": "https://github.com/pybuilder/pybuilder/issues",
+    "Source Code": "https://github.com/pybuilder/pybuilder",
+    "Documentation": "https://pybuilder.io/documentation",
+    "Twitter": "https://twitter.com/pybuilder_",
+}
 license = "Apache License, Version 2.0"
 version = "0.13.8.dev"
 
@@ -100,34 +104,44 @@ def initialize(project):
 
     project.set_property("verbose", True)
 
-    project.set_property("vendorize_target_dir", "$dir_source_main_python/pybuilder/_vendor")
-    project.set_property("vendorize_packages", ["tblib~=1.5",
-                                                "tailer~=0.4",
-                                                "setuptools>=45.0.0",
-                                                "virtualenv>=20.0.0",
-                                                "importlib-resources>=1.0",
-                                                "importlib-metadata>=0.12,<5.0",
-                                                "typing-extensions",
-                                                "colorama~=0.4.3"
-                                                ])
-    project.set_property("vendorize_cleanup_globs", ["bin",
-                                                     "setuptools",
-                                                     "easy_install.py",
-                                                     "*.pth"])
-    project.set_property("vendorize_preserve_metadata", ["virtualenv*", "importlib_metadata*"])
+    project.set_property(
+        "vendorize_target_dir", "$dir_source_main_python/pybuilder/_vendor"
+    )
+    project.set_property(
+        "vendorize_packages",
+        [
+            "tblib~=1.5",
+            "tailer~=0.4",
+            "setuptools>=45.0.0",
+            "virtualenv>=20.0.0",
+            "importlib-resources>=1.0",
+            "importlib-metadata>=0.12,<5.0",
+            "typing-extensions",
+            "colorama~=0.4.3",
+        ],
+    )
+    project.set_property(
+        "vendorize_cleanup_globs", ["bin", "setuptools", "easy_install.py", "*.pth"]
+    )
+    project.set_property(
+        "vendorize_preserve_metadata", ["virtualenv*", "importlib_metadata*"]
+    )
 
     project.set_property("coverage_break_build", False)
-    project.get_property("coverage_exceptions").extend(["pybuilder._vendor",
-                                                        "pybuilder._vendor.*",
-                                                        "setup"])
+    project.get_property("coverage_exceptions").extend(
+        ["pybuilder._vendor", "pybuilder._vendor.*", "setup"]
+    )
 
     project.set_property("flake8_break_build", True)
     project.set_property("flake8_extend_ignore", "E303")
     project.set_property("flake8_include_test_sources", True)
     project.set_property("flake8_include_scripts", True)
-    project.set_property("flake8_exclude_patterns", ",".join([
-        project.expand_path("$dir_source_main_python", "pybuilder/_vendor/*")
-    ]))
+    project.set_property(
+        "flake8_exclude_patterns",
+        ",".join(
+            [project.expand_path("$dir_source_main_python", "pybuilder/_vendor/*")]
+        ),
+    )
     project.set_property("flake8_max_line_length", 130)
 
     project.set_property("frosted_include_test_sources", True)
@@ -138,8 +152,9 @@ def initialize(project):
     project.set_property("filter_resources_target", "$dir_dist")
     project.get_property("filter_resources_glob").append("pybuilder/__init__.py")
     project.include_file("pybuilder", "LICENSE")
-    project.include_directory("pybuilder/_vendor", "*",
-                              "$dir_source_main_python")  # All included vendored payload is included
+    project.include_directory(
+        "pybuilder/_vendor", "*", "$dir_source_main_python"
+    )  # All included vendored payload is included
 
     project.set_property("sphinx_doc_author", "PyBuilder Team")
     project.set_property("sphinx_doc_builder", "html")
@@ -148,9 +163,9 @@ def initialize(project):
 
     project.set_property("pdoc_module_name", "pybuilder")
 
-    project.get_property("source_dist_ignore_patterns").extend([".project",
-                                                                ".pydevproject",
-                                                                ".settings"])
+    project.get_property("source_dist_ignore_patterns").extend(
+        [".project", ".pydevproject", ".settings"]
+    )
 
     # PyPy distutils needs os.environ['PATH'] not matter what
     # Also Windows needs PATH for DLL loading in all Pythons
@@ -160,35 +175,44 @@ def initialize(project):
     project.set_property("distutils_readme_description", True)
     project.set_property("distutils_description_overwrite", True)
     project.set_property("distutils_upload_skip_existing", True)
-    project.set_property("distutils_setup_keywords", ["PyBuilder",
-                                                      "PyB",
-                                                      "build",
-                                                      "tool",
-                                                      "automation",
-                                                      "Python",
-                                                      "testing",
-                                                      "QA",
-                                                      "packaging",
-                                                      "distribution"])
+    project.set_property(
+        "distutils_setup_keywords",
+        [
+            "PyBuilder",
+            "PyB",
+            "build",
+            "tool",
+            "automation",
+            "Python",
+            "testing",
+            "QA",
+            "packaging",
+            "distribution",
+        ],
+    )
     project.set_property("distutils_console_scripts", ["pyb = pybuilder.cli:main"])
-    project.set_property("distutils_classifiers", [
-        "Programming Language :: Python",
-        "Programming Language :: Python :: Implementation :: CPython",
-        "Programming Language :: Python :: Implementation :: PyPy",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Operating System :: MacOS :: MacOS X",
-        "Operating System :: POSIX :: Linux",
-        "Operating System :: Microsoft :: Windows",
-        "Operating System :: OS Independent",
-        "Development Status :: 5 - Production/Stable",
-        "Environment :: Console",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: Apache Software License",
-        "Topic :: Software Development :: Build Tools",
-        "Topic :: Software Development :: Quality Assurance",
-        "Topic :: Software Development :: Testing"])
+    project.set_property(
+        "distutils_classifiers",
+        [
+            "Programming Language :: Python",
+            "Programming Language :: Python :: Implementation :: CPython",
+            "Programming Language :: Python :: Implementation :: PyPy",
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.11",
+            "Operating System :: MacOS :: MacOS X",
+            "Operating System :: POSIX :: Linux",
+            "Operating System :: Microsoft :: Windows",
+            "Operating System :: OS Independent",
+            "Development Status :: 5 - Production/Stable",
+            "Environment :: Console",
+            "Intended Audience :: Developers",
+            "License :: OSI Approved :: Apache Software License",
+            "Topic :: Software Development :: Build Tools",
+            "Topic :: Software Development :: Quality Assurance",
+            "Topic :: Software Development :: Testing",
+        ],
+    )

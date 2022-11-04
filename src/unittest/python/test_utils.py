@@ -18,8 +18,7 @@
 
 from functools import partial
 from traceback import extract_stack
-from unittest import TestCase
-from unittest import mock
+from unittest import TestCase, mock
 
 
 def _new_mock(*args, **kwargs):
@@ -39,35 +38,71 @@ def _new_mock(*args, **kwargs):
 
 
 class PyBuilderMock(mock.Mock):
-    def __init__(self, spec=None, wraps=None, name=None, spec_set=None,
-                 parent=None, _spec_state=None, _new_name='', _new_parent=None,
-                 _spec_as_instance=False, _eat_self=None, unsafe=False, **kwargs):
+    def __init__(
+        self,
+        spec=None,
+        wraps=None,
+        name=None,
+        spec_set=None,
+        parent=None,
+        _spec_state=None,
+        _new_name="",
+        _new_parent=None,
+        _spec_as_instance=False,
+        _eat_self=None,
+        unsafe=False,
+        **kwargs
+    ):
         __dict__ = self.__dict__
-        __dict__['_mock_tb'] = extract_stack()
-        super(mock.Mock, self).__init__(spec=spec, wraps=wraps, name=name, spec_set=spec_set,
-                                        parent=parent,
-                                        _spec_state=_spec_state,
-                                        _new_name=_new_name,
-                                        _new_parent=_new_parent,
-                                        _spec_as_instance=_spec_as_instance,
-                                        _eat_self=_eat_self,
-                                        unsafe=unsafe, **kwargs)
+        __dict__["_mock_tb"] = extract_stack()
+        super(mock.Mock, self).__init__(
+            spec=spec,
+            wraps=wraps,
+            name=name,
+            spec_set=spec_set,
+            parent=parent,
+            _spec_state=_spec_state,
+            _new_name=_new_name,
+            _new_parent=_new_parent,
+            _spec_as_instance=_spec_as_instance,
+            _eat_self=_eat_self,
+            unsafe=unsafe,
+            **kwargs
+        )
 
 
 class PyBuilderMagicMock(mock.MagicMock):
-    def __init__(self, spec=None, wraps=None, name=None, spec_set=None,
-                 parent=None, _spec_state=None, _new_name='', _new_parent=None,
-                 _spec_as_instance=False, _eat_self=None, unsafe=False, **kwargs):
+    def __init__(
+        self,
+        spec=None,
+        wraps=None,
+        name=None,
+        spec_set=None,
+        parent=None,
+        _spec_state=None,
+        _new_name="",
+        _new_parent=None,
+        _spec_as_instance=False,
+        _eat_self=None,
+        unsafe=False,
+        **kwargs
+    ):
         __dict__ = self.__dict__
-        __dict__['_mock_tb'] = extract_stack()
-        super(mock.MagicMock, self).__init__(spec=spec, wraps=wraps, name=name, spec_set=spec_set,
-                                             parent=parent,
-                                             _spec_state=_spec_state,
-                                             _new_name=_new_name,
-                                             _new_parent=_new_parent,
-                                             _spec_as_instance=_spec_as_instance,
-                                             _eat_self=_eat_self,
-                                             unsafe=unsafe, **kwargs)
+        __dict__["_mock_tb"] = extract_stack()
+        super(mock.MagicMock, self).__init__(
+            spec=spec,
+            wraps=wraps,
+            name=name,
+            spec_set=spec_set,
+            parent=parent,
+            _spec_state=_spec_state,
+            _new_name=_new_name,
+            _new_parent=_new_parent,
+            _spec_as_instance=_spec_as_instance,
+            _eat_self=_eat_self,
+            unsafe=unsafe,
+            **kwargs
+        )
 
 
 Mock = partial(_new_mock, mock_type=PyBuilderMock)
@@ -78,14 +113,16 @@ patch.dict = mock.patch.dict
 patch.multiple = partial(mock.patch.multiple, new_callable=PyBuilderMagicMock)
 patch.stopall = mock.patch.stopall
 mock_open = mock.mock_open
-patch.TEST_PREFIX = 'test'
+patch.TEST_PREFIX = "test"
 DEFAULT = mock.DEFAULT
 call = mock.call
 ANY = mock.ANY
 
 
 class PyBuilderTestCase(TestCase):
-    def assert_line_by_line_equal(self, expected_multi_line_string, actual_multi_line_string):
+    def assert_line_by_line_equal(
+        self, expected_multi_line_string, actual_multi_line_string
+    ):
         expected_lines = expected_multi_line_string.split("\n")
         actual_lines = actual_multi_line_string.split("\n")
         for i in range(len(expected_lines)):
@@ -94,11 +131,16 @@ class PyBuilderTestCase(TestCase):
             message = """Multi-line strings are not equal in line ${line_number}
   expected: "{expected_line}"
    but got: "{actual_line}"
-""".format(line_number=i, expected_line=expected_line, actual_line=actual_line)
+""".format(
+                line_number=i, expected_line=expected_line, actual_line=actual_line
+            )
 
             self.assertEqual(expected_line, actual_line, message)
-        self.assertEqual(len(expected_lines), len(actual_lines),
-                         'Multi-line strings do not have the same number of lines')
+        self.assertEqual(
+            len(expected_lines),
+            len(actual_lines),
+            "Multi-line strings do not have the same number of lines",
+        )
 
 
 __all__ = [PyBuilderTestCase, Mock, MagicMock, patch, ANY, DEFAULT, call]

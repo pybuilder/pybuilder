@@ -36,7 +36,7 @@ INTERPRETER_SHORT_NAMES: Dict[str, str] = {
 }
 
 
-_32_BIT_INTERPRETER = sys.maxsize <= 2 ** 32
+_32_BIT_INTERPRETER = sys.maxsize <= 2**32
 
 
 class Tag:
@@ -437,10 +437,9 @@ def platform_tags() -> Iterator[str]:
     """
     if platform.system() == "Darwin":
         return mac_platforms()
-    elif platform.system() == "Linux":
+    if platform.system() == "Linux":
         return _linux_platforms()
-    else:
-        return _generic_platforms()
+    return _generic_platforms()
 
 
 def interpreter_name() -> str:

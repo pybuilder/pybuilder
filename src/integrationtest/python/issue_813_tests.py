@@ -29,7 +29,8 @@ class Issue807Test(IntegrationTestSupport):
             # importlib.metadata does not exist before Python 3.8
             return
 
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import use_plugin, init
 
 use_plugin("python.core")
@@ -41,33 +42,46 @@ def init (project):
 
     # Required to succeed on Windows
     project.set_property("integrationtest_inherit_environment", True)
-        """)
+        """
+        )
 
         self.create_directory("src/main/python")
         self.create_directory("src/integrationtest/python")
-        self.write_file("src/main/python/code.py", textwrap.dedent(
-            """
+        self.write_file(
+            "src/main/python/code.py",
+            textwrap.dedent(
+                """
             def run_code():
                 pass
-            """))
-        self.write_file("src/integrationtest/python/code1_tests.py", textwrap.dedent(
             """
+            ),
+        )
+        self.write_file(
+            "src/integrationtest/python/code1_tests.py",
+            textwrap.dedent(
+                """
             import unittest
             import code
 
             class Code1Tests(unittest.TestCase):
                 def test_code1(self):
                     code.run_code()
-            """))
-        self.write_file("src/integrationtest/python/code2_tests.py", textwrap.dedent(
             """
+            ),
+        )
+        self.write_file(
+            "src/integrationtest/python/code2_tests.py",
+            textwrap.dedent(
+                """
             import unittest
             import code
 
             class Code2Tests(unittest.TestCase):
                 def test_code2(self):
                     code.run_code()
-            """))
+            """
+            ),
+        )
         reactor = self.prepare_reactor()
         reactor.build("verify")
 

@@ -19,23 +19,30 @@
 import os
 import shutil
 
-from pybuilder.core import init, task, use_plugin, description
+from pybuilder.core import description, init, task, use_plugin
 
 use_plugin("core")
 
 
 @init
 def init_source_distribution(project):
-    source_distribution_directory = "$dir_target/dist/%s-%s-src" % (project.name, project.version)
+    source_distribution_directory = "$dir_target/dist/%s-%s-src" % (
+        project.name,
+        project.version,
+    )
     project.set_property_if_unset("dir_source_dist", source_distribution_directory)
-    project.set_property_if_unset("source_dist_ignore_patterns", ["*.pyc", ".hg*", ".svn", ".CVS"])
+    project.set_property_if_unset(
+        "source_dist_ignore_patterns", ["*.pyc", ".hg*", ".svn", ".CVS"]
+    )
 
 
 @task
 @description("Bundles a source distribution for shipping.")
 def build_source_distribution(project, logger):
     source_distribution_directory = project.expand_path("$dir_source_dist")
-    logger.info("Building source distribution in {0}".format(source_distribution_directory))
+    logger.info(
+        "Building source distribution in {0}".format(source_distribution_directory)
+    )
 
     if os.path.exists(source_distribution_directory):
         shutil.rmtree(source_distribution_directory)
@@ -45,6 +52,8 @@ def build_source_distribution(project, logger):
     if configured_patterns:
         ignore_patterns += configured_patterns
 
-    shutil.copytree(project.basedir,
-                    source_distribution_directory,
-                    ignore=shutil.ignore_patterns(*ignore_patterns))
+    shutil.copytree(
+        project.basedir,
+        source_distribution_directory,
+        ignore=shutil.ignore_patterns(*ignore_patterns),
+    )

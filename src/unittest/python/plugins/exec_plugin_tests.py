@@ -16,17 +16,23 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from unittest import TestCase
 from logging import Logger
+from unittest import TestCase
+
 from test_utils import Mock, patch
 
 from pybuilder.core import Project
-from pybuilder.plugins.exec_plugin import run_unit_tests, run_integration_tests, analyze, package, publish
+from pybuilder.plugins.exec_plugin import (
+    analyze,
+    package,
+    publish,
+    run_integration_tests,
+    run_unit_tests,
+)
 
 
-@patch('pybuilder.plugins.exec_plugin.run_command')
+@patch("pybuilder.plugins.exec_plugin.run_command")
 class SimpleTaskTestS(TestCase):
-
     def test_should_run_unit_tests(self, mock_run_command):
 
         mock_project = Mock(Project)
@@ -34,7 +40,7 @@ class SimpleTaskTestS(TestCase):
 
         run_unit_tests(mock_project, mock_logger)
 
-        mock_run_command.assert_called_with('run_unit_tests', mock_project, mock_logger)
+        mock_run_command.assert_called_with("run_unit_tests", mock_project, mock_logger)
 
     def test_should_run_integration_tests(self, mock_run_command):
 
@@ -43,7 +49,9 @@ class SimpleTaskTestS(TestCase):
 
         run_integration_tests(mock_project, mock_logger)
 
-        mock_run_command.assert_called_with('run_integration_tests', mock_project, mock_logger)
+        mock_run_command.assert_called_with(
+            "run_integration_tests", mock_project, mock_logger
+        )
 
     def test_should_analyze_project(self, mock_run_command):
 
@@ -52,7 +60,7 @@ class SimpleTaskTestS(TestCase):
 
         analyze(mock_project, mock_logger)
 
-        mock_run_command.assert_called_with('analyze', mock_project, mock_logger)
+        mock_run_command.assert_called_with("analyze", mock_project, mock_logger)
 
     def test_should_package_project(self, mock_run_command):
 
@@ -61,7 +69,7 @@ class SimpleTaskTestS(TestCase):
 
         package(mock_project, mock_logger)
 
-        mock_run_command.assert_called_with('package', mock_project, mock_logger)
+        mock_run_command.assert_called_with("package", mock_project, mock_logger)
 
     def test_should_publish_project(self, mock_run_command):
 
@@ -70,4 +78,4 @@ class SimpleTaskTestS(TestCase):
 
         publish(mock_project, mock_logger)
 
-        mock_run_command.assert_called_with('publish', mock_project, mock_logger)
+        mock_run_command.assert_called_with("publish", mock_project, mock_logger)

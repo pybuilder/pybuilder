@@ -32,7 +32,6 @@ from ..util.lock import ReentrantFileLock
 from ..util.path import safe_delete
 from ..util.zipapp import extract
 from ..version import __version__
-
 from .base import AppData, ContentStore
 
 
@@ -96,7 +95,9 @@ class AppDataDiskFolder(AppData):
                             filename.unlink()
 
     def embed_update_log(self, distribution, for_py_version):
-        return EmbedDistributionUpdateStoreDisk(self.lock / "wheel" / for_py_version / "embed" / "3", distribution)
+        return EmbedDistributionUpdateStoreDisk(
+            self.lock / "wheel" / for_py_version / "embed" / "3", distribution
+        )
 
     @property
     def house(self):

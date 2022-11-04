@@ -4,8 +4,8 @@ import re
 import sys
 import typing
 
-from .util import col, line, lineno, _collapse_string_to_ranges
 from .unicode import pyparsing_unicode as ppu
+from .util import _collapse_string_to_ranges, col, line, lineno
 
 
 class ExceptionWordUnicode(ppu.Latin1, ppu.LatinA, ppu.LatinB, ppu.Greek, ppu.Cyrillic):
@@ -56,6 +56,7 @@ class ParseBaseException(Exception):
         exception's stack trace.
         """
         import inspect
+
         from .core import ParserElement
 
         if depth is None:

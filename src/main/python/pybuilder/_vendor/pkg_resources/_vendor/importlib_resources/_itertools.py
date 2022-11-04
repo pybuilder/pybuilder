@@ -1,18 +1,9 @@
 from itertools import filterfalse
-
-from typing import (
-    Callable,
-    Iterable,
-    Iterator,
-    Optional,
-    Set,
-    TypeVar,
-    Union,
-)
+from typing import Callable, Iterable, Iterator, Optional, Set, TypeVar, Union
 
 # Type and type variable definitions
-_T = TypeVar('_T')
-_U = TypeVar('_U')
+_T = TypeVar("_T")
+_U = TypeVar("_U")
 
 
 def unique_everseen(

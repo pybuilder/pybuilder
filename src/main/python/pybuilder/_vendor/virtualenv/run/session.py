@@ -57,7 +57,9 @@ class Session:
 
     def _activate(self):
         if self.activators:
-            active = ", ".join(type(i).__name__.replace("Activator", "") for i in self.activators)
+            active = ", ".join(
+                type(i).__name__.replace("Activator", "") for i in self.activators
+            )
             logging.info("add activators for %s", active)
             for activator in self.activators:
                 activator.generate(self.creator)

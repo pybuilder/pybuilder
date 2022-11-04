@@ -1,18 +1,17 @@
+import contextlib
+import functools
+import importlib
+import inspect
+import itertools
 import os
 import pathlib
 import tempfile
-import functools
-import contextlib
 import types
-import importlib
-import inspect
 import warnings
-import itertools
-
-from typing import Union, Optional, cast
-from .abc import ResourceReader, Traversable
+from typing import Optional, Union, cast
 
 from ._compat import wrap_spec
+from .abc import ResourceReader, Traversable
 
 Package = Union[types.ModuleType, str]
 Anchor = Package
@@ -41,7 +40,7 @@ def package_to_anchor(func):
                 stacklevel=2,
             )
             return func(package)
-        elif anchor is undefined:
+        if anchor is undefined:
             return func()
         return func(anchor)
 
@@ -66,7 +65,7 @@ def get_resource_reader(package: types.ModuleType) -> Optional[ResourceReader]:
     # zipimport.zipimporter does not support weak references, resulting in a
     # TypeError.  That seems terrible.
     spec = package.__spec__
-    reader = getattr(spec.loader, 'get_resource_reader', None)  # type: ignore
+    reader = getattr(spec.loader, "get_resource_reader", None)  # type: ignore
     if reader is None:
         return None
     return reader(spec.name)  # type: ignore
@@ -84,7 +83,7 @@ def _(cand: str) -> types.ModuleType:
 
 @resolve.register
 def _(cand: None) -> types.ModuleType:
-    return resolve(_infer_caller().f_globals['__name__'])
+    return resolve(_infer_caller().f_globals["__name__"])
 
 
 def _infer_caller():
@@ -96,7 +95,7 @@ def _infer_caller():
         return frame_info.filename == __file__
 
     def is_wrapper(frame_info):
-        return frame_info.function == 'wrapper'
+        return frame_info.function == "wrapper"
 
     not_this_file = itertools.filterfalse(is_this_file, inspect.stack())
     # also exclude 'wrapper' due to singledispatch in the call stack
@@ -117,7 +116,7 @@ def from_package(package: types.ModuleType):
 @contextlib.contextmanager
 def _tempfile(
     reader,
-    suffix='',
+    suffix="",
     # gh-93353: Keep a reference to call os.remove() in late Python
     # finalization.
     *,
@@ -203,5 +202,5 @@ def _write_contents(target, source):
         for item in source.iterdir():
             _write_contents(child, item)
     else:
-        child.open('wb').write(source.read_bytes())
+        child.open("wb").write(source.read_bytes())
     return child

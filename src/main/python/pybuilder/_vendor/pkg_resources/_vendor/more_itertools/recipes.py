@@ -7,6 +7,7 @@ Some backward-compatible usability improvements have been made.
 .. [1] http://docs.python.org/library/itertools.html#recipes
 
 """
+import operator
 import warnings
 from collections import deque
 from itertools import (
@@ -21,42 +22,41 @@ from itertools import (
     tee,
     zip_longest,
 )
-import operator
-from random import randrange, sample, choice
+from random import choice, randrange, sample
 
 __all__ = [
-    'all_equal',
-    'before_and_after',
-    'consume',
-    'convolve',
-    'dotproduct',
-    'first_true',
-    'flatten',
-    'grouper',
-    'iter_except',
-    'ncycles',
-    'nth',
-    'nth_combination',
-    'padnone',
-    'pad_none',
-    'pairwise',
-    'partition',
-    'powerset',
-    'prepend',
-    'quantify',
-    'random_combination_with_replacement',
-    'random_combination',
-    'random_permutation',
-    'random_product',
-    'repeatfunc',
-    'roundrobin',
-    'sliding_window',
-    'tabulate',
-    'tail',
-    'take',
-    'triplewise',
-    'unique_everseen',
-    'unique_justseen',
+    "all_equal",
+    "before_and_after",
+    "consume",
+    "convolve",
+    "dotproduct",
+    "first_true",
+    "flatten",
+    "grouper",
+    "iter_except",
+    "ncycles",
+    "nth",
+    "nth_combination",
+    "padnone",
+    "pad_none",
+    "pairwise",
+    "partition",
+    "powerset",
+    "prepend",
+    "quantify",
+    "random_combination_with_replacement",
+    "random_combination",
+    "random_permutation",
+    "random_product",
+    "repeatfunc",
+    "roundrobin",
+    "sliding_window",
+    "tabulate",
+    "tail",
+    "take",
+    "triplewise",
+    "unique_everseen",
+    "unique_justseen",
 ]
 
 
@@ -292,9 +292,7 @@ def grouper(iterable, n, fillvalue=None):
 
     """
     if isinstance(iterable, int):
-        warnings.warn(
-            "grouper expects iterable as first parameter", DeprecationWarning
-        )
+        warnings.warn("grouper expects iterable as first parameter", DeprecationWarning)
         n, iterable = iterable, n
     args = [iter(iterable)] * n
     return zip_longest(fillvalue=fillvalue, *args)

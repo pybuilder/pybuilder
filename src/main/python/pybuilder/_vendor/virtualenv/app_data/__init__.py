@@ -17,8 +17,7 @@ def _default_app_data_dir(env):
     key = "VIRTUALENV_OVERRIDE_APP_DATA"
     if key in env:
         return env[key]
-    else:
-        return user_data_dir(appname="virtualenv", appauthor="pypa")
+    return user_data_dir(appname="virtualenv", appauthor="pypa")
 
 
 def make_app_data(folder, **kwargs):
@@ -39,13 +38,14 @@ def make_app_data(folder, **kwargs):
             os.makedirs(folder)
             logging.debug("created app data folder %s", folder)
         except OSError as exception:
-            logging.info("could not create app data folder %s due to %r", folder, exception)
+            logging.info(
+                "could not create app data folder %s due to %r", folder, exception
+            )
 
     if os.access(folder, os.W_OK):
         return AppDataDiskFolder(folder)
-    else:
-        logging.debug("app data folder %s has no write access", folder)
-        return TempAppData()
+    logging.debug("app data folder %s has no write access", folder)
+    return TempAppData()
 
 
 __all__ = (

@@ -17,14 +17,15 @@
 #   limitations under the License.
 
 import unittest
-
 from os.path import normcase as nc
+
 from itest_support import IntegrationTestSupport
 
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import use_plugin, init
 
 use_plugin('python.core')
@@ -38,7 +39,8 @@ def init (project):
     project.include_file('spam', 'eggs')
     project.install_file('spam_dir', 'more_spam')
     project.install_file('eggs_dir', 'more_eggs')
-""")
+"""
+        )
         self.create_directory("src/main/python/spam")
         self.write_file("src/main/python/spam/eggs", "")
         self.write_file("src/main/python/more_spam", "")
@@ -47,25 +49,24 @@ def init (project):
         reactor = self.prepare_reactor()
         reactor.build()
 
-        self.assert_directory_exists(
-            "target/dist/integration-test-1.0.dev0")
-        self.assert_directory_exists(
-            "target/dist/integration-test-1.0.dev0/spam")
-        self.assert_file_empty(
-            "target/dist/integration-test-1.0.dev0/spam/eggs")
-        self.assert_file_empty(
-            "target/dist/integration-test-1.0.dev0/more_spam")
-        self.assert_file_empty(
-            "target/dist/integration-test-1.0.dev0/more_eggs")
+        self.assert_directory_exists("target/dist/integration-test-1.0.dev0")
+        self.assert_directory_exists("target/dist/integration-test-1.0.dev0/spam")
+        self.assert_file_empty("target/dist/integration-test-1.0.dev0/spam/eggs")
+        self.assert_file_empty("target/dist/integration-test-1.0.dev0/more_spam")
+        self.assert_file_empty("target/dist/integration-test-1.0.dev0/more_eggs")
 
         manifest_in = "target/dist/integration-test-1.0.dev0/MANIFEST.in"
 
         self.assert_file_exists(manifest_in)
         self.assert_file_permissions(0o664, manifest_in)
-        self.assert_file_content(manifest_in, """include %s
+        self.assert_file_content(
+            manifest_in,
+            """include %s
 include more_spam
 include more_eggs
-""" % nc("spam/eggs"))
+"""
+            % nc("spam/eggs"),
+        )
 
 
 if __name__ == "__main__":

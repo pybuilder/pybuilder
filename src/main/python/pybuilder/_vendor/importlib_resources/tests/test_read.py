@@ -1,9 +1,8 @@
 import unittest
-from ... import importlib_resources as resources
-
-from . import data01
-from . import util
 from importlib import import_module
+
+from ... import importlib_resources as resources
+from . import data01, util
 
 
 class CommonBinaryTests(util.CommonTests, unittest.TestCase):
@@ -18,31 +17,31 @@ class CommonTextTests(util.CommonTests, unittest.TestCase):
 
 class ReadTests:
     def test_read_bytes(self):
-        result = resources.files(self.data).joinpath('binary.file').read_bytes()
-        self.assertEqual(result, b'\0\1\2\3')
+        result = resources.files(self.data).joinpath("binary.file").read_bytes()
+        self.assertEqual(result, b"\0\1\2\3")
 
     def test_read_text_default_encoding(self):
-        result = resources.files(self.data).joinpath('utf-8.file').read_text()
-        self.assertEqual(result, 'Hello, UTF-8 world!\n')
+        result = resources.files(self.data).joinpath("utf-8.file").read_text()
+        self.assertEqual(result, "Hello, UTF-8 world!\n")
 
     def test_read_text_given_encoding(self):
         result = (
             resources.files(self.data)
-            .joinpath('utf-16.file')
-            .read_text(encoding='utf-16')
+            .joinpath("utf-16.file")
+            .read_text(encoding="utf-16")
         )
-        self.assertEqual(result, 'Hello, UTF-16 world!\n')
+        self.assertEqual(result, "Hello, UTF-16 world!\n")
 
     def test_read_text_with_errors(self):
         # Raises UnicodeError without the 'errors' argument.
-        target = resources.files(self.data) / 'utf-16.file'
-        self.assertRaises(UnicodeError, target.read_text, encoding='utf-8')
-        result = target.read_text(encoding='utf-8', errors='ignore')
+        target = resources.files(self.data) / "utf-16.file"
+        self.assertRaises(UnicodeError, target.read_text, encoding="utf-8")
+        result = target.read_text(encoding="utf-8", errors="ignore")
         self.assertEqual(
             result,
-            'H\x00e\x00l\x00l\x00o\x00,\x00 '
-            '\x00U\x00T\x00F\x00-\x001\x006\x00 '
-            '\x00w\x00o\x00r\x00l\x00d\x00!\x00\n\x00',
+            "H\x00e\x00l\x00l\x00o\x00,\x00 "
+            "\x00U\x00T\x00F\x00-\x001\x006\x00 "
+            "\x00w\x00o\x00r\x00l\x00d\x00!\x00\n\x00",
         )
 
 
@@ -52,17 +51,17 @@ class ReadDiskTests(ReadTests, unittest.TestCase):
 
 class ReadZipTests(ReadTests, util.ZipSetup, unittest.TestCase):
     def test_read_submodule_resource(self):
-        submodule = import_module('ziptestdata.subdirectory')
-        result = resources.files(submodule).joinpath('binary.file').read_bytes()
-        self.assertEqual(result, b'\0\1\2\3')
+        submodule = import_module("ziptestdata.subdirectory")
+        result = resources.files(submodule).joinpath("binary.file").read_bytes()
+        self.assertEqual(result, b"\0\1\2\3")
 
     def test_read_submodule_resource_by_name(self):
         result = (
-            resources.files('ziptestdata.subdirectory')
-            .joinpath('binary.file')
+            resources.files("ziptestdata.subdirectory")
+            .joinpath("binary.file")
             .read_bytes()
         )
-        self.assertEqual(result, b'\0\1\2\3')
+        self.assertEqual(result, b"\0\1\2\3")
 
 
 class ReadNamespaceTests(ReadTests, unittest.TestCase):
@@ -72,5 +71,5 @@ class ReadNamespaceTests(ReadTests, unittest.TestCase):
         self.data = namespacedata01
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

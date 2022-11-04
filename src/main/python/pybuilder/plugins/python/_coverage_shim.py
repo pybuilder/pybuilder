@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
     sys.path.append(main_file_dir)
 
-    from _coverage_util import save_normalized_coverage, patch_coverage
+    from _coverage_util import patch_coverage, save_normalized_coverage
 
     del sys.path[-1]
 
@@ -81,7 +81,9 @@ if __name__ == "__main__":
     from coverage import coverage as coverage_factory
     from coverage.execfile import PyRunner
 
-    coverage = coverage_factory(*(config.get("cov_args", ())), **(config.get("cov_kwargs", {})))
+    coverage = coverage_factory(
+        *(config.get("cov_args", ())), **(config.get("cov_kwargs", {}))
+    )
     source_path = config["cov_source_path"]
     omit_patterns = config["cov_omit_patterns"]
 

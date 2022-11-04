@@ -16,8 +16,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pybuilder.terminal import print_text
 import os
+
+from pybuilder.terminal import print_text
 
 
 def _is_running_on_teamcity(environment):
@@ -25,21 +26,21 @@ def _is_running_on_teamcity(environment):
 
 
 def test_proxy_for(project):
-    running_coverage = project.get_property('__running_coverage')
-    running_on_teamcity = _is_running_on_teamcity(os.environ) or project.get_property('teamcity_output')
+    running_coverage = project.get_property("__running_coverage")
+    running_on_teamcity = _is_running_on_teamcity(os.environ) or project.get_property(
+        "teamcity_output"
+    )
     if running_on_teamcity and not running_coverage:
         return TeamCityTestProxy()
-    else:
-        return TestProxy()
+    return TestProxy()
 
 
 def flush_text_line(text_line):
-    print_text(text_line + '\n', flush=True)
+    print_text(text_line + "\n", flush=True)
 
 
-class TestProxy(object):
-
-    def __init__(self, test_name='not set'):
+class TestProxy():
+    def __init__(self, test_name="not set"):
         self.test_name = test_name
 
     def and_test_name(self, test_name):
@@ -64,7 +65,6 @@ class TestProxy(object):
 
 
 class TeamCityTestProxy(TestProxy):
-
     def test_starts(self):
         flush_text_line("##teamcity[testStarted name='{0}']".format(self.test_name))
 
@@ -72,7 +72,8 @@ class TeamCityTestProxy(TestProxy):
         flush_text_line("##teamcity[testFinished name='{0}']".format(self.test_name))
 
     def fails(self, reason):
-        flush_text_line("##teamcity[testFailed name='{0}' message='See details' details='{1}']".format(
-                        self.test_name,
-                        reason
-                        ))
+        flush_text_line(
+            "##teamcity[testFailed name='{0}' message='See details' details='{1}']".format(
+                self.test_name, reason
+            )
+        )

@@ -18,7 +18,7 @@
 
 import os
 
-from pybuilder.core import use_plugin, after, task, init
+from pybuilder.core import after, init, task, use_plugin
 
 use_plugin("python.core")
 use_plugin("analysis")
@@ -32,8 +32,9 @@ def init_pylint(project):
 @after("prepare")
 def check_pymetrics_available(project, logger, reactor):
     logger.debug("Checking availability of pymetrics")
-    reactor.pybuilder_venv.verify_can_execute(["pymetrics", "--nosql", "--nocsv"], "pymetrics",
-                                              "plugin python.pymetrics")
+    reactor.pybuilder_venv.verify_can_execute(
+        ["pymetrics", "--nosql", "--nocsv"], "pymetrics", "plugin python.pymetrics"
+    )
     logger.debug("pymetrics has been found")
 
 

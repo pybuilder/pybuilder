@@ -169,22 +169,31 @@ class BaseFileLock(ABC, contextlib.ContextDecorator):
             while True:
                 with self._thread_lock:
                     if not self.is_locked:
-                        _LOGGER.debug("Attempting to acquire lock %s on %s", lock_id, lock_filename)
+                        _LOGGER.debug(
+                            "Attempting to acquire lock %s on %s",
+                            lock_id,
+                            lock_filename,
+                        )
                         self._acquire()
 
                 if self.is_locked:
                     _LOGGER.debug("Lock %s acquired on %s", lock_id, lock_filename)
                     break
-                elif blocking is False:
-                    _LOGGER.debug("Failed to immediately acquire lock %s on %s", lock_id, lock_filename)
+                if blocking is False:
+                    _LOGGER.debug(
+                        "Failed to immediately acquire lock %s on %s",
+                        lock_id,
+                        lock_filename,
+                    )
                     raise Timeout(self._lock_file)
-                elif 0 <= timeout < time.monotonic() - start_time:
-                    _LOGGER.debug("Timeout on acquiring lock %s on %s", lock_id, lock_filename)
+                if 0 <= timeout < time.monotonic() - start_time:
+                    _LOGGER.debug(
+                        "Timeout on acquiring lock %s on %s", lock_id, lock_filename
+                    )
                     raise Timeout(self._lock_file)
-                else:
-                    msg = "Lock %s not acquired on %s, waiting %s seconds ..."
-                    _LOGGER.debug(msg, lock_id, lock_filename, poll_interval)
-                    time.sleep(poll_interval)
+                msg = "Lock %s not acquired on %s, waiting %s seconds ..."
+                _LOGGER.debug(msg, lock_id, lock_filename, poll_interval)
+                time.sleep(poll_interval)
         except BaseException:  # Something did go wrong, so decrement the counter.
             with self._thread_lock:
                 self._lock_counter = max(0, self._lock_counter - 1)
@@ -206,7 +215,9 @@ class BaseFileLock(ABC, contextlib.ContextDecorator):
                 if self._lock_counter == 0 or force:
                     lock_id, lock_filename = id(self), self._lock_file
 
-                    _LOGGER.debug("Attempting to release lock %s on %s", lock_id, lock_filename)
+                    _LOGGER.debug(
+                        "Attempting to release lock %s on %s", lock_id, lock_filename
+                    )
                     self._release()
                     self._lock_counter = 0
                     _LOGGER.debug("Lock %s released on %s", lock_id, lock_filename)

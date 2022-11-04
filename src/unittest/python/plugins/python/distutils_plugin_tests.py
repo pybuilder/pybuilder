@@ -25,36 +25,32 @@ except NameError:
 
 import unittest
 
-from pybuilder.core import Project, Author, Logger
+from test_utils import ANY, MagicMock, Mock, PyBuilderTestCase, call, patch
+
+from pybuilder.core import Author, Logger, Project
 from pybuilder.errors import BuildFailedException
 from pybuilder.pip_utils import PIP_MODULE_STANZA
-from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
-                                                       build_dependency_links_string,
-                                                       build_install_dependencies_string,
-                                                       build_package_data_string,
-                                                       build_entry_points_string,
-                                                       build_namespace_packages_string,
-                                                       default,
-                                                       render_manifest_file,
-                                                       build_scripts_string,
-                                                       render_setup_script,
-                                                       initialize_distutils_plugin,
-                                                       execute_distutils,
-                                                       upload,
-                                                       install_distribution,
-                                                       build_binary_distribution,
-                                                       _normalize_setup_post_pre_script,
-                                                       build_string_from_array,
-                                                       build_setup_keywords,
-                                                       )
+from pybuilder.plugins.python.distutils_plugin import (
+    _normalize_setup_post_pre_script,
+    build_binary_distribution,
+    build_data_files_string,
+    build_dependency_links_string,
+    build_entry_points_string,
+    build_install_dependencies_string,
+    build_namespace_packages_string,
+    build_package_data_string,
+    build_scripts_string,
+    build_setup_keywords,
+    build_string_from_array,
+    default,
+    execute_distutils,
+    initialize_distutils_plugin,
+    install_distribution,
+    render_manifest_file,
+    render_setup_script,
+    upload,
+)
 from pybuilder.utils import np
-from test_utils import (PyBuilderTestCase,
-                        patch,
-                        call,
-                        MagicMock,
-                        Mock,
-                        ANY
-                        )
 
 
 class InstallDependenciesTest(unittest.TestCase):
@@ -68,9 +64,9 @@ class InstallDependenciesTest(unittest.TestCase):
             "distutils_issue8876_workaround_enabled": True,
             "distutils_classifiers": [
                 "Development Status :: 3 - Beta",
-                "Programming Language :: Rust"
+                "Programming Language :: Rust",
             ],
-            "distutils_use_setuptools": False
+            "distutils_use_setuptools": False,
         }
 
         for property_name, property_value in expected_properties.items():
@@ -80,47 +76,57 @@ class InstallDependenciesTest(unittest.TestCase):
 
         for property_name, property_value in expected_properties.items():
             self.assertEqual(
-                self.project.get_property("distutils_commands"), ["foo", "bar"])
+                self.project.get_property("distutils_commands"), ["foo", "bar"]
+            )
             self.assertEqual(
-                self.project.get_property("distutils_issue8876_workaround_enabled"), True)
+                self.project.get_property("distutils_issue8876_workaround_enabled"),
+                True,
+            )
             self.assertEqual(
-                self.project.get_property("distutils_classifiers"), ["Development Status :: 3 - Beta",
-                                                                     "Programming Language :: Rust"])
+                self.project.get_property("distutils_classifiers"),
+                ["Development Status :: 3 - Beta", "Programming Language :: Rust"],
+            )
             self.assertEqual(
-                self.project.get_property("distutils_use_setuptools"), False)
+                self.project.get_property("distutils_use_setuptools"), False
+            )
 
     def test_should_return_empty_string_when_no_dependency_is_given(self):
         self.assertEqual("[]", build_install_dependencies_string(self.project))
 
     def test_should_return_single_dependency_string(self):
         self.project.depends_on("spam")
-        self.assertEqual(
-            "['spam']", build_install_dependencies_string(self.project))
+        self.assertEqual("['spam']", build_install_dependencies_string(self.project))
 
     def test_should_return_single_dependency_string_with_version(self):
         self.project.depends_on("spam", "0.7")
         self.assertEqual(
-            "['spam>=0.7']", build_install_dependencies_string(self.project))
+            "['spam>=0.7']", build_install_dependencies_string(self.project)
+        )
 
     def test_should_return_multiple_dependencies_string_with_versions(self):
         self.project.depends_on("spam", "0.7")
         self.project.depends_on("eggs")
         self.assertEqual(
             "[\n            'eggs',\n            'spam>=0.7'\n        ]",
-            build_install_dependencies_string(self.project))
+            build_install_dependencies_string(self.project),
+        )
 
     def test_should_not_insert_url_dependency_into_install_requires(self):
         self.project.depends_on("spam")
         self.project.depends_on(
-            "pyassert", url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz")
+            "pyassert",
+            url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz",
+        )
 
-        self.assertEqual(
-            "['spam']", build_install_dependencies_string(self.project))
+        self.assertEqual("['spam']", build_install_dependencies_string(self.project))
 
-    def test_should_not_insert_default_version_operator_when_project_contains_operator_in_version(self):
+    def test_should_not_insert_default_version_operator_when_project_contains_operator_in_version(
+        self,
+    ):
         self.project.depends_on("spam", "==0.7")
         self.assertEqual(
-            "['spam==0.7']", build_install_dependencies_string(self.project))
+            "['spam==0.7']", build_install_dependencies_string(self.project)
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     def test_should_quote_requirements(self, mock_open):
@@ -130,7 +136,9 @@ class InstallDependenciesTest(unittest.TestCase):
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
-            "[\n            'foo',\n            'bar'\n        ]", build_install_dependencies_string(self.project))
+            "[\n            'foo',\n            'bar'\n        ]",
+            build_install_dependencies_string(self.project),
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     def test_should_ignore_empty_requirement_lines(self, mock_open):
@@ -140,7 +148,9 @@ class InstallDependenciesTest(unittest.TestCase):
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
-            "[\n            'foo',\n            'bar'\n        ]", build_install_dependencies_string(self.project))
+            "[\n            'foo',\n            'bar'\n        ]",
+            build_install_dependencies_string(self.project),
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     def test_should_ignore_comments_from_requirements(self, mock_open):
@@ -149,40 +159,42 @@ class InstallDependenciesTest(unittest.TestCase):
         handle.readlines.return_value = ["#comment", "bar"]
         self.project.depends_on_requirements("requirements.txt")
 
-        self.assertEqual(
-            "['bar']", build_install_dependencies_string(self.project))
+        self.assertEqual("['bar']", build_install_dependencies_string(self.project))
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    def test_should_ignore_comments_with_leading_space_from_requirements(self, mock_open):
+    def test_should_ignore_comments_with_leading_space_from_requirements(
+        self, mock_open
+    ):
         mock_open.return_value = MagicMock(spec=TYPE_FILE)
         handle = mock_open.return_value.__enter__.return_value
         handle.readlines.return_value = [" # comment", "bar"]
         self.project.depends_on_requirements("requirements.txt")
 
-        self.assertEqual(
-            "['bar']", build_install_dependencies_string(self.project))
+        self.assertEqual("['bar']", build_install_dependencies_string(self.project))
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     def test_should_ignore_editable_urls_from_requirements(self, mock_open):
         mock_open.return_value = MagicMock(spec=TYPE_FILE)
         handle = mock_open.return_value.__enter__.return_value
         handle.readlines.return_value = [
-            "foo", "-e git+https://github.com/someuser/someproject.git#egg=some_package"]
+            "foo",
+            "-e git+https://github.com/someuser/someproject.git#egg=some_package",
+        ]
         self.project.depends_on_requirements("requirements.txt")
 
-        self.assertEqual(
-            "['foo']", build_install_dependencies_string(self.project))
+        self.assertEqual("['foo']", build_install_dependencies_string(self.project))
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     def test_should_ignore_expanded_editable_urls_from_requirements(self, mock_open):
         mock_open.return_value = MagicMock(spec=TYPE_FILE)
         handle = mock_open.return_value.__enter__.return_value
         handle.readlines.return_value = [
-            "foo", "--editable git+https://github.com/someuser/someproject.git#egg=some_package"]
+            "foo",
+            "--editable git+https://github.com/someuser/someproject.git#egg=some_package",
+        ]
         self.project.depends_on_requirements("requirements.txt")
 
-        self.assertEqual(
-            "['foo']", build_install_dependencies_string(self.project))
+        self.assertEqual("['foo']", build_install_dependencies_string(self.project))
 
 
 class DependencyLinksTest(unittest.TestCase):
@@ -194,66 +206,86 @@ class DependencyLinksTest(unittest.TestCase):
 
     def test_should_return_dependency_link(self):
         self.project.depends_on(
-            "pyassert", url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz")
+            "pyassert",
+            url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz",
+        )
         self.assertEqual(
             "['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz']",
-            build_dependency_links_string(self.project))
+            build_dependency_links_string(self.project),
+        )
 
     def test_should_return_dependency_links(self):
-        self.project.depends_on("pyassert1",
-                                url="https://github.com/downloads/halimath/pyassert/pyassert1-0.2.2.tar.gz")
-        self.project.depends_on("pyassert2",
-                                url="https://github.com/downloads/halimath/pyassert/pyassert2-0.2.2.tar.gz")
-        self.assertEqual("[\n            'https://github.com/downloads/halimath/pyassert/pyassert1-0.2.2.tar.gz',\n"
-                         "            'https://github.com/downloads/halimath/pyassert/pyassert2-0.2.2.tar.gz'\n"
-                         "        ]",
-                         build_dependency_links_string(self.project))
+        self.project.depends_on(
+            "pyassert1",
+            url="https://github.com/downloads/halimath/pyassert/pyassert1-0.2.2.tar.gz",
+        )
+        self.project.depends_on(
+            "pyassert2",
+            url="https://github.com/downloads/halimath/pyassert/pyassert2-0.2.2.tar.gz",
+        )
+        self.assertEqual(
+            "[\n            'https://github.com/downloads/halimath/pyassert/pyassert1-0.2.2.tar.gz',\n"
+            "            'https://github.com/downloads/halimath/pyassert/pyassert2-0.2.2.tar.gz'\n"
+            "        ]",
+            build_dependency_links_string(self.project),
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    def test_should_use_editable_urls_from_requirements_as_dependency_links(self, mock_open):
+    def test_should_use_editable_urls_from_requirements_as_dependency_links(
+        self, mock_open
+    ):
         mock_open.return_value = MagicMock(spec=TYPE_FILE)
         handle = mock_open.return_value.__enter__.return_value
         handle.readlines.return_value = [
             "-e git+https://github.com/someuser/someproject.git#egg=some_package",
-            "-e svn+https://github.com/someuser/someproject#egg=some_package"]
+            "-e svn+https://github.com/someuser/someproject#egg=some_package",
+        ]
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
             "[\n            'git+https://github.com/someuser/someproject.git#egg=some_package',\n"
             "            'svn+https://github.com/someuser/someproject#egg=some_package'\n"
             "        ]",
-            build_dependency_links_string(self.project))
+            build_dependency_links_string(self.project),
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    def test_should_use_expanded_editable_urls_from_requirements_as_dependency_links(self, mock_open):
+    def test_should_use_expanded_editable_urls_from_requirements_as_dependency_links(
+        self, mock_open
+    ):
         mock_open.return_value = MagicMock(spec=TYPE_FILE)
         handle = mock_open.return_value.__enter__.return_value
         handle.readlines.return_value = [
             "--editable git+https://github.com/someuser/someproject.git#egg=some_package",
-            "--editable svn+https://github.com/someuser/someproject#egg=some_package"]
+            "--editable svn+https://github.com/someuser/someproject#egg=some_package",
+        ]
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
             "[\n            'git+https://github.com/someuser/someproject.git#egg=some_package',\n"
             "            'svn+https://github.com/someuser/someproject#egg=some_package'\n"
             "        ]",
-            build_dependency_links_string(self.project))
+            build_dependency_links_string(self.project),
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    def test_should_use_editable_urls_from_requirements_combined_with_url_dependencies(self, mock_open):
+    def test_should_use_editable_urls_from_requirements_combined_with_url_dependencies(
+        self, mock_open
+    ):
         mock_open.return_value = MagicMock(spec=TYPE_FILE)
         handle = mock_open.return_value.__enter__.return_value
         handle.readlines.return_value = [
-            "-e svn+https://github.com/someuser/someproject#egg=some_package"]
-        self.project.depends_on(
-            "jedi", url="git+https://github.com/davidhalter/jedi")
+            "-e svn+https://github.com/someuser/someproject#egg=some_package"
+        ]
+        self.project.depends_on("jedi", url="git+https://github.com/davidhalter/jedi")
         self.project.depends_on_requirements("requirements.txt")
 
         self.assertEqual(
             "[\n            'git+https://github.com/davidhalter/jedi',\n"
             "            'svn+https://github.com/someuser/someproject#egg=some_package'\n"
             "        ]",
-            build_dependency_links_string(self.project))
+            build_dependency_links_string(self.project),
+        )
 
 
 class DefaultTest(unittest.TestCase):
@@ -285,45 +317,55 @@ class BuildDataFilesStringTest(unittest.TestCase):
 
         self.assertEqual(
             "[\n            ('bin', ['activate', 'command-stub', 'rsync', 'ssh'])\n        ]",
-            build_data_files_string(self.project))
+            build_data_files_string(self.project),
+        )
 
-    def test_should_return_data_files_string_with_files_to_be_installed_in_several_destinations(self):
+    def test_should_return_data_files_string_with_files_to_be_installed_in_several_destinations(
+        self,
+    ):
         self.project.install_file("/usr/bin", "pyb")
         self.project.install_file("/etc", "pyb.cfg")
         self.project.install_file("data", "pyb.dat")
         self.project.install_file("data", "howto.txt")
-        self.assertEqual("[\n            ('/usr/bin', ['pyb']),\n"
-                         "            ('/etc', ['pyb.cfg']),\n"
-                         "            ('data', ['pyb.dat', 'howto.txt'])\n"
-                         "        ]",
-                         build_data_files_string(self.project))
+        self.assertEqual(
+            "[\n            ('/usr/bin', ['pyb']),\n"
+            "            ('/etc', ['pyb.cfg']),\n"
+            "            ('data', ['pyb.dat', 'howto.txt'])\n"
+            "        ]",
+            build_data_files_string(self.project),
+        )
 
 
 class BuildPackageDataStringTest(unittest.TestCase):
     def setUp(self):
-        self.project = Project('.')
+        self.project = Project(".")
 
-    def test_should_return_empty_package_data_string_when_no_files_to_include_given(self):
-        self.assertEqual('{}', build_package_data_string(self.project))
+    def test_should_return_empty_package_data_string_when_no_files_to_include_given(
+        self,
+    ):
+        self.assertEqual("{}", build_package_data_string(self.project))
 
     def test_should_return_package_data_string_when_including_file(self):
         self.project.include_file("spam", "egg")
 
         self.assertEqual(
-            "{\n"
-            "            'spam': ['egg']\n"
-            "        }", build_package_data_string(self.project))
+            "{\n" "            'spam': ['egg']\n" "        }",
+            build_package_data_string(self.project),
+        )
 
     def test_should_return_package_data_string_when_including_three_files(self):
         self.project.include_file("spam", "egg")
         self.project.include_file("ham", "eggs")
         self.project.include_file("monty", "python")
 
-        self.assertEqual("{\n"
-                         "            'ham': ['eggs'],\n"
-                         "            'monty': ['python'],\n"
-                         "            'spam': ['egg']\n"
-                         "        }", build_package_data_string(self.project))
+        self.assertEqual(
+            "{\n"
+            "            'ham': ['eggs'],\n"
+            "            'monty': ['python'],\n"
+            "            'spam': ['egg']\n"
+            "        }",
+            build_package_data_string(self.project),
+        )
 
     def test_should_return_package_data_string_with_keys_in_alphabetical_order(self):
         self.project.include_file("b", "beta")
@@ -339,20 +381,23 @@ class BuildPackageDataStringTest(unittest.TestCase):
         self.project.include_file("l", "lambda")
         self.project.include_file("x", "chi")
 
-        self.assertEqual("{\n"
-                         "            'a': ['alpha'],\n"
-                         "            'b': ['beta'],\n"
-                         "            'd': ['delta'],\n"
-                         "            'e': ['epsilon'],\n"
-                         "            'i': ['Iota'],\n"
-                         "            'k': ['Kappa'],\n"
-                         "            'l': ['lambda'],\n"
-                         "            'm': ['Mu'],\n"
-                         "            'p': ['psi'],\n"
-                         "            't': ['theta'],\n"
-                         "            'x': ['chi'],\n"
-                         "            'z': ['Zeta']\n"
-                         "        }", build_package_data_string(self.project))
+        self.assertEqual(
+            "{\n"
+            "            'a': ['alpha'],\n"
+            "            'b': ['beta'],\n"
+            "            'd': ['delta'],\n"
+            "            'e': ['epsilon'],\n"
+            "            'i': ['Iota'],\n"
+            "            'k': ['Kappa'],\n"
+            "            'l': ['lambda'],\n"
+            "            'm': ['Mu'],\n"
+            "            'p': ['psi'],\n"
+            "            't': ['theta'],\n"
+            "            'x': ['chi'],\n"
+            "            'z': ['Zeta']\n"
+            "        }",
+            build_package_data_string(self.project),
+        )
 
 
 class RenderSetupScriptTest(PyBuilderTestCase):
@@ -360,33 +405,34 @@ class RenderSetupScriptTest(PyBuilderTestCase):
         self.project = create_project()
 
     def test_should_remove_hardlink_capabilities_when_workaround_is_enabled(self):
-        self.project.set_property(
-            "distutils_issue8876_workaround_enabled", True)
+        self.project.set_property("distutils_issue8876_workaround_enabled", True)
 
         actual_setup_script = render_setup_script(self.project)
 
         self.assertTrue("import os\ndel os.link\n" in actual_setup_script)
 
     def test_should_not_remove_hardlink_capabilities_when_workaround_is_disabled(self):
-        self.project.set_property(
-            "distutils_issue8876_workaround_enabled", False)
+        self.project.set_property("distutils_issue8876_workaround_enabled", False)
 
         actual_setup_script = render_setup_script(self.project)
 
         self.assertFalse("import os\ndel os.link\n" in actual_setup_script)
 
     def test_should_render_build_scripts_properly_when_dir_scripts_is_provided(self):
-        self.project.set_property("dir_dist_scripts", 'scripts')
+        self.project.set_property("dir_dist_scripts", "scripts")
         actual_build_script = build_scripts_string(self.project)
         self.assertEqual(
             "[\n            'scripts/spam',\n"
             "            'scripts/eggs'\n"
-            "        ]", actual_build_script)
+            "        ]",
+            actual_build_script,
+        )
 
     def test_should_render_setup_file(self):
         actual_setup_script = render_setup_script(self.project)
 
-        self.assert_line_by_line_equal("""#!/usr/bin/env python
+        self.assert_line_by_line_equal(
+            """#!/usr/bin/env python
 #   -*- coding: utf-8 -*-
 
 from distutils.core import setup
@@ -462,13 +508,16 @@ if __name__ == '__main__':
         python_requires = '',
         obsoletes = [],
     )
-""", actual_setup_script)
+""",
+            actual_setup_script,
+        )
 
     def test_should_render_setup_file_install_script_wrappers(self):
         self.project.pre_install_script("pre_install_test()")
         self.project.post_install_script("post_install_test()")
         actual_setup_script = render_setup_script(self.project)
-        self.assert_line_by_line_equal("""#!/usr/bin/env python
+        self.assert_line_by_line_equal(
+            """#!/usr/bin/env python
 #   -*- coding: utf-8 -*-
 
 from distutils.core import setup
@@ -544,42 +593,66 @@ if __name__ == '__main__':
         python_requires = '',
         obsoletes = [],
     )
-""", actual_setup_script)
+""",
+            actual_setup_script,
+        )
 
     def test_should_render_console_scripts_when_property_is_set(self):
-        self.project.set_property("distutils_console_scripts", ["release = zest.releaser.release:main",
-                                                                "prerelease = zest.releaser.prerelease:main"])
+        self.project.set_property(
+            "distutils_console_scripts",
+            [
+                "release = zest.releaser.release:main",
+                "prerelease = zest.releaser.prerelease:main",
+            ],
+        )
 
         actual_setup_script = build_entry_points_string(self.project)
-        self.assertEqual("{\n"
-                         "            'console_scripts': [\n"
-                         "                'release = zest.releaser.release:main',\n"
-                         "                'prerelease = zest.releaser.prerelease:main'\n"
-                         "            ]\n"
-                         "        }", actual_setup_script)
+        self.assertEqual(
+            "{\n"
+            "            'console_scripts': [\n"
+            "                'release = zest.releaser.release:main',\n"
+            "                'prerelease = zest.releaser.prerelease:main'\n"
+            "            ]\n"
+            "        }",
+            actual_setup_script,
+        )
 
     def test_should_render_console_script_when_property_is_set(self):
-        self.project.set_property("distutils_console_scripts", ["release = zest.releaser.release:main"])
+        self.project.set_property(
+            "distutils_console_scripts", ["release = zest.releaser.release:main"]
+        )
 
         actual_setup_script = build_entry_points_string(self.project)
-        self.assertEqual("{\n"
-                         "            'console_scripts': ['release = zest.releaser.release:main']\n"
-                         "        }", actual_setup_script)
+        self.assertEqual(
+            "{\n"
+            "            'console_scripts': ['release = zest.releaser.release:main']\n"
+            "        }",
+            actual_setup_script,
+        )
 
     def test_should_render_entry_points_when_property_is_set(self):
-        self.project.set_property("distutils_entry_points", {'foo_entry': ["release = zest.releaser.release:main",
-                                                                           "release1 = zest.releaser.release1:main"],
-                                                             'bar_entry': ["prerelease = zest.releaser.prerelease:main"]
-                                                             })
+        self.project.set_property(
+            "distutils_entry_points",
+            {
+                "foo_entry": [
+                    "release = zest.releaser.release:main",
+                    "release1 = zest.releaser.release1:main",
+                ],
+                "bar_entry": ["prerelease = zest.releaser.prerelease:main"],
+            },
+        )
 
         actual_setup_script = build_entry_points_string(self.project)
-        self.assertEqual("{\n"
-                         "            'bar_entry': ['prerelease = zest.releaser.prerelease:main'],\n"
-                         "            'foo_entry': [\n"
-                         "                'release = zest.releaser.release:main',\n"
-                         "                'release1 = zest.releaser.release1:main'\n"
-                         "            ]\n"
-                         "        }", actual_setup_script)
+        self.assertEqual(
+            "{\n"
+            "            'bar_entry': ['prerelease = zest.releaser.prerelease:main'],\n"
+            "            'foo_entry': [\n"
+            "                'release = zest.releaser.release:main',\n"
+            "                'release1 = zest.releaser.release1:main'\n"
+            "            ]\n"
+            "        }",
+            actual_setup_script,
+        )
 
     def test_should_render_setup_keywords_when_property_is_set(self):
         self.project.set_property("distutils_setup_keywords", "a b c")
@@ -595,12 +668,18 @@ if __name__ == '__main__':
         self.assertEqual("'a b'", actual_setup_script)
 
     def test_should_render_single_entry_pointproperty_is_set(self):
-        self.project.set_property("distutils_entry_points", {'foo_entry': "release = zest.releaser.release:main"})
+        self.project.set_property(
+            "distutils_entry_points",
+            {"foo_entry": "release = zest.releaser.release:main"},
+        )
 
         actual_setup_script = build_entry_points_string(self.project)
-        self.assertEqual("{\n"
-                         "            'foo_entry': ['release = zest.releaser.release:main']\n"
-                         "        }", actual_setup_script)
+        self.assertEqual(
+            "{\n"
+            "            'foo_entry': ['release = zest.releaser.release:main']\n"
+            "        }",
+            actual_setup_script,
+        )
 
     def test_should_fail_with_entry_points_and_console_scripts_set(self):
         self.project.set_property("distutils_console_scripts", object())
@@ -610,70 +689,87 @@ if __name__ == '__main__':
 
     def test_should_render_explicit_namespaces(self):
         actual_setup_script = build_namespace_packages_string(self.project)
-        self.assertEqual("""[
+        self.assertEqual(
+            """[
             'foo.bar',
             'quick.brown.fox'
-        ]""", actual_setup_script)
+        ]""",
+            actual_setup_script,
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
-    def test_should_render_runtime_dependencies_when_requirements_file_used(self, mock_open):
+    def test_should_render_runtime_dependencies_when_requirements_file_used(
+        self, mock_open
+    ):
         mock_open.return_value = MagicMock(spec=TYPE_FILE)
         handle = mock_open.return_value.__enter__.return_value
         handle.readlines.return_value = ["", "foo", "bar"]
         self.project.depends_on_requirements("requirements.txt")
 
         actual_setup_script = build_install_dependencies_string(self.project)
-        self.assertEqual("[\n"
-                         "            'sometool',\n"
-                         "            'foo',\n"
-                         "            'bar'\n"
-                         "        ]", actual_setup_script)
+        self.assertEqual(
+            "[\n"
+            "            'sometool',\n"
+            "            'foo',\n"
+            "            'bar'\n"
+            "        ]",
+            actual_setup_script,
+        )
 
     def test_normalize_setup_post_pre_script(self):
-        test_script = '''
+        test_script = """
 a
     b
         c
     d
 e
-'''
-        expected_script = '''
+"""
+        expected_script = """
         a
             b
                 c
             d
         e
-'''
-        self.assert_line_by_line_equal(expected_script, _normalize_setup_post_pre_script(test_script))
+"""
+        self.assert_line_by_line_equal(
+            expected_script, _normalize_setup_post_pre_script(test_script)
+        )
 
 
 class UtilityMethodTest(PyBuilderTestCase):
     def test_build_string_from_array_empty(self):
-        self.assert_line_by_line_equal('[]', build_string_from_array([]))
+        self.assert_line_by_line_equal("[]", build_string_from_array([]))
 
     def test_build_string_from_array_simple(self):
-        self.assert_line_by_line_equal("['a']", build_string_from_array(['a']))
+        self.assert_line_by_line_equal("['a']", build_string_from_array(["a"]))
 
     def test_build_string_from_array_of_array_of_empty(self):
-        self.assert_line_by_line_equal('''[[]]''', build_string_from_array([[]]))
+        self.assert_line_by_line_equal("""[[]]""", build_string_from_array([[]]))
 
     def test_build_string_from_array_of_array_single_element(self):
-        self.assert_line_by_line_equal('''[['a']]''', build_string_from_array([['a']]))
+        self.assert_line_by_line_equal("""[['a']]""", build_string_from_array([["a"]]))
 
     def test_build_string_from_array_of_array_multiple_elements(self):
-        self.assert_line_by_line_equal('''[[
+        self.assert_line_by_line_equal(
+            """[[
                 'a',
                 'b'
-            ]]''', build_string_from_array([['a', 'b']]))
+            ]]""",
+            build_string_from_array([["a", "b"]]),
+        )
 
     def test_build_string_from_array_of_arrays_single_element(self):
-        self.assert_line_by_line_equal('''[
+        self.assert_line_by_line_equal(
+            """[
             ['a'],
             ['b']
-        ]''', build_string_from_array([['a'], ['b']]))
+        ]""",
+            build_string_from_array([["a"], ["b"]]),
+        )
 
     def test_build_string_from_array_of_arrays_multiple_elements(self):
-        self.assert_line_by_line_equal('''[
+        self.assert_line_by_line_equal(
+            """[
             [
                 'a',
                 'b'
@@ -682,7 +778,9 @@ class UtilityMethodTest(PyBuilderTestCase):
                 'c',
                 'd'
             ]
-        ]''', build_string_from_array([['a', 'b'], ['c', 'd']]))
+        ]""",
+            build_string_from_array([["a", "b"], ["c", "d"]]),
+        )
 
 
 class RenderManifestFileTest(unittest.TestCase):
@@ -691,10 +789,14 @@ class RenderManifestFileTest(unittest.TestCase):
 
         actual_manifest_file = render_manifest_file(project)
 
-        self.assertEqual("""include file1
+        self.assertEqual(
+            """include file1
 include file2
 include %s
-""" % np("spam/eggs"), actual_manifest_file)
+"""
+            % np("spam/eggs"),
+            actual_manifest_file,
+        )
 
 
 class ExecuteDistUtilsTest(PyBuilderTestCase):
@@ -716,7 +818,8 @@ class ExecuteDistUtilsTest(PyBuilderTestCase):
         execute_distutils(self.project, MagicMock(Logger), self.pyb_env, commands)
 
         self.pyb_env.run_process_and_wait.assert_has_calls(
-            [call(self.pyb_env.executable + [ANY, cmd], ANY, ANY) for cmd in commands])
+            [call(self.pyb_env.executable + [ANY, cmd], ANY, ANY) for cmd in commands]
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -725,7 +828,9 @@ class ExecuteDistUtilsTest(PyBuilderTestCase):
 
         execute_distutils(self.project, MagicMock(Logger), self.pyb_env, [commands])
 
-        self.pyb_env.run_process_and_wait.assert_has_calls([call(self.pyb_env.executable + [ANY] + commands, ANY, ANY)])
+        self.pyb_env.run_process_and_wait.assert_has_calls(
+            [call(self.pyb_env.executable + [ANY] + commands, ANY, ANY)]
+        )
 
 
 class UploadTests(PyBuilderTestCase):
@@ -752,15 +857,44 @@ class UploadTests(PyBuilderTestCase):
 
         upload(self.project, MagicMock(Logger), self.reactor)
 
-        self.pyb_env.run_process_and_wait.assert_has_calls([
-            call(self.pyb_env.executable + ["-m", "twine", "register",
-                                            self.project.expand_path("$dir_dist", "dist", "a")], ANY, ANY),
-            call(self.pyb_env.executable + ["-m", "twine", "register",
-                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY),
-            call(self.pyb_env.executable + ["-m", "twine", "upload",
-                                            self.project.expand_path("$dir_dist", "dist", "a"),
-                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)
-        ])
+        self.pyb_env.run_process_and_wait.assert_has_calls(
+            [
+                call(
+                    self.pyb_env.executable
+                    + [
+                        "-m",
+                        "twine",
+                        "register",
+                        self.project.expand_path("$dir_dist", "dist", "a"),
+                    ],
+                    ANY,
+                    ANY,
+                ),
+                call(
+                    self.pyb_env.executable
+                    + [
+                        "-m",
+                        "twine",
+                        "register",
+                        self.project.expand_path("$dir_dist", "dist", "b"),
+                    ],
+                    ANY,
+                    ANY,
+                ),
+                call(
+                    self.pyb_env.executable
+                    + [
+                        "-m",
+                        "twine",
+                        "upload",
+                        self.project.expand_path("$dir_dist", "dist", "a"),
+                        self.project.expand_path("$dir_dist", "dist", "b"),
+                    ],
+                    ANY,
+                    ANY,
+                ),
+            ]
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -771,9 +905,21 @@ class UploadTests(PyBuilderTestCase):
         upload(self.project, MagicMock(Logger), self.reactor)
 
         self.pyb_env.run_process_and_wait.assert_has_calls(
-            [call(self.pyb_env.executable + ["-m", "twine", "upload",
-                                             self.project.expand_path("$dir_dist", "dist", "a"),
-                                             self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
+            [
+                call(
+                    self.pyb_env.executable
+                    + [
+                        "-m",
+                        "twine",
+                        "upload",
+                        self.project.expand_path("$dir_dist", "dist", "a"),
+                        self.project.expand_path("$dir_dist", "dist", "b"),
+                    ],
+                    ANY,
+                    ANY,
+                )
+            ]
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -784,10 +930,24 @@ class UploadTests(PyBuilderTestCase):
 
         upload(self.project, MagicMock(Logger), self.reactor)
 
-        self.pyb_env.run_process_and_wait.assert_has_calls([
-            call(self.pyb_env.executable + ["-m", "twine", "upload", "--repository-url", "test repo",
-                                            self.project.expand_path("$dir_dist", "dist", "a"),
-                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
+        self.pyb_env.run_process_and_wait.assert_has_calls(
+            [
+                call(
+                    self.pyb_env.executable
+                    + [
+                        "-m",
+                        "twine",
+                        "upload",
+                        "--repository-url",
+                        "test repo",
+                        self.project.expand_path("$dir_dist", "dist", "a"),
+                        self.project.expand_path("$dir_dist", "dist", "b"),
+                    ],
+                    ANY,
+                    ANY,
+                )
+            ]
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -799,10 +959,24 @@ class UploadTests(PyBuilderTestCase):
 
         upload(self.project, MagicMock(Logger), self.reactor)
 
-        self.pyb_env.run_process_and_wait.assert_has_calls([
-            call(self.pyb_env.executable + ["-m", "twine", "upload", "--repository-url", "test repo",
-                                            self.project.expand_path("$dir_dist", "dist", "a"),
-                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
+        self.pyb_env.run_process_and_wait.assert_has_calls(
+            [
+                call(
+                    self.pyb_env.executable
+                    + [
+                        "-m",
+                        "twine",
+                        "upload",
+                        "--repository-url",
+                        "test repo",
+                        self.project.expand_path("$dir_dist", "dist", "a"),
+                        self.project.expand_path("$dir_dist", "dist", "b"),
+                    ],
+                    ANY,
+                    ANY,
+                )
+            ]
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -813,10 +987,24 @@ class UploadTests(PyBuilderTestCase):
 
         upload(self.project, MagicMock(Logger), self.reactor)
 
-        self.pyb_env.run_process_and_wait.assert_has_calls([
-            call(self.pyb_env.executable + ["-m", "twine", "upload", "--repository", "test repo key",
-                                            self.project.expand_path("$dir_dist", "dist", "a"),
-                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
+        self.pyb_env.run_process_and_wait.assert_has_calls(
+            [
+                call(
+                    self.pyb_env.executable
+                    + [
+                        "-m",
+                        "twine",
+                        "upload",
+                        "--repository",
+                        "test repo key",
+                        self.project.expand_path("$dir_dist", "dist", "a"),
+                        self.project.expand_path("$dir_dist", "dist", "b"),
+                    ],
+                    ANY,
+                    ANY,
+                )
+            ]
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -827,10 +1015,23 @@ class UploadTests(PyBuilderTestCase):
 
         upload(self.project, MagicMock(Logger), self.reactor)
 
-        self.pyb_env.run_process_and_wait.assert_has_calls([
-            call(self.pyb_env.executable + ["-m", "twine", "upload", "--sign",
-                                            self.project.expand_path("$dir_dist", "dist", "a"),
-                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
+        self.pyb_env.run_process_and_wait.assert_has_calls(
+            [
+                call(
+                    self.pyb_env.executable
+                    + [
+                        "-m",
+                        "twine",
+                        "upload",
+                        "--sign",
+                        self.project.expand_path("$dir_dist", "dist", "a"),
+                        self.project.expand_path("$dir_dist", "dist", "b"),
+                    ],
+                    ANY,
+                    ANY,
+                )
+            ]
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -842,10 +1043,25 @@ class UploadTests(PyBuilderTestCase):
 
         upload(self.project, MagicMock(Logger), self.reactor)
 
-        self.pyb_env.run_process_and_wait.assert_has_calls([
-            call(self.pyb_env.executable + ["-m", "twine", "upload", "--sign", "--identity", "abcd",
-                                            self.project.expand_path("$dir_dist", "dist", "a"),
-                                            self.project.expand_path("$dir_dist", "dist", "b")], ANY, ANY)])
+        self.pyb_env.run_process_and_wait.assert_has_calls(
+            [
+                call(
+                    self.pyb_env.executable
+                    + [
+                        "-m",
+                        "twine",
+                        "upload",
+                        "--sign",
+                        "--identity",
+                        "abcd",
+                        self.project.expand_path("$dir_dist", "dist", "a"),
+                        self.project.expand_path("$dir_dist", "dist", "b"),
+                    ],
+                    ANY,
+                    ANY,
+                )
+            ]
+        )
 
 
 class TasksTest(PyBuilderTestCase):
@@ -869,24 +1085,46 @@ class TasksTest(PyBuilderTestCase):
         install_distribution(self.project, MagicMock(Logger), self.reactor)
 
         self.pyb_env.execute_command.assert_called_with(
-            self.pyb_env.executable + PIP_MODULE_STANZA + ["install", "--force-reinstall",
-                                                           self.project.expand_path("$dir_dist")],
-            cwd=".", env=ANY, outfile_name=ANY, error_file_name=ANY, shell=False, no_path_search=True)
+            self.pyb_env.executable
+            + PIP_MODULE_STANZA
+            + ["install", "--force-reinstall", self.project.expand_path("$dir_dist")],
+            cwd=".",
+            env=ANY,
+            outfile_name=ANY,
+            error_file_name=ANY,
+            shell=False,
+            no_path_search=True,
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.pip_utils.open", create=True)
     def test_install_with_index_url(self, *_):
         self.project.set_property("install_dependencies_index_url", "index_url")
-        self.project.set_property("install_dependencies_extra_index_url", "extra_index_url")
+        self.project.set_property(
+            "install_dependencies_extra_index_url", "extra_index_url"
+        )
 
         install_distribution(self.project, MagicMock(Logger), self.reactor)
 
         self.pyb_env.execute_command.assert_called_with(
-            self.pyb_env.executable + PIP_MODULE_STANZA +
-            ["install", "--index-url", "index_url", "--extra-index-url", "extra_index_url", "--force-reinstall",
-             self.project.expand_path("$dir_dist")], cwd=".", env=ANY, outfile_name=ANY, error_file_name=ANY,
+            self.pyb_env.executable
+            + PIP_MODULE_STANZA
+            + [
+                "install",
+                "--index-url",
+                "index_url",
+                "--extra-index-url",
+                "extra_index_url",
+                "--force-reinstall",
+                self.project.expand_path("$dir_dist"),
+            ],
+            cwd=".",
+            env=ANY,
+            outfile_name=ANY,
+            error_file_name=ANY,
             shell=False,
-            no_path_search=True)
+            no_path_search=True,
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
@@ -897,28 +1135,69 @@ class TasksTest(PyBuilderTestCase):
         build_binary_distribution(self.project, MagicMock(Logger), self.reactor)
 
         self.pyb_env.run_process_and_wait.assert_has_calls(
-            [call(self.pyb_env.executable + [ANY, "clean", "--all", "sdist"], ANY, ANY),
-             call(self.pyb_env.executable + [ANY, "clean", "--all", "bdist_dumb"], ANY, ANY),
-             call(self.pyb_env.executable + ["-m", "twine", "check",
-                                             self.project.expand_path("$dir_dist", "dist", "file1"),
-                                             self.project.expand_path("$dir_dist", "dist", "file2")], ANY, ANY)])
+            [
+                call(
+                    self.pyb_env.executable + [ANY, "clean", "--all", "sdist"], ANY, ANY
+                ),
+                call(
+                    self.pyb_env.executable + [ANY, "clean", "--all", "bdist_dumb"],
+                    ANY,
+                    ANY,
+                ),
+                call(
+                    self.pyb_env.executable
+                    + [
+                        "-m",
+                        "twine",
+                        "check",
+                        self.project.expand_path("$dir_dist", "dist", "file1"),
+                        self.project.expand_path("$dir_dist", "dist", "file2"),
+                    ],
+                    ANY,
+                    ANY,
+                ),
+            ]
+        )
 
     @patch("pybuilder.plugins.python.distutils_plugin.os.mkdir")
     @patch("pybuilder.plugins.python.distutils_plugin.open", create=True)
     @patch("pybuilder.plugins.python.distutils_plugin.os.walk")
     def test_binary_distribution_with_command_options(self, walk, *_):
-        self.project.set_property("distutils_command_options", {"sdist": ['--formats', 'bztar']})
+        self.project.set_property(
+            "distutils_command_options", {"sdist": ["--formats", "bztar"]}
+        )
 
         walk.return_value = [("root", (), ("file1", "file2"))]
 
         build_binary_distribution(self.project, MagicMock(Logger), self.reactor)
 
         self.pyb_env.run_process_and_wait.assert_has_calls(
-            [call(self.pyb_env.executable + [ANY, "clean", "--all", "sdist", "--formats", "bztar"], ANY, ANY),
-             call(self.pyb_env.executable + [ANY, "clean", "--all", "bdist_dumb"], ANY, ANY),
-             call(self.pyb_env.executable + ["-m", "twine", "check",
-                                             self.project.expand_path("$dir_dist", "dist", "file1"),
-                                             self.project.expand_path("$dir_dist", "dist", "file2")], ANY, ANY)])
+            [
+                call(
+                    self.pyb_env.executable
+                    + [ANY, "clean", "--all", "sdist", "--formats", "bztar"],
+                    ANY,
+                    ANY,
+                ),
+                call(
+                    self.pyb_env.executable + [ANY, "clean", "--all", "bdist_dumb"],
+                    ANY,
+                    ANY,
+                ),
+                call(
+                    self.pyb_env.executable
+                    + [
+                        "-m",
+                        "twine",
+                        "check",
+                        self.project.expand_path("$dir_dist", "dist", "file1"),
+                        self.project.expand_path("$dir_dist", "dist", "file2"),
+                    ],
+                    ANY,
+                    ANY,
+                ),
+            ]
+        )
 
 
 def popen_distutils_args(self, call_count, proc_runner):
@@ -931,18 +1210,23 @@ def create_project():
     project.build_depends_on("testingframework")
     project.depends_on("sometool")
     project.depends_on(
-        "pyassert", url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz")
+        "pyassert",
+        url="https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz",
+    )
     project.name = "Spam and Eggs"
     project.version = "1.2.3"
     project.summary = "This is a simple integration-test for distutils plugin."
     project.description = "As you might have guessed we have nothing to say here."
     project.authors = [
-        Author("Udo Juettner", "udo.juettner@gmail.com"), Author("Michael Gruber", "aelgru@gmail.com")]
+        Author("Udo Juettner", "udo.juettner@gmail.com"),
+        Author("Michael Gruber", "aelgru@gmail.com"),
+    ]
     project.license = "WTFPL"
     project.url = "http://github.com/pybuilder/pybuilder"
-    project.urls = {"b": "http://b",
-                    "a": "http://a",
-                    }
+    project.urls = {
+        "b": "http://b",
+        "a": "http://a",
+    }
     project.explicit_namespaces = ["foo.bar", "quick.brown.fox"]
 
     def return_dummy_list():
@@ -952,8 +1236,10 @@ def create_project():
     project.list_packages = return_dummy_list
     project.list_modules = return_dummy_list
 
-    project.set_property("distutils_classifiers", [
-        "Development Status :: 5 - Beta", "Environment :: Console"])
+    project.set_property(
+        "distutils_classifiers",
+        ["Development Status :: 5 - Beta", "Environment :: Console"],
+    )
     project.install_file("dir", "file1")
     project.install_file("dir", "file2")
     project.include_file("spam", "eggs")

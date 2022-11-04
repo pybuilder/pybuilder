@@ -41,13 +41,19 @@ class Describe(metaclass=ABCMeta):
     @property
     def stdlib(self):
         if self._stdlib is None:
-            self._stdlib = Path(self.interpreter.sysconfig_path("stdlib", config_var=self._config_vars))
+            self._stdlib = Path(
+                self.interpreter.sysconfig_path("stdlib", config_var=self._config_vars)
+            )
         return self._stdlib
 
     @property
     def stdlib_platform(self):
         if self._stdlib_platform is None:
-            self._stdlib_platform = Path(self.interpreter.sysconfig_path("platstdlib", config_var=self._config_vars))
+            self._stdlib_platform = Path(
+                self.interpreter.sysconfig_path(
+                    "platstdlib", config_var=self._config_vars
+                )
+            )
         return self._stdlib_platform
 
     @property
@@ -58,7 +64,10 @@ class Describe(metaclass=ABCMeta):
 
     def _calc_config_vars(self, to):
         sys_vars = self.interpreter.sysconfig_vars
-        return {k: (to if v.startswith(self.interpreter.prefix) else v) for k, v in sys_vars.items()}
+        return {
+            k: (to if v.startswith(self.interpreter.prefix) else v)
+            for k, v in sys_vars.items()
+        }
 
     @classmethod
     def can_describe(cls, interpreter):  # noqa: U100

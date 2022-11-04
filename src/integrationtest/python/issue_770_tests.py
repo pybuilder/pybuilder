@@ -24,7 +24,8 @@ from itest_support import IntegrationTestSupport
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import use_plugin, init
 
 use_plugin("python.unittest")
@@ -34,13 +35,17 @@ default_task = ["verify"]
 @init
 def init (project):
     project.set_property("remote_debug", 2)
-""")
+"""
+        )
         self.create_directory("src/main/python")
         self.create_directory("src/unittest/python")
-        self.write_file("src/unittest/python/issue_770_tests.py", r"""
+        self.write_file(
+            "src/unittest/python/issue_770_tests.py",
+            r"""
 print("Hello")
    print("World!")
-""")
+""",
+        )
         reactor = self.prepare_reactor()
         with self.assertRaises(IndentationError) as e:
             reactor.build()

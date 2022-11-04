@@ -40,7 +40,9 @@ def package(project, logger):
 
     source = project.basedir
     target = project.expand_path("$copy_resources_target")
-    logger.info("Copying resources matching '%s' from %s to %s", " ".join(globs), source, target)
+    logger.info(
+        "Copying resources matching '%s' from %s to %s", " ".join(globs), source, target
+    )
 
     apply_on_files(source, copy_resource, globs, target, logger)
 

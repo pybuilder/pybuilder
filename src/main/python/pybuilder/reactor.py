@@ -28,21 +28,34 @@ import os.path
 import sys
 from collections import deque
 
-from pybuilder.core import (TASK_ATTRIBUTE, DEPENDS_ATTRIBUTE, DEPENDENTS_ATTRIBUTE,
-                            DESCRIPTION_ATTRIBUTE, AFTER_ATTRIBUTE,
-                            BEFORE_ATTRIBUTE, INITIALIZER_ATTRIBUTE, FINALIZER_ATTRIBUTE,
-                            ACTION_ATTRIBUTE, ONLY_ONCE_ATTRIBUTE, TEARDOWN_ATTRIBUTE,
-                            Project, NAME_ATTRIBUTE, ENVIRONMENTS_ATTRIBUTE, optional, PluginDef)
-from pybuilder.errors import PyBuilderException, ProjectValidationFailedException
-from pybuilder.execution import Action, Initializer, Finalizer, Task, TaskDependency
-from pybuilder.pluginloader import (BuiltinPluginLoader,
-                                    DispatchingPluginLoader,
-                                    DownloadingPluginLoader)
-from pybuilder.python_env import PythonEnvRegistry, PythonEnv
+from pybuilder.core import (
+    ACTION_ATTRIBUTE,
+    AFTER_ATTRIBUTE,
+    BEFORE_ATTRIBUTE,
+    DEPENDENTS_ATTRIBUTE,
+    DEPENDS_ATTRIBUTE,
+    DESCRIPTION_ATTRIBUTE,
+    ENVIRONMENTS_ATTRIBUTE,
+    FINALIZER_ATTRIBUTE,
+    INITIALIZER_ATTRIBUTE,
+    NAME_ATTRIBUTE,
+    ONLY_ONCE_ATTRIBUTE,
+    TASK_ATTRIBUTE,
+    TEARDOWN_ATTRIBUTE,
+    PluginDef,
+    Project,
+    optional,
+)
+from pybuilder.errors import ProjectValidationFailedException, PyBuilderException
+from pybuilder.execution import Action, Finalizer, Initializer, Task, TaskDependency
+from pybuilder.pluginloader import (
+    BuiltinPluginLoader,
+    DispatchingPluginLoader,
+    DownloadingPluginLoader,
+)
+from pybuilder.python_env import PythonEnv, PythonEnvRegistry
 from pybuilder.python_utils import odict, patch_mp_pyb_env, prepend_env_to_path
-from pybuilder.utils import (as_list,
-                             get_dist_version_string,
-                             np, jp)
+from pybuilder.utils import as_list, get_dist_version_string, jp, np
 
 
 class BuildSummary:
@@ -54,7 +67,9 @@ class BuildSummary:
 class ModuleTraversalTree:
     def __init__(self):
         """A data structure that allows tracking module cross-references and retrieving them in the same order later"""
-        self._entries = odict()  # PluginDef -> [PluginDef, Plugin module, odict of children]
+        self._entries = (
+            odict()
+        )  # PluginDef -> [PluginDef, Plugin module, odict of children]
         self._entry_stack = deque()
         self._mods = 0
 
@@ -129,9 +144,11 @@ class Reactor:
         self.logger = logger
         self.execution_manager = execution_manager
         if not plugin_loader:
-            self.plugin_loader = DispatchingPluginLoader(self.logger,
-                                                         BuiltinPluginLoader(self.logger),
-                                                         DownloadingPluginLoader(self.logger))
+            self.plugin_loader = DispatchingPluginLoader(
+                self.logger,
+                BuiltinPluginLoader(self.logger),
+                DownloadingPluginLoader(self.logger),
+            )
         else:
             self.plugin_loader = plugin_loader
 
@@ -174,22 +191,25 @@ class Reactor:
         if len(validation_messages) > 0:
             raise ProjectValidationFailedException(validation_messages)
 
-    def prepare_build(self,
-                      property_overrides=None,
-                      project_directory=".",
-                      project_descriptor="build.py",
-                      exclude_optional_tasks=None,
-                      exclude_tasks=None,
-                      exclude_all_optional=False,
-                      reset_plugins=False,
-                      offline=False,
-                      no_venvs=False):
+    def prepare_build(
+        self,
+        property_overrides=None,
+        project_directory=".",
+        project_descriptor="build.py",
+        exclude_optional_tasks=None,
+        exclude_tasks=None,
+        exclude_all_optional=False,
+        reset_plugins=False,
+        offline=False,
+        no_venvs=False,
+    ):
         if not property_overrides:
             property_overrides = {}
         Reactor._set_current_instance(self)
 
         project_directory, project_descriptor = self.verify_project_directory(
-            project_directory, project_descriptor)
+            project_directory, project_descriptor
+        )
 
         if no_venvs:
             self.logger.warn("Python Virtual Environments are DISABLED!")
@@ -198,7 +218,9 @@ class Reactor:
 
         self.logger.debug("Loading project module from %s", project_descriptor)
 
-        self.project = Project(basedir=project_directory, offline=offline, no_venvs=no_venvs)
+        self.project = Project(
+            basedir=project_directory, offline=offline, no_venvs=no_venvs
+        )
 
         self._setup_plugin_directory(reset_plugins, no_venvs)
 
@@ -218,7 +240,9 @@ class Reactor:
 
         self.collect_project_annotations(self.project_module)
 
-        self.execution_manager.resolve_dependencies(exclude_optional_tasks, exclude_tasks, exclude_all_optional)
+        self.execution_manager.resolve_dependencies(
+            exclude_optional_tasks, exclude_tasks, exclude_all_optional
+        )
 
         self._remove_deferred_plugin_import()
 
@@ -233,8 +257,9 @@ class Reactor:
         execution_plan = self.create_execution_plan(tasks, environments)
 
         execution_summary = self.build_execution_plan(tasks, execution_plan)
-        self.execution_manager.execute_finalizers(environments, logger=self.logger, project=self.project,
-                                                  reactor=self)
+        self.execution_manager.execute_finalizers(
+            environments, logger=self.logger, project=self.project, reactor=self
+        )
         return execution_summary
 
     def create_execution_plan(self, tasks, environments):
@@ -245,8 +270,9 @@ class Reactor:
 
         self.project._environments = tuple(environments)
 
-        self.execution_manager.execute_initializers(environments, logger=self.logger, project=self.project,
-                                                    reactor=self)
+        self.execution_manager.execute_initializers(
+            environments, logger=self.logger, project=self.project, reactor=self
+        )
         self.log_project_properties()
 
         self.validate_project()
@@ -256,11 +282,16 @@ class Reactor:
         return self.execution_manager.build_execution_plan(tasks)
 
     def build_execution_plan(self, tasks, execution_plan):
-        self.logger.debug("Execution plan is %s", ", ".join(
-            [task.name for task in execution_plan]))
+        self.logger.debug(
+            "Execution plan is %s", ", ".join([task.name for task in execution_plan])
+        )
 
         self.logger.info(
-            "Building %s version %s%s", self.project.name, self.project.version, get_dist_version_string(self.project))
+            "Building %s version %s%s",
+            self.project.name,
+            self.project.version,
+            get_dist_version_string(self.project),
+        )
         self.logger.info("Executing build in %s", self.project.basedir)
 
         if len(tasks) == 1:
@@ -270,33 +301,30 @@ class Reactor:
             self.logger.info("Going to execute tasks: %s", list_of_tasks)
 
         task_execution_summaries = self.execution_manager.execute_execution_plan(
-            execution_plan,
-            logger=self.logger,
-            project=self.project,
-            reactor=self)
+            execution_plan, logger=self.logger, project=self.project, reactor=self
+        )
 
         return BuildSummary(self.project, task_execution_summaries)
 
     def execute_task(self, task_name):
         execution_plan = self.execution_manager.build_execution_plan(task_name)
 
-        self.execution_manager.execute_execution_plan(execution_plan,
-                                                      logger=self.logger,
-                                                      project=self.project,
-                                                      reactor=self)
+        self.execution_manager.execute_execution_plan(
+            execution_plan, logger=self.logger, project=self.project, reactor=self
+        )
 
     def execute_task_shortest_plan(self, task_name):
         execution_plan = self.execution_manager.build_shortest_execution_plan(task_name)
 
-        self.execution_manager.execute_execution_plan(execution_plan,
-                                                      logger=self.logger,
-                                                      project=self.project,
-                                                      reactor=self)
+        self.execution_manager.execute_execution_plan(
+            execution_plan, logger=self.logger, project=self.project, reactor=self
+        )
 
     def override_properties(self, property_overrides):
         for property_override in property_overrides:
             self.project.set_property(
-                property_override, property_overrides[property_override])
+                property_override, property_overrides[property_override]
+            )
 
     def log_project_properties(self):
         formatted = ""
@@ -310,8 +338,11 @@ class Reactor:
             del self._pending_plugin_installs[:]
 
         if plugin_def not in self._plugins_imported:
-            self.logger.debug("Loading plugin '%s'%s", plugin_def.name,
-                              " version %s" % plugin_def.version if plugin_def.version else "")
+            self.logger.debug(
+                "Loading plugin '%s'%s",
+                plugin_def.name,
+                " version %s" % plugin_def.version if plugin_def.version else "",
+            )
 
             plugin_module = self.plugin_loader.load_plugin(self.project, plugin_def)
             self._plugins_imported.add(plugin_def)
@@ -325,8 +356,10 @@ class Reactor:
                 if not isinstance(name, str):
                     name = self.normalize_candidate_name(name)
                 if name not in injected_task_dependencies:
-                    injected_task_dependencies[name] = list()
-                injected_task_dependencies[name].append(TaskDependency(depends_on, optional))
+                    injected_task_dependencies[name] = []
+                injected_task_dependencies[name].append(
+                    TaskDependency(depends_on, optional)
+                )
 
         for name in dir(project_module):
             candidate = getattr(project_module, name)
@@ -353,13 +386,15 @@ class Reactor:
             if getattr(candidate, TASK_ATTRIBUTE, None):
                 dependencies = getattr(candidate, DEPENDS_ATTRIBUTE, None)
 
-                task_dependencies = list()
+                task_dependencies = []
                 if dependencies:
                     dependencies = list(as_list(dependencies))
                     for d in dependencies:
                         if isinstance(d, optional):
                             d = as_list(d())
-                            task_dependencies.extend([TaskDependency(item, True) for item in d])
+                            task_dependencies.extend(
+                                [TaskDependency(item, True) for item in d]
+                            )
                         else:
                             task_dependencies.append(TaskDependency(d))
 
@@ -368,9 +403,12 @@ class Reactor:
                     task_dependencies.extend(injected_task_dependencies[name])
                     del injected_task_dependencies[name]
 
-                self.logger.debug("Found task '%s' with dependencies %s", name, task_dependencies)
+                self.logger.debug(
+                    "Found task '%s' with dependencies %s", name, task_dependencies
+                )
                 self.execution_manager.register_task(
-                    Task(name, candidate, task_dependencies, description))
+                    Task(name, candidate, task_dependencies, description)
+                )
 
             elif getattr(candidate, ACTION_ATTRIBUTE, None):
                 before = getattr(candidate, BEFORE_ATTRIBUTE, None)
@@ -381,20 +419,27 @@ class Reactor:
 
                 self.logger.debug("Found action %s", name)
                 self.execution_manager.register_action(
-                    Action(name, candidate, before, after, description, only_once, teardown))
+                    Action(
+                        name, candidate, before, after, description, only_once, teardown
+                    )
+                )
 
             elif getattr(candidate, INITIALIZER_ATTRIBUTE, None):
                 environments = getattr(candidate, ENVIRONMENTS_ATTRIBUTE, [])
 
                 self.execution_manager.register_initializer(
-                    Initializer(name, candidate, environments, description))
+                    Initializer(name, candidate, environments, description)
+                )
             elif getattr(candidate, FINALIZER_ATTRIBUTE, None):
                 environments = getattr(candidate, ENVIRONMENTS_ATTRIBUTE, [])
 
                 self.execution_manager.register_finalizer(
-                    Finalizer(name, candidate, environments, description))
+                    Finalizer(name, candidate, environments, description)
+                )
 
-        self.execution_manager.register_late_task_dependencies(injected_task_dependencies)
+        self.execution_manager.register_late_task_dependencies(
+            injected_task_dependencies
+        )
 
     def apply_project_attributes(self):
         self.propagate_property("name")
@@ -425,9 +470,17 @@ class Reactor:
             else:
                 raise PyBuilderException("No default task given.")
         else:
-            new_tasks = [task for task in tasks if task[0] not in ("+", "^") or task in ("+", "^")]
-            append_tasks = [task[1:] for task in tasks if task[0] == "+" and task != "+"]
-            remove_tasks = [task[1:] for task in tasks if task[0] == "^" and task != "^"]
+            new_tasks = [
+                task
+                for task in tasks
+                if task[0] not in ("+", "^") or task in ("+", "^")
+            ]
+            append_tasks = [
+                task[1:] for task in tasks if task[0] == "+" and task != "+"
+            ]
+            remove_tasks = [
+                task[1:] for task in tasks if task[0] == "^" and task != "^"
+            ]
 
             if len(new_tasks):
                 del tasks[:]
@@ -453,7 +506,11 @@ class Reactor:
 
     @staticmethod
     def normalize_candidate_name(candidate):
-        return getattr(candidate, NAME_ATTRIBUTE, candidate.__name__ if hasattr(candidate, "__name__") else None)
+        return getattr(
+            candidate,
+            NAME_ATTRIBUTE,
+            candidate.__name__ if hasattr(candidate, "__name__") else None,
+        )
 
     @staticmethod
     def load_project_module(project_descriptor):
@@ -461,26 +518,35 @@ class Reactor:
             return imp.load_source("build", project_descriptor)
         except ImportError as e:
             raise PyBuilderException(
-                "Error importing project descriptor %s: %s" % (project_descriptor, e))
+                "Error importing project descriptor %s: %s" % (project_descriptor, e)
+            )
 
     @staticmethod
     def verify_project_directory(project_directory, project_descriptor):
         project_directory = np(project_directory)
 
         if not os.path.exists(project_directory):
-            raise PyBuilderException("Project directory does not exist: %s", project_directory)
+            raise PyBuilderException(
+                "Project directory does not exist: %s", project_directory
+            )
 
         if not os.path.isdir(project_directory):
-            raise PyBuilderException("Project directory is not a directory: %s", project_directory)
+            raise PyBuilderException(
+                "Project directory is not a directory: %s", project_directory
+            )
 
         project_descriptor_full_path = jp(project_directory, project_descriptor)
 
         if not os.path.exists(project_descriptor_full_path):
-            raise PyBuilderException("Project directory does not contain descriptor file: %s",
-                                     project_descriptor_full_path)
+            raise PyBuilderException(
+                "Project directory does not contain descriptor file: %s",
+                project_descriptor_full_path,
+            )
 
         if not os.path.isfile(project_descriptor_full_path):
-            raise PyBuilderException("Project descriptor is not a file: %s", project_descriptor_full_path)
+            raise PyBuilderException(
+                "Project descriptor is not a file: %s", project_descriptor_full_path
+            )
 
         return project_directory, project_descriptor_full_path
 
@@ -507,16 +573,27 @@ class Reactor:
         system_env = per["system"]
 
         if not no_venvs:
-            plugin_dir = self._plugin_dir = np(jp(self.project.basedir, ".pybuilder", "plugins",
-                                                  system_env.versioned_dir_name))
+            plugin_dir = self._plugin_dir = np(
+                jp(
+                    self.project.basedir,
+                    ".pybuilder",
+                    "plugins",
+                    system_env.versioned_dir_name,
+                )
+            )
 
-            self.logger.debug("Setting up plugins VEnv at '%s'%s", plugin_dir, " (resetting)" if reset_plugins else "")
-            plugin_env = per["pybuilder"] = PythonEnv(plugin_dir, self).create_venv(with_pip=True,
-                                                                                    symlinks=system_env.venv_symlinks,
-                                                                                    upgrade=True,
-                                                                                    clear=(reset_plugins or
-                                                                                           system_env.is_pypy),
-                                                                                    offline=self.project.offline)
+            self.logger.debug(
+                "Setting up plugins VEnv at '%s'%s",
+                plugin_dir,
+                " (resetting)" if reset_plugins else "",
+            )
+            plugin_env = per["pybuilder"] = PythonEnv(plugin_dir, self).create_venv(
+                with_pip=True,
+                symlinks=system_env.venv_symlinks,
+                upgrade=True,
+                clear=(reset_plugins or system_env.is_pypy),
+                offline=self.project.offline,
+            )
             prepend_env_to_path(plugin_env, sys.path)
             patch_mp_pyb_env(plugin_env)
         else:
@@ -542,8 +619,7 @@ class Reactor:
         except ImportError:
             if self._load_deferred_plugins():
                 return self._old_import(*args, **kwargs)
-            else:
-                raise
+            raise
 
     def _load_deferred_plugins(self):
         if not self._deferred_import:

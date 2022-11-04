@@ -5,11 +5,13 @@
 import re
 import string
 import urllib.parse
-from typing import List, Optional as TOptional, Set
+from typing import List
+from typing import Optional as TOptional
+from typing import Set
 
-from ...extern.pyparsing import (  # noqa
-    Combine,
-    Literal as L,
+from ...extern.pyparsing import Combine
+from ...extern.pyparsing import Literal as L  # noqa
+from ...extern.pyparsing import (
     Optional,
     ParseException,
     Regex,
@@ -19,7 +21,6 @@ from ...extern.pyparsing import (  # noqa
     stringEnd,
     stringStart,
 )
-
 from .markers import MARKER_EXPR, Marker
 from .specifiers import LegacySpecifier, Specifier, SpecifierSet
 

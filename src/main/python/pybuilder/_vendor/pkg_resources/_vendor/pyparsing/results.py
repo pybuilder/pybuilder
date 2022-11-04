@@ -1,8 +1,8 @@
 # results.py
-from collections.abc import MutableMapping, Mapping, MutableSequence, Iterator
 import pprint
+from collections.abc import Iterator, Mapping, MutableMapping, MutableSequence
+from typing import Any, Tuple
 from weakref import ref as wkref
-from typing import Tuple, Any
 
 str_type: Tuple[type, ...] = (str, bytes)
 _generator_type = type((_ for _ in ()))
@@ -151,7 +151,7 @@ class ParseResults:
             )
         else:
             self._toklist = [toklist]
-        self._tokdict = dict()
+        self._tokdict = {}
         return self
 
     # Performance tuning: we construct a *lot* of these, so keep this
@@ -191,21 +191,19 @@ class ParseResults:
     def __getitem__(self, i):
         if isinstance(i, (int, slice)):
             return self._toklist[i]
-        else:
-            if i not in self._all_names:
-                return self._tokdict[i][-1][0]
-            else:
-                return ParseResults([v[0] for v in self._tokdict[i]])
+        if i not in self._all_names:
+            return self._tokdict[i][-1][0]
+        return ParseResults([v[0] for v in self._tokdict[i]])
 
     def __setitem__(self, k, v, isinstance=isinstance):
         if isinstance(v, _ParseResultsWithOffset):
-            self._tokdict[k] = self._tokdict.get(k, list()) + [v]
+            self._tokdict[k] = self._tokdict.get(k, []) + [v]
             sub = v[0]
         elif isinstance(k, (int, slice)):
             self._toklist[k] = v
             sub = v
         else:
-            self._tokdict[k] = self._tokdict.get(k, list()) + [
+            self._tokdict[k] = self._tokdict.get(k, []) + [
                 _ParseResultsWithOffset(v, 0)
             ]
             sub = v
@@ -319,9 +317,8 @@ class ParseResults:
             ret = self[index]
             del self[index]
             return ret
-        else:
-            defaultvalue = args[1]
-            return defaultvalue
+        defaultvalue = args[1]
+        return defaultvalue
 
     def get(self, key, default_value=None):
         """
@@ -343,8 +340,7 @@ class ParseResults:
         """
         if key in self:
             return self[key]
-        else:
-            return default_value
+        return default_value
 
     def insert(self, index, ins_string):
         """
@@ -451,9 +447,8 @@ class ParseResults:
         if isinstance(other, int) and other == 0:
             # useful for merging many ParseResults using sum() builtin
             return self.copy()
-        else:
-            # this may raise a TypeError - so be it
-            return other + self
+        # this may raise a TypeError - so be it
+        return other + self
 
     def __repr__(self) -> str:
         return "{}({!r}, {})".format(type(self).__name__, self._toklist, self.as_dict())
@@ -525,8 +520,7 @@ class ParseResults:
         def to_item(obj):
             if isinstance(obj, ParseResults):
                 return obj.as_dict() if obj.haskeys() else [to_item(v) for v in obj]
-            else:
-                return obj
+            return obj
 
         return dict((k, to_item(v)) for k, v in self.items())
 
@@ -568,7 +562,7 @@ class ParseResults:
         """
         if self._name:
             return self._name
-        elif self._parent:
+        if self._parent:
             par = self._parent()
 
             def find_in_parent(sub):
@@ -583,14 +577,13 @@ class ParseResults:
                 )
 
             return find_in_parent(self) if par else None
-        elif (
+        if (
             len(self) == 1
             and len(self._tokdict) == 1
             and next(iter(self._tokdict.values()))[0][1] in (0, -1)
         ):
             return next(iter(self._tokdict.keys()))
-        else:
-            return None
+        return None
 
     def dump(self, indent="", full=True, include_list=True, _depth=0) -> str:
         """

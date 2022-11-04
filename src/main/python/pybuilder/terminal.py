@@ -55,52 +55,53 @@ UNDERLINE = "4"
 
 
 def bg(color):
-    """ Returns the color code to use the given color as a background color. """
+    """Returns the color code to use the given color as a background color."""
     return _BACKGROUND_COLOR + str(int(color))
 
 
 def fg(color):
-    """ Returns the color code to use the given color as a foreground color. """
+    """Returns the color code to use the given color as a foreground color."""
     return _FOREGROUND_COLOR + str(int(color))
 
 
 def styled_text(text, *style_attributes):
     """
-        Applies all the given style attributes to the given text and returns
-        as string which contains
-        - the application of the style attributes
-        - the text itself
-        - a reset of all style attributes
+    Applies all the given style attributes to the given text and returns
+    as string which contains
+    - the application of the style attributes
+    - the text itself
+    - a reset of all style attributes
     """
     return "%s%s%s" % (
         _ESCAPE_SEQUENCE_PATTERN % (_ESCAPE_SEQUENCE_SEPARATOR.join(style_attributes)),
         text,
-        _ESCAPE_SEQUENCE_PATTERN % "0")
+        _ESCAPE_SEQUENCE_PATTERN % "0",
+    )
 
 
 def bold(text):
     """
-        Convenience function to format the given text in bold font face.
-        Equivalent to
-            styled_text(text, BOLD)
+    Convenience function to format the given text in bold font face.
+    Equivalent to
+        styled_text(text, BOLD)
     """
     return styled_text(text, BOLD)
 
 
 def italic(text):
     """
-        Convenience function to format the given text in italic font face.
-        Equivalent to
-            styled_text(text, ITALIC)
+    Convenience function to format the given text in italic font face.
+    Equivalent to
+        styled_text(text, ITALIC)
     """
     return styled_text(text, ITALIC)
 
 
 def underline(text):
     """
-        Convenience function to format the given text with an underline.
-        Equivalent to
-            styled_text(text, UNDERLINE)
+    Convenience function to format the given text with an underline.
+    Equivalent to
+        styled_text(text, UNDERLINE)
     """
     return styled_text(text, UNDERLINE)
 

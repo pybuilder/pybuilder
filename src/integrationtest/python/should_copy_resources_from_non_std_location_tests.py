@@ -23,7 +23,8 @@ from itest_support import IntegrationTestSupport
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import use_plugin, init
 
 use_plugin("python.core")
@@ -33,7 +34,8 @@ use_plugin("copy_resources")
 def init (project):
     project.get_property("copy_resources_glob").append("src/main/resources/**")
     project.set_property("copy_resources_target", "$dir_dist")
-        """)
+        """
+        )
 
         self.create_directory("src/main/python")
         self.create_directory("src/main/resources/foo")
@@ -45,9 +47,15 @@ def init (project):
         reactor.build("package")
         project = reactor.project
 
-        self.assert_file_content(project.expand_path("$dir_dist/src/main/resources/spam"), "spam")
-        self.assert_file_content(project.expand_path("$dir_dist/src/main/resources/eggs"), "eggs")
-        self.assert_file_content(project.expand_path("$dir_dist/src/main/resources/foo/bar"), "bar")
+        self.assert_file_content(
+            project.expand_path("$dir_dist/src/main/resources/spam"), "spam"
+        )
+        self.assert_file_content(
+            project.expand_path("$dir_dist/src/main/resources/eggs"), "eggs"
+        )
+        self.assert_file_content(
+            project.expand_path("$dir_dist/src/main/resources/foo/bar"), "bar"
+        )
 
 
 if __name__ == "__main__":

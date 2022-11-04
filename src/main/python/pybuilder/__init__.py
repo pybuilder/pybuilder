@@ -20,15 +20,16 @@ __version__ = "${dist_version}"
 
 
 def bootstrap():
-    import sys
     import inspect
+    import sys
+
     from pybuilder.errors import BuildFailedException
 
     try:
         current_frame = inspect.currentframe()
         previous_frame = current_frame.f_back
-        name_of_previous_frame = previous_frame.f_globals['__name__']
-        if name_of_previous_frame == '__main__':
+        name_of_previous_frame = previous_frame.f_globals["__name__"]
+        if name_of_previous_frame == "__main__":
             import pybuilder.cli
 
             sys.exit(pybuilder.cli.main(*sys.argv[1:]))

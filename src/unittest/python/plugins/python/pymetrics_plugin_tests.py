@@ -18,13 +18,13 @@
 
 from unittest import TestCase
 
-from pybuilder.core import Project, Logger
-from pybuilder.plugins.python.pymetrics_plugin import check_pymetrics_available
 from test_utils import Mock
+
+from pybuilder.core import Logger, Project
+from pybuilder.plugins.python.pymetrics_plugin import check_pymetrics_available
 
 
 class CheckMyMetricsAvailableTests(TestCase):
-
     def test_should_check_that_pymetrics_can_be_executed(self):
         mock_project = Mock(Project)
         mock_logger = Mock(Logger)
@@ -38,4 +38,6 @@ class CheckMyMetricsAvailableTests(TestCase):
 
         check_pymetrics_available(mock_project, mock_logger, reactor)
 
-        verify_mock.assert_called_with(["pymetrics", "--nosql", "--nocsv"], "pymetrics", "plugin python.pymetrics")
+        verify_mock.assert_called_with(
+            ["pymetrics", "--nosql", "--nocsv"], "pymetrics", "plugin python.pymetrics"
+        )

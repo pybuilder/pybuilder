@@ -42,9 +42,14 @@ class TestPythonGlobTest(unittest.TestCase):
         rmtree(self.tmp_dir)
 
     def test_iglob(self):
-        self.assertEqual(list(iglob(jp(self.tmp_dir, "*.py"))), [jp(self.tmp_dir, "x.py")])
-        self.assertEqual(list(iglob(jp(self.tmp_dir, "**", "*.py"), recursive=True)),
-                         [jp(self.tmp_dir, "x.py"),
-                          jp(self.tmp_dir, "a", "y.py"),
-                          jp(self.tmp_dir, "a", "b", "z.py")
-                          ])
+        self.assertEqual(
+            list(iglob(jp(self.tmp_dir, "*.py"))), [jp(self.tmp_dir, "x.py")]
+        )
+        self.assertEqual(
+            list(iglob(jp(self.tmp_dir, "**", "*.py"), recursive=True)),
+            [
+                jp(self.tmp_dir, "x.py"),
+                jp(self.tmp_dir, "a", "y.py"),
+                jp(self.tmp_dir, "a", "b", "z.py"),
+            ],
+        )

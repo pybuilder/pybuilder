@@ -23,19 +23,18 @@ try:
 except ImportError:
     from Queue import Empty
 
-from test_utils import patch, Mock
+from test_utils import Mock, patch
 
 from pybuilder.core import Project
 from pybuilder.plugins.python.integrationtest_plugin import (
+    ConsumingQueue,
     TaskPoolProgress,
     add_additional_environment_keys,
-    ConsumingQueue,
-    initialize_integrationtest_plugin
+    initialize_integrationtest_plugin,
 )
 
 
 class TaskPoolProgressTests(unittest.TestCase):
-
     def setUp(self):
         self.progress = TaskPoolProgress(42, 8)
         self.project = Project("basedir")
@@ -48,7 +47,7 @@ class TaskPoolProgressTests(unittest.TestCase):
             "integrationtest_file_suffix": True,
             "integrationtest_additional_environment": {"env3": "foo"},
             "integrationtest_inherit_environment": True,
-            "integrationtest_always_verbose": True
+            "integrationtest_always_verbose": True,
         }
         for property_name, property_value in expected_properties.items():
             self.project.set_property(property_name, property_value)
@@ -57,15 +56,22 @@ class TaskPoolProgressTests(unittest.TestCase):
 
         for property_name, property_value in expected_properties.items():
             self.assertEqual(
-                self.project.get_property("dir_source_integrationtest_python"), "foo/bar/python")
+                self.project.get_property("dir_source_integrationtest_python"),
+                "foo/bar/python",
+            )
             self.assertEqual(
-                self.project.get_property("integrationtest_file_glob"), "*foo.py")
+                self.project.get_property("integrationtest_file_glob"), "*foo.py"
+            )
             self.assertEqual(
-                self.project.get_property("integrationtest_file_suffix"), True)
+                self.project.get_property("integrationtest_file_suffix"), True
+            )
             self.assertEqual(
-                self.project.get_property("integrationtest_additional_environment"), {"env3": "foo"}),
+                self.project.get_property("integrationtest_additional_environment"),
+                {"env3": "foo"},
+            ),
             self.assertEqual(
-                self.project.get_property("integrationtest_always_verbose"), True)
+                self.project.get_property("integrationtest_always_verbose"), True
+            )
 
     def test_should_create_new_progress(self):
         self.assertEqual(self.progress.workers_count, 8)
@@ -80,7 +86,9 @@ class TaskPoolProgressTests(unittest.TestCase):
 
         self.assertEqual(progress.running_tasks_count, 2)
 
-    def test_should_have_max_amount_of_tasks_running_when_limited_by_tasks_after_updating(self):
+    def test_should_have_max_amount_of_tasks_running_when_limited_by_tasks_after_updating(
+        self,
+    ):
         self.progress.update(40)
 
         self.assertEqual(self.progress.running_tasks_count, 2)
@@ -88,7 +96,9 @@ class TaskPoolProgressTests(unittest.TestCase):
     def test_should_have_tasks_that_are_neither_running_nor_finished_as_waiting(self):
         self.assertEqual(self.progress.waiting_tasks_count, 42 - 8)
 
-    def test_should_have_tasks_that_are_neither_running_nor_finished_as_waiting_after_updating(self):
+    def test_should_have_tasks_that_are_neither_running_nor_finished_as_waiting_after_updating(
+        self,
+    ):
         self.progress.update(2)
 
         self.assertEqual(self.progress.waiting_tasks_count, 40 - 8)
@@ -107,92 +117,84 @@ class TaskPoolProgressTests(unittest.TestCase):
 
         self.assertTrue(progress.is_finished)
 
-    @patch('pybuilder.plugins.python.integrationtest_plugin.sys.stdout')
+    @patch("pybuilder.plugins.python.integrationtest_plugin.sys.stdout")
     def test_should_be_displayed_when_tty_given(self, stdout):
         stdout.isatty.return_value = True
 
         self.assertTrue(self.progress.can_be_displayed)
 
-    @patch('pybuilder.plugins.python.integrationtest_plugin.sys.stdout')
+    @patch("pybuilder.plugins.python.integrationtest_plugin.sys.stdout")
     def test_should_not_be_displayed_when_no_tty_given(self, stdout):
         stdout.isatty.return_value = False
 
         self.assertFalse(self.progress.can_be_displayed)
 
-    @patch('pybuilder.plugins.python.integrationtest_plugin.styled_text')
+    @patch("pybuilder.plugins.python.integrationtest_plugin.styled_text")
     def test_should_render_progress(self, styled):
         styled.side_effect = lambda text, *styles: text
         progress = TaskPoolProgress(8, 2)
         progress.update(3)
 
-        self.assertEqual(progress.render(),
-                         '[---ᗧ//|||]')
+        self.assertEqual(progress.render(), "[---ᗧ//|||]")
 
-    @patch('pybuilder.plugins.python.integrationtest_plugin.styled_text')
+    @patch("pybuilder.plugins.python.integrationtest_plugin.styled_text")
     def test_should_not_render_pacman_when_finished(self, styled):
         styled.side_effect = lambda text, *styles: text
         progress = TaskPoolProgress(8, 2)
         progress.update(8)
 
-        self.assertEqual(progress.render(),
-                         '[--------] ')
+        self.assertEqual(progress.render(), "[--------] ")
 
-    @patch('pybuilder.plugins.python.integrationtest_plugin.styled_text')
-    @patch('pybuilder.plugins.python.integrationtest_plugin.print_text')
-    @patch('pybuilder.plugins.python.integrationtest_plugin.TaskPoolProgress.can_be_displayed')
-    def test_should_erase_previous_progress_on_subsequent_renders(self, _, print_text, styled):
+    @patch("pybuilder.plugins.python.integrationtest_plugin.styled_text")
+    @patch("pybuilder.plugins.python.integrationtest_plugin.print_text")
+    @patch(
+        "pybuilder.plugins.python.integrationtest_plugin.TaskPoolProgress.can_be_displayed"
+    )
+    def test_should_erase_previous_progress_on_subsequent_renders(
+        self, _, print_text, styled
+    ):
         styled.side_effect = lambda text, *styles: text
         progress = TaskPoolProgress(8, 2)
         progress.update(2)
 
         progress.render_to_terminal()
-        print_text.assert_called_with('[--ᗧ//||||]', flush=True)
+        print_text.assert_called_with("[--ᗧ//||||]", flush=True)
         progress.render_to_terminal()
         print_text.assert_called_with(
-            '\b' * (10 + len('ᗧ')) + '[--ᗧ//||||]', flush=True)
+            "\b" * (10 + len("ᗧ")) + "[--ᗧ//||||]", flush=True
+        )
 
 
 class IntegrationTestConfigurationTests(unittest.TestCase):
-
     def test_should_merge_additional_environment_into_current_one(self):
-        project = Project('any-directory')
-        project.set_property(
-            'integrationtest_additional_environment', {'foo': 'bar'})
-        environment = {'bar': 'baz'}
+        project = Project("any-directory")
+        project.set_property("integrationtest_additional_environment", {"foo": "bar"})
+        environment = {"bar": "baz"}
 
         add_additional_environment_keys(environment, project)
 
-        self.assertEqual(environment,
-                         {
-                             'foo': 'bar',
-                             'bar': 'baz'
-                         })
+        self.assertEqual(environment, {"foo": "bar", "bar": "baz"})
 
     def test_should_override_current_environment_keys_with_additional_environment(self):
-        project = Project('any-directory')
-        project.set_property(
-            'integrationtest_additional_environment', {'foo': 'mooh'})
-        environment = {'foo': 'bar'}
+        project = Project("any-directory")
+        project.set_property("integrationtest_additional_environment", {"foo": "mooh"})
+        environment = {"foo": "bar"}
 
         add_additional_environment_keys(environment, project)
 
-        self.assertEqual(environment,
-                         {
-                             'foo': 'mooh'
-                         })
+        self.assertEqual(environment, {"foo": "mooh"})
 
     def test_should_fail_when_additional_environment_is_not_a_map(self):
-        project = Project('any-directory')
-        project.set_property(
-            'integrationtest_additional_environment', 'meow')
-        self.assertRaises(
-            ValueError, add_additional_environment_keys, {}, project)
+        project = Project("any-directory")
+        project.set_property("integrationtest_additional_environment", "meow")
+        self.assertRaises(ValueError, add_additional_environment_keys, {}, project)
 
 
 class ConsumingQueueTests(unittest.TestCase):
-
-    @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
-    def test_should_consume_no_items_when_underlying_queue_empty(self, underlying_nowait_get):
+    @patch("pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait")
+    def test_should_consume_no_items_when_underlying_queue_empty(
+        self, underlying_nowait_get
+    ):
         ctx = Mock()
         ctx.Empty = Empty
         queue = ConsumingQueue(ctx)
@@ -206,8 +208,10 @@ class ConsumingQueueTests(unittest.TestCase):
 
         self.assertEqual(queue.items, [])
 
-    @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
-    def test_should_consume_one_item_when_underlying_queue_has_one(self, underlying_nowait_get):
+    @patch("pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait")
+    def test_should_consume_one_item_when_underlying_queue_has_one(
+        self, underlying_nowait_get
+    ):
         ctx = Mock()
         ctx.Empty = Empty
         queue = ConsumingQueue(ctx)
@@ -221,10 +225,12 @@ class ConsumingQueueTests(unittest.TestCase):
 
         queue.consume_available_items()
 
-        self.assertEqual(queue.items, ['any-item'])
+        self.assertEqual(queue.items, ["any-item"])
 
-    @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
-    def test_should_consume_many_items_when_underlying_queue_has_them(self, underlying_nowait_get):
+    @patch("pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait")
+    def test_should_consume_many_items_when_underlying_queue_has_them(
+        self, underlying_nowait_get
+    ):
         ctx = Mock()
         ctx.Empty = Empty
         queue = ConsumingQueue(ctx)
@@ -240,12 +246,12 @@ class ConsumingQueueTests(unittest.TestCase):
 
         queue.consume_available_items()
 
-        self.assertEqual(queue.items, ['any-item',
-                                       'any-other-item',
-                                       'some stuff'])
+        self.assertEqual(queue.items, ["any-item", "any-other-item", "some stuff"])
 
-    @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
-    def test_should_give_item_size_of_zero_when_underlying_queue_is_empty(self, underlying_nowait_get):
+    @patch("pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait")
+    def test_should_give_item_size_of_zero_when_underlying_queue_is_empty(
+        self, underlying_nowait_get
+    ):
         ctx = Mock()
         ctx.Empty = Empty
         queue = ConsumingQueue(ctx)
@@ -260,16 +266,18 @@ class ConsumingQueueTests(unittest.TestCase):
 
         self.assertEqual(queue.size, 0)
 
-    @patch('pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait')
-    def test_should_give_item_size_of_n_when_underlying_queue_has_n_elements(self, underlying_nowait_get):
+    @patch("pybuilder.plugins.python.integrationtest_plugin.ConsumingQueue.get_nowait")
+    def test_should_give_item_size_of_n_when_underlying_queue_has_n_elements(
+        self, underlying_nowait_get
+    ):
         ctx = Mock()
         ctx.Empty = Empty
         queue = ConsumingQueue(ctx)
 
         def empty_queue_get_nowait():
-            yield 'first'
-            yield 'second'
-            yield 'third'
+            yield "first"
+            yield "second"
+            yield "third"
             raise Empty()
 
         # generator, needs initialization!

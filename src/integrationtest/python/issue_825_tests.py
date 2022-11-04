@@ -23,7 +23,8 @@ from itest_support import IntegrationTestSupport
 
 class Issue818Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import use_plugin, init
 
 use_plugin("python.core")
@@ -38,7 +39,8 @@ def initialize(project):
 @init(environments="env")
 def initialize_env(project):
     assert project.environments == ("env", )
-""")
+"""
+        )
 
         reactor = self.prepare_reactor()
         reactor.build("prepare", environments=["env"])

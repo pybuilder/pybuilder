@@ -24,7 +24,8 @@ from itest_support import IntegrationTestSupport
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import use_plugin, init
 
 use_plugin("python.core")
@@ -36,16 +37,22 @@ default_task = "run_unit_tests"
 @init
 def init (project):
     project.build_depends_on("mockito")
-""")
+"""
+        )
         self.create_directory("src/main/python")
-        self.write_file("src/main/python/helloworld.py", r"""import sys
+        self.write_file(
+            "src/main/python/helloworld.py",
+            r"""import sys
 
 def helloworld(out):
     out.write("Hello world of Python\n")
 
-""")
+""",
+        )
         self.create_directory("src/unittest/python")
-        self.write_file("src/unittest/python/helloworld_tests.py", r"""from mockito import mock, verify
+        self.write_file(
+            "src/unittest/python/helloworld_tests.py",
+            r"""from mockito import mock, verify
 import unittest
 
 from helloworld import helloworld
@@ -57,7 +64,8 @@ class HelloWorldTest(unittest.TestCase):
         helloworld(out)
 
         verify(out).write("Hello world of Python\n")
-""")
+""",
+        )
 
         reactor = self.prepare_reactor()
         reactor.build()

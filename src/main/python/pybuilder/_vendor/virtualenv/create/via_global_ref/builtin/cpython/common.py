@@ -4,14 +4,15 @@ from pathlib import Path
 
 from ....describe import PosixSupports, WindowsSupports
 from ..ref import RefMust, RefWhen
-
 from ..via_global_self_do import ViaGlobalRefVirtualenvBuiltin
 
 
 class CPython(ViaGlobalRefVirtualenvBuiltin, metaclass=ABCMeta):
     @classmethod
     def can_describe(cls, interpreter):
-        return interpreter.implementation == "CPython" and super().can_describe(interpreter)
+        return interpreter.implementation == "CPython" and super().can_describe(
+            interpreter
+        )
 
     @classmethod
     def exe_stem(cls):
@@ -25,7 +26,15 @@ class CPythonPosix(CPython, PosixSupports, metaclass=ABCMeta):
     def _executables(cls, interpreter):
         host_exe = Path(interpreter.system_executable)
         major, minor = interpreter.version_info.major, interpreter.version_info.minor
-        targets = OrderedDict((i, None) for i in ["python", f"python{major}", f"python{major}.{minor}", host_exe.name])
+        targets = OrderedDict(
+            (i, None)
+            for i in [
+                "python",
+                f"python{major}",
+                f"python{major}.{minor}",
+                host_exe.name,
+            ]
+        )
         must = RefMust.COPY if interpreter.version_info.major == 2 else RefMust.NA
         yield host_exe, list(targets.keys()), must, RefWhen.ANY
 

@@ -7,9 +7,8 @@ from abc import ABCMeta, abstractmethod
 from pathlib import Path
 from textwrap import dedent
 
-from ..ref import ExePathRefToDest, PathRefToDest, RefMust
 from .....info import IS_MAC_ARM64
-
+from ..ref import ExePathRefToDest, PathRefToDest, RefMust
 from .common import CPython, CPythonPosix, is_mac_os_framework
 from .cpython2 import CPython2PosixBase
 from .cpython3 import CPython3
@@ -41,7 +40,14 @@ class CPythonmacOsFramework(CPython, metaclass=ABCMeta):
             # Make sure we use the embedded interpreter inside the framework, even if sys.executable points to the
             # stub executable in ${sys.prefix}/bin.
             # See http://groups.google.com/group/python-virtualenv/browse_thread/thread/17cab2f85da75951
-            fixed_host_exe = Path(interpreter.prefix) / "Resources" / "Python.app" / "Contents" / "MacOS" / "Python"
+            fixed_host_exe = (
+                Path(interpreter.prefix)
+                / "Resources"
+                / "Python.app"
+                / "Contents"
+                / "MacOS"
+                / "Python"
+            )
             yield fixed_host_exe, targets, must, when
 
     @abstractmethod
@@ -70,16 +76,22 @@ class CPython2macOsFramework(CPythonmacOsFramework, CPython2PosixBase):
     def sources(cls, interpreter):
         yield from super().sources(interpreter)
         # landmark for exec_prefix
-        exec_marker_file, to_path, _ = cls.from_stdlib(cls.mappings(interpreter), "lib-dynload")
+        exec_marker_file, to_path, _ = cls.from_stdlib(
+            cls.mappings(interpreter), "lib-dynload"
+        )
         yield PathRefToDest(exec_marker_file, dest=to_path)
 
         # add a copy of the host python image
         exe = Path(interpreter.prefix) / "Python"
-        yield PathRefToDest(exe, dest=lambda self, _: self.dest / "Python", must=RefMust.COPY)  # noqa: U101
+        yield PathRefToDest(
+            exe, dest=lambda self, _: self.dest / "Python", must=RefMust.COPY
+        )  # noqa: U101
 
         # add a symlink to the Resources dir
         resources = Path(interpreter.prefix) / "Resources"
-        yield PathRefToDest(resources, dest=lambda self, _: self.dest / "Resources")  # noqa: U101
+        yield PathRefToDest(
+            resources, dest=lambda self, _: self.dest / "Resources"
+        )  # noqa: U101
 
     @property
     def reload_code(self):
@@ -100,7 +112,9 @@ class CPython2macOsFramework(CPythonmacOsFramework, CPython2PosixBase):
         return result
 
 
-class CPython2macOsArmFramework(CPython2macOsFramework, CPythonmacOsFramework, CPython2PosixBase):
+class CPython2macOsArmFramework(
+    CPython2macOsFramework, CPythonmacOsFramework, CPython2PosixBase
+):
     @classmethod
     def can_create(cls, interpreter):
         if IS_MAC_ARM64 and super(CPythonmacOsFramework, cls).can_describe(interpreter):
@@ -132,7 +146,9 @@ class CPython2macOsArmFramework(CPython2macOsFramework, CPythonmacOsFramework, C
             logging.debug("Changing Signature: %s", cmd)
             subprocess.check_call(cmd)
         except Exception:
-            logging.fatal("Could not change MacOS code signing on copied python exe at %s", exe)
+            logging.fatal(
+                "Could not change MacOS code signing on copied python exe at %s", exe
+            )
             raise
 
 
@@ -149,7 +165,9 @@ class CPython3macOsFramework(CPythonmacOsFramework, CPython3, CPythonPosix):
 
         # add a symlink to the host python image
         exe = Path(interpreter.prefix) / "Python3"
-        yield PathRefToDest(exe, dest=lambda self, _: self.dest / ".Python", must=RefMust.SYMLINK)  # noqa: U101
+        yield PathRefToDest(
+            exe, dest=lambda self, _: self.dest / ".Python", must=RefMust.SYMLINK
+        )  # noqa: U101
 
     @property
     def reload_code(self):
@@ -197,12 +215,19 @@ def fix_mach_o(exe, current, new, max_size):
         logging.debug("change Mach-O for %s from %s to %s", exe, current, new)
         _builtin_change_mach_o(max_size)(exe, current, new)
     except Exception as e:
-        logging.warning("Could not call _builtin_change_mac_o: %s. " "Trying to call install_name_tool instead.", e)
+        logging.warning(
+            "Could not call _builtin_change_mac_o: %s. "
+            "Trying to call install_name_tool instead.",
+            e,
+        )
         try:
             cmd = ["install_name_tool", "-change", current, new, exe]
             subprocess.check_call(cmd)
         except Exception:
-            logging.fatal("Could not call install_name_tool -- you must " "have Apple's development tools installed")
+            logging.fatal(
+                "Could not call install_name_tool -- you must "
+                "have Apple's development tools installed"
+            )
             raise
 
 
@@ -235,7 +260,7 @@ def _builtin_change_mach_o(maxint):
             return self._pos
 
         def _checkwindow(self, seek_to, op):
-            if not (self._start <= seek_to <= self._end):
+            if not self._start <= seek_to <= self._end:
                 msg = f"{op} to offset {seek_to:d} is outside window [{self._start:d}, {self._end:d}]"
                 raise OSError(msg)
 
@@ -284,7 +309,14 @@ def _builtin_change_mach_o(maxint):
 
         def do_macho(file, bits, endian):
             # Read Mach-O header (the magic number is assumed read by the caller)
-            cpu_type, cpu_sub_type, file_type, n_commands, size_of_commands, flags = read_data(file, endian, 6)
+            (
+                cpu_type,
+                cpu_sub_type,
+                file_type,
+                n_commands,
+                size_of_commands,
+                flags,
+            ) = read_data(file, endian, 6)
             # 64-bits header has one more field.
             if bits == 64:
                 read_data(file, endian)
@@ -317,7 +349,9 @@ def _builtin_change_mach_o(maxint):
                 n_fat_arch = read_data(file, BIG_ENDIAN)
                 for _ in range(n_fat_arch):
                     # Read arch header
-                    cpu_type, cpu_sub_type, offset, size, align = read_data(file, BIG_ENDIAN, 5)
+                    cpu_type, cpu_sub_type, offset, size, align = read_data(
+                        file, BIG_ENDIAN, 5
+                    )
                     do_file(file, offset, size)
             elif magic == MH_MAGIC:
                 do_macho(file, 32, BIG_ENDIAN)

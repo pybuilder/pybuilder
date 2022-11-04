@@ -6,7 +6,7 @@ from six import reraise
 from . import Traceback
 
 
-class Error(object):
+class Error():
     def __init__(self, exc_type, exc_value, traceback):
         self.exc_type = exc_type
         self.exc_value = exc_value
@@ -31,7 +31,9 @@ def return_error(func, exc_type=Exception):
     return return_exceptions_wrapper
 
 
-returns_error = return_errors = returns_errors = return_error  # cause I make too many typos
+returns_error = (
+    return_errors
+) = returns_errors = return_error  # cause I make too many typos
 
 
 @return_error

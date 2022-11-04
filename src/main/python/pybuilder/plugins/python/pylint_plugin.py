@@ -16,7 +16,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pybuilder.core import use_plugin, after, init, task
+from pybuilder.core import after, init, task, use_plugin
 from pybuilder.errors import BuildFailedException
 from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
 
@@ -38,7 +38,9 @@ def init_pylint(project):
 @after("prepare")
 def check_pylint_availability(project, logger, reactor):
     logger.debug("Checking availability of PyLint")
-    reactor.pybuilder_venv.verify_can_execute(["pylint"], "pylint", "plugin python.pylint")
+    reactor.pybuilder_venv.verify_can_execute(
+        ["pylint"], "pylint", "plugin python.pylint"
+    )
 
 
 @task("analyze")
@@ -56,17 +58,17 @@ def execute_pylint(project, logger, reactor):
     include_test_sources = project.get_property("pylint_include_test_sources")
     include_scripts = project.get_property("pylint_include_scripts")
 
-    result = command.run_on_production_source_files(logger,
-                                                    include_test_sources=include_test_sources,
-                                                    include_scripts=include_scripts)
+    result = command.run_on_production_source_files(
+        logger,
+        include_test_sources=include_test_sources,
+        include_scripts=include_scripts,
+    )
 
     break_build = project.get_property("pylint_break_build")
     if result.exit_code == 32 and break_build:
         raise BuildFailedException("PyLint failed with exit code %s", result.exit_code)
 
-    warnings = [line.rstrip()
-                for line in result.report_lines
-                if line.find(".py:") >= 0]
+    warnings = [line.rstrip() for line in result.report_lines if line.find(".py:") >= 0]
     warning_count = len(warnings)
 
     if warning_count:
@@ -77,5 +79,4 @@ def execute_pylint(project, logger, reactor):
         if break_build:
             logger.error(message)
             raise BuildFailedException(message)
-        else:
-            logger.warn(message)
+        logger.warn(message)

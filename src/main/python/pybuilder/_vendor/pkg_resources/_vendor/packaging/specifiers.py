@@ -454,17 +454,16 @@ class Specifier(_IndividualSpecifier):
             )
 
             return padded_prospective == padded_spec
-        else:
-            # Convert our spec string into a Version
-            spec_version = Version(spec)
+        # Convert our spec string into a Version
+        spec_version = Version(spec)
 
-            # If the specifier does not have a local segment, then we want to
-            # act as if the prospective version also does not have a local
-            # segment.
-            if not spec_version.local:
-                prospective = Version(prospective.public)
+        # If the specifier does not have a local segment, then we want to
+        # act as if the prospective version also does not have a local
+        # segment.
+        if not spec_version.local:
+            prospective = Version(prospective.public)
 
-            return prospective == spec_version
+        return prospective == spec_version
 
     @_require_version_compare
     def _compare_not_equal(self, prospective: ParsedVersion, spec: str) -> bool:
@@ -768,35 +767,34 @@ class SpecifierSet(BaseSpecifier):
         # If we do not have any specifiers, then we need to have a rough filter
         # which will filter out any pre-releases, unless there are no final
         # releases, and which will filter out LegacyVersion in general.
-        else:
-            filtered: List[VersionTypeVar] = []
-            found_prereleases: List[VersionTypeVar] = []
+        filtered: List[VersionTypeVar] = []
+        found_prereleases: List[VersionTypeVar] = []
 
-            item: UnparsedVersion
-            parsed_version: Union[Version, LegacyVersion]
+        item: UnparsedVersion
+        parsed_version: Union[Version, LegacyVersion]
 
-            for item in iterable:
-                # Ensure that we some kind of Version class for this item.
-                if not isinstance(item, (LegacyVersion, Version)):
-                    parsed_version = parse(item)
-                else:
-                    parsed_version = item
+        for item in iterable:
+            # Ensure that we some kind of Version class for this item.
+            if not isinstance(item, (LegacyVersion, Version)):
+                parsed_version = parse(item)
+            else:
+                parsed_version = item
 
-                # Filter out any item which is parsed as a LegacyVersion
-                if isinstance(parsed_version, LegacyVersion):
-                    continue
+            # Filter out any item which is parsed as a LegacyVersion
+            if isinstance(parsed_version, LegacyVersion):
+                continue
 
-                # Store any item which is a pre-release for later unless we've
-                # already found a final version or we are accepting prereleases
-                if parsed_version.is_prerelease and not prereleases:
-                    if not filtered:
-                        found_prereleases.append(item)
-                else:
-                    filtered.append(item)
+            # Store any item which is a pre-release for later unless we've
+            # already found a final version or we are accepting prereleases
+            if parsed_version.is_prerelease and not prereleases:
+                if not filtered:
+                    found_prereleases.append(item)
+            else:
+                filtered.append(item)
 
-            # If we've found no items except for pre-releases, then we'll go
-            # ahead and use the pre-releases
-            if not filtered and found_prereleases and prereleases is None:
-                return found_prereleases
+        # If we've found no items except for pre-releases, then we'll go
+        # ahead and use the pre-releases
+        if not filtered and found_prereleases and prereleases is None:
+            return found_prereleases
 
-            return filtered
+        return filtered

@@ -26,29 +26,41 @@ import optparse
 import re
 import sys
 import traceback
-from os.path import sep, normcase as nc
+from os.path import normcase as nc
+from os.path import sep
 
-from pybuilder import __version__
-from pybuilder import extern
+from pybuilder import __version__, extern
 from pybuilder.core import Logger
 from pybuilder.errors import PyBuilderException
 from pybuilder.execution import ExecutionManager
 from pybuilder.python_utils import IS_WIN
 from pybuilder.reactor import Reactor
 from pybuilder.scaffolding import start_project, update_project
-from pybuilder.terminal import (BOLD, BROWN, RED, GREEN, bold, styled_text,
-                                fg, italic, print_text, print_text_line,
-                                print_error, print_error_line, draw_line)
+from pybuilder.terminal import (
+    BOLD,
+    BROWN,
+    GREEN,
+    RED,
+    bold,
+    draw_line,
+    fg,
+    italic,
+    print_error,
+    print_error_line,
+    print_text,
+    print_text_line,
+    styled_text,
+)
 from pybuilder.utils import format_timestamp, get_dist_version_string
 
-PROPERTY_OVERRIDE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+=.*')
-DEFAULT_LOG_TIME_FORMAT = '[%Y-%m-%d %H:%M:%S]'
+PROPERTY_OVERRIDE_PATTERN = re.compile(r"^[a-zA-Z0-9_]+=.*")
+DEFAULT_LOG_TIME_FORMAT = "[%Y-%m-%d %H:%M:%S]"
 _extern = extern
 
 
 class CommandLineUsageException(PyBuilderException):
     def __init__(self, usage, message):
-        super(CommandLineUsageException, self).__init__(message)
+        super().__init__(message)
         self.usage = usage
 
 
@@ -66,9 +78,9 @@ class StdOutLogger(Logger):
         formatted_message = self._format_message(message, *arguments)
         log_level = self._level_to_string(level)
         if self.log_time_format is not None:
-            timestamp = datetime.datetime.now().strftime(self.log_time_format) + ' '
+            timestamp = datetime.datetime.now().strftime(self.log_time_format) + " "
         else:
-            timestamp = ''
+            timestamp = ""
         print_text_line("{0}{1} {2}".format(timestamp, log_level, formatted_message))
 
 
@@ -83,7 +95,9 @@ class ColoredStdOutLogger(StdOutLogger):
         return styled_text("[ERROR]", BOLD, fg(RED))
 
 
-def _log_time_format_argument__check_if_timestamp_passed(option, opt_str, value, parser):
+def _log_time_format_argument__check_if_timestamp_passed(
+    option, opt_str, value, parser
+):
     assert value is None
     value = DEFAULT_LOG_TIME_FORMAT
 
@@ -92,168 +106,232 @@ def _log_time_format_argument__check_if_timestamp_passed(option, opt_str, value,
         if arg[:2] == "--" and len(arg) > 2:
             break
         # stop on -foo like options
-        elif arg[:1] == "-" and len(arg) > 1:
+        if arg[:1] == "-" and len(arg) > 1:
             break
-        else:
-            value = arg.rstrip()
-            del parser.rargs[0]
-            break  # Only consume 1 argument
+        value = arg.rstrip()
+        del parser.rargs[0]
+        break  # Only consume 1 argument
 
     setattr(parser.values, option.dest, value)
 
 
 def parse_options(args):
-    parser = optparse.OptionParser(usage="%prog [options] [+|^]task1 [[[+|^]task2] ...]",
-                                   version="%prog " + __version__)
+    parser = optparse.OptionParser(
+        usage="%prog [options] [+|^]task1 [[[+|^]task2] ...]",
+        version="%prog " + __version__,
+    )
 
     def error(msg):
         raise CommandLineUsageException(
-            parser.get_usage() + parser.format_option_help(), msg)
+            parser.get_usage() + parser.format_option_help(), msg
+        )
 
     parser.error = error
 
-    list_tasks_option = parser.add_option("-t", "--list-tasks",
-                                          action="store_true",
-                                          dest="list_tasks",
-                                          default=False,
-                                          help="List all tasks that can be run in the current build configuration")
+    list_tasks_option = parser.add_option(
+        "-t",
+        "--list-tasks",
+        action="store_true",
+        dest="list_tasks",
+        default=False,
+        help="List all tasks that can be run in the current build configuration",
+    )
 
-    list_plan_tasks_option = parser.add_option("-T", "--list-plan-tasks",
-                                               action="store_true",
-                                               dest="list_plan_tasks",
-                                               default=False,
-                                               help="List tasks that will be run with current execution plan")
+    list_plan_tasks_option = parser.add_option(
+        "-T",
+        "--list-plan-tasks",
+        action="store_true",
+        dest="list_plan_tasks",
+        default=False,
+        help="List tasks that will be run with current execution plan",
+    )
 
-    start_project_option = parser.add_option("--start-project",
-                                             action="store_true",
-                                             dest="start_project",
-                                             default=False,
-                                             help="Initialize build descriptors and Python project structure")
+    start_project_option = parser.add_option(
+        "--start-project",
+        action="store_true",
+        dest="start_project",
+        default=False,
+        help="Initialize build descriptors and Python project structure",
+    )
 
-    update_project_option = parser.add_option("--update-project",
-                                              action="store_true",
-                                              dest="update_project",
-                                              default=False,
-                                              help="Update build descriptors and Python project structure")
+    update_project_option = parser.add_option(
+        "--update-project",
+        action="store_true",
+        dest="update_project",
+        default=False,
+        help="Update build descriptors and Python project structure",
+    )
 
     project_group = optparse.OptionGroup(
-        parser, "Project Options", "Customizes the project to build.")
+        parser, "Project Options", "Customizes the project to build."
+    )
 
-    project_group.add_option("-D", "--project-directory",
-                             dest="project_directory",
-                             help="Root directory to execute in",
-                             metavar="<project directory>",
-                             default=".")
+    project_group.add_option(
+        "-D",
+        "--project-directory",
+        dest="project_directory",
+        help="Root directory to execute in",
+        metavar="<project directory>",
+        default=".",
+    )
 
-    project_group.add_option("-O", "--offline",
-                             dest="offline",
-                             help="Attempt to execute the build without network connectivity (may cause build failure)",
-                             default=False,
-                             action="store_true")
+    project_group.add_option(
+        "-O",
+        "--offline",
+        dest="offline",
+        help="Attempt to execute the build without network connectivity (may cause build failure)",
+        default=False,
+        action="store_true",
+    )
 
-    project_group.add_option("-E", "--environment",
-                             dest="environments",
-                             help="Activate the given environment for this build. Can be used multiple times",
-                             metavar="<environment>",
-                             action="append",
-                             default=[])
+    project_group.add_option(
+        "-E",
+        "--environment",
+        dest="environments",
+        help="Activate the given environment for this build. Can be used multiple times",
+        metavar="<environment>",
+        action="append",
+        default=[],
+    )
 
-    project_group.add_option("-P",
-                             action="append",
-                             dest="property_overrides",
-                             default=[],
-                             metavar="<property>=<value>",
-                             help="Set/ override a property value")
+    project_group.add_option(
+        "-P",
+        action="append",
+        dest="property_overrides",
+        default=[],
+        metavar="<property>=<value>",
+        help="Set/ override a property value",
+    )
 
-    project_group.add_option("-x", "--exclude",
-                             action="append",
-                             dest="exclude_optional_tasks",
-                             default=[],
-                             metavar="<task>",
-                             help="Exclude optional task dependencies")
+    project_group.add_option(
+        "-x",
+        "--exclude",
+        action="append",
+        dest="exclude_optional_tasks",
+        default=[],
+        metavar="<task>",
+        help="Exclude optional task dependencies",
+    )
 
-    project_group.add_option("-o", "--exclude-all-optional",
-                             action="store_true",
-                             dest="exclude_all_optional",
-                             default=False,
-                             help="Exclude all optional task dependencies")
+    project_group.add_option(
+        "-o",
+        "--exclude-all-optional",
+        action="store_true",
+        dest="exclude_all_optional",
+        default=False,
+        help="Exclude all optional task dependencies",
+    )
 
-    project_group.add_option("--force-exclude",
-                             action="append",
-                             dest="exclude_tasks",
-                             default=[],
-                             metavar="<task>",
-                             help="Exclude any task dependencies "
-                                  "(dangerous, may break the build in unexpected ways)")
+    project_group.add_option(
+        "--force-exclude",
+        action="append",
+        dest="exclude_tasks",
+        default=[],
+        metavar="<task>",
+        help="Exclude any task dependencies "
+        "(dangerous, may break the build in unexpected ways)",
+    )
 
-    project_group.add_option("--reset-plugins",
-                             action="store_true",
-                             dest="reset_plugins",
-                             default=False,
-                             help="Reset plugins directory prior to running the build")
+    project_group.add_option(
+        "--reset-plugins",
+        action="store_true",
+        dest="reset_plugins",
+        default=False,
+        help="Reset plugins directory prior to running the build",
+    )
 
-    project_group.add_option("--no-venvs",
-                             action="store_true",
-                             dest="no_venvs",
-                             default=False,
-                             help="Disables the use of Python Virtual Environments")
+    project_group.add_option(
+        "--no-venvs",
+        action="store_true",
+        dest="no_venvs",
+        default=False,
+        help="Disables the use of Python Virtual Environments",
+    )
 
     parser.add_option_group(project_group)
 
     output_group = optparse.OptionGroup(
-        parser, "Output Options", "Modifies the messages printed during a build.")
+        parser, "Output Options", "Modifies the messages printed during a build."
+    )
 
-    output_group.add_option("-X", "--debug",
-                            action="store_true",
-                            dest="debug",
-                            default=False,
-                            help="Print debug messages")
+    output_group.add_option(
+        "-X",
+        "--debug",
+        action="store_true",
+        dest="debug",
+        default=False,
+        help="Print debug messages",
+    )
 
-    output_group.add_option("-v", "--verbose",
-                            action="store_true",
-                            dest="verbose",
-                            default=False,
-                            help="Enable verbose output")
+    output_group.add_option(
+        "-v",
+        "--verbose",
+        action="store_true",
+        dest="verbose",
+        default=False,
+        help="Enable verbose output",
+    )
 
-    output_group.add_option("-q", "--quiet",
-                            action="store_true",
-                            dest="quiet",
-                            default=False,
-                            help="Quiet mode; print only warnings and errors")
+    output_group.add_option(
+        "-q",
+        "--quiet",
+        action="store_true",
+        dest="quiet",
+        default=False,
+        help="Quiet mode; print only warnings and errors",
+    )
 
-    output_group.add_option("-Q", "--very-quiet",
-                            action="store_true",
-                            dest="very_quiet",
-                            default=False,
-                            help="Very quiet mode; print only errors")
+    output_group.add_option(
+        "-Q",
+        "--very-quiet",
+        action="store_true",
+        dest="very_quiet",
+        default=False,
+        help="Very quiet mode; print only errors",
+    )
 
-    output_group.add_option("-c", "--color",
-                            action="store_true",
-                            dest="force_color",
-                            default=False,
-                            help="Force colored output")
+    output_group.add_option(
+        "-c",
+        "--color",
+        action="store_true",
+        dest="force_color",
+        default=False,
+        help="Force colored output",
+    )
 
-    output_group.add_option("-C", "--no-color",
-                            action="store_true",
-                            dest="no_color",
-                            default=False,
-                            help="Disable colored output")
+    output_group.add_option(
+        "-C",
+        "--no-color",
+        action="store_true",
+        dest="no_color",
+        default=False,
+        help="Disable colored output",
+    )
 
-    output_group.add_option("-f", "--log-time-format",
-                            action='callback',
-                            callback=_log_time_format_argument__check_if_timestamp_passed,
-                            dest="log_time_format",
-                            help="Define the format of timestamp in the log (default: no timestamps)",
-                            default=None)
+    output_group.add_option(
+        "-f",
+        "--log-time-format",
+        action="callback",
+        callback=_log_time_format_argument__check_if_timestamp_passed,
+        dest="log_time_format",
+        help="Define the format of timestamp in the log (default: no timestamps)",
+        default=None,
+    )
 
     parser.add_option_group(output_group)
 
     options, arguments = parser.parse_args(args=list(args))
 
     if options.list_tasks and options.list_plan_tasks:
-        parser.error("%s and %s are mutually exclusive" % (list_tasks_option, list_plan_tasks_option))
+        parser.error(
+            "%s and %s are mutually exclusive"
+            % (list_tasks_option, list_plan_tasks_option)
+        )
     if options.start_project and options.update_project:
-        parser.error("%s and %s are mutually exclusive" % (start_project_option, update_project_option))
+        parser.error(
+            "%s and %s are mutually exclusive"
+            % (start_project_option, update_project_option)
+        )
 
     property_overrides = {}
     for pair in options.property_overrides:
@@ -292,6 +370,7 @@ def init_logger(options):
     else:
         if IS_WIN:
             import colorama
+
             colorama.init()
         logger = ColoredStdOutLogger(threshold, options.log_time_format)
 
@@ -301,10 +380,12 @@ def init_logger(options):
 def print_build_summary(options, summary):
     print_text_line("Build Summary")
     print_text_line("%20s: %s" % ("Project", summary.project.name))
-    print_text_line("%20s: %s%s" % ("Version", summary.project.version, get_dist_version_string(summary.project)))
+    print_text_line(
+        "%20s: %s%s"
+        % ("Version", summary.project.version, get_dist_version_string(summary.project))
+    )
     print_text_line("%20s: %s" % ("Base directory", summary.project.basedir))
-    print_text_line("%20s: %s" %
-                    ("Environments", ", ".join(options.environments)))
+    print_text_line("%20s: %s" % ("Environments", ", ".join(options.environments)))
 
     task_summary = ""
     for task in summary.task_summaries:
@@ -316,12 +397,12 @@ def print_build_summary(options, summary):
 def print_styled_text(text, options, *style_attributes):
     if should_colorize(options):
         add_trailing_nl = False
-        if text[-1] == '\n':
+        if text[-1] == "\n":
             text = text[:-1]
             add_trailing_nl = True
         text = styled_text(text, *style_attributes)
         if add_trailing_nl:
-            text += '\n'
+            text += "\n"
     print_text(text)
 
 
@@ -335,16 +416,18 @@ def print_build_status(failure_message, options, successful):
         print_styled_text_line("BUILD SUCCESSFUL", options, BOLD, fg(GREEN))
     else:
         print_styled_text_line(
-            "BUILD FAILED - {0}".format(failure_message), options, BOLD, fg(RED))
+            "BUILD FAILED - {0}".format(failure_message), options, BOLD, fg(RED)
+        )
     draw_line()
 
 
 def print_elapsed_time_summary(start, end):
     time_needed = end - start
-    millis = ((time_needed.days * 24 * 60 * 60) + time_needed.seconds) * 1000 + time_needed.microseconds / 1000
+    millis = (
+        (time_needed.days * 24 * 60 * 60) + time_needed.seconds
+    ) * 1000 + time_needed.microseconds / 1000
     print_text_line("Build finished at %s" % format_timestamp(end))
-    print_text_line("Build took %d seconds (%d ms)" %
-                    (time_needed.seconds, millis))
+    print_text_line("Build took %d seconds (%d ms)" % (time_needed.seconds, millis))
 
 
 def print_summary(successful, summary, start, end, options, failure_message):
@@ -375,12 +458,12 @@ def task_description(task):
 
 def print_task_list(tasks, quiet=False):
     if quiet:
-        print_text_line("\n".join([task.name + ":" + task_description(task)
-                                   for task in tasks]))
+        print_text_line(
+            "\n".join([task.name + ":" + task_description(task) for task in tasks])
+        )
         return
 
-    column_length = length_of_longest_string(
-        list(map(lambda task: task.name, tasks)))
+    column_length = length_of_longest_string(list(map(lambda task: task.name, tasks)))
     column_length += 4
 
     for task in tasks:
@@ -390,7 +473,8 @@ def print_task_list(tasks, quiet=False):
         if task.dependencies:
             whitespace = (column_length + 3) * " "
             depends_on_message = "depends on tasks: %s" % " ".join(
-                [str(dependency) for dependency in task.dependencies])
+                [str(dependency) for dependency in task.dependencies]
+            )
             print_text_line(whitespace + depends_on_message)
 
 
@@ -405,7 +489,9 @@ def print_list_of_tasks(reactor, quiet=False):
 def print_plan_list_of_tasks(options, arguments, reactor, quiet=False):
     execution_plan = reactor.create_execution_plan(arguments, options.environments)
     if not quiet:
-        print_text_line('Tasks that will be executed for project "%s":' % reactor.project.name)
+        print_text_line(
+            'Tasks that will be executed for project "%s":' % reactor.project.name
+        )
     print_task_list(execution_plan, quiet)
 
 
@@ -427,13 +513,21 @@ def get_failure_message():
         filename = nc(filename)
         for path in sys.path:
             path = nc(path)
-            if filename.startswith(path) and len(filename) > len(path) and filename[len(path)] == sep:
-                filename = filename[len(path) + 1:]
+            if (
+                filename.startswith(path)
+                and len(filename) > len(path)
+                and filename[len(path)] == sep
+            ):
+                filename = filename[len(path) + 1 :]
                 break
 
-    return "%s%s%s" % ("%s: " % exc_type.__name__ if not isinstance(exc_obj, PyBuilderException) else "",
-                       exc_obj,
-                       " (%s:%d)" % (filename, lineno) if filename else "")
+    return "%s%s%s" % (
+        "%s: " % exc_type.__name__
+        if not isinstance(exc_obj, PyBuilderException)
+        else "",
+        exc_obj,
+        " (%s:%d)" % (filename, lineno) if filename else "",
+    )
 
 
 def main(*args):
@@ -459,19 +553,22 @@ def main(*args):
 
     if options.list_tasks or options.list_plan_tasks:
         try:
-            reactor.prepare_build(property_overrides=options.property_overrides,
-                                  project_directory=options.project_directory,
-                                  exclude_optional_tasks=options.exclude_optional_tasks,
-                                  exclude_tasks=options.exclude_tasks,
-                                  exclude_all_optional=options.exclude_all_optional,
-                                  offline=options.offline,
-                                  no_venvs=options.no_venvs
-                                  )
+            reactor.prepare_build(
+                property_overrides=options.property_overrides,
+                project_directory=options.project_directory,
+                exclude_optional_tasks=options.exclude_optional_tasks,
+                exclude_tasks=options.exclude_tasks,
+                exclude_all_optional=options.exclude_all_optional,
+                offline=options.offline,
+                no_venvs=options.no_venvs,
+            )
             if options.list_tasks:
                 print_list_of_tasks(reactor, quiet=options.very_quiet)
 
             if options.list_plan_tasks:
-                print_plan_list_of_tasks(options, arguments, reactor, quiet=options.very_quiet)
+                print_plan_list_of_tasks(
+                    options, arguments, reactor, quiet=options.very_quiet
+                )
             return 0
         except PyBuilderException:
             print_build_status(get_failure_message(), options, successful=False)
@@ -479,7 +576,8 @@ def main(*args):
 
     if not options.very_quiet:
         print_styled_text_line(
-            "PyBuilder version {0}".format(__version__), options, BOLD)
+            "PyBuilder version {0}".format(__version__), options, BOLD
+        )
         print_text_line("Build started at %s" % format_timestamp(start))
         draw_line()
 
@@ -489,22 +587,22 @@ def main(*args):
 
     try:
         try:
-            reactor.prepare_build(property_overrides=options.property_overrides,
-                                  project_directory=options.project_directory,
-                                  exclude_optional_tasks=options.exclude_optional_tasks,
-                                  exclude_tasks=options.exclude_tasks,
-                                  exclude_all_optional=options.exclude_all_optional,
-                                  reset_plugins=options.reset_plugins,
-                                  offline=options.offline,
-                                  no_venvs=options.no_venvs
-                                  )
+            reactor.prepare_build(
+                property_overrides=options.property_overrides,
+                project_directory=options.project_directory,
+                exclude_optional_tasks=options.exclude_optional_tasks,
+                exclude_tasks=options.exclude_tasks,
+                exclude_all_optional=options.exclude_all_optional,
+                reset_plugins=options.reset_plugins,
+                offline=options.offline,
+                no_venvs=options.no_venvs,
+            )
 
             if options.verbose or options.debug:
                 logger.debug("Verbose output enabled.\n")
                 reactor.project.set_property("verbose", True)
 
-            summary = reactor.build(
-                environments=options.environments, tasks=arguments)
+            summary = reactor.build(environments=options.environments, tasks=arguments)
 
         except KeyboardInterrupt:
             raise PyBuilderException("Build aborted")
@@ -518,8 +616,7 @@ def main(*args):
     finally:
         end = datetime.datetime.now()
         if not options.very_quiet:
-            print_summary(
-                successful, summary, start, end, options, failure_message)
+            print_summary(successful, summary, start, end, options, failure_message)
 
         if not successful:
             return 1

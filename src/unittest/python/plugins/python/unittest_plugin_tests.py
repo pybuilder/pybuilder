@@ -18,14 +18,18 @@
 
 from unittest import TestCase, TextTestRunner
 
-from pybuilder.core import Project
-from pybuilder.plugins.python.unittest_plugin import (execute_tests, execute_tests_matching,
-                                                      _instrument_result,
-                                                      _create_runner,
-                                                      _get_make_result_method_name,
-                                                      report_to_ci_server)
-from pybuilder.utils import np
 from test_utils import Mock, patch
+
+from pybuilder.core import Project
+from pybuilder.plugins.python.unittest_plugin import (
+    _create_runner,
+    _get_make_result_method_name,
+    _instrument_result,
+    execute_tests,
+    execute_tests_matching,
+    report_to_ci_server,
+)
+from pybuilder.utils import np
 
 __author__ = "Michael Gruber"
 
@@ -46,35 +50,61 @@ class ExecuteTestsTests(TestCase):
     @patch("unittest.TextTestRunner")
     @patch("pybuilder.plugins.python.unittest_plugin.unittest")
     @patch("pybuilder.plugins.python.unittest_plugin.discover_modules_matching")
-    def test_should_discover_modules_by_suffix(self, mock_discover_modules_matching, mock_unittest, runner, tool):
+    def test_should_discover_modules_by_suffix(
+        self, mock_discover_modules_matching, mock_unittest, runner, tool
+    ):
         pipe = Mock()
         pipe.remote_close_cause.return_value = None
         proc = Mock()
         proc.exitcode = 0
         tool.return_value = (proc, pipe)
-        execute_tests(Mock(), [], runner, self.mock_logger, "/path/to/test/sources", "_tests.py", ["a", "b"])
+        execute_tests(
+            Mock(),
+            [],
+            runner,
+            self.mock_logger,
+            "/path/to/test/sources",
+            "_tests.py",
+            ["a", "b"],
+        )
 
-        mock_discover_modules_matching.assert_called_with("/path/to/test/sources", "*_tests.py")
+        mock_discover_modules_matching.assert_called_with(
+            "/path/to/test/sources", "*_tests.py"
+        )
 
     @patch("pybuilder.plugins.python.unittest_plugin.start_unittest_tool")
     @patch("unittest.TextTestRunner")
     @patch("pybuilder.plugins.python.unittest_plugin.unittest")
     @patch("pybuilder.plugins.python.unittest_plugin.discover_modules_matching")
-    def test_should_discover_modules_by_glob(self, mock_discover_modules_matching, mock_unittest, runner, tool):
+    def test_should_discover_modules_by_glob(
+        self, mock_discover_modules_matching, mock_unittest, runner, tool
+    ):
         pipe = Mock()
         pipe.remote_close_cause.return_value = None
         proc = Mock()
         proc.exitcode = 0
         tool.return_value = (proc, pipe)
-        execute_tests_matching(Mock(), [], runner, self.mock_logger, "/path/to/test/sources", "*_tests.py", ["a", "b"])
+        execute_tests_matching(
+            Mock(),
+            [],
+            runner,
+            self.mock_logger,
+            "/path/to/test/sources",
+            "*_tests.py",
+            ["a", "b"],
+        )
 
-        mock_discover_modules_matching.assert_called_with("/path/to/test/sources", "*_tests.py")
+        mock_discover_modules_matching.assert_called_with(
+            "/path/to/test/sources", "*_tests.py"
+        )
 
     @patch("pybuilder.plugins.python.unittest_plugin.start_unittest_tool")
     @patch("unittest.TextTestRunner")
     @patch("pybuilder.plugins.python.unittest_plugin.unittest")
     @patch("pybuilder.utils.discover_modules")
-    def test_should_return_actual_test_results(self, mock_discover_modules, mock_unittest, runner, tool):
+    def test_should_return_actual_test_results(
+        self, mock_discover_modules, mock_unittest, runner, tool
+    ):
         pipe = Mock()
         pipe.remote_close_cause.return_value = None
         proc = Mock()
@@ -84,8 +114,15 @@ class ExecuteTestsTests(TestCase):
         mock_unittest.defaultTestLoader.loadTestsFromNames.return_value = mock_tests
         runner.return_value.run.return_value = self.mock_result
 
-        actual, _ = execute_tests(Mock(), [], runner, self.mock_logger, "/path/to/test/sources", "_tests.py",
-                                  ["a", "b"])
+        actual, _ = execute_tests(
+            Mock(),
+            [],
+            runner,
+            self.mock_logger,
+            "/path/to/test/sources",
+            "_tests.py",
+            ["a", "b"],
+        )
 
         self.assertEqual(self.mock_result, actual)
 
@@ -121,9 +158,7 @@ class CIServerInteractionTests(TestCase):
         mock_proxy.__exit__ = Mock(return_value=False)
         result = Mock()
         result.test_names = ["test1", "test2", "test3"]
-        result.failed_test_names_and_reasons = {
-            "test2": "Something went very wrong"
-        }
+        result.failed_test_names_and_reasons = {"test2": "Something went very wrong"}
 
         report_to_ci_server(project, result)
 
@@ -131,7 +166,7 @@ class CIServerInteractionTests(TestCase):
 
 
 class TestNameAwareTestResult(TestCase):
-    class TestResult(object):
+    class TestResult():
         def __init__(self):
             pass
 
@@ -145,7 +180,9 @@ class TestNameAwareTestResult(TestCase):
             pass
 
     def setUp(self):
-        self.mock_test_result = _instrument_result(Mock(), TestNameAwareTestResult.TestResult())
+        self.mock_test_result = _instrument_result(
+            Mock(), TestNameAwareTestResult.TestResult()
+        )
 
     def test_should_append_test_name_when_running_test(self):
         self.mock_test_result.startTest("any_test_name")
@@ -154,39 +191,43 @@ class TestNameAwareTestResult(TestCase):
 
     def test_should_save_exception_details_when_test_failure_occurs(self):
         self.mock_test_result.addFailure(
-            "test_with_failure",
-            ("type", "exception", "traceback"))
+            "test_with_failure", ("type", "exception", "traceback")
+        )
 
         self.assertEqual(
             self.mock_test_result.failed_test_names_and_reasons,
-            {"test_with_failure": "type: exception"})
+            {"test_with_failure": "type: exception"},
+        )
 
     def test_should_save_exception_details_when_test_error_occurs(self):
         self.mock_test_result.addError(
-            "test_with_failure",
-            ("type", "exception", "traceback"))
+            "test_with_failure", ("type", "exception", "traceback")
+        )
 
         self.assertEqual(
             self.mock_test_result.failed_test_names_and_reasons,
-            {"test_with_failure": "type: exception"})
+            {"test_with_failure": "type: exception"},
+        )
 
     def test_should_save_exception_details_when_test_failure_with_unicode_occurs(self):
         self.mock_test_result.addFailure(
-            "test_with_failure",
-            ("type", "exception with ünicode", "traceback"))
+            "test_with_failure", ("type", "exception with ünicode", "traceback")
+        )
 
         self.assertEqual(
             self.mock_test_result.failed_test_names_and_reasons,
-            {"test_with_failure": "type: exception with ünicode"})
+            {"test_with_failure": "type: exception with ünicode"},
+        )
 
     def test_should_save_exception_details_when_test_error_with_unicode_occurs(self):
         self.mock_test_result.addError(
-            "test_with_failure",
-            ("type", "exception with ünicode", "traceback"))
+            "test_with_failure", ("type", "exception with ünicode", "traceback")
+        )
 
         self.assertEqual(
             self.mock_test_result.failed_test_names_and_reasons,
-            {"test_with_failure": "type: exception with ünicode"})
+            {"test_with_failure": "type: exception with ünicode"},
+        )
 
 
 class UnittestRunnerTest(TestCase):
@@ -194,28 +235,43 @@ class UnittestRunnerTest(TestCase):
         self.assertTrue(isinstance(_create_runner(TextTestRunner), TextTestRunner))
 
     def test_create_runner_from_str(self):
-        self.assertTrue(isinstance(_create_runner("unittest.TextTestRunner"), TextTestRunner))
+        self.assertTrue(
+            isinstance(_create_runner("unittest.TextTestRunner"), TextTestRunner)
+        )
 
     def test_create_runner_from_tuple_class(self):
-        self.assertTrue(isinstance(_create_runner((TextTestRunner, Mock())), TextTestRunner))
+        self.assertTrue(
+            isinstance(_create_runner((TextTestRunner, Mock())), TextTestRunner)
+        )
 
     def test_create_runner_from_tuple_str(self):
-        self.assertTrue(isinstance(_create_runner(("unittest.TextTestRunner", Mock())), TextTestRunner))
+        self.assertTrue(
+            isinstance(
+                _create_runner(("unittest.TextTestRunner", Mock())), TextTestRunner
+            )
+        )
 
     def test_get_make_result_method_name_default(self):
         self.assertEqual(_get_make_result_method_name(TextTestRunner), "_makeResult")
 
     def test_get_make_result_method_name_from_str(self):
-        self.assertEqual(_get_make_result_method_name((TextTestRunner, "_makeResult")), "_makeResult")
+        self.assertEqual(
+            _get_make_result_method_name((TextTestRunner, "_makeResult")), "_makeResult"
+        )
 
     def test_get_make_result_method_name_from_method(self):
-        self.assertEqual(_get_make_result_method_name((TextTestRunner, TextTestRunner._makeResult)), "_makeResult")
+        self.assertEqual(
+            _get_make_result_method_name((TextTestRunner, TextTestRunner._makeResult)),
+            "_makeResult",
+        )
 
     def test_get_make_result_method_name_from_func(self):
         def _makeResult(self):
             pass
 
-        self.assertEqual(_get_make_result_method_name((TextTestRunner, _makeResult)), "_makeResult")
+        self.assertEqual(
+            _get_make_result_method_name((TextTestRunner, _makeResult)), "_makeResult"
+        )
 
 
 class UnittestRunnerCompatibilityTest(TestCase):

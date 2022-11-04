@@ -23,7 +23,8 @@ from itest_support import IntegrationTestSupport
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import use_plugin, init
 
 use_plugin("python.core")
@@ -41,36 +42,55 @@ def init (project):
         declaration_only=True)
     project.depends_on("eggs", "==0.2.3", declaration_only=True)
     project.build_depends_on("eggy", declaration_only=True)
-""")
+"""
+        )
         self.create_directory("src/main/python/spam")
-        self.write_file("requirements.txt", """
+        self.write_file(
+            "requirements.txt",
+            """
 awesome>=1.3.37
-foo==42""")
+foo==42""",
+        )
         self.write_file("src/main/python/standalone_module.py")
-        self.write_file("src/main/python/spam/__init__.py", "__import__('pkg_resources').declare_namespace(__name__)")
-        self.write_file("src/main/python/spam/eggs.py", """
+        self.write_file(
+            "src/main/python/spam/__init__.py",
+            "__import__('pkg_resources').declare_namespace(__name__)",
+        )
+        self.write_file(
+            "src/main/python/spam/eggs.py",
+            """
 def spam ():
     pass
-""")
+""",
+        )
 
         reactor = self.prepare_reactor()
         reactor.build()
 
         self.assert_directory_exists("target/dist/integration-test-1.0.dev0")
         self.assert_directory_exists("target/dist/integration-test-1.0.dev0/spam")
-        self.assert_file_exists("target/dist/integration-test-1.0.dev0/standalone_module.py")
-        self.assert_file_content("target/dist/integration-test-1.0.dev0/spam/__init__.py",
-                                 "__import__('pkg_resources').declare_namespace(__name__)")
-        self.assert_file_content("target/dist/integration-test-1.0.dev0/spam/eggs.py", """
+        self.assert_file_exists(
+            "target/dist/integration-test-1.0.dev0/standalone_module.py"
+        )
+        self.assert_file_content(
+            "target/dist/integration-test-1.0.dev0/spam/__init__.py",
+            "__import__('pkg_resources').declare_namespace(__name__)",
+        )
+        self.assert_file_content(
+            "target/dist/integration-test-1.0.dev0/spam/eggs.py",
+            """
 def spam ():
     pass
-""")
+""",
+        )
 
         setup_py = "target/dist/integration-test-1.0.dev0/setup.py"
 
         self.assert_file_exists(setup_py)
         self.assert_file_permissions(0o755, setup_py)
-        self.assert_file_content(setup_py, """#!/usr/bin/env python
+        self.assert_file_content(
+            setup_py,
+            """#!/usr/bin/env python
 #   -*- coding: utf-8 -*-
 
 from setuptools import setup
@@ -130,7 +150,8 @@ if __name__ == '__main__':
         python_requires = '',
         obsoletes = [],
     )
-""")
+""",
+        )
 
 
 if __name__ == "__main__":

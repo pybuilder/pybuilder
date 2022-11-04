@@ -3,7 +3,9 @@ from pathlib import Path
 
 def handle_store_python(meta, interpreter):
     if is_store_python(interpreter):
-        meta.symlink_error = "Windows Store Python does not support virtual environments via symlink"
+        meta.symlink_error = (
+            "Windows Store Python does not support virtual environments via symlink"
+        )
     return meta
 
 

@@ -16,7 +16,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pybuilder.core import use_plugin, init
+from pybuilder.core import init, use_plugin
 
 use_plugin("python.core")
 use_plugin("python.unittest")

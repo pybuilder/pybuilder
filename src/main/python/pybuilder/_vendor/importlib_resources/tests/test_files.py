@@ -1,38 +1,36 @@
-import typing
+import contextlib
+import importlib
 import textwrap
+import typing
 import unittest
 import warnings
-import importlib
-import contextlib
 
 from ... import importlib_resources as resources
 from ..abc import Traversable
-from . import data01
-from . import util
-from . import _path
-from ._compat import os_helper, import_helper
+from . import _path, data01, util
+from ._compat import import_helper, os_helper
 
 
 @contextlib.contextmanager
 def suppress_known_deprecation():
     with warnings.catch_warnings(record=True) as ctx:
-        warnings.simplefilter('default', category=DeprecationWarning)
+        warnings.simplefilter("default", category=DeprecationWarning)
         yield ctx
 
 
 class FilesTests:
     def test_read_bytes(self):
         files = resources.files(self.data)
-        actual = files.joinpath('utf-8.file').read_bytes()
-        assert actual == b'Hello, UTF-8 world!\n'
+        actual = files.joinpath("utf-8.file").read_bytes()
+        assert actual == b"Hello, UTF-8 world!\n"
 
     def test_read_text(self):
         files = resources.files(self.data)
-        actual = files.joinpath('utf-8.file').read_text(encoding='utf-8')
-        assert actual == 'Hello, UTF-8 world!\n'
+        actual = files.joinpath("utf-8.file").read_text(encoding="utf-8")
+        assert actual == "Hello, UTF-8 world!\n"
 
     @unittest.skipUnless(
-        hasattr(typing, 'runtime_checkable'),
+        hasattr(typing, "runtime_checkable"),
         "Only suitable when typing supports runtime_checkable",
     )
     def test_traversable(self):
@@ -78,14 +76,14 @@ class ModulesFilesTests(SiteDir, unittest.TestCase):
         A module can have resources found adjacent to the module.
         """
         spec = {
-            'mod.py': '',
-            'res.txt': 'resources are the best',
+            "mod.py": "",
+            "res.txt": "resources are the best",
         }
         _path.build(spec, self.site_dir)
         import mod
 
-        actual = resources.files(mod).joinpath('res.txt').read_text()
-        assert actual == spec['res.txt']
+        actual = resources.files(mod).joinpath("res.txt").read_text()
+        assert actual == spec["res.txt"]
 
 
 class ImplicitContextFilesTests(SiteDir, unittest.TestCase):
@@ -94,19 +92,19 @@ class ImplicitContextFilesTests(SiteDir, unittest.TestCase):
         Without any parameter, files() will infer the location as the caller.
         """
         spec = {
-            'somepkg': {
-                '__init__.py': textwrap.dedent(
+            "somepkg": {
+                "__init__.py": textwrap.dedent(
                     """
                     import importlib_resources as res
                     val = res.files().joinpath('res.txt').read_text()
                     """
                 ),
-                'res.txt': 'resources are the best',
+                "res.txt": "resources are the best",
             },
         }
         _path.build(spec, self.site_dir)
-        assert importlib.import_module('somepkg').val == 'resources are the best'
+        assert importlib.import_module("somepkg").val == "resources are the best"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

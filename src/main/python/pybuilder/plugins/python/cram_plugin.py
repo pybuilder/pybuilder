@@ -25,11 +25,11 @@
 
 import os
 
-from pybuilder.core import after, task, init, use_plugin, depends, description, before
+from pybuilder.core import after, before, depends, description, init, task, use_plugin
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import discover_files_matching, read_file, tail_log
 
-__author__ = 'Valentin Haenel'
+__author__ = "Valentin Haenel"
 
 use_plugin("python.core")
 
@@ -48,26 +48,32 @@ def initialize_cram_plugin(project):
 def coverage_init(project, logger, reactor):
     em = reactor.execution_manager
 
-    if em.is_task_in_current_execution_plan("coverage") and em.is_task_in_current_execution_plan(
-            "run_integration_tests"):
+    if em.is_task_in_current_execution_plan(
+        "coverage"
+    ) and em.is_task_in_current_execution_plan("run_integration_tests"):
         project.get_property("_coverage_tasks").append(run_integration_tests)
-        project.get_property("_coverage_config_prefixes")[run_integration_tests] = "cram"
+        project.get_property("_coverage_config_prefixes")[
+            run_integration_tests
+        ] = "cram"
         project.set_property("cram_coverage_name", "Python Cram test")
         project.set_property("cram_coverage_python_env", "pybuilder")
 
 
 @after("prepare")
 def assert_cram_is_executable(project, logger, reactor):
-    """ Asserts that the cram script is executable. """
+    """Asserts that the cram script is executable."""
     logger.debug("Checking if cram is executable.")
 
     reactor.pybuilder_venv.verify_can_execute(
-        command_and_arguments=reactor.pybuilder_venv.executable + ["-m", "cram", "--version"],
-        prerequisite="cram", caller="plugin python.cram")
+        command_and_arguments=reactor.pybuilder_venv.executable
+        + ["-m", "cram", "--version"],
+        prerequisite="cram",
+        caller="plugin python.cram",
+    )
 
 
 def _cram_command_for(project):
-    command_and_arguments = ["-m", "cram", '-E']
+    command_and_arguments = ["-m", "cram", "-E"]
     if project.get_property("verbose"):
         command_and_arguments.append("--verbose")
     return command_and_arguments
@@ -85,7 +91,7 @@ def _report_file(project):
 
 
 def _prepend_path(env, variable, value):
-    env[variable] = value + os.pathsep + env.get(variable, '')
+    env[variable] = value + os.pathsep + env.get(variable, "")
 
 
 @task
@@ -98,8 +104,7 @@ def run_cram_tests(project, logger, reactor):
     if not cram_tests or len(cram_tests) == 0:
         if project.get_property("cram_fail_if_no_tests"):
             raise BuildFailedException("No Cram tests found!")
-        else:
-            return
+        return
 
     pyb_venv = reactor.pybuilder_venv
 
@@ -119,13 +124,15 @@ def run_cram_tests(project, logger, reactor):
         script_dir = project.expand_path("$dir_source_main_scripts")
         _prepend_path(pyb_environ, "PATH", script_dir)
 
-    return_code = pyb_venv.execute_command(command_and_arguments,
-                                           report_file,
-                                           env=pyb_environ,
-                                           error_file_name=report_file)
+    return_code = pyb_venv.execute_command(
+        command_and_arguments, report_file, env=pyb_environ, error_file_name=report_file
+    )
 
     if return_code != 0:
-        error_str = "Cram tests failed! See %s for full details:\n%s" % (report_file, tail_log(report_file))
+        error_str = "Cram tests failed! See %s for full details:\n%s" % (
+            report_file,
+            tail_log(report_file),
+        )
         logger.error(error_str)
         raise BuildFailedException(error_str)
 

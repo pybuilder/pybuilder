@@ -2,15 +2,21 @@ from collections import OrderedDict, defaultdict, namedtuple
 
 from ...create.describe import Describe
 from ...create.via_global_ref.builtin.builtin_way import VirtualenvBuiltin
-
 from .base import ComponentBuilder
 
-CreatorInfo = namedtuple("CreatorInfo", ["key_to_class", "key_to_meta", "describe", "builtin_key"])
+CreatorInfo = namedtuple(
+    "CreatorInfo", ["key_to_class", "key_to_meta", "describe", "builtin_key"]
+)
 
 
 class CreatorSelector(ComponentBuilder):
     def __init__(self, interpreter, parser):
-        creators, self.key_to_meta, self.describe, self.builtin_key = self.for_interpreter(interpreter)
+        (
+            creators,
+            self.key_to_meta,
+            self.describe,
+            self.builtin_key,
+        ) = self.for_interpreter(interpreter)
         super().__init__(interpreter, parser, "creator", creators)
 
     @classmethod
@@ -25,20 +31,28 @@ class CreatorSelector(ComponentBuilder):
                 if meta.error:
                     errors[meta.error].append(creator_class)
                 else:
-                    if "builtin" not in key_to_class and issubclass(creator_class, VirtualenvBuiltin):
+                    if "builtin" not in key_to_class and issubclass(
+                        creator_class, VirtualenvBuiltin
+                    ):
                         builtin_key = key
                         key_to_class["builtin"] = creator_class
                         key_to_meta["builtin"] = meta
                     key_to_class[key] = creator_class
                     key_to_meta[key] = meta
-            if describe is None and issubclass(creator_class, Describe) and creator_class.can_describe(interpreter):
+            if (
+                describe is None
+                and issubclass(creator_class, Describe)
+                and creator_class.can_describe(interpreter)
+            ):
                 describe = creator_class
         if not key_to_meta:
             if errors:
-                rows = [f"{k} for creators {', '.join(i.__name__ for i in v)}" for k, v in errors.items()]
+                rows = [
+                    f"{k} for creators {', '.join(i.__name__ for i in v)}"
+                    for k, v in errors.items()
+                ]
                 raise RuntimeError("\n".join(rows))
-            else:
-                raise RuntimeError(f"No virtualenv implementation for {interpreter}")
+            raise RuntimeError(f"No virtualenv implementation for {interpreter}")
         return CreatorInfo(
             key_to_class=key_to_class,
             key_to_meta=key_to_meta,
@@ -64,7 +78,9 @@ class CreatorSelector(ComponentBuilder):
 
     def populate_selected_argparse(self, selected, app_data):
         self.parser.description = f"options for {self.name} {selected}"
-        self._impl_class.add_parser_arguments(self.parser, self.interpreter, self.key_to_meta[selected], app_data)
+        self._impl_class.add_parser_arguments(
+            self.parser, self.interpreter, self.key_to_meta[selected], app_data
+        )
 
     def create(self, options):
         options.meta = self.key_to_meta[getattr(options, self.name)]

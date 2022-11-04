@@ -20,7 +20,7 @@ import os
 import shutil
 from functools import partial
 
-from pybuilder.core import init, task, description, depends, optional
+from pybuilder.core import depends, description, init, optional, task
 from pybuilder.utils import jp
 
 
@@ -62,8 +62,9 @@ def prepare(project, logger, reactor):
         logger.debug("Creating reports directory %s", reports_directory)
         os.mkdir(reports_directory)
 
-    reactor.python_env_registry["pybuilder"].install_dependencies(project.plugin_dependencies,
-                                                                  package_type="plugin")
+    reactor.python_env_registry["pybuilder"].install_dependencies(
+        project.plugin_dependencies, package_type="plugin"
+    )
 
 
 @task

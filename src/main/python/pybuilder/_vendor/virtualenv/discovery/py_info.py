@@ -16,18 +16,24 @@ import warnings
 from collections import OrderedDict, namedtuple
 from string import digits
 
-VersionInfo = namedtuple("VersionInfo", ["major", "minor", "micro", "releaselevel", "serial"])
+VersionInfo = namedtuple(
+    "VersionInfo", ["major", "minor", "micro", "releaselevel", "serial"]
+)
 
 
 def _get_path_extensions():
-    return list(OrderedDict.fromkeys([""] + os.environ.get("PATHEXT", "").lower().split(os.pathsep)))
+    return list(
+        OrderedDict.fromkeys(
+            [""] + os.environ.get("PATHEXT", "").lower().split(os.pathsep)
+        )
+    )
 
 
 EXTENSIONS = _get_path_extensions()
 _CONF_VAR_RE = re.compile(r"\{\w+\}")
 
 
-class PythonInfo(object):
+class PythonInfo():
     """Contains information for a Python interpreter"""
 
     def __init__(self):
@@ -35,7 +41,9 @@ class PythonInfo(object):
             return v.decode("utf-8") if isinstance(v, bytes) else v
 
         def abs_path(v):
-            return None if v is None else os.path.abspath(v)  # unroll relative elements from path (e.g. ..)
+            return (
+                None if v is None else os.path.abspath(v)
+            )  # unroll relative elements from path (e.g. ..)
 
         # qualifies the python
         self.platform = u(sys.platform)
@@ -57,15 +65,23 @@ class PythonInfo(object):
         # information about the prefix - determines python home
         self.prefix = u(abs_path(getattr(sys, "prefix", None)))  # prefix we think
         self.base_prefix = u(abs_path(getattr(sys, "base_prefix", None)))  # venv
-        self.real_prefix = u(abs_path(getattr(sys, "real_prefix", None)))  # old virtualenv
+        self.real_prefix = u(
+            abs_path(getattr(sys, "real_prefix", None))
+        )  # old virtualenv
 
         # information about the exec prefix - dynamic stdlib modules
         self.base_exec_prefix = u(abs_path(getattr(sys, "base_exec_prefix", None)))
         self.exec_prefix = u(abs_path(getattr(sys, "exec_prefix", None)))
 
-        self.executable = u(abs_path(sys.executable))  # the executable we were invoked via
-        self.original_executable = u(abs_path(self.executable))  # the executable as known by the interpreter
-        self.system_executable = self._fast_get_system_executable()  # the executable we are based of (if available)
+        self.executable = u(
+            abs_path(sys.executable)
+        )  # the executable we were invoked via
+        self.original_executable = u(
+            abs_path(self.executable)
+        )  # the executable as known by the interpreter
+        self.system_executable = (
+            self._fast_get_system_executable()
+        )  # the executable we are based of (if available)
 
         try:
             __import__("venv")
@@ -82,7 +98,9 @@ class PythonInfo(object):
         if "venv" in scheme_names:
             self.sysconfig_scheme = "venv"
             self.sysconfig_paths = {
-                u(i): u(sysconfig.get_path(i, expand=False, scheme=self.sysconfig_scheme))
+                u(i): u(
+                    sysconfig.get_path(i, expand=False, scheme=self.sysconfig_scheme)
+                )
                 for i in sysconfig.get_path_names()
             }
             # we cannot use distutils at all if "venv" exists, distutils don't know it
@@ -93,17 +111,27 @@ class PythonInfo(object):
         elif sys.version_info[:2] == (3, 10) and "deb_system" in scheme_names:
             self.sysconfig_scheme = "posix_prefix"
             self.sysconfig_paths = {
-                i: sysconfig.get_path(i, expand=False, scheme=self.sysconfig_scheme) for i in sysconfig.get_path_names()
+                i: sysconfig.get_path(i, expand=False, scheme=self.sysconfig_scheme)
+                for i in sysconfig.get_path_names()
             }
             # we cannot use distutils at all if "venv" exists, distutils don't know it
             self.distutils_install = {}
         else:
             self.sysconfig_scheme = None
-            self.sysconfig_paths = {u(i): u(sysconfig.get_path(i, expand=False)) for i in sysconfig.get_path_names()}
-            self.distutils_install = {u(k): u(v) for k, v in self._distutils_install().items()}
+            self.sysconfig_paths = {
+                u(i): u(sysconfig.get_path(i, expand=False))
+                for i in sysconfig.get_path_names()
+            }
+            self.distutils_install = {
+                u(k): u(v) for k, v in self._distutils_install().items()
+            }
 
         # https://bugs.python.org/issue22199
-        makefile = getattr(sysconfig, "get_makefile_filename", getattr(sysconfig, "_get_makefile_filename", None))
+        makefile = getattr(
+            sysconfig,
+            "get_makefile_filename",
+            getattr(sysconfig, "_get_makefile_filename", None),
+        )
         self.sysconfig = {
             u(k): u(v)
             for k, v in [
@@ -119,11 +147,16 @@ class PythonInfo(object):
                 config_var_keys.add(u(k[1:-1]))
         config_var_keys.add("PYTHONFRAMEWORK")
 
-        self.sysconfig_vars = {u(i): u(sysconfig.get_config_var(i) or "") for i in config_var_keys}
+        self.sysconfig_vars = {
+            u(i): u(sysconfig.get_config_var(i) or "") for i in config_var_keys
+        }
         if self.implementation == "PyPy" and sys.version_info.major == 2:
             self.sysconfig_vars["implementation_lower"] = "python"
 
-        confs = {k: (self.system_prefix if v.startswith(self.prefix) else v) for k, v in self.sysconfig_vars.items()}
+        confs = {
+            k: (self.system_prefix if v.startswith(self.prefix) else v)
+            for k, v in self.sysconfig_vars.items()
+        }
         self.system_stdlib = self.sysconfig_path("stdlib", confs)
         self.system_stdlib_platform = self.sysconfig_path("platstdlib", confs)
         self.max_size = getattr(sys, "maxsize", getattr(sys, "maxint", None))
@@ -135,9 +168,15 @@ class PythonInfo(object):
             self.base_prefix is not None and self.base_prefix != self.prefix
         ):  # if this is a virtual environment
             if self.real_prefix is None:
-                base_executable = getattr(sys, "_base_executable", None)  # some platforms may set this to help us
-                if base_executable is not None:  # use the saved system executable if present
-                    if sys.executable != base_executable:  # we know we're in a virtual environment, cannot be us
+                base_executable = getattr(
+                    sys, "_base_executable", None
+                )  # some platforms may set this to help us
+                if (
+                    base_executable is not None
+                ):  # use the saved system executable if present
+                    if (
+                        sys.executable != base_executable
+                    ):  # we know we're in a virtual environment, cannot be us
                         return base_executable
             return None  # in this case we just can't tell easily without poking around FS and calling them, bail
         # if we're not in a virtual environment, this is already a system python, so return the original executable
@@ -146,10 +185,19 @@ class PythonInfo(object):
 
     def install_path(self, key):
         result = self.distutils_install.get(key)
-        if result is None:  # use sysconfig if sysconfig_scheme is set or distutils is unavailable
+        if (
+            result is None
+        ):  # use sysconfig if sysconfig_scheme is set or distutils is unavailable
             # set prefixes to empty => result is relative from cwd
-            prefixes = self.prefix, self.exec_prefix, self.base_prefix, self.base_exec_prefix
-            config_var = {k: "" if v in prefixes else v for k, v in self.sysconfig_vars.items()}
+            prefixes = (
+                self.prefix,
+                self.exec_prefix,
+                self.base_prefix,
+                self.base_exec_prefix,
+            )
+            config_var = {
+                k: "" if v in prefixes else v for k, v in self.sysconfig_vars.items()
+            }
             result = self.sysconfig_path(key, config_var=config_var).lstrip(os.sep)
         return result
 
@@ -166,7 +214,9 @@ class PythonInfo(object):
             except ImportError:  # if removed or not installed ignore
                 return {}
 
-        d = dist.Distribution({"script_args": "--no-user-cfg"})  # conf files not parsed so they do not hijack paths
+        d = dist.Distribution(
+            {"script_args": "--no-user-cfg"}
+        )  # conf files not parsed so they do not hijack paths
         if hasattr(sys, "_framework"):
             sys._framework = None  # disable macOS static paths for framework
 
@@ -174,9 +224,14 @@ class PythonInfo(object):
             warnings.simplefilter("ignore")
             i = d.get_command_obj("install", create=True)
 
-        i.prefix = os.sep  # paths generated are relative to prefix that contains the path sep, this makes it relative
+        i.prefix = (
+            os.sep
+        )  # paths generated are relative to prefix that contains the path sep, this makes it relative
         i.finalize_options()
-        result = {key: (getattr(i, "install_{}".format(key))[1:]).lstrip(os.sep) for key in SCHEME_KEYS}
+        result = {
+            key: (getattr(i, "install_{}".format(key))[1:]).lstrip(os.sep)
+            for key in SCHEME_KEYS
+        }
         return result
 
     @property
@@ -221,11 +276,18 @@ class PythonInfo(object):
     def system_include(self):
         path = self.sysconfig_path(
             "include",
-            {k: (self.system_prefix if v.startswith(self.prefix) else v) for k, v in self.sysconfig_vars.items()},
+            {
+                k: (self.system_prefix if v.startswith(self.prefix) else v)
+                for k, v in self.sysconfig_vars.items()
+            },
         )
-        if not os.path.exists(path):  # some broken packaging don't respect the sysconfig, fallback to distutils path
+        if not os.path.exists(
+            path
+        ):  # some broken packaging don't respect the sysconfig, fallback to distutils path
             # the pattern include the distribution name too at the end, remove that via the parent call
-            fallback = os.path.join(self.prefix, os.path.dirname(self.install_path("headers")))
+            fallback = os.path.join(
+                self.prefix, os.path.dirname(self.install_path("headers"))
+            )
             if os.path.exists(fallback):
                 path = fallback
         return path
@@ -259,7 +321,8 @@ class PythonInfo(object):
                     ("spec", self.spec),
                     (
                         "system"
-                        if self.system_executable is not None and self.system_executable != self.executable
+                        if self.system_executable is not None
+                        and self.system_executable != self.executable
                         else None,
                         self.system_executable,
                     ),
@@ -275,7 +338,10 @@ class PythonInfo(object):
                     ("exe", self.executable),
                     ("platform", self.platform),
                     ("version", repr(self.version)),
-                    ("encoding_fs_io", "{}-{}".format(self.file_system_encoding, self.stdout_encoding)),
+                    (
+                        "encoding_fs_io",
+                        "{}-{}".format(self.file_system_encoding, self.stdout_encoding),
+                    ),
                 )
                 if k is not None
             ),
@@ -284,7 +350,11 @@ class PythonInfo(object):
 
     @property
     def spec(self):
-        return "{}{}-{}".format(self.implementation, ".".join(str(i) for i in self.version_info), self.architecture)
+        return "{}{}-{}".format(
+            self.implementation,
+            ".".join(str(i) for i in self.version_info),
+            self.architecture,
+        )
 
     @classmethod
     def clear_cache(cls, app_data):
@@ -311,13 +381,18 @@ class PythonInfo(object):
                     return False
 
         if impl_must_match:
-            if spec.implementation is not None and spec.implementation.lower() != self.implementation.lower():
+            if (
+                spec.implementation is not None
+                and spec.implementation.lower() != self.implementation.lower()
+            ):
                 return False
 
         if spec.architecture is not None and spec.architecture != self.architecture:
             return False
 
-        for our, req in zip(self.version_info[0:3], (spec.major, spec.minor, spec.micro)):
+        for our, req in zip(
+            self.version_info[0:3], (spec.major, spec.minor, spec.micro)
+        ):
             if req is not None and our is not None and our != req:
                 return False
         return True
@@ -332,7 +407,9 @@ class PythonInfo(object):
         the host python has been upgraded from underneath us.
         """
         if cls._current is None:
-            cls._current = cls.from_exe(sys.executable, app_data, raise_on_error=True, resolve_to_host=False)
+            cls._current = cls.from_exe(
+                sys.executable, app_data, raise_on_error=True, resolve_to_host=False
+            )
         return cls._current
 
     @classmethod
@@ -342,7 +419,9 @@ class PythonInfo(object):
         the host python has been upgraded from underneath us.
         """
         if cls._current_system is None:
-            cls._current_system = cls.from_exe(sys.executable, app_data, raise_on_error=True, resolve_to_host=True)
+            cls._current_system = cls.from_exe(
+                sys.executable, app_data, raise_on_error=True, resolve_to_host=True
+            )
         return cls._current_system
 
     def _to_json(self):
@@ -350,19 +429,39 @@ class PythonInfo(object):
         return json.dumps(self._to_dict(), indent=2)
 
     def _to_dict(self):
-        data = {var: (getattr(self, var) if var not in ("_creators",) else None) for var in vars(self)}
+        data = {
+            var: (getattr(self, var) if var not in ("_creators",) else None)
+            for var in vars(self)
+        }
         # noinspection PyProtectedMember
-        data["version_info"] = data["version_info"]._asdict()  # namedtuple to dictionary
+        data["version_info"] = data[
+            "version_info"
+        ]._asdict()  # namedtuple to dictionary
         return data
 
     @classmethod
-    def from_exe(cls, exe, app_data=None, raise_on_error=True, ignore_cache=False, resolve_to_host=True, env=None):
+    def from_exe(
+        cls,
+        exe,
+        app_data=None,
+        raise_on_error=True,
+        ignore_cache=False,
+        resolve_to_host=True,
+        env=None,
+    ):
         """Given a path to an executable get the python information"""
         # this method is not used by itself, so here and called functions can import stuff locally
         from .cached_py_info import from_exe
 
         env = os.environ if env is None else env
-        proposed = from_exe(cls, app_data, exe, env=env, raise_on_error=raise_on_error, ignore_cache=ignore_cache)
+        proposed = from_exe(
+            cls,
+            app_data,
+            exe,
+            env=env,
+            raise_on_error=raise_on_error,
+            ignore_cache=ignore_cache,
+        )
         # noinspection PyProtectedMember
         if isinstance(proposed, PythonInfo) and resolve_to_host:
             try:
@@ -370,7 +469,11 @@ class PythonInfo(object):
             except Exception as exception:
                 if raise_on_error:
                     raise exception
-                logging.info("ignore %s due cannot resolve system due to %r", proposed.original_executable, exception)
+                logging.info(
+                    "ignore %s due cannot resolve system due to %r",
+                    proposed.original_executable,
+                    exception,
+                )
                 proposed = None
         return proposed
 
@@ -382,7 +485,9 @@ class PythonInfo(object):
 
     @classmethod
     def _from_dict(cls, data):
-        data["version_info"] = VersionInfo(**data["version_info"])  # restore this to a named tuple structure
+        data["version_info"] = VersionInfo(
+            **data["version_info"]
+        )  # restore this to a named tuple structure
         result = cls()
         result.__dict__ = {k: v for k, v in data.items()}
         return result
@@ -401,8 +506,12 @@ class PythonInfo(object):
                     break
                 for at, (p, t) in enumerate(prefixes.items(), start=1):
                     logging.error("%d: prefix=%s, info=%r", at, p, t)
-                logging.error("%d: prefix=%s, info=%r", len(prefixes) + 1, prefix, target)
-                raise RuntimeError("prefixes are causing a circle {}".format("|".join(prefixes.keys())))
+                logging.error(
+                    "%d: prefix=%s, info=%r", len(prefixes) + 1, prefix, target
+                )
+                raise RuntimeError(
+                    "prefixes are causing a circle {}".format("|".join(prefixes.keys()))
+                )
             prefixes[prefix] = target
             target = target.discover_exe(app_data, prefix=prefix, exact=False)
         if target.executable != target.system_executable:
@@ -415,7 +524,12 @@ class PythonInfo(object):
     def discover_exe(self, app_data, prefix, exact=True, env=None):
         key = prefix, exact
         if key in self._cache_exe_discovery and prefix:
-            logging.debug("discover exe from cache %s - exact %s: %r", prefix, exact, self._cache_exe_discovery[key])
+            logging.debug(
+                "discover exe from cache %s - exact %s: %r",
+                prefix,
+                exact,
+                self._cache_exe_discovery[key],
+            )
             return self._cache_exe_discovery[key]
         logging.debug("discover exe for %s in %s", self, prefix)
         # we don't know explicitly here, do some guess work - our executable name should tell
@@ -433,16 +547,24 @@ class PythonInfo(object):
             info = self._select_most_likely(discovered, self)
             folders = os.pathsep.join(possible_folders)
             self._cache_exe_discovery[key] = info
-            logging.debug("no exact match found, chosen most similar of %s within base folders %s", info, folders)
+            logging.debug(
+                "no exact match found, chosen most similar of %s within base folders %s",
+                info,
+                folders,
+            )
             return info
-        msg = "failed to detect {} in {}".format("|".join(possible_names), os.pathsep.join(possible_folders))
+        msg = "failed to detect {} in {}".format(
+            "|".join(possible_names), os.pathsep.join(possible_folders)
+        )
         raise RuntimeError(msg)
 
     def _check_exe(self, app_data, folder, name, exact, discovered, env):
         exe_path = os.path.join(folder, name)
         if not os.path.exists(exe_path):
             return None
-        info = self.from_exe(exe_path, app_data, resolve_to_host=False, raise_on_error=False, env=env)
+        info = self.from_exe(
+            exe_path, app_data, resolve_to_host=False, raise_on_error=False, env=env
+        )
         if info is None:  # ignore if for some reason we can't query
             return None
         for item in ["implementation", "architecture", "version_info"]:
@@ -450,9 +572,17 @@ class PythonInfo(object):
             searched = getattr(self, item)
             if found != searched:
                 if item == "version_info":
-                    found, searched = ".".join(str(i) for i in found), ".".join(str(i) for i in searched)
+                    found, searched = ".".join(str(i) for i in found), ".".join(
+                        str(i) for i in searched
+                    )
                 executable = info.executable
-                logging.debug("refused interpreter %s because %s differs %s != %s", executable, item, found, searched)
+                logging.debug(
+                    "refused interpreter %s because %s differs %s != %s",
+                    executable,
+                    item,
+                    found,
+                    searched,
+                )
                 if exact is False:
                     discovered.append(info)
                 break
@@ -476,10 +606,15 @@ class PythonInfo(object):
                 info.version_info.releaselevel == target.version_info.releaselevel,
                 info.version_info.serial == target.version_info.serial,
             ]
-            priority = sum((1 << pos if match else 0) for pos, match in enumerate(reversed(matches)))
+            priority = sum(
+                (1 << pos if match else 0)
+                for pos, match in enumerate(reversed(matches))
+            )
             return priority
 
-        sorted_discovered = sorted(discovered, key=sort_by, reverse=True)  # sort by priority in decreasing order
+        sorted_discovered = sorted(
+            discovered, key=sort_by, reverse=True
+        )  # sort by priority in decreasing order
         most_likely = sorted_discovered[0]
         return most_likely
 

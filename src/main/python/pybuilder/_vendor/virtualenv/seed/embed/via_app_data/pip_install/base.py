@@ -9,7 +9,6 @@ from pathlib import Path
 from tempfile import mkdtemp
 
 from ......distlib.scripts import ScriptMaker, enquote_executable
-
 from .....util.path import safe_delete
 
 
@@ -37,12 +36,18 @@ class PipInstall(metaclass=ABCMeta):
         consoles = set()
         script_dir = self._creator.script_dir
         for name, module in self._console_scripts.items():
-            consoles.update(self._create_console_entry_point(name, module, script_dir, version_info))
-        logging.debug("generated console scripts %s", " ".join(i.name for i in consoles))
+            consoles.update(
+                self._create_console_entry_point(name, module, script_dir, version_info)
+            )
+        logging.debug(
+            "generated console scripts %s", " ".join(i.name for i in consoles)
+        )
 
     def build_image(self):
         # 1. first extract the wheel
-        logging.debug("build install image for %s to %s", self._wheel.name, self._image_dir)
+        logging.debug(
+            "build install image for %s to %s", self._wheel.name, self._image_dir
+        )
         with zipfile.ZipFile(str(self._wheel)) as zip_ref:
             self._shorten_path_if_needed(zip_ref)
             zip_ref.extractall(str(self._image_dir))
@@ -67,7 +72,9 @@ class PipInstall(metaclass=ABCMeta):
                 self._image_dir = Path(to_folder)
 
     def _records_text(self, files):
-        return "\n".join(f"{os.path.relpath(str(rec), str(self._image_dir))},," for rec in files)
+        return "\n".join(
+            f"{os.path.relpath(str(rec), str(self._image_dir))},," for rec in files
+        )
 
     def _generate_new_files(self):
         new_files = set()
@@ -81,12 +88,16 @@ class PipInstall(metaclass=ABCMeta):
         folder = mkdtemp()
         try:
             to_folder = Path(folder)
-            rel = os.path.relpath(str(self._creator.script_dir), str(self._creator.purelib))
+            rel = os.path.relpath(
+                str(self._creator.script_dir), str(self._creator.purelib)
+            )
             version_info = self._creator.interpreter.version_info
             for name, module in self._console_scripts.items():
                 new_files.update(
                     Path(os.path.normpath(str(self._image_dir / rel / i.name)))
-                    for i in self._create_console_entry_point(name, module, to_folder, version_info)
+                    for i in self._create_console_entry_point(
+                        name, module, to_folder, version_info
+                    )
                 )
         finally:
             safe_delete(folder)
@@ -104,7 +115,9 @@ class PipInstall(metaclass=ABCMeta):
                     self.__dist_info = filename
                     break
             else:
-                raise RuntimeError(f"no .dist-info at {self._image_dir}, has {', '.join(files)}")  # pragma: no cover
+                raise RuntimeError(
+                    f"no .dist-info at {self._image_dir}, has {', '.join(files)}"
+                )  # pragma: no cover
         return self.__dist_info
 
     @abstractmethod
@@ -140,8 +153,16 @@ class PipInstall(metaclass=ABCMeta):
 
     def _uninstall_previous_version(self):
         dist_name = self._dist_info.stem.split("-")[0]
-        in_folders = chain.from_iterable([i.iterdir() for i in {self._creator.purelib, self._creator.platlib}])
-        paths = (p for p in in_folders if p.stem.split("-")[0] == dist_name and p.suffix == ".dist-info" and p.is_dir())
+        in_folders = chain.from_iterable(
+            [i.iterdir() for i in {self._creator.purelib, self._creator.platlib}]
+        )
+        paths = (
+            p
+            for p in in_folders
+            if p.stem.split("-")[0] == dist_name
+            and p.suffix == ".dist-info"
+            and p.is_dir()
+        )
         existing_dist = next(paths, None)
         if existing_dist is not None:
             self._uninstall_dist(existing_dist)
@@ -149,16 +170,31 @@ class PipInstall(metaclass=ABCMeta):
     @staticmethod
     def _uninstall_dist(dist):
         dist_base = dist.parent
-        logging.debug("uninstall existing distribution %s from %s", dist.stem, dist_base)
+        logging.debug(
+            "uninstall existing distribution %s from %s", dist.stem, dist_base
+        )
 
         top_txt = dist / "top_level.txt"  # add top level packages at folder level
-        paths = {dist.parent / i.strip() for i in top_txt.read_text().splitlines()} if top_txt.exists() else set()
+        paths = (
+            {dist.parent / i.strip() for i in top_txt.read_text().splitlines()}
+            if top_txt.exists()
+            else set()
+        )
         paths.add(dist)  # add the dist-info folder itself
 
-        base_dirs, record = paths.copy(), dist / "RECORD"  # collect entries in record that we did not register yet
-        for name in (i.split(",")[0] for i in record.read_text().splitlines()) if record.exists() else ():
+        base_dirs, record = (
+            paths.copy(),
+            dist / "RECORD",
+        )  # collect entries in record that we did not register yet
+        for name in (
+            (i.split(",")[0] for i in record.read_text().splitlines())
+            if record.exists()
+            else ()
+        ):
             path = dist_base / name
-            if not any(p in base_dirs for p in path.parents):  # only add if not already added as a base dir
+            if not any(
+                p in base_dirs for p in path.parents
+            ):  # only add if not already added as a base dir
                 paths.add(path)
 
         for path in sorted(paths):  # actually remove stuff in a stable order

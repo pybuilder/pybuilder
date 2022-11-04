@@ -17,13 +17,14 @@
 import unittest
 
 from itest_support import IntegrationTestSupport
+
 from pybuilder.errors import MissingPluginException
 
 
 class Test(IntegrationTestSupport):
-
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import use_plugin
 
 use_plugin("pypi:thispluginsdoesnotandshouldnotexist")
@@ -31,7 +32,8 @@ use_plugin("pypi:thispluginsdoesnotandshouldnotexist")
 name = "plugin-fail-test"
 default_task = "publish"
 
-""")
+"""
+        )
         self.create_directory("src/main/python/spam")
         self.write_file("src/main/python/spam/__init__.py", "")
 

@@ -8,10 +8,9 @@ import platform
 import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from ...extern.pyparsing import (  # noqa: N817
-    Forward,
-    Group,
-    Literal as L,
+from ...extern.pyparsing import Forward, Group
+from ...extern.pyparsing import Literal as L  # noqa: N817
+from ...extern.pyparsing import (
     ParseException,
     ParseResults,
     QuotedString,
@@ -19,7 +18,6 @@ from ...extern.pyparsing import (  # noqa: N817
     stringEnd,
     stringStart,
 )
-
 from .specifiers import InvalidSpecifier, Specifier
 
 __all__ = [
@@ -141,8 +139,7 @@ MARKER = stringStart + MARKER_EXPR + stringEnd
 def _coerce_parse_result(results: Union[ParseResults, List[Any]]) -> List[Any]:
     if isinstance(results, ParseResults):
         return [_coerce_parse_result(i) for i in results]
-    else:
-        return results
+    return results
 
 
 def _format_marker(
@@ -166,12 +163,10 @@ def _format_marker(
         inner = (_format_marker(m, first=False) for m in marker)
         if first:
             return " ".join(inner)
-        else:
-            return "(" + " ".join(inner) + ")"
-    elif isinstance(marker, tuple):
+        return "(" + " ".join(inner) + ")"
+    if isinstance(marker, tuple):
         return " ".join([m.serialize() for m in marker])
-    else:
-        return marker
+    return marker
 
 
 _operators: Dict[str, Operator] = {

@@ -28,12 +28,11 @@ import subprocess
 import sys
 import tempfile
 import time
-from os.path import normcase, normpath, abspath, realpath, join
-from subprocess import Popen, PIPE
+from os.path import abspath, join, normcase, normpath, realpath
+from subprocess import PIPE, Popen
 
 from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
-from pybuilder.python_utils import (is_string, which, makedirs,
-                                    IS_WIN, iglob, escape)
+from pybuilder.python_utils import IS_WIN, escape, iglob, is_string, makedirs, which
 
 try:
     from collections import abc
@@ -50,8 +49,14 @@ def get_all_dependencies_for_task(task):
 
     task_name = task.__name__
     execution_manager = Reactor.current_instance().execution_manager
-    task_and_all_dependencies = execution_manager.collect_all_transitive_tasks([task_name])
-    return [dependency for dependency in task_and_all_dependencies if dependency.name != task_name]
+    task_and_all_dependencies = execution_manager.collect_all_transitive_tasks(
+        [task_name]
+    )
+    return [
+        dependency
+        for dependency in task_and_all_dependencies
+        if dependency.name != task_name
+    ]
 
 
 def render_report(report_dict):
@@ -63,38 +68,40 @@ def format_timestamp(timestamp):
 
 
 def timedelta_in_millis(timedelta):
-    return ((timedelta.days * 24 * 60 * 60) + timedelta.seconds) * 1000 + round(timedelta.microseconds / 1000)
+    return ((timedelta.days * 24 * 60 * 60) + timedelta.seconds) * 1000 + round(
+        timedelta.microseconds / 1000
+    )
 
 
 def as_list(*whatever):
     """
-        Returns a list containing all values given in whatever.
-        Each list or tuple will be "unpacked", all other elements
-        are added to the resulting list.
+    Returns a list containing all values given in whatever.
+    Each list or tuple will be "unpacked", all other elements
+    are added to the resulting list.
 
-        Examples given
+    Examples given
 
-        >>> as_list('spam')
-        ['spam']
+    >>> as_list('spam')
+    ['spam']
 
-        >>> as_list('spam', 'eggs')
-        ['spam', 'eggs']
+    >>> as_list('spam', 'eggs')
+    ['spam', 'eggs']
 
-        >>> as_list(('spam', 'eggs'))
-        ['spam', 'eggs']
+    >>> as_list(('spam', 'eggs'))
+    ['spam', 'eggs']
 
-        >>> as_list(['spam', 'eggs'])
-        ['spam', 'eggs']
+    >>> as_list(['spam', 'eggs'])
+    ['spam', 'eggs']
 
-        >>> as_list(['spam', 'eggs'], ('spam', 'eggs'), 'foo', 'bar')
-        ['spam', 'eggs', 'spam', 'eggs', 'foo', 'bar']
+    >>> as_list(['spam', 'eggs'], ('spam', 'eggs'), 'foo', 'bar')
+    ['spam', 'eggs', 'spam', 'eggs', 'foo', 'bar']
     """
     result = []
 
     for w in whatever:
         if w is None:
             continue
-        elif isinstance(w, list):
+        if isinstance(w, list):
             result += w
         elif isinstance(w, tuple):
             result += w
@@ -104,7 +111,7 @@ def as_list(*whatever):
 
 
 def remove_leading_slash_or_dot_from_path(path):
-    if path.startswith('/') or path.startswith('.'):
+    if path.startswith("/") or path.startswith("."):
         return path[1:]
     return path
 
@@ -130,21 +137,29 @@ def discover_module_files_matching(source_path, module_glob):
     return result
 
 
-def discover_modules(source_path, suffix=".py",
-                     include_packages=True,
-                     include_package_modules=True,
-                     include_namespace_modules=True
-                     ):
-    return discover_modules_matching(source_path, "*{0}".format(suffix),
-                                     include_packages=include_packages,
-                                     include_package_modules=include_package_modules,
-                                     include_namespace_modules=include_namespace_modules)
+def discover_modules(
+    source_path,
+    suffix=".py",
+    include_packages=True,
+    include_package_modules=True,
+    include_namespace_modules=True,
+):
+    return discover_modules_matching(
+        source_path,
+        "*{0}".format(suffix),
+        include_packages=include_packages,
+        include_package_modules=include_package_modules,
+        include_namespace_modules=include_namespace_modules,
+    )
 
 
-def discover_modules_matching(source_path, module_glob,
-                              include_packages=True,
-                              include_package_modules=True,
-                              include_namespace_modules=True):
+def discover_modules_matching(
+    source_path,
+    module_glob,
+    include_packages=True,
+    include_package_modules=True,
+    include_namespace_modules=True,
+):
     result = []
     if not module_glob.endswith(".py"):
         module_glob += ".py"
@@ -159,9 +174,15 @@ def discover_modules_matching(source_path, module_glob,
         for file_name in files:
             if fnmatch.fnmatch(file_name, module_glob):
                 module_file_path = jp(root, file_name)
-                relative_module_file_path = os.path.relpath(module_file_path, source_path)
-                relative_module_file_path = relative_module_file_path.replace(os.sep, ".")
-                module_file = remove_leading_slash_or_dot_from_path(relative_module_file_path)
+                relative_module_file_path = os.path.relpath(
+                    module_file_path, source_path
+                )
+                relative_module_file_path = relative_module_file_path.replace(
+                    os.sep, "."
+                )
+                module_file = remove_leading_slash_or_dot_from_path(
+                    relative_module_file_path
+                )
                 module_name = remove_python_source_suffix(module_file)
 
                 add_module = False
@@ -170,8 +191,12 @@ def discover_modules_matching(source_path, module_glob,
                         module_name = module_name[:-9]  # len(".__init__")
                         add_module = True
                 else:
-                    add_module = (not is_package and include_namespace_modules or
-                                  is_package and include_package_modules)
+                    add_module = (
+                        not is_package
+                        and include_namespace_modules
+                        or is_package
+                        and include_package_modules
+                    )
 
                 if add_module:
                     result.append(module_name)
@@ -193,25 +218,42 @@ def discover_files_matching(start_dir, file_glob, exclude_file_glob=None):
                 yield os.path.join(root, file_name)
 
 
-def assert_can_execute(command_and_arguments, prerequisite, caller, env, no_path_search=False, logger=None):
+def assert_can_execute(
+    command_and_arguments, prerequisite, caller, env, no_path_search=False, logger=None
+):
     with tempfile.NamedTemporaryFile() as f:
         try:
             if IS_WIN and not is_string(command_and_arguments) and not no_path_search:
-                which_cmd = which(command_and_arguments[0], path=env.get("PATH") if env else None)
+                which_cmd = which(
+                    command_and_arguments[0], path=env.get("PATH") if env else None
+                )
                 if which_cmd:
                     command_and_arguments[0] = which_cmd
 
             if logger:
-                logger.debug("Verifying command: %s", " ".join(repr(cmd) for cmd in command_and_arguments))
+                logger.debug(
+                    "Verifying command: %s",
+                    " ".join(repr(cmd) for cmd in command_and_arguments),
+                )
 
-            process = subprocess.Popen(command_and_arguments, stdout=f, stderr=f, shell=False, env=env)
+            process = subprocess.Popen(
+                command_and_arguments, stdout=f, stderr=f, shell=False, env=env
+            )
             process.wait()
         except OSError:
             raise MissingPrerequisiteException(prerequisite, caller)
 
 
-def execute_command(command_and_arguments, outfile_name=None, env=None, cwd=None, error_file_name=None, shell=False,
-                    no_path_search=False, logger=None):
+def execute_command(
+    command_and_arguments,
+    outfile_name=None,
+    env=None,
+    cwd=None,
+    error_file_name=None,
+    shell=False,
+    no_path_search=False,
+    logger=None,
+):
     if error_file_name is None and outfile_name:
         error_file_name = outfile_name + ".err"
 
@@ -228,20 +270,32 @@ def execute_command(command_and_arguments, outfile_name=None, env=None, cwd=None
             error_file_created = True
 
         try:
-            if not shell and IS_WIN and not is_string(command_and_arguments) and not no_path_search:
-                which_cmd = which(command_and_arguments[0], path=env.get("PATH") if env else None)
+            if (
+                not shell
+                and IS_WIN
+                and not is_string(command_and_arguments)
+                and not no_path_search
+            ):
+                which_cmd = which(
+                    command_and_arguments[0], path=env.get("PATH") if env else None
+                )
                 if which_cmd:
                     command_and_arguments[0] = which_cmd
 
             if logger:
-                logger.debug("Executing command: %s", " ".join(repr(cmd) for cmd in command_and_arguments))
+                logger.debug(
+                    "Executing command: %s",
+                    " ".join(repr(cmd) for cmd in command_and_arguments),
+                )
 
-            process = Popen(command_and_arguments,
-                            stdout=outfile_name,
-                            stderr=error_file_name,
-                            env=env,
-                            cwd=cwd,
-                            shell=shell)
+            process = Popen(
+                command_and_arguments,
+                stdout=outfile_name,
+                stderr=error_file_name,
+                env=env,
+                cwd=cwd,
+                shell=shell,
+            )
             return process.wait()
         finally:
             if error_file_name and error_file_created:
@@ -254,14 +308,16 @@ def execute_command(command_and_arguments, outfile_name=None, env=None, cwd=None
 def execute_command_and_capture_output(*command_and_arguments):
     process_handle = Popen(command_and_arguments, stdout=PIPE, stderr=PIPE)
     stdout, stderr = process_handle.communicate()
-    stdout, stderr = stdout.decode(sys.stdout.encoding or 'utf-8'), stderr.decode(sys.stderr.encoding or 'utf-8')
+    stdout, stderr = stdout.decode(sys.stdout.encoding or "utf-8"), stderr.decode(
+        sys.stderr.encoding or "utf-8"
+    )
     process_return_code = process_handle.returncode
     return process_return_code, stdout, stderr
 
 
 def tail(file_path, lines=20):
     try:
-        import pybuilder._vendor.tailer as tailer
+        from  pybuilder._vendor import tailer
     except ImportError:
         return read_file(file_path)
 
@@ -278,9 +334,8 @@ def read_file(file_name):
         # This is an open file with mode
         file_name.seek(0)
         return file_name.readlines()
-    else:
-        with open(file_name, "r") as file_handle:
-            return file_handle.readlines()
+    with open(file_name, "r") as file_handle:
+        return file_handle.readlines()
 
 
 def write_file(file_name, *lines):
@@ -288,7 +343,7 @@ def write_file(file_name, *lines):
         file_handle.writelines(lines)
 
 
-class Timer(object):
+class Timer():
     @staticmethod
     def start():
         return Timer()
@@ -306,16 +361,26 @@ class Timer(object):
         return int((self.end_time - self.start_time) * 1000)
 
 
-def apply_on_files(start_directory, closure, globs, *additional_closure_arguments, **keyword_closure_arguments):
+def apply_on_files(
+    start_directory,
+    closure,
+    globs,
+    *additional_closure_arguments,
+    **keyword_closure_arguments
+):
     for glob in globs:
-        for absolute_file_name in iglob(normcase(os.path.join(escape(start_directory), glob)), recursive=True):
+        for absolute_file_name in iglob(
+            normcase(os.path.join(escape(start_directory), glob)), recursive=True
+        ):
             if os.path.isdir(absolute_file_name):
                 continue
             relative_file_name = os.path.relpath(absolute_file_name, start_directory)
-            closure(absolute_file_name,
-                    relative_file_name,
-                    *additional_closure_arguments,
-                    **keyword_closure_arguments)
+            closure(
+                absolute_file_name,
+                relative_file_name,
+                *additional_closure_arguments,
+                **keyword_closure_arguments
+            )
 
 
 def mkdir(directory):
@@ -327,7 +392,9 @@ def mkdir(directory):
 
     if os.path.exists(directory):
         if os.path.isfile(directory):
-            message = "Unable to created directory '%s': A file with that name already exists"
+            message = (
+                "Unable to created directory '%s': A file with that name already exists"
+            )
             raise PyBuilderException(message, directory)
         return
     makedirs(directory, exist_ok=True)
@@ -339,13 +406,15 @@ def is_notstr_iterable(obj):
 
 
 def get_dist_version_string(project, format=" (%s)"):
-    return format % project.dist_version if project.version != project.dist_version else ""
+    return (
+        format % project.dist_version if project.version != project.dist_version else ""
+    )
 
 
 def safe_log_file_name(file_name):
     # per https://support.microsoft.com/en-us/kb/177506
     # per https://msdn.microsoft.com/en-us/library/aa365247
-    return re.sub(r'\\|/|:|\*|\?|\"|<|>|\|', '_', file_name)
+    return re.sub(r"\\|/|:|\*|\?|\"|<|>|\|", "_", file_name)
 
 
 nc = normcase

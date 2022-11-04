@@ -23,7 +23,8 @@ from itest_support import IntegrationTestSupport
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import task, depends
 
 @task
@@ -39,7 +40,8 @@ def task_b(project):
 @depends("task_a", "task_b")
 def task_c(project):
     project.set_property("c", True)
-        """)
+        """
+        )
         reactor = self.prepare_reactor()
         project = reactor.project
         reactor.execution_manager.resolve_dependencies(exclude_tasks=["task_b"])

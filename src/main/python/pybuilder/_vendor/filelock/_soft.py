@@ -25,9 +25,13 @@ class SoftFileLock(BaseFileLock):
         except OSError as exception:
             if exception.errno == EEXIST:  # expected if cannot lock
                 pass
-            elif exception.errno == ENOENT:  # No such file or directory - parent directory is missing
+            elif (
+                exception.errno == ENOENT
+            ):  # No such file or directory - parent directory is missing
                 raise
-            elif exception.errno == EACCES and sys.platform != "win32":  # pragma: win32 no cover
+            elif (
+                exception.errno == EACCES and sys.platform != "win32"
+            ):  # pragma: win32 no cover
                 # Permission denied - parent dir is R/O
                 raise  # note windows does not allow you to make a folder r/o only files
         else:

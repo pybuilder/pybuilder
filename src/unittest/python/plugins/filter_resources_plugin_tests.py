@@ -18,9 +18,10 @@
 
 import unittest
 
+from test_utils import Mock
+
 from pybuilder.core import Project
 from pybuilder.plugins.filter_resources_plugin import ProjectDictWrapper
-from test_utils import Mock
 
 
 class ProjectDictWrapperTest(unittest.TestCase):
@@ -32,7 +33,9 @@ class ProjectDictWrapperTest(unittest.TestCase):
 
         project_mock.get_property.assert_not_called()
 
-    def test_should_delegate_to_project_get_property_when_attribute_is_not_defined(self):
+    def test_should_delegate_to_project_get_property_when_attribute_is_not_defined(
+        self,
+    ):
         project_mock = Project(".")
         project_mock.has_property = Mock(return_value=True)
         project_mock.get_property = Mock(return_value="eggs")
@@ -51,4 +54,5 @@ class ProjectDictWrapperTest(unittest.TestCase):
 
         project_mock.get_property.assert_not_called()
         logger_mock.warn.assert_called_with(
-            "Skipping impossible substitution for 'n/a' - there is no matching project attribute or property.")
+            "Skipping impossible substitution for 'n/a' - there is no matching project attribute or property."
+        )

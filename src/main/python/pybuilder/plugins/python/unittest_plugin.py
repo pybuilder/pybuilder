@@ -19,13 +19,14 @@
 import sys
 import unittest
 from functools import reduce
-from types import MethodType, FunctionType
+from types import FunctionType, MethodType
 
 from pybuilder.ci_server_interaction import test_proxy_for
-from pybuilder.core import init, task, description, use_plugin, before
+from pybuilder.core import before, description, init, task, use_plugin
 from pybuilder.errors import BuildFailedException
-from pybuilder.plugins.python.remote_tools.unittest_tool import start_unittest_tool, PipeShutdownError, \
-    logger as tool_logger
+from pybuilder.plugins.python.remote_tools.unittest_tool import PipeShutdownError
+from pybuilder.plugins.python.remote_tools.unittest_tool import logger as tool_logger
+from pybuilder.plugins.python.remote_tools.unittest_tool import start_unittest_tool
 from pybuilder.python_utils import StringIO
 from pybuilder.terminal import print_text_line
 from pybuilder.utils import discover_modules_matching, render_report
@@ -40,19 +41,29 @@ def init_test_source_directory(project):
     project.set_property_if_unset("dir_source_unittest_python", "src/unittest/python")
     project.set_property_if_unset("unittest_breaks_build", True)
     project.set_property_if_unset("unittest_module_glob", "*_tests")
-    project.set_property_if_unset("unittest_file_suffix", None)  # deprecated, use unittest_module_glob.
+    project.set_property_if_unset(
+        "unittest_file_suffix", None
+    )  # deprecated, use unittest_module_glob.
     project.set_property_if_unset("unittest_test_method_prefix", None)
     project.set_property_if_unset("unittest_python_env", "build")
-    project.set_property_if_unset("unittest_runner", (
-        lambda stream: __import__("xmlrunner").XMLTestRunner(output=project.expand_path("$dir_target/reports"),
-                                                             stream=stream), "_make_result"))
+    project.set_property_if_unset(
+        "unittest_runner",
+        (
+            lambda stream: __import__("xmlrunner").XMLTestRunner(
+                output=project.expand_path("$dir_target/reports"), stream=stream
+            ),
+            "_make_result",
+        ),
+    )
 
 
 @before("prepare")
 def coverage_init(project, logger, reactor):
     em = reactor.execution_manager
 
-    if em.is_task_in_current_execution_plan("coverage") and em.is_task_in_current_execution_plan("run_unit_tests"):
+    if em.is_task_in_current_execution_plan(
+        "coverage"
+    ) and em.is_task_in_current_execution_plan("run_unit_tests"):
         project.get_property("_coverage_tasks").append(run_unit_tests)
         project.get_property("_coverage_config_prefixes")[run_unit_tests] = "ut"
         project.set_property("ut_coverage_name", "Python unit test")
@@ -73,7 +84,9 @@ def run_tests(project, logger, reactor, execution_prefix, execution_name):
     file_suffix = project.get_property("%s_file_suffix" % execution_prefix)
     if file_suffix is not None:
         logger.warn(
-            "%(prefix)s_file_suffix is deprecated, please use %(prefix)s_module_glob" % {"prefix": execution_prefix})
+            "%(prefix)s_file_suffix is deprecated, please use %(prefix)s_module_glob"
+            % {"prefix": execution_prefix}
+        )
         module_glob = "*{0}".format(file_suffix)
         if module_glob.endswith(".py"):
             module_glob = module_glob[:-3]
@@ -85,14 +98,22 @@ def run_tests(project, logger, reactor, execution_prefix, execution_name):
     logger.debug("Including files matching '%s'", module_glob)
 
     try:
-        test_method_prefix = project.get_property("%s_test_method_prefix" % execution_prefix)
+        test_method_prefix = project.get_property(
+            "%s_test_method_prefix" % execution_prefix
+        )
         runner_generator = project.get_property("%s_runner" % execution_prefix)
         result, console_out = execute_tests_matching(
             reactor.python_env_registry[project.get_property("unittest_python_env")],
-            reactor.tools, runner_generator, logger, test_dir, module_glob, [test_dir, src_dir],
+            reactor.tools,
+            runner_generator,
+            logger,
+            test_dir,
+            module_glob,
+            [test_dir, src_dir],
             test_method_prefix,
             project.get_property("remote_debug"),
-            project.get_property("remote_tracing"))
+            project.get_property("remote_tracing"),
+        )
 
         if result.testsRun == 0:
             logger.warn("No %s executed.", execution_name)
@@ -104,42 +125,85 @@ def run_tests(project, logger, reactor, execution_prefix, execution_name):
         break_build = project.get_property("%s_breaks_build" % execution_prefix)
         if not result.wasSuccessful():
             msg = "There were %d error(s) and %d failure(s) in %s" % (
-                len(result.errors), len(result.failures), execution_name)
+                len(result.errors),
+                len(result.failures),
+                execution_name,
+            )
             if break_build:
                 raise BuildFailedException(msg)
-            else:
-                logger.warn(msg)
+            logger.warn(msg)
         logger.info("All %s passed.", execution_name)
     except ImportError as e:
         import traceback
 
         _, _, import_error_traceback = sys.exc_info()
-        file_with_error, error_line, _, statement_causing_error = traceback.extract_tb(import_error_traceback)[-1]
-        logger.error("Import error in test file {0}, due to statement '{1}' on line {2}".format(
-            file_with_error, statement_causing_error, error_line))
+        file_with_error, error_line, _, statement_causing_error = traceback.extract_tb(
+            import_error_traceback
+        )[-1]
+        logger.error(
+            "Import error in test file {0}, due to statement '{1}' on line {2}".format(
+                file_with_error, statement_causing_error, error_line
+            )
+        )
         logger.error("Error importing %s: %s", execution_prefix, e)
         raise BuildFailedException("Unable to execute %s." % execution_name)
 
 
-def execute_tests(pyenv, tools, runner_generator, logger, test_source, suffix, sys_paths, test_method_prefix=None,
-                  remote_debug=0, remote_tracing=0):
-    return execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, "*{0}".format(suffix),
-                                  test_method_prefix, remote_debug=remote_debug, remote_tracing=remote_tracing)
+def execute_tests(
+    pyenv,
+    tools,
+    runner_generator,
+    logger,
+    test_source,
+    suffix,
+    sys_paths,
+    test_method_prefix=None,
+    remote_debug=0,
+    remote_tracing=0,
+):
+    return execute_tests_matching(
+        pyenv,
+        tools,
+        runner_generator,
+        logger,
+        test_source,
+        "*{0}".format(suffix),
+        test_method_prefix,
+        remote_debug=remote_debug,
+        remote_tracing=remote_tracing,
+    )
 
 
-def execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, file_glob, sys_paths,
-                           test_method_prefix=None, remote_debug=0, remote_tracing=0):
+def execute_tests_matching(
+    pyenv,
+    tools,
+    runner_generator,
+    logger,
+    test_source,
+    file_glob,
+    sys_paths,
+    test_method_prefix=None,
+    remote_debug=0,
+    remote_tracing=0,
+):
     output_log_file = StringIO()
     try:
         test_modules = discover_modules_matching(test_source, file_glob)
-        runner = _instrument_runner(runner_generator,
-                                    logger,
-                                    _create_runner(runner_generator, output_log_file))
+        runner = _instrument_runner(
+            runner_generator, logger, _create_runner(runner_generator, output_log_file)
+        )
 
         exit_code = None
         try:
-            proc, pipe = start_unittest_tool(pyenv, tools, sys_paths, test_modules, test_method_prefix,
-                                             logging=remote_debug, tracing=remote_tracing)
+            proc, pipe = start_unittest_tool(
+                pyenv,
+                tools,
+                sys_paths,
+                test_modules,
+                test_method_prefix,
+                logging=remote_debug,
+                tracing=remote_tracing,
+            )
             try:
                 pipe.register_remote(runner)
                 pipe.register_remote_type(unittest.result.TestResult)
@@ -163,7 +227,9 @@ def execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, 
                                 pass
 
             if exit_code:
-                raise BuildFailedException("Unittest tool failed with exit code %s", exit_code)
+                raise BuildFailedException(
+                    "Unittest tool failed with exit code %s", exit_code
+                )
 
             remote_closed_cause = pipe.remote_close_cause()
             if remote_closed_cause is not None:
@@ -177,17 +243,23 @@ def execute_tests_matching(pyenv, tools, runner_generator, logger, test_source, 
 
 
 def _create_runner(runner_generator, output_log_file=None):
-    if (isinstance(runner_generator, list) or isinstance(runner_generator, tuple)) and len(runner_generator) > 1:
+    if (
+        isinstance(runner_generator, list) or isinstance(runner_generator, tuple)
+    ) and len(runner_generator) > 1:
         runner_generator = runner_generator[0]
-    if not hasattr(runner_generator, '__call__'):
-        runner_generator = reduce(getattr, runner_generator.split("."), sys.modules[__name__])
+    if not hasattr(runner_generator, "__call__"):
+        runner_generator = reduce(
+            getattr, runner_generator.split("."), sys.modules[__name__]
+        )
     return runner_generator(output_log_file)
 
 
 def _get_make_result_method_name(runner_generator):
-    if (isinstance(runner_generator, list) or isinstance(runner_generator, tuple)) and len(runner_generator) > 1:
+    if (
+        isinstance(runner_generator, list) or isinstance(runner_generator, tuple)
+    ) and len(runner_generator) > 1:
         method = runner_generator[1]
-        if type(method) == MethodType or type(method) == FunctionType:
+        if isinstance(method, MethodType) or isinstance(method, FunctionType):
             method = method.__name__
     else:
         method = "_makeResult"
@@ -219,12 +291,16 @@ def _instrument_result(logger, result):
 
     def addError(self, test, err):
         exception_type, exception, traceback = err
-        self.failed_test_names_and_reasons[test] = '{0}: {1}'.format(exception_type, exception).replace('\'', '')
+        self.failed_test_names_and_reasons[test] = "{0}: {1}".format(
+            exception_type, exception
+        ).replace("'", "")
         old_addError(test, err)
 
     def addFailure(self, test, err):
         exception_type, exception, traceback = err
-        self.failed_test_names_and_reasons[test] = '{0}: {1}'.format(exception_type, exception).replace('\'', '')
+        self.failed_test_names_and_reasons[test] = "{0}: {1}".format(
+            exception_type, exception
+        ).replace("'", "")
         old_addFailure(test, err)
 
     result.startTest = MethodType(startTest, result)
@@ -237,7 +313,9 @@ def _instrument_result(logger, result):
     return result
 
 
-def _register_test_and_source_path_and_return_test_dir(project, system_path, execution_prefix):
+def _register_test_and_source_path_and_return_test_dir(
+    project, system_path, execution_prefix
+):
     """This function is deprecated and will be removed and should not be used by any new code"""
     test_dir = project.expand_path("$dir_source_%s_python" % execution_prefix)
     system_path.insert(0, test_dir)
@@ -249,21 +327,17 @@ def _register_test_and_source_path_and_return_test_dir(project, system_path, exe
 def write_report(name, project, logger, result, console_out):
     project.write_report("%s" % name, console_out)
 
-    report = {"tests-run": result.testsRun,
-              "errors": [],
-              "failures": []}
+    report = {"tests-run": result.testsRun, "errors": [], "failures": []}
 
     for error in result.errors:
-        report["errors"].append({"test": error[0].id(),
-                                 "traceback": error[1]})
+        report["errors"].append({"test": error[0].id(), "traceback": error[1]})
         logger.error("Test has error: %s", error[0].id())
 
         if project.get_property("verbose"):
             print_text_line(error[1])
 
     for failure in result.failures:
-        report["failures"].append({"test": failure[0].id(),
-                                   "traceback": failure[1]})
+        report["failures"].append({"test": failure[0].id(), "traceback": failure[1]})
         logger.error("Test failed: %s", failure[0].id())
 
         if project.get_property("verbose"):

@@ -16,7 +16,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pybuilder.remote import Process, PipeShutdownError, RemoteObjectPipe, logger, log_to_stderr
+from pybuilder.remote import (
+    PipeShutdownError,
+    Process,
+    RemoteObjectPipe,
+    log_to_stderr,
+    logger,
+)
 
 __all__ = ["RemoteObjectPipe", "start_tool", "Tool", "PipeShutdownError", "logger"]
 
@@ -41,8 +47,13 @@ def start_tool(pyenv, tools, group=None, name=None, logging=None, tracing=None):
         logger.setLevel(int(logging))
 
     pipe = RemoteObjectPipe.new_pipe()
-    proc = Process(pyenv, group=group, name=name,
-                   target=_traced_tool if tracing else _instrumented_tool, args=(tools, pipe))
+    proc = Process(
+        pyenv,
+        group=group,
+        name=name,
+        target=_traced_tool if tracing else _instrumented_tool,
+        args=(tools, pipe),
+    )
 
     try:
         proc.start()
@@ -56,7 +67,7 @@ def start_tool(pyenv, tools, group=None, name=None, logging=None, tracing=None):
 def _traced_tool(tools, pipe):
     import trace
 
-    def _print(*objects, sep=' ', end='', **kwargs):
+    def _print(*objects, sep=" ", end="", **kwargs):
         logger.debug((sep.join(objects) + end).rstrip("\r\n"))
 
     trace.print = _print
@@ -88,17 +99,23 @@ def _instrumented_tool(tools, pipe):
             current = threading.current_thread()
 
             if main != current:
-                logger.warn("current thread %s is not the main %s in the tool process", current, main)
+                logger.warn(
+                    "current thread %s is not the main %s in the tool process",
+                    current,
+                    main,
+                )
 
             blocked_threads = False
             for t in threading.enumerate():
                 if not t.daemon and t != current:
-                    logger.warn("non-daemon thread %s is blocking the tool process shutdown", t)
+                    logger.warn(
+                        "non-daemon thread %s is blocking the tool process shutdown", t
+                    )
                     blocked_threads = True
 
             if blocked_threads:
-                import os
                 import atexit
+                import os
 
                 try:
                     atexit._run_exitfuncs()

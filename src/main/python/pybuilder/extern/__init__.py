@@ -79,22 +79,23 @@ class VendorImporter(Loader):
                 mod = sys.modules[extant]
                 sys.modules[fullname] = mod
                 return mod
-        else:
-            raise ImportError(
-                "The '{target}' package is required; "
-                "normally this is bundled with this package so if you get "
-                "this warning, consult the packager of your "
-                "distribution.".format(**locals())
-            )
+        raise ImportError(
+            "The '{target}' package is required; "
+            "normally this is bundled with this package so if you get "
+            "this warning, consult the packager of your "
+            "distribution.".format(**locals())
+        )
 
     def _find_distributions(self, context):
-        context.path.insert(0, pybuilder._vendor.__file__[:-len("__init__.py") - 1])
+        context.path.insert(0, pybuilder._vendor.__file__[: -len("__init__.py") - 1])
         return []
 
     # https://github.com/pybuilder/pybuilder/issues/807
     if sys.version_info[:2] == (3, 8):
+
         def find_distributions(self, context):
             return iter(self._find_distributions(context))
+
     else:
         find_distributions = _find_distributions
 
@@ -113,4 +114,6 @@ class VendorImporter(Loader):
 
 # Don't run if we're actually in PDoc
 # if not (sys.version_info[0] == 2 and basename(sys.argv[0]) == "pdoc"):
-VendorImporter(__name__, pybuilder._vendor.__names__, pybuilder._vendor.__package__).install()
+VendorImporter(
+    __name__, pybuilder._vendor.__names__, pybuilder._vendor.__package__
+).install()

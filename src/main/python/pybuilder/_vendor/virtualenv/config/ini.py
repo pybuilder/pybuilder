@@ -19,7 +19,10 @@ class IniConfig:
         config_file = env.get(self.VIRTUALENV_CONFIG_FILE_ENV_VAR, None)
         self.is_env_var = config_file is not None
         if config_file is None:
-            config_file = Path(user_config_dir(appname="virtualenv", appauthor="pypa")) / "virtualenv.ini"
+            config_file = (
+                Path(user_config_dir(appname="virtualenv", appauthor="pypa"))
+                / "virtualenv.ini"
+            )
         else:
             config_file = Path(config_file)
         self.config_file = config_file
@@ -37,11 +40,15 @@ class IniConfig:
                 self.config_parser = ConfigParser()
                 try:
                     self._load()
-                    self.has_virtualenv_section = self.config_parser.has_section(self.section)
+                    self.has_virtualenv_section = self.config_parser.has_section(
+                        self.section
+                    )
                 except Exception as exc:
                     exception = exc
         if exception is not None:
-            logging.error("failed to read config file %s because %r", config_file, exception)
+            logging.error(
+                "failed to read config file %s because %r", config_file, exception
+            )
 
     def _load(self):
         with self.config_file.open("rt") as file_handler:

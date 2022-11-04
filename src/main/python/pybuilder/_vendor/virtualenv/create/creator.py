@@ -12,7 +12,6 @@ from ..discovery.cached_py_info import LogCmd
 from ..util.path import safe_delete
 from ..util.subprocess import run_cmd
 from ..version import __version__
-
 from .pyenv_cfg import PyEnvCfg
 
 HERE = Path(os.path.abspath(__file__)).parent
@@ -102,7 +101,9 @@ class Creator(metaclass=ABCMeta):
 
         def non_write_able(dest, value):
             common = Path(*os.path.commonprefix([value.parts, dest.parts]))
-            raise ArgumentTypeError(f"the destination {dest.relative_to(common)} is not write-able at {common}")
+            raise ArgumentTypeError(
+                f"the destination {dest.relative_to(common)} is not write-able at {common}"
+            )
 
         # the file system must be able to encode
         # note in newer CPython this is always utf-8 https://www.python.org/dev/peps/pep-0529/
@@ -127,19 +128,22 @@ class Creator(metaclass=ABCMeta):
 
         value = Path(raw_value)
         if value.exists() and value.is_file():
-            raise ArgumentTypeError(f"the destination {value} already exists and is a file")
+            raise ArgumentTypeError(
+                f"the destination {value} already exists and is a file"
+            )
         if sys.version_info <= (3, 6):
             # pre 3.6 resolve is always strict, aka must exists, sidestep by using os.path operation
             dest = Path(os.path.realpath(raw_value))
         else:
-            dest = Path(os.path.abspath(str(value))).resolve()  # on Windows absolute does not imply resolve so use both
+            dest = Path(
+                os.path.abspath(str(value))
+            ).resolve()  # on Windows absolute does not imply resolve so use both
         value = dest
         while dest:
             if dest.exists():
                 if os.access(str(dest), os.W_OK):
                     break
-                else:
-                    non_write_able(dest, value)
+                non_write_able(dest, value)
             base, _ = dest.parent, dest.name
             if base == dest:
                 non_write_able(dest, value)  # pragma: no cover
@@ -159,7 +163,9 @@ class Creator(metaclass=ABCMeta):
         self.pyenv_cfg.content = OrderedDict()
         self.pyenv_cfg["home"] = self.interpreter.system_exec_prefix
         self.pyenv_cfg["implementation"] = self.interpreter.implementation
-        self.pyenv_cfg["version_info"] = ".".join(str(i) for i in self.interpreter.version_info)
+        self.pyenv_cfg["version_info"] = ".".join(
+            str(i) for i in self.interpreter.version_info
+        )
         self.pyenv_cfg["virtualenv"] = __version__
 
     def setup_ignore_vcs(self):
@@ -180,7 +186,9 @@ class Creator(metaclass=ABCMeta):
         :return: debug information about the virtual environment (only valid after :meth:`create` has run)
         """
         if self._debug is None and self.exe is not None:
-            self._debug = get_env_debug_info(self.exe, self.debug_script(), self.app_data, self.env)
+            self._debug = get_env_debug_info(
+                self.exe, self.debug_script(), self.app_data, self.env
+            )
         return self._debug
 
     @staticmethod
@@ -211,7 +219,12 @@ def get_env_debug_info(env_exe, debug_script, app_data, env):
         if err:
             result["err"] = err
     except Exception as exception:
-        return {"out": out, "err": err, "returncode": code, "exception": repr(exception)}
+        return {
+            "out": out,
+            "err": err,
+            "returncode": code,
+            "exception": repr(exception),
+        }
     if "sys" in result and "path" in result["sys"]:
         del result["sys"]["path"][0]
     return result

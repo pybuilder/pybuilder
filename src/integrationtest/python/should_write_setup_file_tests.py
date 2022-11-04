@@ -23,7 +23,8 @@ from itest_support import IntegrationTestSupport
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 import os
 
 from pybuilder.core import use_plugin, init
@@ -44,14 +45,18 @@ def init (project):
 
     project.include_file("project", "descriptors/*/*")
     project.include_directory(os.path.join("project", "calendars"), "*.yml", package_root="src/main/python")
-""")
+"""
+        )
         self.create_directory("src/main/python/spam")
         self.write_file("src/main/python/standalone_module.py")
         self.write_file("src/main/python/spam/__init__.py", "")
-        self.write_file("src/main/python/spam/eggs.py", """
+        self.write_file(
+            "src/main/python/spam/eggs.py",
+            """
 def spam ():
     pass
-""")
+""",
+        )
         self.create_directory("src/main/python/project/descriptors/a")
         self.create_directory("src/main/python/project/calendars/acc")
 
@@ -59,26 +64,35 @@ def spam ():
         self.write_file("src/main/python/project/calendars/__init__.py", "")
         self.write_file("src/main/python/project/descriptors/a/b.yml", "file: b")
         self.write_file("src/main/python/project/calendars/2018.yml", "file: 2018")
-        self.write_file("src/main/python/project/calendars/acc/2018.yml", "file: acc_2018")
+        self.write_file(
+            "src/main/python/project/calendars/acc/2018.yml", "file: acc_2018"
+        )
 
         reactor = self.prepare_reactor()
         reactor.build()
 
         self.assert_directory_exists("target/dist/integration-test-1.0.dev0")
         self.assert_directory_exists("target/dist/integration-test-1.0.dev0/spam")
-        self.assert_file_exists("target/dist/integration-test-1.0.dev0/standalone_module.py")
+        self.assert_file_exists(
+            "target/dist/integration-test-1.0.dev0/standalone_module.py"
+        )
         self.assert_file_empty("target/dist/integration-test-1.0.dev0/spam/__init__.py")
-        self.assert_file_content("target/dist/integration-test-1.0.dev0/spam/eggs.py", """
+        self.assert_file_content(
+            "target/dist/integration-test-1.0.dev0/spam/eggs.py",
+            """
 def spam ():
     pass
-""")
+""",
+        )
 
         setup_py = "target/dist/integration-test-1.0.dev0/setup.py"
 
         self.assert_file_exists(setup_py)
         self.assert_file_permissions(0o755, setup_py)
 
-        self.assert_file_content(setup_py, """#!/usr/bin/env python
+        self.assert_file_content(
+            setup_py,
+            """#!/usr/bin/env python
 #   -*- coding: utf-8 -*-
 
 from setuptools import setup
@@ -145,7 +159,8 @@ if __name__ == '__main__':
         python_requires = '',
         obsoletes = [],
     )
-""")
+""",
+        )
 
 
 if __name__ == "__main__":

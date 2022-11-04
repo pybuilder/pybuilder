@@ -9,9 +9,8 @@ from subprocess import CalledProcessError
 from threading import Lock, Thread
 
 from ....info import fs_supports_symlink
-from ..base_embed import BaseEmbed
 from ...wheels import get_wheel
-
+from ..base_embed import BaseEmbed
 from .pip_install.copy import CopyPipInstall
 from .pip_install.symlink import SymlinkPipInstall
 
@@ -38,15 +37,24 @@ class FromAppData(BaseEmbed):
         if not self.enabled:
             return
         with self._get_seed_wheels(creator) as name_to_whl:
-            pip_version = name_to_whl["pip"].version_tuple if "pip" in name_to_whl else None
+            pip_version = (
+                name_to_whl["pip"].version_tuple if "pip" in name_to_whl else None
+            )
             installer_class = self.installer_class(pip_version)
             exceptions = {}
 
             def _install(name, wheel):
                 try:
-                    logging.debug("install %s from wheel %s via %s", name, wheel, installer_class.__name__)
+                    logging.debug(
+                        "install %s from wheel %s via %s",
+                        name,
+                        wheel,
+                        installer_class.__name__,
+                    )
                     key = Path(installer_class.__name__) / wheel.path.stem
-                    wheel_img = self.app_data.wheel_image(creator.interpreter.version_release_str, key)
+                    wheel_img = self.app_data.wheel_image(
+                        creator.interpreter.version_release_str, key
+                    )
                     installer = installer_class(wheel.path, creator, wheel_img)
                     parent = self.app_data.lock / wheel_img.parent
                     with parent.non_reentrant_lock_for_key(wheel_img.name):
@@ -56,16 +64,26 @@ class FromAppData(BaseEmbed):
                 except Exception:
                     exceptions[name] = sys.exc_info()
 
-            threads = [Thread(target=_install, args=(n, w)) for n, w in name_to_whl.items()]
+            threads = [
+                Thread(target=_install, args=(n, w)) for n, w in name_to_whl.items()
+            ]
             for thread in threads:
                 thread.start()
             for thread in threads:
                 thread.join()
             if exceptions:
-                messages = [f"failed to build image {', '.join(exceptions.keys())} because:"]
+                messages = [
+                    f"failed to build image {', '.join(exceptions.keys())} because:"
+                ]
                 for value in exceptions.values():
                     exc_type, exc_value, exc_traceback = value
-                    messages.append("".join(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+                    messages.append(
+                        "".join(
+                            traceback.format_exception(
+                                exc_type, exc_value, exc_traceback
+                            )
+                        )
+                    )
                 raise RuntimeError("\n".join(messages))
 
     @contextmanager
@@ -122,7 +140,9 @@ class FromAppData(BaseEmbed):
         for thread in threads:
             thread.join()
         if fail:
-            raise RuntimeError(f"seed failed due to failing to download wheels {', '.join(fail.keys())}")
+            raise RuntimeError(
+                f"seed failed due to failing to download wheels {', '.join(fail.keys())}"
+            )
         yield name_to_whl
 
     def installer_class(self, pip_version_tuple):

@@ -1,13 +1,11 @@
+import pathlib
 import sys
 import unittest
-from ... import importlib_resources as resources
 import uuid
-import pathlib
-
-from . import data01
-from . import zipdata01, zipdata02
-from . import util
 from importlib import import_module
+
+from ... import importlib_resources as resources
+from . import data01, util, zipdata01, zipdata02
 from ._compat import import_helper, unlink
 
 
@@ -15,15 +13,15 @@ class ResourceTests:
     # Subclasses are expected to set the `data` attribute.
 
     def test_is_file_exists(self):
-        target = resources.files(self.data) / 'binary.file'
+        target = resources.files(self.data) / "binary.file"
         self.assertTrue(target.is_file())
 
     def test_is_file_missing(self):
-        target = resources.files(self.data) / 'not-a-file'
+        target = resources.files(self.data) / "not-a-file"
         self.assertFalse(target.is_file())
 
     def test_is_dir(self):
-        target = resources.files(self.data) / 'subdirectory'
+        target = resources.files(self.data) / "subdirectory"
         self.assertFalse(target.is_file())
         self.assertTrue(target.is_dir())
 
@@ -44,27 +42,27 @@ def names(traversable):
 class ResourceLoaderTests(unittest.TestCase):
     def test_resource_contents(self):
         package = util.create_package(
-            file=data01, path=data01.__file__, contents=['A', 'B', 'C']
+            file=data01, path=data01.__file__, contents=["A", "B", "C"]
         )
-        self.assertEqual(names(resources.files(package)), {'A', 'B', 'C'})
+        self.assertEqual(names(resources.files(package)), {"A", "B", "C"})
 
     def test_is_file(self):
         package = util.create_package(
-            file=data01, path=data01.__file__, contents=['A', 'B', 'C', 'D/E', 'D/F']
+            file=data01, path=data01.__file__, contents=["A", "B", "C", "D/E", "D/F"]
         )
-        self.assertTrue(resources.files(package).joinpath('B').is_file())
+        self.assertTrue(resources.files(package).joinpath("B").is_file())
 
     def test_is_dir(self):
         package = util.create_package(
-            file=data01, path=data01.__file__, contents=['A', 'B', 'C', 'D/E', 'D/F']
+            file=data01, path=data01.__file__, contents=["A", "B", "C", "D/E", "D/F"]
         )
-        self.assertTrue(resources.files(package).joinpath('D').is_dir())
+        self.assertTrue(resources.files(package).joinpath("D").is_dir())
 
     def test_resource_missing(self):
         package = util.create_package(
-            file=data01, path=data01.__file__, contents=['A', 'B', 'C', 'D/E', 'D/F']
+            file=data01, path=data01.__file__, contents=["A", "B", "C", "D/E", "D/F"]
         )
-        self.assertFalse(resources.files(package).joinpath('Z').is_file())
+        self.assertFalse(resources.files(package).joinpath("Z").is_file())
 
 
 class ResourceCornerCaseTests(unittest.TestCase):
@@ -74,48 +72,48 @@ class ResourceCornerCaseTests(unittest.TestCase):
         # 2. Are not on the file system
         # 3. Are not in a zip file
         module = util.create_package(
-            file=data01, path=data01.__file__, contents=['A', 'B', 'C']
+            file=data01, path=data01.__file__, contents=["A", "B", "C"]
         )
         # Give the module a dummy loader.
         module.__loader__ = object()
         # Give the module a dummy origin.
-        module.__file__ = '/path/which/shall/not/be/named'
+        module.__file__ = "/path/which/shall/not/be/named"
         module.__spec__.loader = module.__loader__
         module.__spec__.origin = module.__file__
-        self.assertFalse(resources.files(module).joinpath('A').is_file())
+        self.assertFalse(resources.files(module).joinpath("A").is_file())
 
 
 class ResourceFromZipsTest01(util.ZipSetupBase, unittest.TestCase):
     ZIP_MODULE = zipdata01  # type: ignore
 
     def test_is_submodule_resource(self):
-        submodule = import_module('ziptestdata.subdirectory')
-        self.assertTrue(resources.files(submodule).joinpath('binary.file').is_file())
+        submodule = import_module("ziptestdata.subdirectory")
+        self.assertTrue(resources.files(submodule).joinpath("binary.file").is_file())
 
     def test_read_submodule_resource_by_name(self):
         self.assertTrue(
-            resources.files('ziptestdata.subdirectory')
-            .joinpath('binary.file')
+            resources.files("ziptestdata.subdirectory")
+            .joinpath("binary.file")
             .is_file()
         )
 
     def test_submodule_contents(self):
-        submodule = import_module('ziptestdata.subdirectory')
+        submodule = import_module("ziptestdata.subdirectory")
         self.assertEqual(
-            names(resources.files(submodule)), {'__init__.py', 'binary.file'}
+            names(resources.files(submodule)), {"__init__.py", "binary.file"}
         )
 
     def test_submodule_contents_by_name(self):
         self.assertEqual(
-            names(resources.files('ziptestdata.subdirectory')),
-            {'__init__.py', 'binary.file'},
+            names(resources.files("ziptestdata.subdirectory")),
+            {"__init__.py", "binary.file"},
         )
 
     def test_as_file_directory(self):
-        with resources.as_file(resources.files('ziptestdata')) as data:
-            assert data.name == 'ziptestdata'
+        with resources.as_file(resources.files("ziptestdata")) as data:
+            assert data.name == "ziptestdata"
             assert data.is_dir()
-            assert data.joinpath('subdirectory').is_dir()
+            assert data.joinpath("subdirectory").is_dir()
             assert len(list(data.iterdir()))
         assert not data.parent.exists()
 
@@ -129,12 +127,12 @@ class ResourceFromZipsTest02(util.ZipSetupBase, unittest.TestCase):
         distinct resources. Ref python/importlib_resources#44.
         """
         self.assertEqual(
-            names(resources.files('ziptestdata.one')),
-            {'__init__.py', 'resource1.txt'},
+            names(resources.files("ziptestdata.one")),
+            {"__init__.py", "resource1.txt"},
         )
         self.assertEqual(
-            names(resources.files('ziptestdata.two')),
-            {'__init__.py', 'resource2.txt'},
+            names(resources.files("ziptestdata.two")),
+            {"__init__.py", "resource2.txt"},
         )
 
 
@@ -151,11 +149,11 @@ class DeletingZipsTest(unittest.TestCase):
 
         data_path = pathlib.Path(self.ZIP_MODULE.__file__)
         data_dir = data_path.parent
-        self.source_zip_path = data_dir / 'ziptestdata.zip'
-        self.zip_path = pathlib.Path(f'{uuid.uuid4()}.zip').absolute()
+        self.source_zip_path = data_dir / "ziptestdata.zip"
+        self.zip_path = pathlib.Path(f"{uuid.uuid4()}.zip").absolute()
         self.zip_path.write_bytes(self.source_zip_path.read_bytes())
         sys.path.append(str(self.zip_path))
-        self.data = import_module('ziptestdata')
+        self.data = import_module("ziptestdata")
 
     def tearDown(self):
         try:
@@ -176,23 +174,23 @@ class DeletingZipsTest(unittest.TestCase):
             pass
 
     def test_iterdir_does_not_keep_open(self):
-        c = [item.name for item in resources.files('ziptestdata').iterdir()]
+        c = [item.name for item in resources.files("ziptestdata").iterdir()]
         self.zip_path.unlink()
         del c
 
     def test_is_file_does_not_keep_open(self):
-        c = resources.files('ziptestdata').joinpath('binary.file').is_file()
+        c = resources.files("ziptestdata").joinpath("binary.file").is_file()
         self.zip_path.unlink()
         del c
 
     def test_is_file_failure_does_not_keep_open(self):
-        c = resources.files('ziptestdata').joinpath('not-present').is_file()
+        c = resources.files("ziptestdata").joinpath("not-present").is_file()
         self.zip_path.unlink()
         del c
 
     @unittest.skip("Desired but not supported.")
     def test_as_file_does_not_keep_open(self):  # pragma: no cover
-        c = resources.as_file(resources.files('ziptestdata') / 'binary.file')
+        c = resources.as_file(resources.files("ziptestdata") / "binary.file")
         self.zip_path.unlink()
         del c
 
@@ -200,18 +198,18 @@ class DeletingZipsTest(unittest.TestCase):
         # This is what certifi does on import to make its bundle
         # available for the process duration.
         c = resources.as_file(
-            resources.files('ziptestdata') / 'binary.file'
+            resources.files("ziptestdata") / "binary.file"
         ).__enter__()
         self.zip_path.unlink()
         del c
 
     def test_read_binary_does_not_keep_open(self):
-        c = resources.files('ziptestdata').joinpath('binary.file').read_bytes()
+        c = resources.files("ziptestdata").joinpath("binary.file").read_bytes()
         self.zip_path.unlink()
         del c
 
     def test_read_text_does_not_keep_open(self):
-        c = resources.files('ziptestdata').joinpath('utf-8.file').read_text()
+        c = resources.files("ziptestdata").joinpath("utf-8.file").read_text()
         self.zip_path.unlink()
         del c
 
@@ -229,32 +227,32 @@ class ResourceFromNamespaceTest01(unittest.TestCase):
 
     def test_is_submodule_resource(self):
         self.assertTrue(
-            resources.files(import_module('namespacedata01'))
-            .joinpath('binary.file')
+            resources.files(import_module("namespacedata01"))
+            .joinpath("binary.file")
             .is_file()
         )
 
     def test_read_submodule_resource_by_name(self):
         self.assertTrue(
-            resources.files('namespacedata01').joinpath('binary.file').is_file()
+            resources.files("namespacedata01").joinpath("binary.file").is_file()
         )
 
     def test_submodule_contents(self):
-        contents = names(resources.files(import_module('namespacedata01')))
+        contents = names(resources.files(import_module("namespacedata01")))
         try:
-            contents.remove('__pycache__')
+            contents.remove("__pycache__")
         except KeyError:
             pass
-        self.assertEqual(contents, {'binary.file', 'utf-8.file', 'utf-16.file'})
+        self.assertEqual(contents, {"binary.file", "utf-8.file", "utf-16.file"})
 
     def test_submodule_contents_by_name(self):
-        contents = names(resources.files('namespacedata01'))
+        contents = names(resources.files("namespacedata01"))
         try:
-            contents.remove('__pycache__')
+            contents.remove("__pycache__")
         except KeyError:
             pass
-        self.assertEqual(contents, {'binary.file', 'utf-8.file', 'utf-16.file'})
+        self.assertEqual(contents, {"binary.file", "utf-8.file", "utf-16.file"})
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

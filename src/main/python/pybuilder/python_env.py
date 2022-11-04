@@ -56,11 +56,24 @@ print({
 })
 """
 
-_FIELDS = {"platform", "executable", "name", "type", "version", "env_dir", "versioned_dir_name", "os_name",
-           "site_paths", "is_pypy", "is_64bit", "environ", "exec_dir"}
+_FIELDS = {
+    "platform",
+    "executable",
+    "name",
+    "type",
+    "version",
+    "env_dir",
+    "versioned_dir_name",
+    "os_name",
+    "site_paths",
+    "is_pypy",
+    "is_64bit",
+    "environ",
+    "exec_dir",
+}
 
 
-class PythonEnv(object):
+class PythonEnv():
     def __init__(self, env_dir, reactor, platform=None, install_log_name="install.log"):
         self._env_dir = env_dir
         self._reactor = reactor
@@ -84,7 +97,9 @@ class PythonEnv(object):
         self._check_populated()
 
         python_exec_path = _venv_python_executable(self._env_dir, self._platform)
-        result = subprocess.check_output([python_exec_path, "-c", _PYTHON_INFO_SCRIPT], universal_newlines=True)
+        result = subprocess.check_output(
+            [python_exec_path, "-c", _PYTHON_INFO_SCRIPT], universal_newlines=True
+        )
         python_info = ast.literal_eval(result)
 
         for k, v in python_info.items():
@@ -101,12 +116,16 @@ class PythonEnv(object):
 
         environ_path = self._environ.get("PATH")
         if environ_path:
-            self._environ["PATH"] = pathsep.join([self._exec_dir] + environ_path.split(pathsep))
+            self._environ["PATH"] = pathsep.join(
+                [self._exec_dir] + environ_path.split(pathsep)
+            )
 
-        self._long_desc = "%s version %s on %s in %s" % (self.name,
-                                                         ".".join(str(v) for v in self.version),
-                                                         self.platform,
-                                                         self.executable)
+        self._long_desc = "%s version %s on %s in %s" % (
+            self.name,
+            ".".join(str(v) for v in self.version),
+            self.platform,
+            self.executable,
+        )
         self._short_desc = "%s %s" % (self.name, ".".join(str(v) for v in self.version))
 
     def __str__(self):
@@ -202,120 +221,162 @@ class PythonEnv(object):
 
         self._recalculate_derived()
 
-    def create_venv(self, system_site_packages=False,
-                    clear=False,
-                    symlinks=False,
-                    upgrade=False,
-                    with_pip=False,
-                    prompt=None,
-                    offline=False,
-                    ):
+    def create_venv(
+        self,
+        system_site_packages=False,
+        clear=False,
+        symlinks=False,
+        upgrade=False,
+        with_pip=False,
+        prompt=None,
+        offline=False,
+    ):
         """Creates VEnv in the designated location. Must not be yet populated."""
 
         self._check_populated()
 
-        create_venv(self._env_dir,
-                    system_site_packages=system_site_packages,
-                    clear=clear,
-                    symlinks=symlinks,
-                    upgrade=upgrade,
-                    with_pip=with_pip,
-                    prompt=prompt,
-                    offline=offline,
-                    logger=self.logger)
+        create_venv(
+            self._env_dir,
+            system_site_packages=system_site_packages,
+            clear=clear,
+            symlinks=symlinks,
+            upgrade=upgrade,
+            with_pip=with_pip,
+            prompt=prompt,
+            offline=offline,
+            logger=self.logger,
+        )
 
         return self.populate()
 
-    def recreate_venv(self, system_site_packages=False,
-                      clear=False,
-                      symlinks=False,
-                      upgrade=False,
-                      with_pip=False,
-                      prompt=None,
-                      offline=False,
-                      ):
+    def recreate_venv(
+        self,
+        system_site_packages=False,
+        clear=False,
+        symlinks=False,
+        upgrade=False,
+        with_pip=False,
+        prompt=None,
+        offline=False,
+    ):
 
-        create_venv(self._env_dir,
-                    system_site_packages=system_site_packages,
-                    clear=clear,
-                    symlinks=symlinks,
-                    upgrade=upgrade,
-                    with_pip=with_pip,
-                    prompt=prompt,
-                    offline=offline,
-                    logger=self.logger)
+        create_venv(
+            self._env_dir,
+            system_site_packages=system_site_packages,
+            clear=clear,
+            symlinks=symlinks,
+            upgrade=upgrade,
+            with_pip=with_pip,
+            prompt=prompt,
+            offline=offline,
+            logger=self.logger,
+        )
 
         return self
 
-    def install_dependencies(self, pip_batch,
-                             install_log_path=None,
-                             local_mapping=None,
-                             constraints_file_name=None,
-                             log_file_mode="ab",
-                             package_type="dependency",
-                             target_dir=None,
-                             ignore_installed=False,
-                             ):
+    def install_dependencies(
+        self,
+        pip_batch,
+        install_log_path=None,
+        local_mapping=None,
+        constraints_file_name=None,
+        log_file_mode="ab",
+        package_type="dependency",
+        target_dir=None,
+        ignore_installed=False,
+    ):
 
-        install_dependencies(self.logger, self.project,
-                             pip_batch,
-                             self,
-                             install_log_path or self.install_log_path,
-                             local_mapping=local_mapping,
-                             constraints_file_name=constraints_file_name,
-                             log_file_mode=log_file_mode,
-                             package_type=package_type,
-                             target_dir=target_dir,
-                             ignore_installed=ignore_installed)
+        install_dependencies(
+            self.logger,
+            self.project,
+            pip_batch,
+            self,
+            install_log_path or self.install_log_path,
+            local_mapping=local_mapping,
+            constraints_file_name=constraints_file_name,
+            log_file_mode=log_file_mode,
+            package_type=package_type,
+            target_dir=target_dir,
+            ignore_installed=ignore_installed,
+        )
 
-    def verify_can_execute(self, command_and_arguments, prerequisite, caller, env=None, no_path_search=False,
-                           inherit_env=True):
+    def verify_can_execute(
+        self,
+        command_and_arguments,
+        prerequisite,
+        caller,
+        env=None,
+        no_path_search=False,
+        inherit_env=True,
+    ):
         environ = self.environ if inherit_env else {}
         if env:
             environ.update(env)
-        return assert_can_execute(command_and_arguments, prerequisite, caller, env=environ,
-                                  no_path_search=no_path_search, logger=self.logger)
+        return assert_can_execute(
+            command_and_arguments,
+            prerequisite,
+            caller,
+            env=environ,
+            no_path_search=no_path_search,
+            logger=self.logger,
+        )
 
-    def execute_command(self, command_and_arguments,
-                        outfile_name=None,
-                        env=None,
-                        cwd=None,
-                        error_file_name=None,
-                        shell=False,
-                        no_path_search=False,
-                        inherit_env=True):
+    def execute_command(
+        self,
+        command_and_arguments,
+        outfile_name=None,
+        env=None,
+        cwd=None,
+        error_file_name=None,
+        shell=False,
+        no_path_search=False,
+        inherit_env=True,
+    ):
         environ = self.environ if inherit_env else {}
         if env:
             environ.update(env)
 
-        return execute_command(command_and_arguments, outfile_name=outfile_name, env=environ, cwd=cwd,
-                               error_file_name=error_file_name, shell=shell, no_path_search=no_path_search,
-                               logger=self.logger)
+        return execute_command(
+            command_and_arguments,
+            outfile_name=outfile_name,
+            env=environ,
+            cwd=cwd,
+            error_file_name=error_file_name,
+            shell=shell,
+            no_path_search=no_path_search,
+            logger=self.logger,
+        )
 
-    def run_process_and_wait(self, commands, cwd, stdout, stderr=None, no_path_search=True):
+    def run_process_and_wait(
+        self, commands, cwd, stdout, stderr=None, no_path_search=True
+    ):
         if is_windows(self.platform) and not no_path_search:
             which_cmd = which(commands[0], path=self.environ.get("PATH"))
             if which_cmd:
                 commands[0] = which_cmd
 
         with open(os.devnull) as devnull:
-            process = subprocess.Popen(commands,
-                                       cwd=cwd,
-                                       stdin=devnull,
-                                       stdout=stdout,
-                                       stderr=stderr or stdout,
-                                       shell=False)
+            process = subprocess.Popen(
+                commands,
+                cwd=cwd,
+                stdin=devnull,
+                stdout=stdout,
+                stderr=stderr or stdout,
+                shell=False,
+            )
             return process.wait()
 
     def _get_site_paths(self):
         prefix = self.env_dir
         if self.is_pypy:
-            yield os.path.join(prefix, "lib", "pypy%d.%d" % self.version[:2], "site-packages")
+            yield os.path.join(
+                prefix, "lib", "pypy%d.%d" % self.version[:2], "site-packages"
+            )
             yield os.path.join(prefix, "site-packages")
         elif os.sep == "/":
-            yield os.path.join(prefix, "lib",
-                               "python%d.%d" % self.version[:2],
-                               "site-packages")
+            yield os.path.join(
+                prefix, "lib", "python%d.%d" % self.version[:2], "site-packages"
+            )
         else:
             yield prefix
             yield os.path.join(prefix, "lib", "site-packages")
@@ -325,11 +386,12 @@ class PythonEnv(object):
             # locations.
             framework = self._darwin_python_framework
             if framework:
-                yield os.path.join("/Library", framework,
-                                   "%d.%d" % self.version[:2], "site-packages")
+                yield os.path.join(
+                    "/Library", framework, "%d.%d" % self.version[:2], "site-packages"
+                )
 
 
-class PythonEnvRegistry(object):
+class PythonEnvRegistry():
     def __init__(self, reactor):
         self.reactor = reactor
         self.logger = reactor.logger
@@ -340,7 +402,9 @@ class PythonEnvRegistry(object):
         registry = self._registry
         existing_env = registry.get(key)
         if existing_env:
-            raise KeyError("environment '%s' is already registered: %s", key, existing_env[-1])
+            raise KeyError(
+                "environment '%s' is already registered: %s", key, existing_env[-1]
+            )
 
         self.logger.debug("Registered Python environment '%s': %s", key, value)
         existing_env = [value]
@@ -379,15 +443,17 @@ class PythonEnvRegistry(object):
         del existing_env[-1]
 
 
-def create_venv(home_dir,
-                system_site_packages=False,
-                clear=False,
-                symlinks=False,
-                upgrade=False,
-                with_pip=False,
-                prompt=None,
-                offline=False,
-                logger=None):
+def create_venv(
+    home_dir,
+    system_site_packages=False,
+    clear=False,
+    symlinks=False,
+    upgrade=False,
+    with_pip=False,
+    prompt=None,
+    offline=False,
+    logger=None,
+):
     import virtualenv
 
     args = [home_dir, "--no-periodic-update", "-p", sys.executable]
@@ -424,16 +490,19 @@ def create_venv(home_dir,
     virtualenv.cli_run(args, setup_logging=False)
 
 
-_, _venv_python_exename = os.path.split(os.path.abspath(getattr(sys, "_base_executable", sys.executable)))
+_, _venv_python_exename = os.path.split(
+    os.path.abspath(getattr(sys, "_base_executable", sys.executable))
+)
 venv_symlinks = os.name == "posix"
 
 # On Windows python.exe could be in PythonXY/ or venv/Scripts/
 # python[3[.x]].exe may also not be available, only python.exe
-_windows_exec_candidates = (lambda env_dir: jp(env_dir, "Scripts", _venv_python_exename),
-                            lambda env_dir: jp(env_dir, _venv_python_exename),
-                            lambda env_dir: jp(env_dir, "Scripts", "python.exe"),
-                            lambda env_dir: jp(env_dir, "python.exe"),
-                            )
+_windows_exec_candidates = (
+    lambda env_dir: jp(env_dir, "Scripts", _venv_python_exename),
+    lambda env_dir: jp(env_dir, _venv_python_exename),
+    lambda env_dir: jp(env_dir, "Scripts", "python.exe"),
+    lambda env_dir: jp(env_dir, "python.exe"),
+)
 
 
 def _venv_python_executable(env_dir, platform):

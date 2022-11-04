@@ -1,14 +1,13 @@
 import unittest
 
 from ... import importlib_resources as resources
-from . import data01
-from . import util
+from . import data01, util
 
 
 class CommonBinaryTests(util.CommonTests, unittest.TestCase):
     def execute(self, package, path):
         target = resources.files(package).joinpath(path)
-        with target.open('rb'):
+        with target.open("rb"):
             pass
 
 
@@ -21,43 +20,43 @@ class CommonTextTests(util.CommonTests, unittest.TestCase):
 
 class OpenTests:
     def test_open_binary(self):
-        target = resources.files(self.data) / 'binary.file'
-        with target.open('rb') as fp:
+        target = resources.files(self.data) / "binary.file"
+        with target.open("rb") as fp:
             result = fp.read()
-            self.assertEqual(result, b'\x00\x01\x02\x03')
+            self.assertEqual(result, b"\x00\x01\x02\x03")
 
     def test_open_text_default_encoding(self):
-        target = resources.files(self.data) / 'utf-8.file'
+        target = resources.files(self.data) / "utf-8.file"
         with target.open() as fp:
             result = fp.read()
-            self.assertEqual(result, 'Hello, UTF-8 world!\n')
+            self.assertEqual(result, "Hello, UTF-8 world!\n")
 
     def test_open_text_given_encoding(self):
-        target = resources.files(self.data) / 'utf-16.file'
-        with target.open(encoding='utf-16', errors='strict') as fp:
+        target = resources.files(self.data) / "utf-16.file"
+        with target.open(encoding="utf-16", errors="strict") as fp:
             result = fp.read()
-        self.assertEqual(result, 'Hello, UTF-16 world!\n')
+        self.assertEqual(result, "Hello, UTF-16 world!\n")
 
     def test_open_text_with_errors(self):
         # Raises UnicodeError without the 'errors' argument.
-        target = resources.files(self.data) / 'utf-16.file'
-        with target.open(encoding='utf-8', errors='strict') as fp:
+        target = resources.files(self.data) / "utf-16.file"
+        with target.open(encoding="utf-8", errors="strict") as fp:
             self.assertRaises(UnicodeError, fp.read)
-        with target.open(encoding='utf-8', errors='ignore') as fp:
+        with target.open(encoding="utf-8", errors="ignore") as fp:
             result = fp.read()
         self.assertEqual(
             result,
-            'H\x00e\x00l\x00l\x00o\x00,\x00 '
-            '\x00U\x00T\x00F\x00-\x001\x006\x00 '
-            '\x00w\x00o\x00r\x00l\x00d\x00!\x00\n\x00',
+            "H\x00e\x00l\x00l\x00o\x00,\x00 "
+            "\x00U\x00T\x00F\x00-\x001\x006\x00 "
+            "\x00w\x00o\x00r\x00l\x00d\x00!\x00\n\x00",
         )
 
     def test_open_binary_FileNotFoundError(self):
-        target = resources.files(self.data) / 'does-not-exist'
-        self.assertRaises(FileNotFoundError, target.open, 'rb')
+        target = resources.files(self.data) / "does-not-exist"
+        self.assertRaises(FileNotFoundError, target.open, "rb")
 
     def test_open_text_FileNotFoundError(self):
-        target = resources.files(self.data) / 'does-not-exist'
+        target = resources.files(self.data) / "does-not-exist"
         self.assertRaises(FileNotFoundError, target.open)
 
 
@@ -77,5 +76,5 @@ class OpenZipTests(OpenTests, util.ZipSetup, unittest.TestCase):
     pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

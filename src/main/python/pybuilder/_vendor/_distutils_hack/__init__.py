@@ -1,13 +1,12 @@
 # don't import any costly modules
-import sys
 import os
+import sys
 
-
-is_pypy = '__pypy__' in sys.builtin_module_names
+is_pypy = "__pypy__" in sys.builtin_module_names
 
 
 def warn_distutils_present():
-    if 'distutils' not in sys.modules:
+    if "distutils" not in sys.modules:
         return
     if is_pypy and sys.version_info < (3, 7):
         # PyPy for 3.6 unconditionally imports distutils, so bypass the warning
@@ -26,7 +25,7 @@ def warn_distutils_present():
 
 
 def clear_distutils():
-    if 'distutils' not in sys.modules:
+    if "distutils" not in sys.modules:
         return
     import warnings
 
@@ -44,8 +43,8 @@ def enabled():
     """
     Allow selection of distutils by environment variable.
     """
-    which = os.environ.get('SETUPTOOLS_USE_DISTUTILS', 'local')
-    return which == 'local'
+    which = os.environ.get("SETUPTOOLS_USE_DISTUTILS", "local")
+    return which == "local"
 
 
 def ensure_local_distutils():
@@ -57,12 +56,12 @@ def ensure_local_distutils():
     # perform an import to cause distutils to be
     # loaded from setuptools._distutils. Ref #2906.
     with shim():
-        importlib.import_module('distutils')
+        importlib.import_module("distutils")
 
     # check that submodules load as expected
-    core = importlib.import_module('distutils.core')
-    assert '_distutils' in core.__file__, core.__file__
-    assert 'setuptools._distutils.log' not in sys.modules
+    core = importlib.import_module("distutils.core")
+    assert "_distutils" in core.__file__, core.__file__
+    assert "setuptools._distutils.log" not in sys.modules
 
 
 def do_override():
@@ -89,10 +88,10 @@ class DistutilsMetaFinder:
     def find_spec(self, fullname, path, target=None):
         # optimization: only consider top level modules and those
         # found in the CPython test suite.
-        if path is not None and not fullname.startswith('test.'):
+        if path is not None and not fullname.startswith("test."):
             return
 
-        method_name = 'spec_for_{fullname}'.format(**locals())
+        method_name = "spec_for_{fullname}".format(**locals())
         method = getattr(self, method_name, lambda: None)
         return method()
 
@@ -105,7 +104,7 @@ class DistutilsMetaFinder:
         import importlib.util
 
         try:
-            mod = importlib.import_module('setuptools._distutils')
+            mod = importlib.import_module("setuptools._distutils")
         except Exception:
             # There are a couple of cases where setuptools._distutils
             # may not be present:
@@ -119,14 +118,14 @@ class DistutilsMetaFinder:
 
         class DistutilsLoader(importlib.abc.Loader):
             def create_module(self, spec):
-                mod.__name__ = 'distutils'
+                mod.__name__ = "distutils"
                 return mod
 
             def exec_module(self, module):
                 pass
 
         return importlib.util.spec_from_loader(
-            'distutils', DistutilsLoader(), origin=mod.__file__
+            "distutils", DistutilsLoader(), origin=mod.__file__
         )
 
     @staticmethod
@@ -135,7 +134,7 @@ class DistutilsMetaFinder:
         Suppress supplying distutils for CPython (build and tests).
         Ref #2965 and #3007.
         """
-        return os.path.isfile('pybuilddir.txt')
+        return os.path.isfile("pybuilddir.txt")
 
     def spec_for_pip(self):
         """
@@ -164,7 +163,7 @@ class DistutilsMetaFinder:
         Return True if the indicated frame suggests a setup.py file.
         """
         # some frames may not have __file__ (#2940)
-        return frame.f_globals.get('__file__', '').endswith('setup.py')
+        return frame.f_globals.get("__file__", "").endswith("setup.py")
 
     def spec_for_sensitive_tests(self):
         """
@@ -177,13 +176,13 @@ class DistutilsMetaFinder:
 
     sensitive_tests = (
         [
-            'test.test_distutils',
-            'test.test_peg_generator',
-            'test.test_importlib',
+            "test.test_distutils",
+            "test.test_peg_generator",
+            "test.test_importlib",
         ]
         if sys.version_info < (3, 10)
         else [
-            'test.test_distutils',
+            "test.test_distutils",
         ]
     )
 
@@ -191,7 +190,7 @@ class DistutilsMetaFinder:
 for name in DistutilsMetaFinder.sensitive_tests:
     setattr(
         DistutilsMetaFinder,
-        f'spec_for_{name}',
+        f"spec_for_{name}",
         DistutilsMetaFinder.spec_for_sensitive_tests,
     )
 

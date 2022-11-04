@@ -1,7 +1,6 @@
 import os.path
 
 from ..util.lock import NoOpFileLock
-
 from .via_disk_folder import AppDataDiskFolder, PyInfoStoreDisk
 
 

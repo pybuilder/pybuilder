@@ -6,9 +6,8 @@ from pathlib import Path
 from textwrap import dedent
 
 from ....describe import Python3Supports
-from ..ref import PathRefToDest
 from ...store import is_store_python
-
+from ..ref import PathRefToDest
 from .common import CPython, CPythonPosix, CPythonWindows, is_mac_os_framework
 
 
@@ -19,7 +18,9 @@ class CPython3(CPython, Python3Supports, metaclass=abc.ABCMeta):
 class CPython3Posix(CPythonPosix, CPython3):
     @classmethod
     def can_describe(cls, interpreter):
-        return is_mac_os_framework(interpreter) is False and super().can_describe(interpreter)
+        return is_mac_os_framework(interpreter) is False and super().can_describe(
+            interpreter
+        )
 
     def env_patch_text(self):
         text = super().env_patch_text()
@@ -37,7 +38,9 @@ class CPython3Posix(CPythonPosix, CPython3):
     @classmethod
     def pyvenv_launch_patch_active(cls, interpreter):
         ver = interpreter.version_info
-        return interpreter.platform == "darwin" and ((3, 7, 8) > ver >= (3, 7) or (3, 8, 3) > ver >= (3, 8))
+        return interpreter.platform == "darwin" and (
+            (3, 7, 8) > ver >= (3, 7) or (3, 8, 3) > ver >= (3, 8)
+        )
 
 
 class CPython3Windows(CPythonWindows, CPython3):
@@ -71,7 +74,9 @@ class CPython3Windows(CPythonWindows, CPython3):
 
     @classmethod
     def shim(cls, interpreter):
-        shim = Path(interpreter.system_stdlib) / "venv" / "scripts" / "nt" / "python.exe"
+        shim = (
+            Path(interpreter.system_stdlib) / "venv" / "scripts" / "nt" / "python.exe"
+        )
         if shim.exists():
             return shim
         return None

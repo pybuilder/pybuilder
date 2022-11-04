@@ -24,7 +24,8 @@ from itest_support import IntegrationTestSupport
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import task, before, Project, Logger
 
 name = "test-project"
@@ -42,7 +43,8 @@ def annotated_action(project: Project, logger: Logger):
     assert project is not None
     assert logger is not None
 
-""")
+"""
+        )
         reactor = self.prepare_reactor()
         reactor.build(["annotated_task"])
 

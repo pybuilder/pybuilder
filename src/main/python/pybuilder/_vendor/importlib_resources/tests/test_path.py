@@ -2,8 +2,7 @@ import io
 import unittest
 
 from ... import importlib_resources as resources
-from . import data01
-from . import util
+from . import data01, util
 
 
 class CommonTests(util.CommonTests, unittest.TestCase):
@@ -17,13 +16,13 @@ class PathTests:
         # Path should be readable.
         # Test also implicitly verifies the returned object is a pathlib.Path
         # instance.
-        target = resources.files(self.data) / 'utf-8.file'
+        target = resources.files(self.data) / "utf-8.file"
         with resources.as_file(target) as path:
             self.assertTrue(path.name.endswith("utf-8.file"), repr(path))
             # pathlib.Path.read_text() was introduced in Python 3.5.
-            with path.open('r', encoding='utf-8') as file:
+            with path.open("r", encoding="utf-8") as file:
                 text = file.read()
-            self.assertEqual('Hello, UTF-8 world!\n', text)
+            self.assertEqual("Hello, UTF-8 world!\n", text)
 
 
 class PathDiskTests(PathTests, unittest.TestCase):
@@ -35,14 +34,14 @@ class PathDiskTests(PathTests, unittest.TestCase):
         file-system-backed resources do not get the tempdir
         treatment.
         """
-        target = resources.files(self.data) / 'utf-8.file'
+        target = resources.files(self.data) / "utf-8.file"
         with resources.as_file(target) as path:
-            assert 'data' in str(path)
+            assert "data" in str(path)
 
 
 class PathMemoryTests(PathTests, unittest.TestCase):
     def setUp(self):
-        file = io.BytesIO(b'Hello, UTF-8 world!\n')
+        file = io.BytesIO(b"Hello, UTF-8 world!\n")
         self.addCleanup(file.close)
         self.data = util.create_package(
             file=file, path=FileNotFoundError("package exists only in memory")
@@ -55,10 +54,10 @@ class PathZipTests(PathTests, util.ZipSetup, unittest.TestCase):
     def test_remove_in_context_manager(self):
         # It is not an error if the file that was temporarily stashed on the
         # file system is removed inside the `with` stanza.
-        target = resources.files(self.data) / 'utf-8.file'
+        target = resources.files(self.data) / "utf-8.file"
         with resources.as_file(target) as path:
             path.unlink()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

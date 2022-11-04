@@ -18,15 +18,16 @@
 
 from os.path import join
 
-from pybuilder.core import task, init, before, depends
+from pybuilder.core import before, depends, init, task
 from pybuilder.errors import BuildFailedException
 from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
 
 
 @before("run_sonar_analysis")
 def check_sonar_scanner_availability(project, reactor):
-    reactor.python_env_registry["pybuilder"].verify_can_execute(["sonar-scanner", "-h"], "sonar-scanner",
-                                                                "plugin python.sonarqube")
+    reactor.python_env_registry["pybuilder"].verify_can_execute(
+        ["sonar-scanner", "-h"], "sonar-scanner", "plugin python.sonarqube"
+    )
 
 
 @init
@@ -46,7 +47,9 @@ def run_sonar_analysis(project, logger, reactor):
         logger.error(
             "sonar-scanner exited with code {exit_code}. See {reports_dir} for more information.".format(
                 exit_code=result.exit_code,
-                reports_dir=project.expand_path("$dir_reports")))
+                reports_dir=project.expand_path("$dir_reports"),
+            )
+        )
 
         if project.get_property("verbose"):
             logger.error("Contents of {0}:".format(result.error_report_file))
@@ -57,19 +60,21 @@ def run_sonar_analysis(project, logger, reactor):
 
 def build_sonar_scanner(project, reactor):
     return (
-        SonarCommandBuilder("sonar-scanner", project, reactor).set_sonar_key(
-            "sonar.projectKey").to_property_value("sonarqube_project_key").set_sonar_key(
-            "sonar.projectName").to_property_value("sonarqube_project_name").set_sonar_key(
-            "sonar.projectVersion").to(project.version).set_sonar_key(
-            "sonar.sources").to_property_value("dir_source_main_python").set_sonar_key(
-            "sonar.python.coverage.reportPath").to(join(project.get_property("dir_target"),
-                                                        "reports",
-                                                        "coverage*.xml"))
+        SonarCommandBuilder("sonar-scanner", project, reactor)
+        .set_sonar_key("sonar.projectKey")
+        .to_property_value("sonarqube_project_key")
+        .set_sonar_key("sonar.projectName")
+        .to_property_value("sonarqube_project_name")
+        .set_sonar_key("sonar.projectVersion")
+        .to(project.version)
+        .set_sonar_key("sonar.sources")
+        .to_property_value("dir_source_main_python")
+        .set_sonar_key("sonar.python.coverage.reportPath")
+        .to(join(project.get_property("dir_target"), "reports", "coverage*.xml"))
     )
 
 
 class SonarCommandBuilder(ExternalCommandBuilder):
-
     def set_sonar_key(self, key):
         self.key = key
         return self

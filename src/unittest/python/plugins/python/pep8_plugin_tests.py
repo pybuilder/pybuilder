@@ -18,15 +18,16 @@
 
 from unittest import TestCase
 
-from pybuilder.core import Project, Logger
-from pybuilder.plugins.python.pep8_plugin import (check_pep8_available,
-                                                  init_pep8_properties,
-                                                  )
 from test_utils import Mock
+
+from pybuilder.core import Logger, Project
+from pybuilder.plugins.python.pep8_plugin import (
+    check_pep8_available,
+    init_pep8_properties,
+)
 
 
 class CheckPep8AvailableTests(TestCase):
-
     def test_should_check_that_pylint_can_be_executed(self):
         mock_project = Mock(Project)
         mock_logger = Mock(Logger)
@@ -38,10 +39,14 @@ class CheckPep8AvailableTests(TestCase):
 
         check_pep8_available(mock_project, mock_logger, reactor)
 
-        expected_command_line = ['pep8', ]
-        pyb_env.verify_can_execute.assert_called_with(expected_command_line, 'pep8', 'plugin python.pep8')
+        expected_command_line = [
+            "pep8",
+        ]
+        pyb_env.verify_can_execute.assert_called_with(
+            expected_command_line, "pep8", "plugin python.pep8"
+        )
 
     def test_should_set_dependency(self):
         mock_project = Mock(Project)
         init_pep8_properties(mock_project)
-        mock_project.plugin_depends_on.assert_called_with('pep8')
+        mock_project.plugin_depends_on.assert_called_with("pep8")

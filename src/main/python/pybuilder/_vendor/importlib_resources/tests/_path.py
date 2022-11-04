@@ -1,6 +1,5 @@
-import pathlib
 import functools
-
+import pathlib
 
 ####
 # from jaraco.path 3.4

@@ -20,12 +20,14 @@ import textwrap
 import unittest
 
 from itest_support import IntegrationTestSupport
+
 from pybuilder.errors import BuildFailedException
 
 
 class Issue822Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import use_plugin, init
 
 use_plugin("python.core")
@@ -35,12 +37,15 @@ use_plugin("python.unittest")
 def init (project):
     project.set_property("verbose", True)
     project.set_property("remote_tracing", 1)
-        """)
+        """
+        )
 
         self.create_directory("src/main/python")
         self.create_directory("src/unittest/python")
-        self.write_file("src/main/python/code.py", textwrap.dedent(
-            """
+        self.write_file(
+            "src/main/python/code.py",
+            textwrap.dedent(
+                """
             import threading
             import time
             class TestThread(threading.Thread):
@@ -53,9 +58,13 @@ def init (project):
             def run_code():
                 TestThread().start()
 
-            """))
-        self.write_file("src/unittest/python/code_tests.py", textwrap.dedent(
             """
+            ),
+        )
+        self.write_file(
+            "src/unittest/python/code_tests.py",
+            textwrap.dedent(
+                """
             import unittest
             import code
 
@@ -63,12 +72,15 @@ def init (project):
                 def test_code(self):
                     code.run_code()
             """
-        ))
+            ),
+        )
         reactor = self.prepare_reactor()
         with self.assertRaises(BuildFailedException) as raised_ex:
             reactor.build("verify")
 
-        self.assertEqual(raised_ex.exception.message, "Unittest tool failed with exit code 1")
+        self.assertEqual(
+            raised_ex.exception.message, "Unittest tool failed with exit code 1"
+        )
 
 
 if __name__ == "__main__":

@@ -1,10 +1,10 @@
 # util.py
-import warnings
-import types
 import collections
 import itertools
+import types
+import warnings
 from functools import lru_cache
-from typing import List, Union, Iterable
+from typing import Iterable, List, Union
 
 _bslash = chr(92)
 

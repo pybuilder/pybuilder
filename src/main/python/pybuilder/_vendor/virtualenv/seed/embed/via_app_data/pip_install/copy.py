@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 from .....util.path import copy
-
 from .base import PipInstall
 
 

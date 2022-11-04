@@ -6,13 +6,17 @@ from collections import OrderedDict
 
 from ..info import fs_is_case_sensitive
 
-PATTERN = re.compile(r"^(?P<impl>[a-zA-Z]+)?(?P<version>[0-9.]+)?(?:-(?P<arch>32|64))?$")
+PATTERN = re.compile(
+    r"^(?P<impl>[a-zA-Z]+)?(?P<version>[0-9.]+)?(?:-(?P<arch>32|64))?$"
+)
 
 
 class PythonSpec:
     """Contains specification about a Python Interpreter"""
 
-    def __init__(self, str_spec, implementation, major, minor, micro, architecture, path):
+    def __init__(
+        self, str_spec, implementation, major, minor, micro, architecture, path
+    ):
         self.str_spec = str_spec
         self.implementation = implementation
         self.major = major
@@ -74,7 +78,9 @@ class PythonSpec:
                 # trivia: MacBooks and all pre 2018 Windows-es were case insensitive by default
                 impls[self.implementation.lower()] = False
                 impls[self.implementation.upper()] = False
-        impls["python"] = True  # finally consider python as alias, implementation must match now
+        impls[
+            "python"
+        ] = True  # finally consider python as alias, implementation must match now
         version = self.major, self.minor, self.micro
         try:
             version = version[: version.index(None)]
@@ -94,12 +100,17 @@ class PythonSpec:
         """called when there's a candidate metadata spec to see if compatible - e.g. PEP-514 on Windows"""
         if spec.is_abs and self.is_abs and self.path != spec.path:
             return False
-        if spec.implementation is not None and spec.implementation.lower() != self.implementation.lower():
+        if (
+            spec.implementation is not None
+            and spec.implementation.lower() != self.implementation.lower()
+        ):
             return False
         if spec.architecture is not None and spec.architecture != self.architecture:
             return False
 
-        for our, req in zip((self.major, self.minor, self.micro), (spec.major, spec.minor, spec.micro)):
+        for our, req in zip(
+            (self.major, self.minor, self.micro), (spec.major, spec.minor, spec.micro)
+        ):
             if req is not None and our is not None and our != req:
                 return False
         return True

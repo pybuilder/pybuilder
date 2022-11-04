@@ -45,8 +45,17 @@ def session_via_cli(args, options=None, setup_logging=True, env=None):
     env = os.environ if env is None else env
     parser, elements = build_parser(args, options, setup_logging, env)
     options = parser.parse_args(args)
-    creator, seeder, activators = tuple(e.create(options) for e in elements)  # create types
-    of_session = Session(options.verbosity, options.app_data, parser._interpreter, creator, seeder, activators)
+    creator, seeder, activators = tuple(
+        e.create(options) for e in elements
+    )  # create types
+    of_session = Session(
+        options.verbosity,
+        options.app_data,
+        parser._interpreter,
+        creator,
+        seeder,
+        activators,
+    )
     return of_session
 
 
@@ -103,8 +112,12 @@ def load_app_data(args, parser, options):
     parser.add_argument(
         "--app-data",
         help="a data folder used as cache by the virtualenv",
-        type=partial(make_app_data, read_only=options.read_only_app_data, env=options.env),
-        default=make_app_data(None, read_only=options.read_only_app_data, env=options.env),
+        type=partial(
+            make_app_data, read_only=options.read_only_app_data, env=options.env
+        ),
+        default=make_app_data(
+            None, read_only=options.read_only_app_data, env=options.env
+        ),
     )
     parser.add_argument(
         "--reset-app-data",
@@ -134,15 +147,31 @@ def add_version_flag(parser):
 
 
 def _do_report_setup(parser, args, setup_logging):
-    level_map = ", ".join(f"{logging.getLevelName(l)}={c}" for c, l in sorted(LEVELS.items()))
+    level_map = ", ".join(
+        f"{logging.getLevelName(l)}={c}" for c, l in sorted(LEVELS.items())
+    )
     msg = "verbosity = verbose - quiet, default {}, mapping => {}"
     verbosity_group = parser.add_argument_group(
         title="verbosity",
         description=msg.format(logging.getLevelName(LEVELS[3]), level_map),
     )
     verbosity = verbosity_group.add_mutually_exclusive_group()
-    verbosity.add_argument("-v", "--verbose", action="count", dest="verbose", help="increase verbosity", default=2)
-    verbosity.add_argument("-q", "--quiet", action="count", dest="quiet", help="decrease verbosity", default=0)
+    verbosity.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        dest="verbose",
+        help="increase verbosity",
+        default=2,
+    )
+    verbosity.add_argument(
+        "-q",
+        "--quiet",
+        action="count",
+        dest="quiet",
+        help="decrease verbosity",
+        default=0,
+    )
     option, _ = parser.parse_known_args(args)
     if setup_logging:
         setup_report(option.verbosity)

@@ -117,7 +117,9 @@ class ReentrantFileLock(PathLockBase):
         except Timeout:
             if no_block:
                 raise
-            logging.debug("lock file %s present, will block until released", lock.lock_file)
+            logging.debug(
+                "lock file %s present, will block until released", lock.lock_file
+            )
             lock.release()  # release the acquire try from above
             lock.acquire()
 

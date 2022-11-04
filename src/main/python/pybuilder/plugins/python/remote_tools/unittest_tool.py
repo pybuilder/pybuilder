@@ -18,7 +18,13 @@
 
 import sys
 
-from pybuilder.plugins.python.remote_tools import start_tool, RemoteObjectPipe, Tool, logger, PipeShutdownError
+from pybuilder.plugins.python.remote_tools import (
+    PipeShutdownError,
+    RemoteObjectPipe,
+    Tool,
+    logger,
+    start_tool,
+)
 
 __all__ = ["start_unittest_tool", "PipeShutdownError", logger]
 
@@ -35,6 +41,7 @@ class UnitTestTool(Tool):
             sys.path.insert(0, path)
 
         import unittest
+
         loader = unittest.defaultTestLoader
         if self.test_method_prefix:
             loader.testMethodPrefix = self.test_method_prefix
@@ -56,6 +63,10 @@ class UnitTestTool(Tool):
         pipe.hide("unittest_tests")
 
 
-def start_unittest_tool(pyenv, tools, sys_paths, test_modules, test_method_prefix, logging=0, tracing=0):
+def start_unittest_tool(
+    pyenv, tools, sys_paths, test_modules, test_method_prefix, logging=0, tracing=0
+):
     tool = UnitTestTool(sys_paths, test_modules, test_method_prefix)
-    return start_tool(pyenv, tools + [tool], name="unittest", logging=logging, tracing=tracing)
+    return start_tool(
+        pyenv, tools + [tool], name="unittest", logging=logging, tracing=tracing
+    )

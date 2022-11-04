@@ -10,7 +10,9 @@ class Activator(metaclass=ABCMeta):
 
         :param options: the parsed options as defined within :meth:`add_parser_arguments`
         """
-        self.flag_prompt = os.path.basename(os.getcwd()) if options.prompt == "." else options.prompt
+        self.flag_prompt = (
+            os.path.basename(os.getcwd()) if options.prompt == "." else options.prompt
+        )
 
     @classmethod
     def supports(cls, interpreter):  # noqa: U100

@@ -23,7 +23,7 @@
 """
 import os
 
-from pybuilder.core import task, init, depends, dependents, optional, after, use_plugin
+from pybuilder.core import after, dependents, depends, init, optional, task, use_plugin
 from pybuilder.errors import BuildFailedException
 from pybuilder.utils import tail_log
 
@@ -36,8 +36,10 @@ use_plugin("core")
 def pdoc_init(project):
     project.plugin_depends_on("pdoc3", ">=0.8.3")
 
-    project.set_property_if_unset("pdoc_command_args",
-                                  ["--html", "--overwrite", "--external-links", "--skip-errors"])
+    project.set_property_if_unset(
+        "pdoc_command_args",
+        ["--html", "--overwrite", "--external-links", "--skip-errors"],
+    )
 
     project.set_property_if_unset("pdoc_source", "$dir_source_main_python")
     project.set_property_if_unset("pdoc_output_dir", "$dir_target/pdocs")
@@ -46,11 +48,14 @@ def pdoc_init(project):
 
 @after("prepare")
 def pdoc_prepare(project, logger, reactor):
-    """ Asserts that pdoc is executable. """
+    """Asserts that pdoc is executable."""
     logger.debug("Checking if pdoc is executable.")
 
-    reactor.pybuilder_venv.verify_can_execute(command_and_arguments=["pdoc", "--version"],
-                                              prerequisite="pdoc", caller="plugin python.pdoc")
+    reactor.pybuilder_venv.verify_can_execute(
+        command_and_arguments=["pdoc", "--version"],
+        prerequisite="pdoc",
+        caller="plugin python.pdoc",
+    )
 
     pdoc_output_dir = project.expand_path("$pdoc_output_dir")
     if not os.path.exists(pdoc_output_dir):
@@ -75,18 +80,25 @@ def pdoc_compile_docs(project, logger, reactor):
     command_and_arguments += [project.get_property("pdoc_module_name")]
 
     source_directory = project.expand_path("$pdoc_source")
-    environment = {"PYTHONPATH": source_directory,
-                   "PATH": reactor.pybuilder_venv.environ["PATH"]}
+    environment = {
+        "PYTHONPATH": source_directory,
+        "PATH": reactor.pybuilder_venv.environ["PATH"],
+    }
 
     report_file = project.expand_path("$dir_reports", "pdoc.err")
     logger.debug("Executing PDoc as: %s", command_and_arguments)
-    return_code = reactor.pybuilder_venv.execute_command(command_and_arguments,
-                                                         outfile_name=project.expand_path("$dir_reports", "pdoc"),
-                                                         error_file_name=report_file,
-                                                         env=environment,
-                                                         cwd=pdoc_output_dir)
+    return_code = reactor.pybuilder_venv.execute_command(
+        command_and_arguments,
+        outfile_name=project.expand_path("$dir_reports", "pdoc"),
+        error_file_name=report_file,
+        env=environment,
+        cwd=pdoc_output_dir,
+    )
 
     if return_code:
-        error_str = "PDoc failed! See %s for full details:\n%s" % (report_file, tail_log(report_file))
+        error_str = "PDoc failed! See %s for full details:\n%s" % (
+            report_file,
+            tail_log(report_file),
+        )
         logger.error(error_str)
         raise BuildFailedException(error_str)

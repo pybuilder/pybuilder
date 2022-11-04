@@ -3,7 +3,6 @@ import os
 import sys
 
 from ..info import IS_WIN
-
 from .discover import Discover
 from .py_info import PythonInfo
 from .py_spec import PythonSpec
@@ -41,7 +40,9 @@ class Builtin(Discover):
 
     def run(self):
         for python_spec in self.python_spec:
-            result = get_interpreter(python_spec, self.try_first_with, self.app_data, self._env)
+            result = get_interpreter(
+                python_spec, self.try_first_with, self.app_data, self._env
+            )
             if result is not None:
                 return result
         return None
@@ -56,7 +57,9 @@ def get_interpreter(key, try_first_with, app_data=None, env=None):
     logging.info("find interpreter for spec %r", spec)
     proposed_paths = set()
     env = os.environ if env is None else env
-    for interpreter, impl_must_match in propose_interpreters(spec, try_first_with, app_data, env):
+    for interpreter, impl_must_match in propose_interpreters(
+        spec, try_first_with, app_data, env
+    ):
         key = interpreter.system_executable, impl_must_match
         if key in proposed_paths:
             continue
@@ -73,7 +76,9 @@ def propose_interpreters(spec, try_first_with, app_data, env=None):
     for py_exe in try_first_with:
         path = os.path.abspath(py_exe)
         try:
-            os.lstat(path)  # Windows Store Python does not work with os.path.exists, but does for os.lstat
+            os.lstat(
+                path
+            )  # Windows Store Python does not work with os.path.exists, but does for os.lstat
         except OSError:
             pass
         else:
@@ -82,12 +87,16 @@ def propose_interpreters(spec, try_first_with, app_data, env=None):
     # 1. if it's a path and exists
     if spec.path is not None:
         try:
-            os.lstat(spec.path)  # Windows Store Python does not work with os.path.exists, but does for os.lstat
+            os.lstat(
+                spec.path
+            )  # Windows Store Python does not work with os.path.exists, but does for os.lstat
         except OSError:
             if spec.is_abs:
                 raise
         else:
-            yield PythonInfo.from_exe(os.path.abspath(spec.path), app_data, env=env), True
+            yield PythonInfo.from_exe(
+                os.path.abspath(spec.path), app_data, env=env
+            ), True
         if spec.is_abs:
             return
     else:
@@ -112,7 +121,9 @@ def propose_interpreters(spec, try_first_with, app_data, env=None):
                 exe = os.path.abspath(found)
                 if exe not in tested_exes:
                     tested_exes.add(exe)
-                    interpreter = PathPythonInfo.from_exe(exe, app_data, raise_on_error=False, env=env)
+                    interpreter = PathPythonInfo.from_exe(
+                        exe, app_data, raise_on_error=False, env=env
+                    )
                     if interpreter is not None:
                         yield interpreter, match
 

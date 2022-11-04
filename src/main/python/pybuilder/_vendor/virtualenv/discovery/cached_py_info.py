@@ -16,8 +16,8 @@ from string import ascii_lowercase, ascii_uppercase, digits
 from subprocess import Popen
 
 from ..app_data import AppDataDisabled
-from .py_info import PythonInfo
 from ..util.subprocess import subprocess
+from .py_info import PythonInfo
 
 _CACHE = OrderedDict()
 _CACHE[Path(sys.executable)] = PythonInfo()
@@ -29,8 +29,7 @@ def from_exe(cls, app_data, exe, env=None, raise_on_error=True, ignore_cache=Fal
     if isinstance(result, Exception):
         if raise_on_error:
             raise result
-        else:
-            logging.info("%s", result)
+        logging.info("%s", result)
         result = None
     return result
 
@@ -62,7 +61,11 @@ def _get_via_file_cache(cls, app_data, path, exe, env):
     with py_info_store.locked():
         if py_info_store.exists():  # if exists and matches load
             data = py_info_store.read()
-            of_path, of_st_mtime, of_content = data["path"], data["st_mtime"], data["content"]
+            of_path, of_st_mtime, of_content = (
+                data["path"],
+                data["st_mtime"],
+                data["content"],
+            )
             if of_path == path_text and of_st_mtime == path_modified:
                 py_info = cls._from_dict({k: v for k, v in of_content.items()})
                 sys_exe = py_info.system_executable
@@ -74,7 +77,11 @@ def _get_via_file_cache(cls, app_data, path, exe, env):
         if py_info is None:  # if not loaded run and save
             failure, py_info = _run_subprocess(cls, exe, app_data, env)
             if failure is None:
-                data = {"st_mtime": path_modified, "path": path_text, "content": py_info._to_dict()}
+                data = {
+                    "st_mtime": path_modified,
+                    "path": path_text,
+                    "content": py_info._to_dict(),
+                }
                 py_info_store.write(data)
             else:
                 py_info = failure
@@ -85,7 +92,10 @@ COOKIE_LENGTH: int = 32
 
 
 def gen_cookie():
-    return "".join(random.choice("".join((ascii_lowercase, ascii_uppercase, digits))) for _ in range(COOKIE_LENGTH))
+    return "".join(
+        random.choice("".join((ascii_lowercase, ascii_uppercase, digits)))
+        for _ in range(COOKIE_LENGTH)
+    )
 
 
 def _run_subprocess(cls, exe, app_data, env):
@@ -142,7 +152,9 @@ def _run_subprocess(cls, exe, app_data, env):
             out = out[:out_ends]
 
         result = cls._from_json(out)
-        result.executable = exe  # keep original executable as this may contain initialization code
+        result.executable = (
+            exe  # keep original executable as this may contain initialization code
+        )
     else:
         msg = f"{exe} with code {code}{f' out: {out!r}' if out else ''}{f' err: {err!r}' if err else ''}"
         failure = RuntimeError(f"failed to query {msg}")

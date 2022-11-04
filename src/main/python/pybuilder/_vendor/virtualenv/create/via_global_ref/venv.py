@@ -1,14 +1,13 @@
 import logging
 from copy import copy
 
-from .store import handle_store_python
 from ...discovery.py_info import PythonInfo
 from ...util.error import ProcessCallFailed
 from ...util.path import ensure_dir
 from ...util.subprocess import run_cmd
-
 from .api import ViaGlobalRefApi, ViaGlobalRefMeta
 from .builtin.pypy.pypy3 import Pypy3Windows
+from .store import handle_store_python
 
 
 class Venv(ViaGlobalRefApi):
@@ -16,11 +15,16 @@ class Venv(ViaGlobalRefApi):
         self.describe = options.describe
         super().__init__(options, interpreter)
         current = PythonInfo.current()
-        self.can_be_inline = interpreter is current and interpreter.executable == interpreter.system_executable
+        self.can_be_inline = (
+            interpreter is current
+            and interpreter.executable == interpreter.system_executable
+        )
         self._context = None
 
     def _args(self):
-        return super()._args() + ([("describe", self.describe.__class__.__name__)] if self.describe else [])
+        return super()._args() + (
+            [("describe", self.describe.__class__.__name__)] if self.describe else []
+        )
 
     @classmethod
     def can_create(cls, interpreter):

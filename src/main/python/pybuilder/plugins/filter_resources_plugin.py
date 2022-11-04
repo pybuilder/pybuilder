@@ -18,7 +18,7 @@
 
 import string
 
-from pybuilder.core import init, after, use_plugin
+from pybuilder.core import after, init, use_plugin
 from pybuilder.utils import apply_on_files, read_file, write_file
 
 use_plugin("core")
@@ -52,8 +52,7 @@ def filter_resource(absolute_file_name, relative_file_name, dictionary, logger):
     write_file(absolute_file_name, filtered)
 
 
-class ProjectDictWrapper(object):
-
+class ProjectDictWrapper():
     def __init__(self, project, logger):
         self.project = project
         self.logger = logger
@@ -65,5 +64,8 @@ class ProjectDictWrapper(object):
         if self.project.has_property(key):
             return self.project.get_property(key)
         self.logger.warn(
-            "Skipping impossible substitution for '{0}' - there is no matching project attribute or property.".format(key))
+            "Skipping impossible substitution for '{0}' - there is no matching project attribute or property.".format(
+                key
+            )
+        )
         return fallback_when_no_substitution_possible

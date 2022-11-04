@@ -30,17 +30,18 @@ import sys
 import traceback
 import types
 
-from pybuilder.errors import (CircularTaskDependencyException,
-                              DependenciesNotResolvedException,
-                              InvalidNameException,
-                              MissingTaskDependencyException,
-                              MissingActionDependencyException,
-                              NoSuchTaskException,
-                              RequiredTaskExclusionException)
+from pybuilder.errors import (
+    CircularTaskDependencyException,
+    DependenciesNotResolvedException,
+    InvalidNameException,
+    MissingActionDependencyException,
+    MissingTaskDependencyException,
+    NoSuchTaskException,
+    RequiredTaskExclusionException,
+)
 from pybuilder.graph_utils import Graph
 from pybuilder.python_utils import odict, raise_exception
-from pybuilder.utils import as_list, Timer
-
+from pybuilder.utils import Timer, as_list
 
 getargspec = inspect.getfullargspec
 
@@ -48,10 +49,9 @@ getargspec = inspect.getfullargspec
 def as_task_name(item):
     if isinstance(item, types.FunctionType):
         return item.__name__
-    elif hasattr(item, "name"):
+    if hasattr(item, "name"):
         return item.name
-    else:
-        return str(item)
+    return str(item)
 
 
 def as_task_name_list(mixed):
@@ -61,7 +61,7 @@ def as_task_name_list(mixed):
     return result
 
 
-class Executable(object):
+class Executable():
     NAME_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]+$")
 
     def __init__(self, name, callable_, description=""):
@@ -77,7 +77,7 @@ class Executable(object):
             self.source = "n/a"
 
         if isinstance(self.callable, types.FunctionType):
-            self.parameters = getargspec(self.callable).args
+            self.parameters = inspect.getargspec(self.callable).args
         else:
             raise TypeError("Don't know how to handle callable %s" % callable_)
 
@@ -89,31 +89,58 @@ class Executable(object):
         arguments = []
         for parameter in self.parameters:
             if parameter not in argument_dict:
-                raise ValueError("Invalid parameter '%s' for %s %s" % (parameter, self.__class__.__name__, self.name))
+                raise ValueError(
+                    "Invalid parameter '%s' for %s %s"
+                    % (parameter, self.__class__.__name__, self.name)
+                )
             arguments.append(argument_dict[parameter])
 
         self.callable(*arguments)
 
     def __repr__(self):
         return "Executable[name=%r, callable=%r, source=%r, description=%r]" % (
-            self._name, self.callable, self.source, self.description)
+            self._name,
+            self.callable,
+            self.source,
+            self.description,
+        )
 
 
 class Action(Executable):
-    def __init__(self, name, callable_, before=None, after=None, description="", only_once=False, teardown=False):
-        super(Action, self).__init__(name, callable_, description)
+    def __init__(
+        self,
+        name,
+        callable_,
+        before=None,
+        after=None,
+        description="",
+        only_once=False,
+        teardown=False,
+    ):
+        super().__init__(name, callable_, description)
         self.execute_before = as_task_name_list(before)
         self.execute_after = as_task_name_list(after)
         self.only_once = only_once
         self.teardown = teardown
 
     def __repr__(self):
-        return "Action[name=%r, callable=%r, source=%r, before=%r, after=%r, only_once=%r, teardown=%r, " \
-               "description=%r]" % (self._name, self.callable, self.source, self.execute_before, self.execute_after,
-                                    self.only_once, self.teardown, self.description)
+        return (
+            "Action[name=%r, callable=%r, source=%r, before=%r, after=%r, only_once=%r, teardown=%r, "
+            "description=%r]"
+            % (
+                self._name,
+                self.callable,
+                self.source,
+                self.execute_before,
+                self.execute_after,
+                self.only_once,
+                self.teardown,
+                self.description,
+            )
+        )
 
 
-class TaskDependency(object):
+class TaskDependency():
     def __init__(self, mixed, optional=False):
         self._name = as_task_name(mixed)
         self._optional = optional
@@ -137,7 +164,7 @@ class TaskDependency(object):
         self._optional = False
 
 
-class Task(object):
+class Task():
     def __init__(self, name, callable_, dependencies=None, description=""):
         self.name = name
         self.executables = [Executable(name, callable_, description)]
@@ -161,7 +188,11 @@ class Task(object):
         return self.name < other
 
     def executable(self, callable_):
-        return [executable for executable in self.executables if executable.callable is callable_][0]
+        return [
+            executable
+            for executable in self.executables
+            if executable.callable is callable_
+        ][0]
 
     def extend(self, task):
         self.executables += task.executables
@@ -172,20 +203,28 @@ class Task(object):
         for executable in self.executables:
             if _executable is not None:
                 if executable is not _executable:
-                    logger.debug("Skipping subtask %r from %r", self.name, executable.source)
+                    logger.debug(
+                        "Skipping subtask %r from %r", self.name, executable.source
+                    )
                     continue
 
-            logger.debug("Executing subtask of %r from %r", self.name, executable.source)
+            logger.debug(
+                "Executing subtask of %r from %r", self.name, executable.source
+            )
             executable.execute(argument_dict)
 
     def __repr__(self):
         return "Task[name=%r, executables=%r, dependencies=%r, description=%r]" % (
-            self.name, self.executables, self.dependencies, self.description)
+            self.name,
+            self.executables,
+            self.dependencies,
+            self.description,
+        )
 
 
 class LifecycleAction(Executable):
     def __init__(self, name, callable_, environments=None, description=""):
-        super(LifecycleAction, self).__init__(name, callable_, description)
+        super().__init__(name, callable_, description)
         self.environments = environments
 
     def is_applicable(self, environments=None):
@@ -204,14 +243,14 @@ class Finalizer(LifecycleAction):
     pass
 
 
-class TaskExecutionSummary(object):
+class TaskExecutionSummary():
     def __init__(self, task, number_of_actions, execution_time):
         self.task = task
         self.number_of_actions = number_of_actions
         self.execution_time = execution_time
 
 
-class ExecutionManager(object):
+class ExecutionManager():
     def __init__(self, logger):
         self.logger = logger
 
@@ -275,7 +314,9 @@ class ExecutionManager(object):
     def register_late_task_dependencies(self, dependencies):
         for name in dependencies:
             dependency_tasks = dependencies[name]
-            self.logger.debug("Registering late dependency of task '%s' on %s", name, dependency_tasks)
+            self.logger.debug(
+                "Registering late dependency of task '%s' on %s", name, dependency_tasks
+            )
             if name not in self._dependencies_pending_tasks:
                 self._dependencies_pending_tasks[name] = []
             self._dependencies_pending_tasks[name].extend(dependency_tasks)
@@ -283,7 +324,11 @@ class ExecutionManager(object):
         for name in list(self._dependencies_pending_tasks.keys()):
             if self.has_task(name):
                 dependency_tasks = self._dependencies_pending_tasks[name]
-                self.logger.debug("Resolved late dependency of task '%s' on %s", name, dependency_tasks)
+                self.logger.debug(
+                    "Resolved late dependency of task '%s' on %s",
+                    name,
+                    dependency_tasks,
+                )
                 self.get_task(name).dependencies.extend(dependency_tasks)
                 del self._dependencies_pending_tasks[name]
 
@@ -291,21 +336,39 @@ class ExecutionManager(object):
         for initializer in self._initializers:
             if not initializer.is_applicable(environments):
                 message = "Not going to execute initializer %r from %r as %r environments don't match %r."
-                self.logger.debug(message, initializer.name, initializer.source, environments, initializer.environments)
+                self.logger.debug(
+                    message,
+                    initializer.name,
+                    initializer.source,
+                    environments,
+                    initializer.environments,
+                )
             else:
-                self.logger.debug("Executing initializer '%s' from '%s'",
-                                  initializer.name, initializer.source)
+                self.logger.debug(
+                    "Executing initializer '%s' from '%s'",
+                    initializer.name,
+                    initializer.source,
+                )
                 initializer.execute(kwargs)
 
     def execute_finalizers(self, environments=None, **kwargs):
         for finalizer in reversed(self._finalizers):
             if not finalizer.is_applicable(environments):
                 message = "Not going to execute finalizer %r from %r as %r environments don't match %r."
-                self.logger.debug(message, finalizer.name, finalizer.source, environments, finalizer.environments)
+                self.logger.debug(
+                    message,
+                    finalizer.name,
+                    finalizer.source,
+                    environments,
+                    finalizer.environments,
+                )
 
             else:
-                self.logger.debug("Executing finalizer '%s' from '%s'",
-                                  finalizer.name, finalizer.source)
+                self.logger.debug(
+                    "Executing finalizer '%s' from '%s'",
+                    finalizer.name,
+                    finalizer.source,
+                )
                 finalizer.execute(kwargs)
 
     def assert_dependencies_resolved(self):
@@ -341,8 +404,7 @@ class ExecutionManager(object):
         except Exception:
             if not has_teardown_tasks:
                 raise
-            else:
-                task_error = sys.exc_info()
+            task_error = sys.exc_info()
 
         for action in after_actions:
             try:
@@ -352,7 +414,7 @@ class ExecutionManager(object):
             except Exception:
                 if not has_teardown_tasks:
                     raise
-                elif task_error:
+                if task_error:
                     suppressed_errors.append((action, sys.exc_info()))
                 else:
                     task_error = sys.exc_info()
@@ -360,9 +422,16 @@ class ExecutionManager(object):
         for suppressed_error in suppressed_errors:
             action = suppressed_error[0]
             action_error = suppressed_error[1]
-            self.logger.error("Executing action '%s' from '%s' resulted in an error that was suppressed:\n%s",
-                              action.name, action.source,
-                              "".join(traceback.format_exception(action_error[0], action_error[1], action_error[2])))
+            self.logger.error(
+                "Executing action '%s' from '%s' resulted in an error that was suppressed:\n%s",
+                action.name,
+                action.source,
+                "".join(
+                    traceback.format_exception(
+                        action_error[0], action_error[1], action_error[2]
+                    )
+                ),
+            )
         if task_error:
             raise_exception(task_error[1], task_error[2])
         self._current_task = None
@@ -378,7 +447,9 @@ class ExecutionManager(object):
             self.logger.debug(message, action.name)
             return False
 
-        self.logger.debug("Executing action '%s' from '%s' before task", action.name, action.source)
+        self.logger.debug(
+            "Executing action '%s' from '%s' before task", action.name, action.source
+        )
         action.execute(arguments)
         self._actions_executed.append(action)
         return True
@@ -430,7 +501,9 @@ class ExecutionManager(object):
 
         dependency_edges = {}
         for task in self.collect_all_transitive_tasks(as_list(task_names)):
-            dependency_edges[task.name] = [dependency.name for dependency in task.dependencies]
+            dependency_edges[task.name] = [
+                dependency.name for dependency in task.dependencies
+            ]
 
         cycles = Graph(dependency_edges).assert_no_cycles_present()
         if cycles:
@@ -450,15 +523,22 @@ class ExecutionManager(object):
         shortest_plan = copy.copy(execution_plan)
         for executed_task in self._tasks_executed:
             candidate_task = shortest_plan[0]
-            if candidate_task.name not in task_names and candidate_task == executed_task:
+            if (
+                candidate_task.name not in task_names
+                and candidate_task == executed_task
+            ):
                 shortest_plan.pop(0)
             else:
                 break
 
         if self._current_task and self._current_task in shortest_plan:
-            raise CircularTaskDependencyException("Task '%s' attempted to invoke tasks %s, "
-                                                  "resulting in plan %s, creating circular dependency",
-                                                  self._current_task, task_names, shortest_plan)
+            raise CircularTaskDependencyException(
+                "Task '%s' attempted to invoke tasks %s, "
+                "resulting in plan %s, creating circular dependency",
+                self._current_task,
+                task_names,
+                shortest_plan,
+            )
         return shortest_plan
 
     def _enqueue_task(self, execution_plan, task_name):
@@ -476,25 +556,42 @@ class ExecutionManager(object):
 
     def _should_omit_dependency(self, task, dependency):
         if dependency.optional:
-            if self._exclude_all_optional or \
-                    dependency.name in self._exclude_optional_tasks or \
-                    dependency.name in self._exclude_tasks:
-                self.logger.debug("Omitting optional dependency '%s' of task '%s'", dependency.name, task.name)
+            if (
+                self._exclude_all_optional
+                or dependency.name in self._exclude_optional_tasks
+                or dependency.name in self._exclude_tasks
+            ):
+                self.logger.debug(
+                    "Omitting optional dependency '%s' of task '%s'",
+                    dependency.name,
+                    task.name,
+                )
                 return True
         else:
             if dependency.name in self._exclude_optional_tasks:
                 raise RequiredTaskExclusionException(task.name, dependency.name)
             if dependency.name in self._exclude_tasks:
-                self.logger.warn("Omitting required dependency '%s' of task '%s'", dependency.name, task.name)
+                self.logger.warn(
+                    "Omitting required dependency '%s' of task '%s'",
+                    dependency.name,
+                    task.name,
+                )
                 return True
         return False
 
-    def resolve_dependencies(self, exclude_optional_tasks=None, exclude_tasks=None, exclude_all_optional=False):
+    def resolve_dependencies(
+        self,
+        exclude_optional_tasks=None,
+        exclude_tasks=None,
+        exclude_all_optional=False,
+    ):
         self._exclude_optional_tasks = as_task_name_list(exclude_optional_tasks or [])
         self._exclude_tasks = as_task_name_list(exclude_tasks or [])
         self._exclude_all_optional = exclude_all_optional
 
-        self.register_late_task_dependencies({})  # This tries to flush out all remaining pending dependencies
+        self.register_late_task_dependencies(
+            {}
+        )  # This tries to flush out all remaining pending dependencies
         for name in self._dependencies_pending_tasks:
             self.get_task(name)
         self._dependencies_pending_tasks.clear()
@@ -514,16 +611,25 @@ class ExecutionManager(object):
                         if existing_dependency.optional != d.optional:
                             if existing_dependency.optional:
                                 existing_dependency.required()
-                                self.logger.debug("Converting optional dependency '%s' of task '%s' into required",
-                                                  existing_dependency, task.name)
+                                self.logger.debug(
+                                    "Converting optional dependency '%s' of task '%s' into required",
+                                    existing_dependency,
+                                    task.name,
+                                )
                             else:
                                 self.logger.debug(
                                     "Ignoring '%s' as optional dependency of task '%s' - already required",
-                                    existing_dependency, task.name)
+                                    existing_dependency,
+                                    task.name,
+                                )
                         add_dependency = False
                 if add_dependency:
-                    self._task_dependencies[task.name].append(TaskDependency(self.get_task(d), d.optional))
-                    self.logger.debug("Adding '%s' as a dependency of task '%s'", d, task.name)
+                    self._task_dependencies[task.name].append(
+                        TaskDependency(self.get_task(d), d.optional)
+                    )
+                    self.logger.debug(
+                        "Adding '%s' as a dependency of task '%s'", d, task.name
+                    )
 
         for actions in self._actions.values():
             for action in actions:
@@ -531,13 +637,17 @@ class ExecutionManager(object):
                     if not self.has_task(task):
                         raise MissingActionDependencyException(action.name, task)
                     self._execute_before[task].append(action)
-                    self.logger.debug("Adding before action '%s' for task '%s'", action.name, task)
+                    self.logger.debug(
+                        "Adding before action '%s' for task '%s'", action.name, task
+                    )
 
                 for task in reversed(action.execute_after):
                     if not self.has_task(task):
                         raise MissingActionDependencyException(action.name, task)
                     self._execute_after[task].append(action)
-                    self.logger.debug("Adding after action '%s' for task '%s'", action.name, task)
+                    self.logger.debug(
+                        "Adding after action '%s' for task '%s'", action.name, task
+                    )
 
         self._dependencies_resolved = True
 
@@ -548,7 +658,9 @@ class ExecutionManager(object):
                     return True
         return False
 
-    def is_task_before_in_current_execution_plan(self, task_name_before, task_name_after):
+    def is_task_before_in_current_execution_plan(
+        self, task_name_before, task_name_after
+    ):
         if self._current_execution_plan:
             task_before = self.get_task(task_name_before)
             task_after = self.get_task(task_name_after)

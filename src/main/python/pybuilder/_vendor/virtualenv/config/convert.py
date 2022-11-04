@@ -77,7 +77,13 @@ def convert(value, as_type, source):
     try:
         return as_type.convert(value)
     except Exception as exception:
-        logging.warning("%s failed to convert %r as %r because %r", source, value, as_type, exception)
+        logging.warning(
+            "%s failed to convert %r as %r because %r",
+            source,
+            value,
+            as_type,
+            exception,
+        )
         raise
 
 

@@ -1,7 +1,11 @@
 """Inspect a target Python interpreter virtual environment wise"""
 import sys  # built-in
 
-PYPY2_WIN = hasattr(sys, "pypy_version_info") and sys.platform != "win32" and sys.version_info[0] == 2
+PYPY2_WIN = (
+    hasattr(sys, "pypy_version_info")
+    and sys.platform != "win32"
+    and sys.version_info[0] == 2
+)
 
 
 def encode_path(value):
@@ -56,7 +60,11 @@ def run():
         import sysconfig
 
         # https://bugs.python.org/issue22199
-        makefile = getattr(sysconfig, "get_makefile_filename", getattr(sysconfig, "_get_makefile_filename", None))
+        makefile = getattr(
+            sysconfig,
+            "get_makefile_filename",
+            getattr(sysconfig, "_get_makefile_filename", None),
+        )
         result["makefile_filename"] = encode_path(makefile())
     except ImportError:
         pass

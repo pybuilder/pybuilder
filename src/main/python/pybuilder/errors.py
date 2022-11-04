@@ -26,7 +26,7 @@ from pprint import pformat
 
 class PyBuilderException(Exception):
     def __init__(self, message, *arguments):
-        super(PyBuilderException, self).__init__(message, *arguments)
+        super().__init__(message, *arguments)
         self._message = message
         self._arguments = arguments
 
@@ -40,71 +40,78 @@ class PyBuilderException(Exception):
 
 class InvalidNameException(PyBuilderException):
     def __init__(self, name):
-        super(InvalidNameException, self).__init__("Invalid name: %s", name)
+        super().__init__("Invalid name: %s", name)
 
 
 class NoSuchTaskException(PyBuilderException):
     def __init__(self, name):
-        super(NoSuchTaskException, self).__init__("No such task %s", name)
+        super().__init__("No such task %s", name)
 
 
 class CircularTaskDependencyException(PyBuilderException):
     def __init__(self, message, *args):
         if isinstance(message, (list, tuple)):
             cycles = message
-            super(CircularTaskDependencyException, self).__init__("Circular task dependencies detected:\n%s",
-                                                                  "\n".join("\t" + pformat(cycle) for cycle in cycles)
-                                                                  )
+            super().__init__(
+                "Circular task dependencies detected:\n%s",
+                "\n".join("\t" + pformat(cycle) for cycle in cycles),
+            )
         else:
-            super(CircularTaskDependencyException, self).__init__(message,
-                                                                  *args)
+            super().__init__(message, *args)
 
 
 class MissingPrerequisiteException(PyBuilderException):
     def __init__(self, prerequisite, caller="n/a"):
-        super(
-            MissingPrerequisiteException, self).__init__("Missing prerequisite %s required by %s",
-                                                         prerequisite, caller)
+        super().__init__(
+            "Missing prerequisite %s required by %s", prerequisite, caller
+        )
 
 
 class MissingTaskDependencyException(PyBuilderException):
     def __init__(self, source, dependency):
-        super(
-            MissingTaskDependencyException, self).__init__("Missing task '%s' required for task '%s'",
-                                                           dependency, source)
+        super().__init__(
+            "Missing task '%s' required for task '%s'", dependency, source
+        )
 
 
 class RequiredTaskExclusionException(PyBuilderException):
     def __init__(self, source, dependency):
-        super(
-            RequiredTaskExclusionException, self).__init__("Task '%s' is required for task '%s' and cannot be excluded",
-                                                           dependency, source)
+        super().__init__(
+            "Task '%s' is required for task '%s' and cannot be excluded",
+            dependency,
+            source,
+        )
 
 
 class MissingActionDependencyException(PyBuilderException):
     def __init__(self, source, dependency):
-        super(
-            MissingActionDependencyException, self).__init__("Missing task '%s' required for action '%s'",
-                                                             dependency, source)
+        super().__init__(
+            "Missing task '%s' required for action '%s'", dependency, source
+        )
 
 
 class MissingPluginException(PyBuilderException):
     def __init__(self, plugin, message=""):
-        super(MissingPluginException, self).__init__(
-            "Missing plugin %s: %s", plugin, message)
+        super().__init__(
+            "Missing plugin %s: %s", plugin, message
+        )
 
 
 class UnspecifiedPluginNameException(PyBuilderException):
     def __init__(self, plugin):
-        super(UnspecifiedPluginNameException, self).__init__(
-            "Plugin module name is not specified '%s'", plugin)
+        super().__init__(
+            "Plugin module name is not specified '%s'", plugin
+        )
 
 
 class IncompatiblePluginException(PyBuilderException):
     def __init__(self, plugin_name, required_pyb_version, actual_pyb_version):
-        super(IncompatiblePluginException, self).__init__(
-            "Plugin '%s': required PyB version '%s' does not match current '%s'", plugin_name, required_pyb_version,
-            actual_pyb_version)
+        super().__init__(
+            "Plugin '%s': required PyB version '%s' does not match current '%s'",
+            plugin_name,
+            required_pyb_version,
+            actual_pyb_version,
+        )
 
 
 class BuildFailedException(PyBuilderException):
@@ -113,14 +120,14 @@ class BuildFailedException(PyBuilderException):
 
 class MissingPropertyException(PyBuilderException):
     def __init__(self, property):
-        super(MissingPropertyException, self).__init__(
-            "No such property: %s", property)
+        super().__init__("No such property: %s", property)
 
 
 class ProjectValidationFailedException(BuildFailedException):
     def __init__(self, validation_messages):
         BuildFailedException.__init__(
-            self, "Project validation failed: " + "\n-".join(validation_messages))
+            self, "Project validation failed: " + "\n-".join(validation_messages)
+        )
         self.validation_messages = validation_messages
 
 
@@ -130,4 +137,6 @@ class InternalException(PyBuilderException):
 
 class DependenciesNotResolvedException(InternalException):
     def __init__(self):
-        super(DependenciesNotResolvedException, self).__init__("Dependencies have not been resolved.")
+        super().__init__(
+            "Dependencies have not been resolved."
+        )

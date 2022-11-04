@@ -1,7 +1,7 @@
 import abc
 from typing import BinaryIO, Iterable, Text
 
-from ._compat import runtime_checkable, Protocol
+from ._compat import Protocol, runtime_checkable
 
 
 class ResourceReader(metaclass=abc.ABCMeta):
@@ -63,7 +63,7 @@ class Traversable(Protocol):
         """
         Read contents of self as bytes
         """
-        with self.open('rb') as strm:
+        with self.open("rb") as strm:
             return strm.read()
 
     def read_text(self, encoding=None):
@@ -98,7 +98,7 @@ class Traversable(Protocol):
         return self.joinpath(child)
 
     @abc.abstractmethod
-    def open(self, mode='r', *args, **kwargs):
+    def open(self, mode="r", *args, **kwargs):
         """
         mode may be 'r' or 'rb' to open as text or binary. Return a handle
         suitable for reading (same as pathlib.Path.open).
@@ -125,7 +125,7 @@ class TraversableResources(ResourceReader):
         """Return a Traversable object for the loaded package."""
 
     def open_resource(self, resource):
-        return self.files().joinpath(resource).open('rb')
+        return self.files().joinpath(resource).open("rb")
 
     def resource_path(self, resource):
         raise FileNotFoundError(resource)

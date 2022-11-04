@@ -26,22 +26,22 @@ from traceback import format_exc
 
 from pybuilder import __version__ as pyb_version
 from pybuilder.core import PluginDef
-from pybuilder.errors import (MissingPluginException,
-                              IncompatiblePluginException,
-                              BuildFailedException
-                              )
+from pybuilder.errors import (
+    BuildFailedException,
+    IncompatiblePluginException,
+    MissingPluginException,
+)
 from pybuilder.pip_common import Version
-from pybuilder.pip_utils import (version_satisfies_spec
-                                 )
+from pybuilder.pip_utils import version_satisfies_spec
 from pybuilder.utils import as_list
 
 if pyb_version == "${dist_version}":  # This is the case of PyB bootstrap
-    PYB_VERSION = Version('0.0.1.dev0')
+    PYB_VERSION = Version("0.0.1.dev0")
 else:
     PYB_VERSION = Version(pyb_version)
 
 
-class PluginLoader(object):
+class PluginLoader():
     def __init__(self, logger):
         self.logger = logger
 
@@ -69,15 +69,24 @@ class BuiltinPluginLoader(PluginLoader):
 
         last_problem = None
         for candidate in candidates:
-            self.logger.debug("Trying to load direct plugin %r, module %r", plugin_defs.name, candidate)
+            self.logger.debug(
+                "Trying to load direct plugin %r, module %r",
+                plugin_defs.name,
+                candidate,
+            )
             try:
                 plugin_module = _load_plugin(candidate, plugin_defs.name)
-                self.logger.debug("Found direct plugin %r, module %r", plugin_defs.name, candidate)
+                self.logger.debug(
+                    "Found direct plugin %r, module %r", plugin_defs.name, candidate
+                )
                 return plugin_module
             except MissingPluginException as e:
-                self.logger.debug("Direct plugin %r, module %r failed to load: %s", plugin_defs.name,
-                                  candidate,
-                                  e.message)
+                self.logger.debug(
+                    "Direct plugin %r, module %r failed to load: %s",
+                    plugin_defs.name,
+                    candidate,
+                    e.message,
+                )
                 last_problem = e
 
         if last_problem:
@@ -86,8 +95,9 @@ class BuiltinPluginLoader(PluginLoader):
 
 class DownloadingPluginLoader(PluginLoader):
     def can_load(self, reactor, plugin_def):
-        return (plugin_def.name.startswith(PluginDef.PYPI_PLUGIN_PROTOCOL) or
-                plugin_def.name.startswith(PluginDef.VCS_PLUGIN_PROTOCOL))
+        return plugin_def.name.startswith(
+            PluginDef.PYPI_PLUGIN_PROTOCOL
+        ) or plugin_def.name.startswith(PluginDef.VCS_PLUGIN_PROTOCOL)
 
     def install_plugin(self, reactor, plugin_defs):
         plugin_defs = as_list(plugin_defs)
@@ -102,28 +112,43 @@ class DownloadingPluginLoader(PluginLoader):
             pip_batch.append(plugin_def.dependency)
 
         try:
-            reactor.pybuilder_venv.install_dependencies(pip_batch, package_type="plugin")
+            reactor.pybuilder_venv.install_dependencies(
+                pip_batch, package_type="plugin"
+            )
         except BuildFailedException as e:
             self.logger.warn(e.message)
 
     def load_plugin(self, reactor, plugin_def):
         plugin_module_name = plugin_def.plugin_module_name or plugin_def.name
-        self.logger.debug("Trying to load third party plugin %r, module %r", plugin_def.name, plugin_module_name)
+        self.logger.debug(
+            "Trying to load third party plugin %r, module %r",
+            plugin_def.name,
+            plugin_module_name,
+        )
         plugin_module = _load_plugin(plugin_module_name, plugin_def.name)
-        self.logger.debug("Found third party plugin %r, module %r", plugin_def.name, plugin_module_name)
+        self.logger.debug(
+            "Found third party plugin %r, module %r",
+            plugin_def.name,
+            plugin_module_name,
+        )
         return plugin_module
 
     def _check_plugin_def_type(self, plugin_def):
-        if (not plugin_def.name.startswith(PluginDef.PYPI_PLUGIN_PROTOCOL) and
-                not plugin_def.name.startswith(PluginDef.VCS_PLUGIN_PROTOCOL)):
+        if not plugin_def.name.startswith(
+            PluginDef.PYPI_PLUGIN_PROTOCOL
+        ) and not plugin_def.name.startswith(PluginDef.VCS_PLUGIN_PROTOCOL):
             message = "Only plugins starting with '{0}' are currently supported"
-            raise MissingPluginException(plugin_def, message.format(
-                (PluginDef.PYPI_PLUGIN_PROTOCOL, PluginDef.VCS_PLUGIN_PROTOCOL)))
+            raise MissingPluginException(
+                plugin_def,
+                message.format(
+                    (PluginDef.PYPI_PLUGIN_PROTOCOL, PluginDef.VCS_PLUGIN_PROTOCOL)
+                ),
+            )
 
 
 class DispatchingPluginLoader(PluginLoader):
     def __init__(self, logger, *loaders):
-        super(DispatchingPluginLoader, self).__init__(logger)
+        super().__init__(logger)
         self._loaders = loaders
 
     def can_load(self, reactor, plugin_def):
@@ -147,8 +172,9 @@ class DispatchingPluginLoader(PluginLoader):
                     loader_found = True
                     break
             if not loader_found:
-                raise MissingPluginException(plugin_def,
-                                             "no plugin loader was able to load the plugin specified")
+                raise MissingPluginException(
+                    plugin_def, "no plugin loader was able to load the plugin specified"
+                )
 
         for loader, plugin_defs in loader_plugins.items():
             loader.install_plugin(reactor, plugin_defs)
@@ -165,9 +191,9 @@ class DispatchingPluginLoader(PluginLoader):
 
         if last_problem:
             raise last_problem
-        else:
-            raise MissingPluginException(plugin_def,
-                                         "no plugin loader was able to load the plugin specified")
+        raise MissingPluginException(
+            plugin_def, "no plugin loader was able to load the plugin specified"
+        )
 
 
 def _load_plugin(plugin_module_name, plugin_name):
@@ -178,10 +204,14 @@ def _load_plugin(plugin_module_name, plugin_name):
         return plugin_module
 
     except ImportError:
-        raise MissingPluginException("plugin %r, module %r" % (plugin_name, plugin_module_name), format_exc())
+        raise MissingPluginException(
+            "plugin %r, module %r" % (plugin_name, plugin_module_name), format_exc()
+        )
 
 
 def _check_plugin_version(plugin_module, plugin_name):
     if hasattr(plugin_module, "pyb_version") and plugin_module.pyb_version:
         if not version_satisfies_spec(plugin_module.pyb_version, PYB_VERSION):
-            raise IncompatiblePluginException(plugin_name, plugin_module.pyb_version, PYB_VERSION)
+            raise IncompatiblePluginException(
+                plugin_name, plugin_module.pyb_version, PYB_VERSION
+            )

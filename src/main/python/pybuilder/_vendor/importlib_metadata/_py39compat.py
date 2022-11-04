@@ -19,7 +19,7 @@ def normalized_name(dist: Distribution) -> Optional[str]:
     except AttributeError:
         from . import Prepared  # -> delay to prevent circular imports.
 
-        return Prepared.normalize(getattr(dist, "name", None) or dist.metadata['Name'])
+        return Prepared.normalize(getattr(dist, "name", None) or dist.metadata["Name"])
 
 
 def ep_matches(ep: EntryPoint, **params) -> Tuple[EntryPoint, bool]:

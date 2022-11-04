@@ -8,7 +8,9 @@ if sys.version_info >= (3, 8):
 else:
     from ....importlib_metadata import entry_points, version
 
-    importlib_metadata_version = tuple(int(i) for i in version("importlib_metadata").split(".")[:2])
+    importlib_metadata_version = tuple(
+        int(i) for i in version("importlib_metadata").split(".")[:2]
+    )
 
 
 class PluginLoader:
@@ -18,9 +20,12 @@ class PluginLoader:
     @classmethod
     def entry_points_for(cls, key):
         if sys.version_info >= (3, 10) or importlib_metadata_version >= (3, 6):
-            return OrderedDict((e.name, e.load()) for e in cls.entry_points().select(group=key))
-        else:
-            return OrderedDict((e.name, e.load()) for e in cls.entry_points().get(key, {}))
+            return OrderedDict(
+                (e.name, e.load()) for e in cls.entry_points().select(group=key)
+            )
+        return OrderedDict(
+            (e.name, e.load()) for e in cls.entry_points().get(key, {})
+        )
 
     @staticmethod
     def entry_points():

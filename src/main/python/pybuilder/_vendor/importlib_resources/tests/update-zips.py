@@ -26,28 +26,28 @@ def main():
     ...data02... -> ziptestdata/...
     ...
     """
-    suffixes = '01', '02'
+    suffixes = "01", "02"
     tuple(map(generate, suffixes))
 
 
 def generate(suffix):
     root = pathlib.Path(__file__).parent.relative_to(os.getcwd())
-    zfpath = root / f'zipdata{suffix}/ziptestdata.zip'
-    with zipfile.ZipFile(zfpath, 'w') as zf:
-        for src, rel in walk(root / f'data{suffix}'):
-            dst = 'ziptestdata' / pathlib.PurePosixPath(rel.as_posix())
-            print(src, '->', dst)
+    zfpath = root / f"zipdata{suffix}/ziptestdata.zip"
+    with zipfile.ZipFile(zfpath, "w") as zf:
+        for src, rel in walk(root / f"data{suffix}"):
+            dst = "ziptestdata" / pathlib.PurePosixPath(rel.as_posix())
+            print(src, "->", dst)
             zf.write(src, dst)
 
 
 def walk(datapath):
     for dirpath, dirnames, filenames in os.walk(datapath):
         with contextlib.suppress(ValueError):
-            dirnames.remove('__pycache__')
+            dirnames.remove("__pycache__")
         for filename in filenames:
             res = pathlib.Path(dirpath) / filename
             rel = res.relative_to(datapath)
             yield res, rel
 
 
-__name__ == '__main__' and main()
+__name__ == "__main__" and main()

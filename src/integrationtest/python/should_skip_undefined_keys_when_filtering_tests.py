@@ -23,7 +23,8 @@ from itest_support import IntegrationTestSupport
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import use_plugin, init
 
 use_plugin("copy_resources")
@@ -33,7 +34,8 @@ use_plugin("filter_resources")
 def init (project):
     project.get_property("copy_resources_glob").append("*")
     project.get_property("filter_resources_glob").append("spam")
-        """)
+        """
+        )
 
         self.write_file("spam", "${version} ${any_undefined_key}")
 

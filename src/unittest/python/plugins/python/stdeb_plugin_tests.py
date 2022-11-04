@@ -18,16 +18,17 @@
 
 from unittest import TestCase
 
-from pybuilder.core import Project, Logger
+from test_utils import Mock
+
+from pybuilder.core import Logger, Project
 from pybuilder.plugins.python.stdeb_plugin import (
+    assert_dpkg_is_available,
     assert_py2dsc_deb_is_available,
     get_py2dsc_deb_command,
-    assert_dpkg_is_available)
-from test_utils import Mock
+)
 
 
 class CheckStdebAvailableTests(TestCase):
-
     def setUp(self):
         self.reactor = Mock()
         self.reactor.python_env_registry = {}
@@ -42,7 +43,8 @@ class CheckStdebAvailableTests(TestCase):
         assert_py2dsc_deb_is_available(mock_project, mock_logger, self.reactor)
 
         self.reactor.pybuilder_venv.verify_can_execute.assert_called_with(
-            ["py2dsc-deb", "-h"], "py2dsc-deb", "plugin python.stdeb")
+            ["py2dsc-deb", "-h"], "py2dsc-deb", "plugin python.stdeb"
+        )
 
     def test_should_check_that_dpkg_buildpackage_can_be_executed(self):
         mock_project = Mock(Project)
@@ -51,17 +53,16 @@ class CheckStdebAvailableTests(TestCase):
         assert_dpkg_is_available(mock_project, mock_logger, self.reactor)
 
         self.reactor.pybuilder_venv.verify_can_execute.assert_called_with(
-            ["dpkg-buildpackage", "--help"], "dpkg-buildpackage", "plugin python.stdeb")
+            ["dpkg-buildpackage", "--help"], "dpkg-buildpackage", "plugin python.stdeb"
+        )
 
 
 class StdebBuildCommandTests(TestCase):
-
     def setUp(self):
         self.project = Project("basedir")
 
     def test_should_generate_stdeb_build_command_with_project_properties(self):
-        self.project.set_property(
-            "deb_package_maintainer", "foo <foo@bar.com>")
+        self.project.set_property("deb_package_maintainer", "foo <foo@bar.com>")
         self.project.set_property("path_final_build", "/path/to/final/build")
         self.project.set_property("path_to_source_tarball", "/path/to/source/")
 
@@ -69,4 +70,12 @@ class StdebBuildCommandTests(TestCase):
 
         self.assertEqual(
             py2dsc_deb_command,
-            ["py2dsc-deb", "--maintainer", "foo <foo@bar.com>", "-d", "/path/to/final/build", "/path/to/source/"])
+            [
+                "py2dsc-deb",
+                "--maintainer",
+                "foo <foo@bar.com>",
+                "-d",
+                "/path/to/final/build",
+                "/path/to/source/",
+            ],
+        )

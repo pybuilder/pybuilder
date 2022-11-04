@@ -16,7 +16,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pybuilder.core import task, depends, description, use_plugin
+from pybuilder.core import depends, description, task, use_plugin
 
 use_plugin("core")
 

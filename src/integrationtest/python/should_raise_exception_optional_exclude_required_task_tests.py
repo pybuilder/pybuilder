@@ -19,12 +19,14 @@
 import unittest
 
 from itest_support import IntegrationTestSupport
+
 from pybuilder.errors import RequiredTaskExclusionException
 
 
 class Test(IntegrationTestSupport):
     def test(self):
-        self.write_build_file("""
+        self.write_build_file(
+            """
 from pybuilder.core import task, depends
 
 @task
@@ -40,10 +42,17 @@ def task_b(project):
 @depends("task_a", "task_b")
 def task_c(project):
     project.set_property("c", True)
-        """)
+        """
+        )
         reactor = self.prepare_reactor()
-        reactor.execution_manager.resolve_dependencies(exclude_optional_tasks=["task_b"])
-        self.assertRaises(RequiredTaskExclusionException, reactor.execution_manager.build_execution_plan, "task_c")
+        reactor.execution_manager.resolve_dependencies(
+            exclude_optional_tasks=["task_b"]
+        )
+        self.assertRaises(
+            RequiredTaskExclusionException,
+            reactor.execution_manager.build_execution_plan,
+            "task_c",
+        )
 
 
 if __name__ == "__main__":

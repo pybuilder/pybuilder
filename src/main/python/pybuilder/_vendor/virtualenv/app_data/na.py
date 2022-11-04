@@ -12,7 +12,9 @@ class AppDataDisabled(AppData):
     def __init__(self):
         pass
 
-    error = RuntimeError("no app data folder available, probably no write access to the folder")
+    error = RuntimeError(
+        "no app data folder available, probably no write access to the folder"
+    )
 
     def close(self):
         """do nothing"""

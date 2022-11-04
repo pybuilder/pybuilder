@@ -2,23 +2,18 @@ import io
 import unittest
 
 from ... import importlib_resources as resources
-
-from .._adapters import (
-    CompatibilityFiles,
-    wrap_spec,
-)
-
+from .._adapters import CompatibilityFiles, wrap_spec
 from . import util
 
 
 class CompatibilityFilesTests(unittest.TestCase):
     @property
     def package(self):
-        bytes_data = io.BytesIO(b'Hello, world!')
+        bytes_data = io.BytesIO(b"Hello, world!")
         return util.create_package(
             file=bytes_data,
-            path='some_path',
-            contents=('a', 'b', 'c'),
+            path="some_path",
+            contents=("a", "b", "c"),
         )
 
     @property
@@ -28,57 +23,57 @@ class CompatibilityFilesTests(unittest.TestCase):
     def test_spec_path_iter(self):
         self.assertEqual(
             sorted(path.name for path in self.files.iterdir()),
-            ['a', 'b', 'c'],
+            ["a", "b", "c"],
         )
 
     def test_child_path_iter(self):
-        self.assertEqual(list((self.files / 'a').iterdir()), [])
+        self.assertEqual(list((self.files / "a").iterdir()), [])
 
     def test_orphan_path_iter(self):
-        self.assertEqual(list((self.files / 'a' / 'a').iterdir()), [])
-        self.assertEqual(list((self.files / 'a' / 'a' / 'a').iterdir()), [])
+        self.assertEqual(list((self.files / "a" / "a").iterdir()), [])
+        self.assertEqual(list((self.files / "a" / "a" / "a").iterdir()), [])
 
     def test_spec_path_is(self):
         self.assertFalse(self.files.is_file())
         self.assertFalse(self.files.is_dir())
 
     def test_child_path_is(self):
-        self.assertTrue((self.files / 'a').is_file())
-        self.assertFalse((self.files / 'a').is_dir())
+        self.assertTrue((self.files / "a").is_file())
+        self.assertFalse((self.files / "a").is_dir())
 
     def test_orphan_path_is(self):
-        self.assertFalse((self.files / 'a' / 'a').is_file())
-        self.assertFalse((self.files / 'a' / 'a').is_dir())
-        self.assertFalse((self.files / 'a' / 'a' / 'a').is_file())
-        self.assertFalse((self.files / 'a' / 'a' / 'a').is_dir())
+        self.assertFalse((self.files / "a" / "a").is_file())
+        self.assertFalse((self.files / "a" / "a").is_dir())
+        self.assertFalse((self.files / "a" / "a" / "a").is_file())
+        self.assertFalse((self.files / "a" / "a" / "a").is_dir())
 
     def test_spec_path_name(self):
-        self.assertEqual(self.files.name, 'testingpackage')
+        self.assertEqual(self.files.name, "testingpackage")
 
     def test_child_path_name(self):
-        self.assertEqual((self.files / 'a').name, 'a')
+        self.assertEqual((self.files / "a").name, "a")
 
     def test_orphan_path_name(self):
-        self.assertEqual((self.files / 'a' / 'b').name, 'b')
-        self.assertEqual((self.files / 'a' / 'b' / 'c').name, 'c')
+        self.assertEqual((self.files / "a" / "b").name, "b")
+        self.assertEqual((self.files / "a" / "b" / "c").name, "c")
 
     def test_spec_path_open(self):
-        self.assertEqual(self.files.read_bytes(), b'Hello, world!')
-        self.assertEqual(self.files.read_text(), 'Hello, world!')
+        self.assertEqual(self.files.read_bytes(), b"Hello, world!")
+        self.assertEqual(self.files.read_text(), "Hello, world!")
 
     def test_child_path_open(self):
-        self.assertEqual((self.files / 'a').read_bytes(), b'Hello, world!')
-        self.assertEqual((self.files / 'a').read_text(), 'Hello, world!')
+        self.assertEqual((self.files / "a").read_bytes(), b"Hello, world!")
+        self.assertEqual((self.files / "a").read_text(), "Hello, world!")
 
     def test_orphan_path_open(self):
         with self.assertRaises(FileNotFoundError):
-            (self.files / 'a' / 'b').read_bytes()
+            (self.files / "a" / "b").read_bytes()
         with self.assertRaises(FileNotFoundError):
-            (self.files / 'a' / 'b' / 'c').read_bytes()
+            (self.files / "a" / "b" / "c").read_bytes()
 
     def test_open_invalid_mode(self):
         with self.assertRaises(ValueError):
-            self.files.open('0')
+            self.files.open("0")
 
     def test_orphan_path_invalid(self):
         with self.assertRaises(ValueError):
@@ -99,4 +94,4 @@ class CompatibilityFilesNoReaderTests(unittest.TestCase):
         return resources.files(self.package)
 
     def test_spec_path_joinpath(self):
-        self.assertIsInstance(self.files / 'a', CompatibilityFiles.OrphanPath)
+        self.assertIsInstance(self.files / "a", CompatibilityFiles.OrphanPath)

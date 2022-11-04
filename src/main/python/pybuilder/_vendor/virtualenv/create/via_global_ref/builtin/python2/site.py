@@ -14,7 +14,9 @@ def main():
     sys.real_prefix = sys.base_prefix = config["base-prefix"]
     sys.base_exec_prefix = config["base-exec-prefix"]
     sys.base_executable = config["base-executable"]
-    global_site_package_enabled = config.get("include-system-site-packages", False) == "true"
+    global_site_package_enabled = (
+        config.get("include-system-site-packages", False) == "true"
+    )
     rewrite_standard_library_sys_path()
     disable_user_site_package()
     load_host_site(here)
@@ -60,7 +62,9 @@ def get_site_packages_dirs(here):
         yield os.path.abspath(os.path.join(here, path.encode("utf-8")))
 
 
-sep = "\\" if sys.platform == "win32" else "/"  # no os module here yet - poor mans version
+sep = (
+    "\\" if sys.platform == "win32" else "/"
+)  # no os module here yet - poor mans version
 
 
 def read_pyvenv():
@@ -86,10 +90,14 @@ def rewrite_standard_library_sys_path():
     exe_dir = exe[: exe.rfind(sep)]
     for at, path in enumerate(sys.path):
         path = abs_path(path)  # replace old sys prefix path starts with new
-        skip_rewrite = path == exe_dir  # don't fix the current executable location, notably on Windows this gets added
+        skip_rewrite = (
+            path == exe_dir
+        )  # don't fix the current executable location, notably on Windows this gets added
         skip_rewrite = skip_rewrite  # ___SKIP_REWRITE____
         if not skip_rewrite:
-            sys.path[at] = map_path(path, base_exe, exe_dir, exec_prefix, base_prefix, prefix, base_exec)
+            sys.path[at] = map_path(
+                path, base_exe, exe_dir, exec_prefix, base_prefix, prefix, base_exec
+            )
 
     # the rewrite above may have changed elements from PYTHONPATH, revert these if on
     if sys.flags.ignore_environment:
@@ -105,7 +113,10 @@ def rewrite_standard_library_sys_path():
 
 
 def get_exe_prefixes(base=False):
-    return tuple(abs_path(getattr(sys, ("base_" if base else "") + i)) for i in ("executable", "prefix", "exec_prefix"))
+    return tuple(
+        abs_path(getattr(sys, ("base_" if base else "") + i))
+        for i in ("executable", "prefix", "exec_prefix")
+    )
 
 
 def abs_path(value):
@@ -120,14 +131,16 @@ def abs_path(value):
     return sep.join(keep[::-1])
 
 
-def map_path(path, base_executable, exe_dir, exec_prefix, base_prefix, prefix, base_exec_prefix):
+def map_path(
+    path, base_executable, exe_dir, exec_prefix, base_prefix, prefix, base_exec_prefix
+):
     if path_starts_with(path, exe_dir):
         # content inside the exe folder needs to remap to original executables folder
         orig_exe_folder = base_executable[: base_executable.rfind(sep)]
         return "{}{}".format(orig_exe_folder, path[len(exe_dir) :])
-    elif path_starts_with(path, prefix):
+    if path_starts_with(path, prefix):
         return "{}{}".format(base_prefix, path[len(prefix) :])
-    elif path_starts_with(path, exec_prefix):
+    if path_starts_with(path, exec_prefix):
         return "{}{}".format(base_exec_prefix, path[len(exec_prefix) :])
     return path
 
@@ -141,9 +154,13 @@ def disable_user_site_package():
     # sys.flags is a c-extension type, so we cannot monkeypatch it, replace it with a python class to flip it
     sys.original_flags = sys.flags
 
-    class Flags(object):
+    class Flags():
         def __init__(self):
-            self.__dict__ = {key: getattr(sys.flags, key) for key in dir(sys.flags) if not key.startswith("_")}
+            self.__dict__ = {
+                key: getattr(sys.flags, key)
+                for key in dir(sys.flags)
+                if not key.startswith("_")
+            }
 
     sys.flags = Flags()
     sys.flags.no_user_site = 1

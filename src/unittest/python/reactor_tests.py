@@ -19,23 +19,36 @@
 import unittest
 from types import ModuleType
 
-from pybuilder.core import (ENVIRONMENTS_ATTRIBUTE,
-                            INITIALIZER_ATTRIBUTE,
-                            NAME_ATTRIBUTE,
-                            TASK_ATTRIBUTE,
-                            Project,
-                            PluginDef,
-                            task,
-                            depends,
-                            dependents,
-                            optional,
-                            after,
-                            before)
-from pybuilder.errors import MissingPluginException, PyBuilderException, ProjectValidationFailedException
-from pybuilder.execution import Task, TaskDependency, Action, ExecutionManager, Initializer
+from test_utils import ANY, Mock, call, patch
+
+from pybuilder.core import (
+    ENVIRONMENTS_ATTRIBUTE,
+    INITIALIZER_ATTRIBUTE,
+    NAME_ATTRIBUTE,
+    TASK_ATTRIBUTE,
+    PluginDef,
+    Project,
+    after,
+    before,
+    dependents,
+    depends,
+    optional,
+    task,
+)
+from pybuilder.errors import (
+    MissingPluginException,
+    ProjectValidationFailedException,
+    PyBuilderException,
+)
+from pybuilder.execution import (
+    Action,
+    ExecutionManager,
+    Initializer,
+    Task,
+    TaskDependency,
+)
 from pybuilder.pluginloader import PluginLoader
 from pybuilder.reactor import Reactor
-from test_utils import Mock, ANY, call, patch
 
 
 class ReactorTest(unittest.TestCase):
@@ -45,7 +58,8 @@ class ReactorTest(unittest.TestCase):
         self.logger = Mock()
         self.execution_manager = Mock(ExecutionManager)
         self.reactor = Reactor(
-            self.logger, self.execution_manager, self.plugin_loader_mock)
+            self.logger, self.execution_manager, self.plugin_loader_mock
+        )
 
     def tearDown(self):
         Reactor._set_current_instance(self.old_reactor)
@@ -55,12 +69,17 @@ class ReactorTest(unittest.TestCase):
         self.assertEqual(["spam"], self.reactor.get_tasks())
 
     def test_should_raise_exception_when_importing_plugin_and_plugin_not_found(self):
-        self.plugin_loader_mock.load_plugin.side_effect = MissingPluginException("not_found")
+        self.plugin_loader_mock.load_plugin.side_effect = MissingPluginException(
+            "not_found"
+        )
 
         self.assertRaises(
-            MissingPluginException, self.reactor.import_plugin, PluginDef("not_found"))
+            MissingPluginException, self.reactor.import_plugin, PluginDef("not_found")
+        )
 
-        self.plugin_loader_mock.load_plugin.assert_called_with(ANY, PluginDef("not_found"))
+        self.plugin_loader_mock.load_plugin.assert_called_with(
+            ANY, PluginDef("not_found")
+        )
 
     def test_should_collect_single_task(self):
         def task():
@@ -74,9 +93,13 @@ class ReactorTest(unittest.TestCase):
         self.reactor.collect_project_annotations(module)
 
         self.assertEqual(len(self.execution_manager.register_task.call_args_list), 1)
-        self.assertTrue(isinstance(self.execution_manager.register_task.call_args[0][0], Task) and len(
-            self.execution_manager.register_task.call_args[0]) == 1)
-        self.assertEqual(self.execution_manager.register_task.call_args[0][0].name, "task")
+        self.assertTrue(
+            isinstance(self.execution_manager.register_task.call_args[0][0], Task)
+            and len(self.execution_manager.register_task.call_args[0]) == 1
+        )
+        self.assertEqual(
+            self.execution_manager.register_task.call_args[0][0].name, "task"
+        )
 
     def test_should_collect_single_task_with_overridden_name(self):
         def task():
@@ -91,9 +114,13 @@ class ReactorTest(unittest.TestCase):
         self.reactor.collect_project_annotations(module)
 
         self.assertEqual(len(self.execution_manager.register_task.call_args_list), 1)
-        self.assertTrue(isinstance(self.execution_manager.register_task.call_args[0][0], Task) and len(
-            self.execution_manager.register_task.call_args[0]) == 1)
-        self.assertEqual(self.execution_manager.register_task.call_args[0][0].name, "overridden_name")
+        self.assertTrue(
+            isinstance(self.execution_manager.register_task.call_args[0][0], Task)
+            and len(self.execution_manager.register_task.call_args[0]) == 1
+        )
+        self.assertEqual(
+            self.execution_manager.register_task.call_args[0][0].name, "overridden_name"
+        )
 
     def test_should_collect_multiple_tasks(self):
         def task():
@@ -114,12 +141,15 @@ class ReactorTest(unittest.TestCase):
 
         self.assertEqual(len(self.execution_manager.register_task.call_args_list), 2)
         for call_args in self.execution_manager.register_task.call_args_list:
-            self.assertTrue(isinstance(call_args[0][0], Task) and len(call_args[0]) == 1)
+            self.assertTrue(
+                isinstance(call_args[0][0], Task) and len(call_args[0]) == 1
+            )
 
     def test_task_dependencies(self):
         import pybuilder.reactor
 
         with patch("pybuilder.reactor.Task"):
+
             @task
             def task1():
                 pass
@@ -159,19 +189,32 @@ class ReactorTest(unittest.TestCase):
 
             self.reactor.collect_project_annotations(module)
 
-            pybuilder.reactor.Task.assert_has_calls([call("task1", task1, [], ''),
-                                                     call("task2", task2, [TaskDependency(task1)], ''),
-                                                     call("task3", task3, [TaskDependency(task5, True)], ''),
-                                                     call("task4", task4, [TaskDependency(task3, True)], ''),
-                                                     call("task5", task5, [], ''),
-                                                     call("task6", task6,
-                                                          [TaskDependency(task1), TaskDependency(task2, True),
-                                                           TaskDependency(task4), TaskDependency(task5)], '')])
+            pybuilder.reactor.Task.assert_has_calls(
+                [
+                    call("task1", task1, [], ""),
+                    call("task2", task2, [TaskDependency(task1)], ""),
+                    call("task3", task3, [TaskDependency(task5, True)], ""),
+                    call("task4", task4, [TaskDependency(task3, True)], ""),
+                    call("task5", task5, [], ""),
+                    call(
+                        "task6",
+                        task6,
+                        [
+                            TaskDependency(task1),
+                            TaskDependency(task2, True),
+                            TaskDependency(task4),
+                            TaskDependency(task5),
+                        ],
+                        "",
+                    ),
+                ]
+            )
 
     def test_task_dependencies_with_post_definition_injections(self):
         import pybuilder.reactor
 
         with patch("pybuilder.reactor.Task"):
+
             @task
             def task1():
                 pass
@@ -195,18 +238,26 @@ class ReactorTest(unittest.TestCase):
             module2.task3 = task3
 
             self.reactor.collect_project_annotations(module1)
-            pybuilder.reactor.Task.assert_has_calls([call("task1", task1, [], ''),
-                                                     call("task2", task2, [TaskDependency(task1)], '')])
+            pybuilder.reactor.Task.assert_has_calls(
+                [
+                    call("task1", task1, [], ""),
+                    call("task2", task2, [TaskDependency(task1)], ""),
+                ]
+            )
 
             self.reactor.collect_project_annotations(module2)
-            pybuilder.reactor.Task.assert_has_calls([call("task3", task3, [TaskDependency(task1)], '')])
+            pybuilder.reactor.Task.assert_has_calls(
+                [call("task3", task3, [TaskDependency(task1)], "")]
+            )
             self.execution_manager.register_late_task_dependencies.assert_has_calls(
-                [call({}), call({"task2": [TaskDependency(task3)]})])
+                [call({}), call({"task2": [TaskDependency(task3)]})]
+            )
 
     def test_task_dependencies_with_post_definition_injections_custom_names(self):
         import pybuilder.reactor
 
         with patch("pybuilder.reactor.Task"):
+
             @task
             def task1():
                 pass
@@ -230,13 +281,20 @@ class ReactorTest(unittest.TestCase):
             module2.task3 = task3
 
             self.reactor.collect_project_annotations(module1)
-            pybuilder.reactor.Task.assert_has_calls([call("task1", task1, [], ''),
-                                                     call("task2", task2, [TaskDependency(task1)], '')])
+            pybuilder.reactor.Task.assert_has_calls(
+                [
+                    call("task1", task1, [], ""),
+                    call("task2", task2, [TaskDependency(task1)], ""),
+                ]
+            )
 
             self.reactor.collect_project_annotations(module2)
-            pybuilder.reactor.Task.assert_has_calls([call("task_3", task3, [TaskDependency(task1)], '')])
+            pybuilder.reactor.Task.assert_has_calls(
+                [call("task_3", task3, [TaskDependency(task1)], "")]
+            )
             self.execution_manager.register_late_task_dependencies.assert_has_calls(
-                [call({}), call({"task2": [TaskDependency("task_3")]})])
+                [call({}), call({"task2": [TaskDependency("task_3")]})]
+            )
 
     def test_should_collect_single_before_action(self):
         @before("spam")
@@ -249,8 +307,10 @@ class ReactorTest(unittest.TestCase):
         self.reactor.collect_project_annotations(module)
 
         self.assertEqual(self.execution_manager.register_action.call_count, 1)
-        self.assertTrue(isinstance(self.execution_manager.register_action.call_args[0][0], Action) and
-                        len(self.execution_manager.register_action.call_args[0]) == 1)
+        self.assertTrue(
+            isinstance(self.execution_manager.register_action.call_args[0][0], Action)
+            and len(self.execution_manager.register_action.call_args[0]) == 1
+        )
 
     def test_should_collect_single_after_action(self):
         @after("spam")
@@ -263,8 +323,10 @@ class ReactorTest(unittest.TestCase):
         self.reactor.collect_project_annotations(module)
 
         self.assertEqual(self.execution_manager.register_action.call_count, 1)
-        self.assertTrue(isinstance(self.execution_manager.register_action.call_args[0][0], Action) and
-                        len(self.execution_manager.register_action.call_args[0]) == 1)
+        self.assertTrue(
+            isinstance(self.execution_manager.register_action.call_args[0][0], Action)
+            and len(self.execution_manager.register_action.call_args[0]) == 1
+        )
 
     def test_should_collect_single_after_action_with_only_once_flag(self):
         @after("spam", only_once=True)
@@ -304,8 +366,12 @@ class ReactorTest(unittest.TestCase):
         self.reactor.collect_project_annotations(module)
 
         self.assertEqual(self.execution_manager.register_initializer.call_count, 1)
-        self.assertTrue(isinstance(self.execution_manager.register_initializer.call_args[0][0], Initializer) and
-                        len(self.execution_manager.register_initializer.call_args[0]) == 1)
+        self.assertTrue(
+            isinstance(
+                self.execution_manager.register_initializer.call_args[0][0], Initializer
+            )
+            and len(self.execution_manager.register_initializer.call_args[0]) == 1
+        )
 
     def test_should_collect_single_initializer_with_environments(self):
         def init():
@@ -317,7 +383,7 @@ class ReactorTest(unittest.TestCase):
         module = ModuleType("mock_module")
         module.task = init
 
-        class ExecutionManagerMock(object):
+        class ExecutionManagerMock():
             def register_initializer(self, initializer):
                 self.initializer = initializer
 
@@ -330,15 +396,17 @@ class ReactorTest(unittest.TestCase):
         self.reactor.collect_project_annotations(module)
 
         self.assertEqual(
-            execution_manager_mock.initializer.environments, ["any_environment"])
+            execution_manager_mock.initializer.environments, ["any_environment"]
+        )
 
     @patch("pybuilder.reactor.os.path.exists", return_value=False)
     @patch("pybuilder.reactor.np", return_value="spam")
-    def test_should_raise_when_verifying_project_directory_and_directory_does_not_exist(self,
-                                                                                        np,
-                                                                                        os_path_exists):
+    def test_should_raise_when_verifying_project_directory_and_directory_does_not_exist(
+        self, np, os_path_exists
+    ):
         self.assertRaises(
-            PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs")
+            PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs"
+        )
 
         np.assert_called_with("spam")
         os_path_exists.assert_called_with("spam")
@@ -346,12 +414,12 @@ class ReactorTest(unittest.TestCase):
     @patch("pybuilder.reactor.os.path.isdir", return_value=False)
     @patch("pybuilder.reactor.os.path.exists", return_value=True)
     @patch("pybuilder.reactor.np", return_value="spam")
-    def test_should_raise_when_verifying_project_directory_and_directory_is_not_a_directory(self,
-                                                                                            np,
-                                                                                            os_path_exists,
-                                                                                            os_path_isdir):
+    def test_should_raise_when_verifying_project_directory_and_directory_is_not_a_directory(
+        self, np, os_path_exists, os_path_isdir
+    ):
         self.assertRaises(
-            PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs")
+            PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs"
+        )
 
         np.assert_called_with("spam")
         os_path_exists.assert_called_with("spam")
@@ -359,15 +427,17 @@ class ReactorTest(unittest.TestCase):
 
     @patch("pybuilder.reactor.jp", side_effect=lambda *x: "/".join(x))
     @patch("pybuilder.reactor.os.path.isdir", return_value=True)
-    @patch("pybuilder.reactor.os.path.exists", side_effect=lambda x: True if x == "spam" else False)
+    @patch(
+        "pybuilder.reactor.os.path.exists",
+        side_effect=lambda x: x == "spam"
+    )
     @patch("pybuilder.reactor.np", return_value="spam")
-    def test_should_raise_when_verifying_project_directory_and_build_descriptor_does_not_exist(self,
-                                                                                               np,
-                                                                                               os_path_exists,
-                                                                                               os_path_isdir,
-                                                                                               jp):
+    def test_should_raise_when_verifying_project_directory_and_build_descriptor_does_not_exist(
+        self, np, os_path_exists, os_path_isdir, jp
+    ):
         self.assertRaises(
-            PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs")
+            PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs"
+        )
 
         np.assert_called_with("spam")
         os_path_exists.assert_has_calls([call("spam"), call("spam/eggs")])
@@ -379,14 +449,12 @@ class ReactorTest(unittest.TestCase):
     @patch("pybuilder.reactor.os.path.isdir", return_value=True)
     @patch("pybuilder.reactor.os.path.exists", return_value=True)
     @patch("pybuilder.reactor.np", return_value="spam")
-    def test_should_raise_when_verifying_project_directory_and_build_descriptor_is_not_a_file(self,
-                                                                                              np,
-                                                                                              os_path_exists,
-                                                                                              os_path_isdir,
-                                                                                              jp,
-                                                                                              os_path_isfile):
+    def test_should_raise_when_verifying_project_directory_and_build_descriptor_is_not_a_file(
+        self, np, os_path_exists, os_path_isdir, jp, os_path_isfile
+    ):
         self.assertRaises(
-            PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs")
+            PyBuilderException, self.reactor.verify_project_directory, "spam", "eggs"
+        )
 
         np.assert_called_with("spam")
         os_path_exists.assert_has_calls([call("spam"), call("spam/eggs")])
@@ -399,14 +467,13 @@ class ReactorTest(unittest.TestCase):
     @patch("pybuilder.reactor.os.path.isdir", return_value=True)
     @patch("pybuilder.reactor.os.path.exists", return_value=True)
     @patch("pybuilder.reactor.np", return_value="/spam")
-    def test_should_return_directory_and_full_path_of_descriptor_when_verifying_project_directory(self,
-                                                                                                  np,
-                                                                                                  os_path_exists,
-                                                                                                  os_path_isdir,
-                                                                                                  jp,
-                                                                                                  os_path_isfile):
+    def test_should_return_directory_and_full_path_of_descriptor_when_verifying_project_directory(
+        self, np, os_path_exists, os_path_isdir, jp, os_path_isfile
+    ):
         self.assertEqual(
-            ("/spam", "/spam/eggs"), self.reactor.verify_project_directory("spam", "eggs"))
+            ("/spam", "/spam/eggs"),
+            self.reactor.verify_project_directory("spam", "eggs"),
+        )
 
         np.assert_called_with("spam")
         os_path_exists.assert_has_calls([call("/spam"), call("/spam/eggs")])
@@ -415,15 +482,20 @@ class ReactorTest(unittest.TestCase):
         os_path_isfile.assert_called_with("/spam/eggs")
 
     @patch("pybuilder.reactor.imp.load_source", side_effect=ImportError("spam"))
-    def test_should_raise_when_loading_project_module_and_import_raises_exception(self, imp_load_source):
-        self.assertRaises(
-            PyBuilderException, self.reactor.load_project_module, "spam")
+    def test_should_raise_when_loading_project_module_and_import_raises_exception(
+        self, imp_load_source
+    ):
+        self.assertRaises(PyBuilderException, self.reactor.load_project_module, "spam")
 
         imp_load_source.assert_called_with("build", "spam")
 
     @patch("pybuilder.reactor.imp.load_source", return_value=Mock())
-    def test_should_return_module_when_loading_project_module_and_import_raises_exception(self, imp_load_source):
-        self.assertTrue(imp_load_source.return_value is self.reactor.load_project_module("spam"))
+    def test_should_return_module_when_loading_project_module_and_import_raises_exception(
+        self, imp_load_source
+    ):
+        self.assertTrue(
+            imp_load_source.return_value is self.reactor.load_project_module("spam")
+        )
 
         imp_load_source.assert_called_with("build", "spam")
 
@@ -482,7 +554,9 @@ class ReactorTest(unittest.TestCase):
 
         self.plugin_loader_mock.load_plugin.assert_called_with(ANY, PluginDef("spam"))
 
-    def test_ensure_project_properties_are_logged_when_calling_log_project_properties(self):
+    def test_ensure_project_properties_are_logged_when_calling_log_project_properties(
+        self,
+    ):
         project = Project("spam")
         project.set_property("spam", "spam")
         project.set_property("eggs", "eggs")
@@ -509,7 +583,7 @@ class ReactorTest(unittest.TestCase):
 
         self.assertEqual(self.reactor._prepare_tasks(["c"]), ["c"])
         self.assertEqual(self.reactor._prepare_tasks(["+c"]), ["a", "b", "c"])
-        self.assertEqual(self.reactor._prepare_tasks(["+c", '^c']), ["a", "b"])
+        self.assertEqual(self.reactor._prepare_tasks(["+c", "^c"]), ["a", "b"])
         self.assertEqual(self.reactor._prepare_tasks(["^b"]), ["a"])
         self.assertEqual(self.reactor._prepare_tasks(["^a"]), ["b"])
         self.assertEqual(self.reactor._prepare_tasks(["^d"]), ["a", "b"])

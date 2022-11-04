@@ -8,7 +8,9 @@ class ActivationSelector(ComponentBuilder):
     def __init__(self, interpreter, parser):
         self.default = None
         possible = OrderedDict(
-            (k, v) for k, v in self.options("virtualenv.activate").items() if v.supports(interpreter)
+            (k, v)
+            for k, v in self.options("virtualenv.activate").items()
+            if v.supports(interpreter)
         )
         super().__init__(interpreter, parser, "activators", possible)
         self.parser.description = "options for activation scripts"
@@ -29,14 +31,20 @@ class ActivationSelector(ComponentBuilder):
         elements = [e.strip() for e in entered_str.split(",") if e.strip()]
         missing = [e for e in elements if e not in self.possible]
         if missing:
-            raise ArgumentTypeError(f"the following activators are not available {','.join(missing)}")
+            raise ArgumentTypeError(
+                f"the following activators are not available {','.join(missing)}"
+            )
         return elements
 
     def handle_selected_arg_parse(self, options):
         selected_activators = (
-            self._extract_activators(self.default) if options.activators is self.default else options.activators
+            self._extract_activators(self.default)
+            if options.activators is self.default
+            else options.activators
         )
-        self.active = {k: v for k, v in self.possible.items() if k in selected_activators}
+        self.active = {
+            k: v for k, v in self.possible.items() if k in selected_activators
+        }
         self.parser.add_argument(
             "--prompt",
             dest="prompt",
