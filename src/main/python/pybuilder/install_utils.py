@@ -55,7 +55,10 @@ def install_dependencies(logger, project, dependencies, python_env,
         url = getattr(dependency, "url", None)
         install_options = {}
 
-        if should_update_package(dependency.version) and not getattr(dependency, "version_not_a_spec", False):
+        eager_update = getattr(dependency, "eager_update", None)
+        version_not_a_spec = getattr(dependency, "version_not_a_spec", False)
+        if eager_update or (eager_update is None and should_update_package(dependency.version) and
+                            not version_not_a_spec):
             install_options["upgrade"] = True
 
         if dependency.name in local_mapping or url:
