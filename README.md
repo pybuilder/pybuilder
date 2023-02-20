@@ -3,7 +3,7 @@
 
 [![Follow PyBuilder on Twitter](https://img.shields.io/twitter/follow/pybuilder_?label=Follow%20PyBuilder&style=social)](https://twitter.com/intent/follow?screen_name=pybuilder_)
 [![Gitter](https://img.shields.io/gitter/room/pybuilder/pybuilder?logo=gitter)](https://gitter.im/pybuilder/pybuilder)
-[![Build Status](https://img.shields.io/github/workflow/status/pybuilder/pybuilder/pybuilder/master)](https://github.com/pybuilder/pybuilder/actions/workflows/pybuilder.yml)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/pybuilder/pybuilder/pybuilder.yml?branch=master)](https://github.com/pybuilder/pybuilder/actions/workflows/pybuilder.yml)
 [![Coverage Status](https://img.shields.io/coveralls/github/pybuilder/pybuilder/master?logo=coveralls)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
 
 [![PyBuilder Version](https://img.shields.io/pypi/v/pybuilder?logo=pypi)](https://pypi.org/project/pybuilder/)
