@@ -66,6 +66,12 @@ jobs:
           - os: macos-12
             python-version: '3.7'
             with-homebrew: 'true'
+          - os: macos-11
+            python-version: '3.8'
+            with-homebrew: 'true'
+          - os: macos-12
+            python-version: '3.8'
+            with-homebrew: 'true'
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
