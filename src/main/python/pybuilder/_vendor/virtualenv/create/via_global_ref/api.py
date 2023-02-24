@@ -3,7 +3,7 @@ import os
 from abc import ABCMeta
 from pathlib import Path
 
-from ...info import fs_supports_symlink
+from virtualenv.info import fs_supports_symlink
 
 from ..creator import Creator, CreatorMeta
 

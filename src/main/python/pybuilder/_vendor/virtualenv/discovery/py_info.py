@@ -138,7 +138,24 @@ class PythonInfo(object):
                 base_executable = getattr(sys, "_base_executable", None)  # some platforms may set this to help us
                 if base_executable is not None:  # use the saved system executable if present
                     if sys.executable != base_executable:  # we know we're in a virtual environment, cannot be us
-                        return base_executable
+                        if os.path.exists(base_executable):
+                            return base_executable
+                        # Python may return "python" because it was invoked from the POSIX virtual environment
+                        # however some installs/distributions do not provide a version-less "python" binary in
+                        # the system install location (see PEP 394) so try to fallback to a versioned binary.
+                        #
+                        # Gate this to Python 3.11 as `sys._base_executable` path resolution is now relative to
+                        # the 'home' key from pyvenv.cfg which often points to the system install location.
+                        major, minor = self.version_info.major, self.version_info.minor
+                        if self.os == "posix" and (major, minor) >= (3, 11):
+                            # search relative to the directory of sys._base_executable
+                            base_dir = os.path.dirname(base_executable)
+                            for base_executable in [
+                                os.path.join(base_dir, exe)
+                                for exe in ("python{}".format(major), "python{}.{}".format(major, minor))
+                            ]:
+                                if os.path.exists(base_executable):
+                                    return base_executable
             return None  # in this case we just can't tell easily without poking around FS and calling them, bail
         # if we're not in a virtual environment, this is already a system python, so return the original executable
         # note we must choose the original and not the pure executable as shim scripts might throw us off
@@ -212,7 +229,7 @@ class PythonInfo(object):
 
     def creators(self, refresh=False):
         if self._creators is None or refresh is True:
-            from ..run.plugin.creators import CreatorSelector
+            from virtualenv.run.plugin.creators import CreatorSelector
 
             self._creators = CreatorSelector.for_interpreter(self)
         return self._creators
@@ -289,7 +306,7 @@ class PythonInfo(object):
     @classmethod
     def clear_cache(cls, app_data):
         # this method is not used by itself, so here and called functions can import stuff locally
-        from .cached_py_info import clear
+        from virtualenv.discovery.cached_py_info import clear
 
         clear(app_data)
         cls._cache_exe_discovery.clear()
@@ -359,7 +376,7 @@ class PythonInfo(object):
     def from_exe(cls, exe, app_data=None, raise_on_error=True, ignore_cache=False, resolve_to_host=True, env=None):
         """Given a path to an executable get the python information"""
         # this method is not used by itself, so here and called functions can import stuff locally
-        from .cached_py_info import from_exe
+        from virtualenv.discovery.cached_py_info import from_exe
 
         env = os.environ if env is None else env
         proposed = from_exe(cls, app_data, exe, env=env, raise_on_error=raise_on_error, ignore_cache=ignore_cache)
@@ -524,7 +541,7 @@ class PythonInfo(object):
         for base in possible_base:
             lower = base.lower()
             yield lower
-            from ..info import fs_is_case_sensitive
+            from virtualenv.info import fs_is_case_sensitive
 
             if fs_is_case_sensitive():
                 if base != lower:

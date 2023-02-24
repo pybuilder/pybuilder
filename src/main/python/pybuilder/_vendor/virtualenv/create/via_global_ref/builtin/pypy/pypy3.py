@@ -1,8 +1,8 @@
 import abc
 from pathlib import Path
 
-from ....describe import PosixSupports, Python3Supports, WindowsSupports
-from ..ref import PathRefToDest
+from virtualenv.create.describe import PosixSupports, Python3Supports, WindowsSupports
+from virtualenv.create.via_global_ref.builtin.ref import PathRefToDest
 
 from .common import PyPy
 

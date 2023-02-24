@@ -2,7 +2,7 @@ from abc import ABCMeta
 from collections import OrderedDict
 from pathlib import Path
 
-from ..info import IS_WIN
+from virtualenv.info import IS_WIN
 
 
 class Describe(metaclass=ABCMeta):

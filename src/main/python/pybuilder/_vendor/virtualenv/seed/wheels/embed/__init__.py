@@ -1,33 +1,38 @@
 from pathlib import Path
 
-from ..util import Wheel
+from virtualenv.seed.wheels.util import Wheel
 
 BUNDLE_FOLDER = Path(__file__).absolute().parent
 BUNDLE_SUPPORT = {
+    "3.12": {
+        "pip": "pip-23.0-py3-none-any.whl",
+        "setuptools": "setuptools-67.1.0-py3-none-any.whl",
+        "wheel": "wheel-0.38.4-py3-none-any.whl",
+    },
     "3.11": {
-        "pip": "pip-22.3-py3-none-any.whl",
-        "setuptools": "setuptools-65.5.0-py3-none-any.whl",
-        "wheel": "wheel-0.37.1-py2.py3-none-any.whl",
+        "pip": "pip-23.0-py3-none-any.whl",
+        "setuptools": "setuptools-67.1.0-py3-none-any.whl",
+        "wheel": "wheel-0.38.4-py3-none-any.whl",
     },
     "3.10": {
-        "pip": "pip-22.3-py3-none-any.whl",
-        "setuptools": "setuptools-65.5.0-py3-none-any.whl",
-        "wheel": "wheel-0.37.1-py2.py3-none-any.whl",
+        "pip": "pip-23.0-py3-none-any.whl",
+        "setuptools": "setuptools-67.1.0-py3-none-any.whl",
+        "wheel": "wheel-0.38.4-py3-none-any.whl",
     },
     "3.9": {
-        "pip": "pip-22.3-py3-none-any.whl",
-        "setuptools": "setuptools-65.5.0-py3-none-any.whl",
-        "wheel": "wheel-0.37.1-py2.py3-none-any.whl",
+        "pip": "pip-23.0-py3-none-any.whl",
+        "setuptools": "setuptools-67.1.0-py3-none-any.whl",
+        "wheel": "wheel-0.38.4-py3-none-any.whl",
     },
     "3.8": {
-        "pip": "pip-22.3-py3-none-any.whl",
-        "setuptools": "setuptools-65.5.0-py3-none-any.whl",
-        "wheel": "wheel-0.37.1-py2.py3-none-any.whl",
+        "pip": "pip-23.0-py3-none-any.whl",
+        "setuptools": "setuptools-67.1.0-py3-none-any.whl",
+        "wheel": "wheel-0.38.4-py3-none-any.whl",
     },
     "3.7": {
-        "pip": "pip-22.3-py3-none-any.whl",
-        "setuptools": "setuptools-65.5.0-py3-none-any.whl",
-        "wheel": "wheel-0.37.1-py2.py3-none-any.whl",
+        "pip": "pip-23.0-py3-none-any.whl",
+        "setuptools": "setuptools-67.1.0-py3-none-any.whl",
+        "wheel": "wheel-0.38.4-py3-none-any.whl",
     },
     "3.6": {
         "pip": "pip-21.3.1-py3-none-any.whl",
@@ -45,7 +50,7 @@ BUNDLE_SUPPORT = {
         "wheel": "wheel-0.37.1-py2.py3-none-any.whl",
     },
 }
-MAX = "3.11"
+MAX = "3.12"
 
 
 def get_embed_wheel(distribution, for_py_version):

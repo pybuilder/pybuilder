@@ -2,7 +2,7 @@ import abc
 import logging
 from pathlib import Path
 
-from ..ref import PathRefToDest
+from virtualenv.create.via_global_ref.builtin.ref import PathRefToDest
 
 from ..python2.python2 import Python2
 from .common import CPython, CPythonPosix, CPythonWindows, is_mac_os_framework

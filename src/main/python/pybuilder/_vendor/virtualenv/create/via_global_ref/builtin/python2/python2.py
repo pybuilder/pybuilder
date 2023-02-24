@@ -3,10 +3,10 @@ import json
 import os
 from pathlib import Path
 
-from ....describe import Python2Supports
-from ..ref import PathRefToDest
-from .....info import IS_ZIPAPP
-from .....util.zipapp import read as read_from_zipapp
+from virtualenv.create.describe import Python2Supports
+from virtualenv.create.via_global_ref.builtin.ref import PathRefToDest
+from virtualenv.info import IS_ZIPAPP
+from virtualenv.util.zipapp import read as read_from_zipapp
 
 from ..via_global_self_do import ViaGlobalRefVirtualenvBuiltin
 
