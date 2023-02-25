@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 
-from ..info import IS_WIN
+from virtualenv.info import IS_WIN
 
 from .discover import Discover
 from .py_info import PythonInfo

@@ -10,7 +10,7 @@ from tempfile import mkdtemp
 
 from ......distlib.scripts import ScriptMaker, enquote_executable
 
-from .....util.path import safe_delete
+from virtualenv.util.path import safe_delete
 
 
 class PipInstall(metaclass=ABCMeta):
@@ -23,7 +23,7 @@ class PipInstall(metaclass=ABCMeta):
         self._console_entry_points = None
 
     @abstractmethod
-    def _sync(self, src, dst):  # noqa: U100
+    def _sync(self, src, dst):
         raise NotImplementedError
 
     def install(self, version_info):
@@ -61,7 +61,7 @@ class PipInstall(metaclass=ABCMeta):
             if path_len > 260:
                 self._image_dir.mkdir(exist_ok=True)  # to get a short path must exist
 
-                from .....util.path import get_short_path_name
+                from virtualenv.util.path import get_short_path_name
 
                 to_folder = get_short_path_name(to_folder)
                 self._image_dir = Path(to_folder)
@@ -108,7 +108,7 @@ class PipInstall(metaclass=ABCMeta):
         return self.__dist_info
 
     @abstractmethod
-    def _fix_records(self, extra_record_data):  # noqa: U100
+    def _fix_records(self, extra_record_data):
         raise NotImplementedError
 
     @property

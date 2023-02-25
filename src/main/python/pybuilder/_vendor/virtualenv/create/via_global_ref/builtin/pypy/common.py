@@ -1,7 +1,7 @@
 import abc
 from pathlib import Path
 
-from ..ref import PathRefToDest, RefMust, RefWhen
+from virtualenv.create.via_global_ref.builtin.ref import PathRefToDest, RefMust, RefWhen
 
 from ..via_global_self_do import ViaGlobalRefVirtualenvBuiltin
 

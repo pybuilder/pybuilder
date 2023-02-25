@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from .....util.path import copy
+from virtualenv.util.path import copy
 
 from .base import PipInstall
 

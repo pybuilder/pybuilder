@@ -5,9 +5,9 @@ from operator import methodcaller as method
 from pathlib import Path
 from textwrap import dedent
 
-from ....describe import Python3Supports
-from ..ref import PathRefToDest
-from ...store import is_store_python
+from virtualenv.create.describe import Python3Supports
+from virtualenv.create.via_global_ref.builtin.ref import PathRefToDest
+from virtualenv.create.via_global_ref.store import is_store_python
 
 from .common import CPython, CPythonPosix, CPythonWindows, is_mac_os_framework
 

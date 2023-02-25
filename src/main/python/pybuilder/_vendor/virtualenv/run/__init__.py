@@ -123,7 +123,7 @@ def load_app_data(args, parser, options):
 
 
 def add_version_flag(parser):
-    from ... import virtualenv
+    import virtualenv
 
     parser.add_argument(
         "--version",

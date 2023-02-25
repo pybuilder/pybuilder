@@ -18,8 +18,8 @@ from threading import Thread
 from urllib.error import URLError
 from urllib.request import urlopen
 
-from ...app_data import AppDataDiskFolder
-from ...util.subprocess import CREATE_NO_WINDOW
+from virtualenv.app_data import AppDataDiskFolder
+from virtualenv.util.subprocess import CREATE_NO_WINDOW
 
 from ..wheels.embed import BUNDLE_SUPPORT
 from ..wheels.util import Wheel
@@ -236,7 +236,7 @@ def do_update(distribution, for_py_version, embed_filename, app_data, search_dir
 
 
 def _run_do_update(app_data, distribution, embed_filename, for_py_version, periodic, search_dirs):
-    from . import acquire
+    from virtualenv.seed.wheels import acquire
 
     wheel_filename = None if embed_filename is None else Path(embed_filename)
     embed_version = None if wheel_filename is None else Wheel(wheel_filename).version_tuple

@@ -15,9 +15,9 @@ from shlex import quote
 from string import ascii_lowercase, ascii_uppercase, digits
 from subprocess import Popen
 
-from ..app_data import AppDataDisabled
-from .py_info import PythonInfo
-from ..util.subprocess import subprocess
+from virtualenv.app_data import AppDataDisabled
+from virtualenv.discovery.py_info import PythonInfo
+from virtualenv.util.subprocess import subprocess
 
 _CACHE = OrderedDict()
 _CACHE[Path(sys.executable)] = PythonInfo()

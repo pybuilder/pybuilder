@@ -7,8 +7,12 @@ from abc import ABCMeta, abstractmethod
 from pathlib import Path
 from textwrap import dedent
 
-from ..ref import ExePathRefToDest, PathRefToDest, RefMust
-from .....info import IS_MAC_ARM64
+from virtualenv.create.via_global_ref.builtin.ref import (
+    ExePathRefToDest,
+    PathRefToDest,
+    RefMust,
+)
+from virtualenv.info import IS_MAC_ARM64
 
 from .common import CPython, CPythonPosix, is_mac_os_framework
 from .cpython2 import CPython2PosixBase

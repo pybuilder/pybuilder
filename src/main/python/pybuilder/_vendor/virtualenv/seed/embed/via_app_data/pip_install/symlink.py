@@ -2,7 +2,7 @@ import os
 from stat import S_IREAD, S_IRGRP, S_IROTH
 from subprocess import PIPE, Popen
 
-from .....util.path import safe_delete, set_tree
+from virtualenv.util.path import safe_delete, set_tree
 
 from .base import PipInstall
 

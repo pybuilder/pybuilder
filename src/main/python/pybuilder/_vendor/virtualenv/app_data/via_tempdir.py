@@ -1,7 +1,7 @@
 import logging
 from tempfile import mkdtemp
 
-from ..util.path import safe_delete
+from virtualenv.util.path import safe_delete
 
 from .via_disk_folder import AppDataDiskFolder
 

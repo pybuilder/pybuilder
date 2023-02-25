@@ -3,8 +3,8 @@ import logging
 import os
 from pathlib import Path
 
-from ....describe import PosixSupports, WindowsSupports
-from ..ref import PathRefToDest
+from virtualenv.create.describe import PosixSupports, WindowsSupports
+from virtualenv.create.via_global_ref.builtin.ref import PathRefToDest
 
 from ..python2.python2 import Python2
 from .common import PyPy

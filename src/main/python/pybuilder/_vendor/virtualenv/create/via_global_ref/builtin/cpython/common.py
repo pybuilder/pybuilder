@@ -2,8 +2,8 @@ from abc import ABCMeta
 from collections import OrderedDict
 from pathlib import Path
 
-from ....describe import PosixSupports, WindowsSupports
-from ..ref import RefMust, RefWhen
+from virtualenv.create.describe import PosixSupports, WindowsSupports
+from virtualenv.create.via_global_ref.builtin.ref import RefMust, RefWhen
 
 from ..via_global_self_do import ViaGlobalRefVirtualenvBuiltin
 

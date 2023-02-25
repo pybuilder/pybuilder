@@ -7,8 +7,8 @@ from datetime import datetime
 def run(args=None, options=None, env=None):
     env = os.environ if env is None else env
     start = datetime.now()
-    from .run import cli_run
-    from .util.error import ProcessCallFailed
+    from virtualenv.run import cli_run
+    from virtualenv.util.error import ProcessCallFailed
 
     if args is None:
         args = sys.argv[1:]
@@ -46,7 +46,7 @@ class LogSession:
 
 
 def run_with_catch(args=None, env=None):
-    from .config.cli.parser import VirtualEnvOptions
+    from virtualenv.config.cli.parser import VirtualEnvOptions
 
     env = os.environ if env is None else env
     options = VirtualEnvOptions()

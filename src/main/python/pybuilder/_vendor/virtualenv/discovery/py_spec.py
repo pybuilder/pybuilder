@@ -4,7 +4,7 @@ import os
 import re
 from collections import OrderedDict
 
-from ..info import fs_is_case_sensitive
+from virtualenv.info import fs_is_case_sensitive
 
 PATTERN = re.compile(r"^(?P<impl>[a-zA-Z]+)?(?P<version>[0-9.]+)?(?:-(?P<arch>32|64))?$")
 
@@ -56,7 +56,7 @@ class PythonSpec:
                 else:
                     impl = groups["impl"]
                     if impl == "py" or impl == "python":
-                        impl = "CPython"
+                        impl = None
                     arch = _int_or_none(groups["arch"])
 
             if not ok:
