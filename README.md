@@ -2,7 +2,7 @@
 =========
 
 [![Follow PyBuilder on Twitter](https://img.shields.io/twitter/follow/pybuilder_?label=Follow%20PyBuilder&style=social)](https://twitter.com/intent/follow?screen_name=pybuilder_)
-[![Gitter](https://img.shields.io/gitter/room/pybuilder/pybuilder?logo=gitter)](https://gitter.im/pybuilder/pybuilder)
+[![Gitter](https://img.shields.io/gitter/room/pybuilder/pybuilder?logo=gitter)](https://app.gitter.im/#/room/#pybuilder_pybuilder:gitter.im)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/pybuilder/pybuilder/pybuilder.yml?branch=master)](https://github.com/pybuilder/pybuilder/actions/workflows/pybuilder.yml)
 [![Coverage Status](https://img.shields.io/coveralls/github/pybuilder/pybuilder/master?logo=coveralls)](https://coveralls.io/r/pybuilder/pybuilder?branch=master)
 
