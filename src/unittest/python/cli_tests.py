@@ -24,6 +24,7 @@ from pybuilder.cli import (parse_options,
                            StdOutLogger,
                            length_of_longest_string,
                            print_list_of_tasks,
+                           DEFAULT_LOG_TIME_FORMAT,
                            get_failure_message)
 from pybuilder.core import Logger
 from pybuilder.errors import PyBuilderException
@@ -93,6 +94,38 @@ class TaskListTests(unittest.TestCase):
                                           call('    task-2 - any description for task 2')])
 
 
+
+class FormattedTimestampLoggerTest(unittest.TestCase):
+    DEFAULT_LOG_FORMAT = "some_fixed_test"
+
+    class StreamWrapper(object):
+        def __init__(self, wrapped):
+            self.text = ''
+            self.__wrapped = wrapped
+
+        def __getattr__(self, name):
+            # 'write' is overridden but for every other function, like 'flush', use the original wrapped stream
+            return getattr(self.__wrapped, name)
+
+        def write(self, text):
+            self.text += text
+
+    def setUp(self):
+        self.stdout_logger = StdOutLogger(log_time_format=FormattedTimestampLoggerTest.DEFAULT_LOG_FORMAT)
+
+    def test_if_log_line_contains_log_time_format(self):
+        import sys
+
+        original = sys.stdout
+        try:
+            sys.stdout = self.StreamWrapper(sys.stdout)
+
+            self.stdout_logger.info("Test")
+            self.assertRegexpMatches(sys.stdout.text, "^" + self.DEFAULT_LOG_FORMAT)
+        finally:
+            sys.stdout = original
+
+
 class StdOutLoggerTest(unittest.TestCase):
     def setUp(self):
         self.stdout_logger = StdOutLogger()
@@ -151,6 +184,8 @@ class ParseOptionsTest(unittest.TestCase):
                          overrides.get("property_overrides", {}))
         self.assertEqual(options.start_project,
                          overrides.get("start_project", False))
+        self.assertEqual(options.log_time_format,
+                         overrides.get("log_time_format", None))
 
     def test_should_parse_empty_arguments(self):
         options, arguments = parse_options([])
@@ -222,6 +257,32 @@ class ParseOptionsTest(unittest.TestCase):
         options, arguments = parse_options([])
 
         self.assert_options(options, environments=[])
+        self.assertEqual([], arguments)
+
+    def test_setting_of_default_log_time_format(self):
+        options, arguments = parse_options(['-f'])
+
+        self.assert_options(options, log_time_format=DEFAULT_LOG_TIME_FORMAT)
+        self.assertEqual([], arguments)
+
+    def test_setting_of_a_log_time_format(self):
+        test_this_format = '%Y-%m-%d'
+        left_over_argument = 'abc'
+        options, arguments = parse_options(['-f', test_this_format, left_over_argument])
+
+        self.assert_options(options, log_time_format=test_this_format)
+        self.assertEqual([left_over_argument], arguments)
+
+    def test_setting_of_default_log_time_format_with_other_parameter_single_dash(self):
+        options, arguments = parse_options(['-f', '-X'])
+
+        self.assert_options(options, log_time_format=DEFAULT_LOG_TIME_FORMAT, debug=True)
+        self.assertEqual([], arguments)
+
+    def test_setting_of_default_log_time_format_with_other_parameter_double_dash(self):
+        options, arguments = parse_options(['-f', '--debug'])
+
+        self.assert_options(options, log_time_format=DEFAULT_LOG_TIME_FORMAT, debug=True)
         self.assertEqual([], arguments)
 
 

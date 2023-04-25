@@ -44,8 +44,12 @@ class PythonInfo(object):
             self.pypy_version_info = tuple(u(i) for i in sys.pypy_version_info)
 
         # this is a tuple in earlier, struct later, unify to our own named tuple
-        self.version_info = VersionInfo(*list(u(i) for i in sys.version_info))
+        self.version_info = VersionInfo(*[u(i) for i in sys.version_info])
         self.architecture = 64 if sys.maxsize > 2**32 else 32
+
+        # Used to determine some file names.
+        # See `CPython3Windows.python_zip()`.
+        self.version_nodot = sysconfig.get_config_var("py_version_nodot")
 
         self.version = u(sys.version)
         self.os = u(os.name)
@@ -73,10 +77,23 @@ class PythonInfo(object):
         self.file_system_encoding = u(sys.getfilesystemencoding())
         self.stdout_encoding = u(getattr(sys.stdout, "encoding", None))
 
-        if "venv" in sysconfig.get_scheme_names():
+        scheme_names = sysconfig.get_scheme_names()
+
+        if "venv" in scheme_names:
             self.sysconfig_scheme = "venv"
             self.sysconfig_paths = {
-                u(i): u(sysconfig.get_path(i, expand=False, scheme="venv")) for i in sysconfig.get_path_names()
+                u(i): u(sysconfig.get_path(i, expand=False, scheme=self.sysconfig_scheme))
+                for i in sysconfig.get_path_names()
+            }
+            # we cannot use distutils at all if "venv" exists, distutils don't know it
+            self.distutils_install = {}
+        # debian / ubuntu python 3.10 without `python3-distutils` will report
+        # mangled `local/bin` / etc. names for the default prefix
+        # intentionally select `posix_prefix` which is the unaltered posix-like paths
+        elif sys.version_info[:2] == (3, 10) and "deb_system" in scheme_names:
+            self.sysconfig_scheme = "posix_prefix"
+            self.sysconfig_paths = {
+                i: sysconfig.get_path(i, expand=False, scheme=self.sysconfig_scheme) for i in sysconfig.get_path_names()
             }
             # we cannot use distutils at all if "venv" exists, distutils don't know it
             self.distutils_install = {}
@@ -121,7 +138,24 @@ class PythonInfo(object):
                 base_executable = getattr(sys, "_base_executable", None)  # some platforms may set this to help us
                 if base_executable is not None:  # use the saved system executable if present
                     if sys.executable != base_executable:  # we know we're in a virtual environment, cannot be us
-                        return base_executable
+                        if os.path.exists(base_executable):
+                            return base_executable
+                        # Python may return "python" because it was invoked from the POSIX virtual environment
+                        # however some installs/distributions do not provide a version-less "python" binary in
+                        # the system install location (see PEP 394) so try to fallback to a versioned binary.
+                        #
+                        # Gate this to Python 3.11 as `sys._base_executable` path resolution is now relative to
+                        # the 'home' key from pyvenv.cfg which often points to the system install location.
+                        major, minor = self.version_info.major, self.version_info.minor
+                        if self.os == "posix" and (major, minor) >= (3, 11):
+                            # search relative to the directory of sys._base_executable
+                            base_dir = os.path.dirname(base_executable)
+                            for base_executable in [
+                                os.path.join(base_dir, exe)
+                                for exe in ("python{}".format(major), "python{}.{}".format(major, minor))
+                            ]:
+                                if os.path.exists(base_executable):
+                                    return base_executable
             return None  # in this case we just can't tell easily without poking around FS and calling them, bail
         # if we're not in a virtual environment, this is already a system python, so return the original executable
         # note we must choose the original and not the pure executable as shim scripts might throw us off
@@ -195,7 +229,7 @@ class PythonInfo(object):
 
     def creators(self, refresh=False):
         if self._creators is None or refresh is True:
-            from ..run.plugin.creators import CreatorSelector
+            from virtualenv.run.plugin.creators import CreatorSelector
 
             self._creators = CreatorSelector.for_interpreter(self)
         return self._creators
@@ -272,7 +306,7 @@ class PythonInfo(object):
     @classmethod
     def clear_cache(cls, app_data):
         # this method is not used by itself, so here and called functions can import stuff locally
-        from .cached_py_info import clear
+        from virtualenv.discovery.cached_py_info import clear
 
         clear(app_data)
         cls._cache_exe_discovery.clear()
@@ -342,7 +376,7 @@ class PythonInfo(object):
     def from_exe(cls, exe, app_data=None, raise_on_error=True, ignore_cache=False, resolve_to_host=True, env=None):
         """Given a path to an executable get the python information"""
         # this method is not used by itself, so here and called functions can import stuff locally
-        from .cached_py_info import from_exe
+        from virtualenv.discovery.cached_py_info import from_exe
 
         env = os.environ if env is None else env
         proposed = from_exe(cls, app_data, exe, env=env, raise_on_error=raise_on_error, ignore_cache=ignore_cache)
@@ -482,7 +516,7 @@ class PythonInfo(object):
 
         # or at root level
         candidate_folder[inside_folder] = None
-        return list(i for i in candidate_folder.keys() if os.path.exists(i))
+        return [i for i in candidate_folder.keys() if os.path.exists(i)]
 
     def _find_possible_exe_names(self):
         name_candidate = OrderedDict()
@@ -507,7 +541,7 @@ class PythonInfo(object):
         for base in possible_base:
             lower = base.lower()
             yield lower
-            from ..info import fs_is_case_sensitive
+            from virtualenv.info import fs_is_case_sensitive
 
             if fs_is_case_sensitive():
                 if base != lower:
@@ -520,4 +554,21 @@ class PythonInfo(object):
 if __name__ == "__main__":
     # dump a JSON representation of the current python
     # noinspection PyProtectedMember
-    print(PythonInfo()._to_json())
+    argv = sys.argv[1:]
+
+    if len(argv) >= 1:
+        start_cookie = argv[0]
+        argv = argv[1:]
+    else:
+        start_cookie = ""
+
+    if len(argv) >= 1:
+        end_cookie = argv[0]
+        argv = argv[1:]
+    else:
+        end_cookie = ""
+
+    sys.argv = sys.argv[:1] + argv
+
+    info = PythonInfo()._to_json()
+    sys.stdout.write("".join((start_cookie[::-1], info, end_cookie[::-1])))

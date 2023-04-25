@@ -24,8 +24,8 @@ from pybuilder.reactor import Reactor
 
 
 class IntegrationTestSupport(BaseIntegrationTestSupport):
-    def prepare_reactor(self):
-        logger = StdOutLogger(level=Logger.DEBUG)
+    def prepare_reactor(self, log_level=Logger.DEBUG, log_time_format=None):
+        logger = StdOutLogger(level=log_level, log_time_format=log_time_format)
         execution_manager = ExecutionManager(logger)
         reactor = Reactor(logger, execution_manager)
         reactor.prepare_build(project_directory=self.tmp_directory)

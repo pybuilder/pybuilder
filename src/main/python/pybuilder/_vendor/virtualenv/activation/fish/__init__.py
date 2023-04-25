@@ -1,10 +1,11 @@
-from __future__ import absolute_import, unicode_literals
-
-from ...util.path import Path
-
 from ..via_template import ViaTemplateActivator
 
 
 class FishActivator(ViaTemplateActivator):
     def templates(self):
-        yield Path("activate.fish")
+        yield "activate.fish"
+
+
+__all__ = [
+    "FishActivator",
+]

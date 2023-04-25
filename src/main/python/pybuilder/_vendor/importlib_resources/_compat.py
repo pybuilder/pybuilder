@@ -1,9 +1,12 @@
 # flake8: noqa
 
 import abc
+import os
 import sys
 import pathlib
 from contextlib import suppress
+from typing import Union
+
 
 if sys.version_info >= (3, 10):
     from zipfile import Path as ZipPath  # type: ignore
@@ -69,9 +72,6 @@ class TraversableResourcesLoader:
                 return readers.FileReader(self)
 
         return (
-            # native reader if it supplies 'files'
-            _native_reader(self.spec)
-            or
             # local ZipReader if a zip module
             _zip_reader(self.spec)
             or
@@ -80,8 +80,12 @@ class TraversableResourcesLoader:
             or
             # local FileReader
             _file_reader(self.spec)
+            or
+            # native reader if it supplies 'files'
+            _native_reader(self.spec)
+            or
             # fallback - adapt the spec ResourceReader to TraversableReader
-            or _adapters.CompatibilityFiles(self.spec)
+            _adapters.CompatibilityFiles(self.spec)
         )
 
 
@@ -96,3 +100,10 @@ def wrap_spec(package):
     from . import _adapters
 
     return _adapters.SpecLoaderAdapter(package.__spec__, TraversableResourcesLoader)
+
+
+if sys.version_info >= (3, 9):
+    StrPath = Union[str, os.PathLike[str]]
+else:
+    # PathLike is only subscriptable at runtime in 3.9+
+    StrPath = Union[str, "os.PathLike[str]"]

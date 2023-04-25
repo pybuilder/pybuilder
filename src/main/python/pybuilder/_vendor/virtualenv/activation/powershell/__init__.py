@@ -1,10 +1,11 @@
-from __future__ import absolute_import, unicode_literals
-
-from ...util.path import Path
-
 from ..via_template import ViaTemplateActivator
 
 
 class PowerShellActivator(ViaTemplateActivator):
     def templates(self):
-        yield Path("activate.ps1")
+        yield "activate.ps1"
+
+
+__all__ = [
+    "PowerShellActivator",
+]

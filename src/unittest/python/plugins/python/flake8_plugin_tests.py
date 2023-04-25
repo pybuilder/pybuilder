@@ -30,7 +30,7 @@ class FlakePluginInitializationTests(TestCase):
     def test_should_set_dependency(self):
         mock_project = Mock(Project)
         initialize_flake8_plugin(mock_project)
-        mock_project.plugin_depends_on.assert_called_with("flake8", "~=4.0")
+        mock_project.plugin_depends_on.assert_called_with("flake8", ">=4.0")
 
     def test_should_leave_user_specified_properties_when_initializing_plugin(self):
 

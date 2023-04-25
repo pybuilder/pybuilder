@@ -1,17 +1,16 @@
 """Bootstrap"""
-from __future__ import absolute_import, unicode_literals
 
 import logging
 import sys
 import traceback
 from contextlib import contextmanager
+from pathlib import Path
 from subprocess import CalledProcessError
 from threading import Lock, Thread
 
-from ....info import fs_supports_symlink
-from ..base_embed import BaseEmbed
-from ...wheels import get_wheel
-from ....util.path import Path
+from virtualenv.info import fs_supports_symlink
+from virtualenv.seed.embed.base_embed import BaseEmbed
+from virtualenv.seed.wheels import get_wheel
 
 from .pip_install.copy import CopyPipInstall
 from .pip_install.symlink import SymlinkPipInstall
@@ -19,20 +18,19 @@ from .pip_install.symlink import SymlinkPipInstall
 
 class FromAppData(BaseEmbed):
     def __init__(self, options):
-        super(FromAppData, self).__init__(options)
+        super().__init__(options)
         self.symlinks = options.symlink_app_data
 
     @classmethod
     def add_parser_arguments(cls, parser, interpreter, app_data):
-        super(FromAppData, cls).add_parser_arguments(parser, interpreter, app_data)
+        super().add_parser_arguments(parser, interpreter, app_data)
         can_symlink = app_data.transient is False and fs_supports_symlink()
+        sym = "" if can_symlink else "not supported - "
         parser.add_argument(
             "--symlink-app-data",
             dest="symlink_app_data",
             action="store_true" if can_symlink else "store_false",
-            help="{} symlink the python packages from the app-data folder (requires seed pip>=19.3)".format(
-                "" if can_symlink else "not supported - ",
-            ),
+            help=f"{sym} symlink the python packages from the app-data folder (requires seed pip>=19.3)",
             default=False,
         )
 
@@ -55,16 +53,16 @@ class FromAppData(BaseEmbed):
                         if not installer.has_image():
                             installer.build_image()
                     installer.install(creator.interpreter.version_info)
-                except Exception:  # noqa
+                except Exception:
                     exceptions[name] = sys.exc_info()
 
-            threads = list(Thread(target=_install, args=(n, w)) for n, w in name_to_whl.items())
+            threads = [Thread(target=_install, args=(n, w)) for n, w in name_to_whl.items()]
             for thread in threads:
                 thread.start()
             for thread in threads:
                 thread.join()
             if exceptions:
-                messages = ["failed to build image {} because:".format(", ".join(exceptions.keys()))]
+                messages = [f"failed to build image {', '.join(exceptions.keys())} because:"]
                 for value in exceptions.values():
                     exc_type, exc_value, exc_traceback = value
                     messages.append("".join(traceback.format_exception(exc_type, exc_value, exc_traceback)))
@@ -93,16 +91,16 @@ class FromAppData(BaseEmbed):
                     )
                     if result is not None:
                         break
-                except Exception as exception:  # noqa
+                except Exception as exception:
                     logging.exception("fail")
                     failure = exception
             if failure:
                 if isinstance(failure, CalledProcessError):
-                    msg = "failed to download {}".format(distribution)
+                    msg = f"failed to download {distribution}"
                     if version is not None:
-                        msg += " version {}".format(version)
-                    msg += ", pip download exit code {}".format(failure.returncode)
-                    output = failure.output if sys.version_info < (3, 5) else (failure.output + failure.stderr)
+                        msg += f" version {version}"
+                    msg += f", pip download exit code {failure.returncode}"
+                    output = failure.output + failure.stderr
                     if output:
                         msg += "\n"
                         msg += output
@@ -115,16 +113,16 @@ class FromAppData(BaseEmbed):
                 with lock:
                     name_to_whl[distribution] = result
 
-        threads = list(
+        threads = [
             Thread(target=_get, args=(distribution, version))
             for distribution, version in self.distribution_to_versions().items()
-        )
+        ]
         for thread in threads:
             thread.start()
         for thread in threads:
             thread.join()
         if fail:
-            raise RuntimeError("seed failed due to failing to download wheels {}".format(", ".join(fail.keys())))
+            raise RuntimeError(f"seed failed due to failing to download wheels {', '.join(fail.keys())}")
         yield name_to_whl
 
     def installer_class(self, pip_version_tuple):
@@ -134,7 +132,12 @@ class FromAppData(BaseEmbed):
                 return SymlinkPipInstall
         return CopyPipInstall
 
-    def __unicode__(self):
-        base = super(FromAppData, self).__unicode__()
-        msg = ", via={}, app_data_dir={}".format("symlink" if self.symlinks else "copy", self.app_data)
-        return base[:-1] + msg + base[-1]
+    def __repr__(self):
+        msg = f", via={'symlink' if self.symlinks else 'copy'}, app_data_dir={self.app_data}"
+        base = super().__repr__()
+        return f"{base[:-1]}{msg}{base[-1]}"
+
+
+__all__ = [
+    "FromAppData",
+]

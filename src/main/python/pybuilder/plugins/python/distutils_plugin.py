@@ -119,9 +119,9 @@ def as_str(value):
 @init
 def initialize_distutils_plugin(project):
     project.plugin_depends_on("pypandoc", "~=1.4")
-    project.plugin_depends_on("setuptools", ">=38.6.0")
     project.plugin_depends_on("twine", ">=1.15.0")
-    project.plugin_depends_on("wheel", ">=0.34.0")
+    project.plugin_depends_on("setuptools", ">=38.6.0", eager_update=False)
+    project.plugin_depends_on("wheel", ">=0.34.0", eager_update=False)
     if project.get_property("distutils_cython_ext_modules"):
         project.plugin_depends_on("Cython", "~=0.29.28")
 
@@ -188,6 +188,15 @@ def set_description(project, logger, reactor):
                     project.description is None or
                     project.get_property("distutils_description_overwrite")):
                 setattr(project, "description", description)
+
+    if (not hasattr(project, "description") or
+            not project.description):
+        if hasattr(project, "summary") and project.summary:
+            description = project.summary
+        else:
+            description = project.name
+
+        setattr(project, "description", description)
 
     warn = False
     if len(project.summary) >= 512:

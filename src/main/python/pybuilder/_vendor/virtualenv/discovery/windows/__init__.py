@@ -1,12 +1,10 @@
-from __future__ import absolute_import, unicode_literals
-
 from ..py_info import PythonInfo
 from ..py_spec import PythonSpec
 from .pep514 import discover_pythons
 
 
 class Pep514PythonInfo(PythonInfo):
-    """ """
+    """A Python information acquired from PEP-514"""
 
 
 def propose_interpreters(spec, cache_dir, env):
@@ -16,7 +14,8 @@ def propose_interpreters(spec, cache_dir, env):
     # and prefer PythonCore over conda pythons (as virtualenv is mostly used by non conda tools)
     existing = list(discover_pythons())
     existing.sort(
-        key=lambda i: tuple(-1 if j is None else j for j in i[1:4]) + (1 if i[0] == "PythonCore" else 0,), reverse=True
+        key=lambda i: tuple(-1 if j is None else j for j in i[1:4]) + (1 if i[0] == "PythonCore" else 0,),
+        reverse=True,
     )
 
     for name, major, minor, arch, exe, _ in existing:
@@ -29,3 +28,9 @@ def propose_interpreters(spec, cache_dir, env):
             if interpreter is not None:
                 if interpreter.satisfies(spec, impl_must_match=True):
                     yield interpreter
+
+
+__all__ = [
+    "Pep514PythonInfo",
+    "propose_interpreters",
+]

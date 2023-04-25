@@ -1,23 +1,20 @@
-from __future__ import absolute_import, unicode_literals
-
 import os
 import sys
 from abc import ABCMeta, abstractmethod
 
-from ...six import add_metaclass
-
-from ..util.six import ensure_text
-
 from .activator import Activator
 
-if sys.version_info >= (3, 7):
-    from importlib.resources import read_binary
+if sys.version_info >= (3, 10):
+    from importlib.resources import files
+
+    def read_binary(module_name: str, filename: str) -> bytes:
+        return (files(module_name) / filename).read_bytes()
+
 else:
-    from ...importlib_resources import read_binary
+    from importlib.resources import read_binary
 
 
-@add_metaclass(ABCMeta)
-class ViaTemplateActivator(Activator):
+class ViaTemplateActivator(Activator, metaclass=ABCMeta):
     @abstractmethod
     def templates(self):
         raise NotImplementedError
@@ -30,13 +27,13 @@ class ViaTemplateActivator(Activator):
             creator.pyenv_cfg["prompt"] = self.flag_prompt
         return generated
 
-    def replacements(self, creator, dest_folder):
+    def replacements(self, creator, dest_folder):  # noqa: U100
         return {
             "__VIRTUAL_PROMPT__": "" if self.flag_prompt is None else self.flag_prompt,
-            "__VIRTUAL_ENV__": ensure_text(str(creator.dest)),
+            "__VIRTUAL_ENV__": str(creator.dest),
             "__VIRTUAL_NAME__": creator.env_name,
-            "__BIN_NAME__": ensure_text(str(creator.bin_dir.relative_to(creator.dest))),
-            "__PATH_SEP__": ensure_text(os.pathsep),
+            "__BIN_NAME__": str(creator.bin_dir.relative_to(creator.dest)),
+            "__PATH_SEP__": os.pathsep,
         }
 
     def _generate(self, replacements, templates, to_folder, creator):
@@ -50,11 +47,11 @@ class ViaTemplateActivator(Activator):
         return generated
 
     def as_name(self, template):
-        return template.name
+        return template
 
     def instantiate_template(self, replacements, template, creator):
         # read content as binary to avoid platform specific line normalization (\n -> \r\n)
-        binary = read_binary(self.__module__, str(template))
+        binary = read_binary(self.__module__, template)
         text = binary.decode("utf-8", errors="strict")
         for key, value in replacements.items():
             value = self._repr_unicode(creator, value)
@@ -62,6 +59,10 @@ class ViaTemplateActivator(Activator):
         return text
 
     @staticmethod
-    def _repr_unicode(creator, value):
-        # by default we just let it be unicode
-        return value
+    def _repr_unicode(creator, value):  # noqa: U100
+        return value  # by default, we just let it be unicode
+
+
+__all__ = [
+    "ViaTemplateActivator",
+]

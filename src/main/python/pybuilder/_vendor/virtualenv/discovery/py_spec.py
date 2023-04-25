@@ -1,19 +1,15 @@
-"""A Python specification is an abstract requirement definition of a interpreter"""
-from __future__ import absolute_import, unicode_literals
+"""A Python specification is an abstract requirement definition of an interpreter"""
 
 import os
 import re
-import sys
 from collections import OrderedDict
 
-from ..info import fs_is_case_sensitive
-from ..util.six import ensure_str
+from virtualenv.info import fs_is_case_sensitive
 
 PATTERN = re.compile(r"^(?P<impl>[a-zA-Z]+)?(?P<version>[0-9.]+)?(?:-(?P<arch>32|64))?$")
-IS_WIN = sys.platform == "win32"
 
 
-class PythonSpec(object):
+class PythonSpec:
     """Contains specification about a Python Interpreter"""
 
     def __init__(self, str_spec, implementation, major, minor, micro, architecture, path):
@@ -60,7 +56,7 @@ class PythonSpec(object):
                 else:
                     impl = groups["impl"]
                     if impl == "py" or impl == "python":
-                        impl = "CPython"
+                        impl = None
                     arch = _int_or_none(groups["arch"])
 
             if not ok:
@@ -87,7 +83,7 @@ class PythonSpec(object):
         for impl, match in impls.items():
             for at in range(len(version), -1, -1):
                 cur_ver = version[0:at]
-                spec = "{}{}".format(impl, ".".join(str(i) for i in cur_ver))
+                spec = f"{impl}{'.'.join(str(i) for i in cur_ver)}"
                 yield spec, match
 
     @property
@@ -108,15 +104,12 @@ class PythonSpec(object):
                 return False
         return True
 
-    def __unicode__(self):
-        return "{}({})".format(
-            type(self).__name__,
-            ", ".join(
-                "{}={}".format(k, getattr(self, k))
-                for k in ("implementation", "major", "minor", "micro", "architecture", "path")
-                if getattr(self, k) is not None
-            ),
-        )
-
     def __repr__(self):
-        return ensure_str(self.__unicode__())
+        name = type(self).__name__
+        params = "implementation", "major", "minor", "micro", "architecture", "path"
+        return f"{name}({', '.join(f'{k}={getattr(self, k)}' for k in params if getattr(self, k) is not None)})"
+
+
+__all__ = [
+    "PythonSpec",
+]

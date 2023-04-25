@@ -18,7 +18,7 @@
 
 import ast
 import copy
-from os.path import dirname
+from os.path import dirname, join
 
 import sys
 
@@ -41,7 +41,7 @@ use_plugin("analysis")
 
 @init
 def init_coverage_properties(project):
-    project.plugin_depends_on("coverage", "~=6.0")
+    project.plugin_depends_on("coverage", ">=6.0")
 
     # These settings are for aggregate coverage
     project.set_property_if_unset("coverage_threshold_warn", 70)
@@ -105,6 +105,9 @@ def coverage(project, logger, reactor):
     em = reactor.execution_manager  # type: ExecutionManager
 
     source_path = nc(project.expand_path(project.get_property("coverage_source_path")))
+
+    # Add a trailing / or \ if not present, for correct `coverage` path interpretation
+    source_path = join(source_path, "")
 
     module_names = discover_modules(source_path)
     module_file_suffixes = discover_module_files(source_path)

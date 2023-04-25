@@ -6,7 +6,7 @@ def get_short_path_name(long_name):
     import ctypes
     from ctypes import wintypes
 
-    _GetShortPathNameW = ctypes.windll.kernel32.GetShortPathNameW
+    _GetShortPathNameW = ctypes.windll.kernel32.GetShortPathNameW  # noqa: N806
     _GetShortPathNameW.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD]
     _GetShortPathNameW.restype = wintypes.DWORD
     output_buf_size = 0
@@ -17,3 +17,8 @@ def get_short_path_name(long_name):
             return output_buf.value
         else:
             output_buf_size = needed
+
+
+__all__ = [
+    "get_short_path_name",
+]

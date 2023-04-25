@@ -87,9 +87,9 @@ urls = {"Bug Tracker": "https://github.com/pybuilder/pybuilder/issues",
         "Twitter": "https://twitter.com/pybuilder_",
         }
 license = "Apache License, Version 2.0"
-version = "0.13.6.dev"
+version = "0.13.10.dev"
 
-requires_python = ">=3.6"
+requires_python = ">=3.7"
 
 default_task = ["analyze", "publish"]
 
@@ -106,9 +106,7 @@ def initialize(project):
                                                 "setuptools>=45.0.0",
                                                 "virtualenv>=20.0.0",
                                                 "importlib-resources>=1.0",
-                                                "importlib-metadata>=0.12",
-                                                "filelock<=3.4.1",
-                                                "platformdirs<=2.4.0",
+                                                "importlib-metadata>=0.12,<5.0",
                                                 "typing-extensions",
                                                 "colorama~=0.4.3"
                                                 ])
@@ -124,7 +122,7 @@ def initialize(project):
                                                         "setup"])
 
     project.set_property("flake8_break_build", True)
-    project.set_property("flake8_extend_ignore", "E303")
+    project.set_property("flake8_extend_ignore", "E303, F401")
     project.set_property("flake8_include_test_sources", True)
     project.set_property("flake8_include_scripts", True)
     project.set_property("flake8_exclude_patterns", ",".join([
@@ -178,11 +176,11 @@ def initialize(project):
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: POSIX :: Linux",
         "Operating System :: Microsoft :: Windows",
