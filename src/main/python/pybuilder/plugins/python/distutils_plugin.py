@@ -677,11 +677,17 @@ def build_ext_modules_string(project):
     # Cython extensions
     cython_ext_modules_strings = []
     cython_ext_modules_desc = project.get_property("distutils_cython_ext_modules")
+    cython_compiler_directives = project.get_property("distutils_cython_compiler_directives")
     if cython_ext_modules_desc is None:
         cython_ext_modules_desc = []
     for ext_module_desc in cython_ext_modules_desc:
         ext_module_kwargs_str = ",".join([u"{}={}".format(key, value) for key, value in ext_module_desc.items()])
-        cython_ext_modules_strings.append(u"""cythonize({})""".format(ext_module_kwargs_str))
+        if cython_compiler_directives:
+            cython_ext_modules_strings.append(
+                u"""cythonize({}, compiler_directives={})""".format(ext_module_kwargs_str, cython_compiler_directives)
+                )
+        else:
+            cython_ext_modules_strings.append(u"""cythonize({})""".format(ext_module_kwargs_str))
     ext_modules_final_string = build_string_from_array([mod for mod in ext_modules_strings], quote_item=False)
     cython_ext_modules_final_string = u" + ".join(cython_ext_modules_strings)
     if not cython_ext_modules_final_string:
