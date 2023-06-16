@@ -102,6 +102,7 @@ if __name__ == '__main__':
         cmdclass = $cmd_class,
         python_requires = $python_requires,
         obsoletes = $obsoletes,
+        setup_requires = $setup_requires,
     )
 """)
 
@@ -270,7 +271,8 @@ def render_setup_script(project):
         "setup_keywords": build_setup_keywords(project),
         "python_requires": as_str(default(project.requires_python)),
         "obsoletes": build_string_from_array(project.obsoletes),
-        "zip_safe": project.get_property("distutils_zip_safe")
+        "zip_safe": project.get_property("distutils_zip_safe"),
+        "setup_requires": "[]"
     }
 
     # If there are modules to be cythonized, do some necessary imports
