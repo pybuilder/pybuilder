@@ -22,7 +22,7 @@ class Activator(metaclass=ABCMeta):
         return True
 
     @classmethod
-    def add_parser_arguments(cls, parser, interpreter):  # noqa: U100
+    def add_parser_arguments(cls, parser, interpreter):  # noqa: U100,B027
         """
         Add CLI arguments for this activation script.
 
@@ -31,7 +31,7 @@ class Activator(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def generate(self, creator):  # noqa: U100
+    def generate(self, creator):
         """Generate activate script for the given creator.
 
         :param creator: the creator (based of :class:`virtualenv.create.creator.Creator`) we used to create this \

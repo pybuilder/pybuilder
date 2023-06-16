@@ -120,9 +120,9 @@ def as_str(value):
 @init
 def initialize_distutils_plugin(project):
     project.plugin_depends_on("pypandoc", "~=1.4")
-    project.plugin_depends_on("setuptools", ">=38.6.0")
     project.plugin_depends_on("twine", ">=1.15.0")
-    project.plugin_depends_on("wheel", ">=0.34.0")
+    project.plugin_depends_on("setuptools", ">=38.6.0", eager_update=False)
+    project.plugin_depends_on("wheel", ">=0.34.0", eager_update=False)
     if project.get_property("distutils_cython_ext_modules"):
         project.plugin_depends_on("Cython", "~=0.29.28")
 
@@ -277,44 +277,10 @@ def render_setup_script(project):
 
     # If there are modules to be cythonized, do some necessary imports
     if project.get_property("distutils_cython_ext_modules"):
-        template_values["setup_requires"] = '["Cython~=0.29.0"]'
-        # setup_requires installs Cython as a first thing in the setup() call
-        # We can't import cython directly in the setup script, so we
-        # import it once there's need for it - upon accessing the ext_modules list.
         template_values["cython_imports"] = """
+from Cython.Build import cythonize
 from setuptools.command.build_py import build_py as _build_py
 import glob
-
-class LazyCythonize(list):
-    def __init__(self, ext_modules, cythonize_modules_kwargs):
-        self.ext_modules = ext_modules if ext_modules is not None else []
-        self.cythonize_modules_kwargs = cythonize_modules_kwargs if cythonize_modules_kwargs is not None else []
-        self.cythonized_modules = []
-
-    def _cythonize(self):
-        if self.cythonized_modules:
-            return
-
-        from Cython.Build import cythonize
-
-        for kwargs in self.cythonize_modules_kwargs:
-            self.cythonized_modules.extend(cythonize(**kwargs))
-        self.cythonized_modules.extend(self.ext_modules)
-
-    def __iter__(self):
-        self._cythonize()
-        return iter(self.cythonized_modules)
-
-    def __getitem__(self, key):
-        self._cythonize()
-        if 0<=key<len(self.cythonized_modules):
-            return self.cythonized_modules[key]
-        else:
-            raise IndexError("Index out of range")
-
-    def __len__(self):
-        self._cythonize()
-        return len(self.cythonized_modules)
 """
         # If the Python sources should not be included in the distribution, add some other necessary functions
         # Note: The Python sources will be removed even from sdist (as this is modifying build_py command that
@@ -708,21 +674,27 @@ def build_ext_modules_string(project):
         ext_modules_desc = []
     for ext_module_desc in ext_modules_desc:
         ext_module_kwargs_str = ",".join(["{}={}".format(key, value) for key, value in ext_module_desc.items()])
-        ext_modules_strings.append("Extension({})".format(ext_module_kwargs_str))
-
-    ext_modules_final_string = build_string_from_array([mod for mod in ext_modules_strings], quote_item=False)
+        ext_modules_strings.append("""Extension({})""".format(ext_module_kwargs_str))
 
     # Cython extensions
     cython_ext_modules_strings = []
     cython_ext_modules_desc = project.get_property("distutils_cython_ext_modules")
+    cython_compiler_directives = project.get_property("distutils_cython_compiler_directives")
     if cython_ext_modules_desc is None:
-        return ext_modules_final_string
+        cython_ext_modules_desc = []
     for ext_module_desc in cython_ext_modules_desc:
-        ext_module_kwargs_str = ",".join([u'"{}":{}'.format(key, value) for key, value in ext_module_desc.items()])
-        cython_ext_modules_strings.append("{"+ext_module_kwargs_str+"}")
-
-    cython_ext_modules_final_string = build_string_from_array([mod for mod in cython_ext_modules_strings], quote_item=False)
-    return "LazyCythonize({},{})".format(ext_modules_final_string, cython_ext_modules_final_string)
+        ext_module_kwargs_str = ",".join([u"{}={}".format(key, value) for key, value in ext_module_desc.items()])
+        if cython_compiler_directives:
+            cython_ext_modules_strings.append(
+                u"""cythonize({}, compiler_directives={})""".format(ext_module_kwargs_str, cython_compiler_directives)
+                )
+        else:
+            cython_ext_modules_strings.append(u"""cythonize({})""".format(ext_module_kwargs_str))
+    ext_modules_final_string = build_string_from_array([mod for mod in ext_modules_strings], quote_item=False)
+    cython_ext_modules_final_string = u" + ".join(cython_ext_modules_strings)
+    if not cython_ext_modules_final_string:
+        return ext_modules_final_string
+    return u" + ".join([ext_modules_final_string, cython_ext_modules_final_string])
 
 
 def build_entry_points_string(project):

@@ -2,7 +2,7 @@ import os
 from argparse import SUPPRESS, ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from collections import OrderedDict
 
-from ..convert import get_type
+from virtualenv.config.convert import get_type
 
 from ..env_var import get_env_var
 from ..ini import IniConfig
@@ -110,7 +110,6 @@ class HelpFormatter(ArgumentDefaultsHelpFormatter):
         super().__init__(prog, max_help_position=32, width=240)
 
     def _get_help_string(self, action):
-
         text = super()._get_help_string(action)
         if hasattr(action, "default_source"):
             default = " (default: %(default)s)"

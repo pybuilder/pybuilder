@@ -8,10 +8,10 @@ from ast import literal_eval
 from collections import OrderedDict
 from pathlib import Path
 
-from ..discovery.cached_py_info import LogCmd
-from ..util.path import safe_delete
-from ..util.subprocess import run_cmd
-from ..version import __version__
+from virtualenv.discovery.cached_py_info import LogCmd
+from virtualenv.util.path import safe_delete
+from virtualenv.util.subprocess import run_cmd
+from virtualenv.version import __version__
 
 from .pyenv_cfg import PyEnvCfg
 
@@ -128,11 +128,7 @@ class Creator(metaclass=ABCMeta):
         value = Path(raw_value)
         if value.exists() and value.is_file():
             raise ArgumentTypeError(f"the destination {value} already exists and is a file")
-        if sys.version_info <= (3, 6):
-            # pre 3.6 resolve is always strict, aka must exists, sidestep by using os.path operation
-            dest = Path(os.path.realpath(raw_value))
-        else:
-            dest = Path(os.path.abspath(str(value))).resolve()  # on Windows absolute does not imply resolve so use both
+        dest = Path(os.path.abspath(str(value))).resolve()  # on Windows absolute does not imply resolve so use both
         value = dest
         while dest:
             if dest.exists():
@@ -157,7 +153,7 @@ class Creator(metaclass=ABCMeta):
 
     def set_pyenv_cfg(self):
         self.pyenv_cfg.content = OrderedDict()
-        self.pyenv_cfg["home"] = self.interpreter.system_exec_prefix
+        self.pyenv_cfg["home"] = os.path.dirname(os.path.abspath(self.interpreter.system_executable))
         self.pyenv_cfg["implementation"] = self.interpreter.implementation
         self.pyenv_cfg["version_info"] = ".".join(str(i) for i in self.interpreter.version_info)
         self.pyenv_cfg["virtualenv"] = __version__

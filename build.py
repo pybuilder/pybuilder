@@ -87,7 +87,7 @@ urls = {"Bug Tracker": "https://github.com/pybuilder/pybuilder/issues",
         "Twitter": "https://twitter.com/pybuilder_",
         }
 license = "Apache License, Version 2.0"
-version = "0.13.8.dev"
+version = "0.13.10.dev"
 
 requires_python = ">=3.7"
 
@@ -106,7 +106,7 @@ def initialize(project):
                                                 "setuptools>=45.0.0",
                                                 "virtualenv>=20.0.0",
                                                 "importlib-resources>=1.0",
-                                                "importlib-metadata>=0.12",
+                                                "importlib-metadata>=0.12,<5.0",
                                                 "typing-extensions",
                                                 "colorama~=0.4.3"
                                                 ])
@@ -122,7 +122,7 @@ def initialize(project):
                                                         "setup"])
 
     project.set_property("flake8_break_build", True)
-    project.set_property("flake8_extend_ignore", "E303")
+    project.set_property("flake8_extend_ignore", "E303, F401")
     project.set_property("flake8_include_test_sources", True)
     project.set_property("flake8_include_scripts", True)
     project.set_property("flake8_exclude_patterns", ",".join([

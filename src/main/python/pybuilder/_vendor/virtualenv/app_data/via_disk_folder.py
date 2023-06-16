@@ -28,10 +28,10 @@ from abc import ABCMeta
 from contextlib import contextmanager
 from hashlib import sha256
 
-from ..util.lock import ReentrantFileLock
-from ..util.path import safe_delete
-from ..util.zipapp import extract
-from ..version import __version__
+from virtualenv.util.lock import ReentrantFileLock
+from virtualenv.util.path import safe_delete
+from virtualenv.util.zipapp import extract
+from virtualenv.version import __version__
 
 from .base import AppData, ContentStore
 

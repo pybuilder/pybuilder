@@ -1,7 +1,7 @@
 from abc import ABCMeta
 
-from ...creator import Creator
-from ...describe import Describe
+from virtualenv.create.creator import Creator
+from virtualenv.create.describe import Describe
 
 
 class VirtualenvBuiltin(Creator, Describe, metaclass=ABCMeta):

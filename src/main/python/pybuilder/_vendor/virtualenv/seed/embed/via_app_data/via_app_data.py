@@ -8,9 +8,9 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from threading import Lock, Thread
 
-from ....info import fs_supports_symlink
-from ..base_embed import BaseEmbed
-from ...wheels import get_wheel
+from virtualenv.info import fs_supports_symlink
+from virtualenv.seed.embed.base_embed import BaseEmbed
+from virtualenv.seed.wheels import get_wheel
 
 from .pip_install.copy import CopyPipInstall
 from .pip_install.symlink import SymlinkPipInstall

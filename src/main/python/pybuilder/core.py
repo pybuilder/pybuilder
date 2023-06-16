@@ -273,7 +273,7 @@ class Dependency(object):
     method from class Project to add a dependency to a project.
     """
 
-    def __init__(self, name, version=None, url=None, declaration_only=False):
+    def __init__(self, name, version=None, url=None, declaration_only=False, eager_update=None):
         from pybuilder import pip_common
         if version:
             try:
@@ -297,6 +297,7 @@ class Dependency(object):
         self.version = version
         self.url = url
         self.declaration_only = declaration_only
+        self.eager_update = eager_update
 
     def __eq__(self, other):
         if not isinstance(other, Dependency):
@@ -559,11 +560,11 @@ class Project(object):
     def plugin_dependencies(self):
         return list(sorted(self._plugin_dependencies))
 
-    def depends_on(self, name, version=None, url=None, declaration_only=False):
-        self._install_dependencies.add(Dependency(name, version, url, declaration_only))
+    def depends_on(self, name, version=None, url=None, declaration_only=False, eager_update=None):
+        self._install_dependencies.add(Dependency(name, version, url, declaration_only, eager_update=eager_update))
 
-    def build_depends_on(self, name, version=None, url=None, declaration_only=False):
-        self._build_dependencies.add(Dependency(name, version, url, declaration_only))
+    def build_depends_on(self, name, version=None, url=None, declaration_only=False, eager_update=None):
+        self._build_dependencies.add(Dependency(name, version, url, declaration_only, eager_update=eager_update))
 
     def depends_on_requirements(self, file, declaration_only=False):
         self._install_dependencies.add(RequirementsFile(os.path.join(self.basedir, file), declaration_only=declaration_only))
@@ -571,8 +572,8 @@ class Project(object):
     def build_depends_on_requirements(self, file):
         self._build_dependencies.add(RequirementsFile(os.path.join(self.basedir, file)))
 
-    def plugin_depends_on(self, name, version=None, url=None, declaration_only=False):
-        self._plugin_dependencies.add(Dependency(name, version, url, declaration_only))
+    def plugin_depends_on(self, name, version=None, url=None, declaration_only=False, eager_update=None):
+        self._plugin_dependencies.add(Dependency(name, version, url, declaration_only, eager_update=eager_update))
 
     @property
     def environments(self):
@@ -730,8 +731,9 @@ class Logger(logging.Handler):
     INFO = 20
     DEBUG = 10
 
-    def __init__(self, level=INFO):
+    def __init__(self, level=INFO, log_time_format=None):
         super(Logger, self).__init__(level)
+        self.log_time_format = log_time_format
 
     def emit(self, record):
         self._do_log(record.levelno, record.getMessage())

@@ -2,7 +2,7 @@ import logging
 import os
 import zipfile
 
-from ..info import IS_WIN, ROOT
+from virtualenv.info import IS_WIN, ROOT
 
 
 def read(full_path):

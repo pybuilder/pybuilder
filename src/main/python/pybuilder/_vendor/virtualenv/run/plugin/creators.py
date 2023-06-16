@@ -1,7 +1,7 @@
 from collections import OrderedDict, defaultdict, namedtuple
 
-from ...create.describe import Describe
-from ...create.via_global_ref.builtin.builtin_way import VirtualenvBuiltin
+from virtualenv.create.describe import Describe
+from virtualenv.create.via_global_ref.builtin.builtin_way import VirtualenvBuiltin
 
 from .base import ComponentBuilder
 
