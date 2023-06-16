@@ -189,6 +189,15 @@ def set_description(project, logger, reactor):
                     project.get_property("distutils_description_overwrite")):
                 setattr(project, "description", description)
 
+    if (not hasattr(project, "description") or
+            not project.description):
+        if hasattr(project, "summary") and project.summary:
+            description = project.summary
+        else:
+            description = project.name
+
+        setattr(project, "description", description)
+
     warn = False
     if len(project.summary) >= 512:
         logger.warn("Project summary SHOULD be shorter than 512 characters per PEP-426")

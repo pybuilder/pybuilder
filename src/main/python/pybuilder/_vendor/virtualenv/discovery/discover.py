@@ -1,23 +1,17 @@
-from __future__ import absolute_import, unicode_literals
-
 from abc import ABCMeta, abstractmethod
 
-from ...six import add_metaclass
 
-
-@add_metaclass(ABCMeta)
-class Discover(object):
+class Discover(metaclass=ABCMeta):
     """Discover and provide the requested Python interpreter"""
 
     @classmethod
-    def add_parser_arguments(cls, parser):
+    def add_parser_arguments(cls, parser):  # noqa: U100
         """Add CLI arguments for this discovery mechanisms.
 
         :param parser: the CLI parser
         """
         raise NotImplementedError
 
-    # noinspection PyUnusedLocal
     def __init__(self, options):
         """Create a new discovery mechanism.
 
@@ -30,7 +24,6 @@ class Discover(object):
     @abstractmethod
     def run(self):
         """Discovers an interpreter.
-
 
         :return: the interpreter ready to use for virtual environment creation
         """
@@ -45,3 +38,8 @@ class Discover(object):
             self._interpreter = self.run()
             self._has_run = True
         return self._interpreter
+
+
+__all__ = [
+    "Discover",
+]

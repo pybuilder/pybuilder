@@ -1,18 +1,14 @@
 """
 Application data stored by virtualenv.
 """
-from __future__ import absolute_import, unicode_literals
 
 from abc import ABCMeta, abstractmethod
 from contextlib import contextmanager
 
-from ... import six
-
 from ..info import IS_ZIPAPP
 
 
-@six.add_metaclass(ABCMeta)
-class AppData(object):
+class AppData(metaclass=ABCMeta):
     """Abstract storage interface for the virtualenv application"""
 
     @abstractmethod
@@ -24,7 +20,7 @@ class AppData(object):
         """called when the user passes in the reset app data"""
 
     @abstractmethod
-    def py_info(self, path):
+    def py_info(self, path):  # noqa: U100
         raise NotImplementedError
 
     @abstractmethod
@@ -36,7 +32,7 @@ class AppData(object):
         raise NotImplementedError
 
     @abstractmethod
-    def embed_update_log(self, distribution, for_py_version):
+    def embed_update_log(self, distribution, for_py_version):  # noqa: U100
         raise NotImplementedError
 
     @property
@@ -48,7 +44,7 @@ class AppData(object):
         raise NotImplementedError
 
     @abstractmethod
-    def wheel_image(self, for_py_version, name):
+    def wheel_image(self, for_py_version, name):  # noqa: U100
         raise NotImplementedError
 
     @contextmanager
@@ -62,17 +58,16 @@ class AppData(object):
 
     @abstractmethod
     @contextmanager
-    def extract(self, path, to_folder):
+    def extract(self, path, to_folder):  # noqa: U100
         raise NotImplementedError
 
     @abstractmethod
     @contextmanager
-    def locked(self, path):
+    def locked(self, path):  # noqa: U100
         raise NotImplementedError
 
 
-@six.add_metaclass(ABCMeta)
-class ContentStore(object):
+class ContentStore(metaclass=ABCMeta):
     @abstractmethod
     def exists(self):
         raise NotImplementedError
@@ -82,7 +77,7 @@ class ContentStore(object):
         raise NotImplementedError
 
     @abstractmethod
-    def write(self, content):
+    def write(self, content):  # noqa: U100
         raise NotImplementedError
 
     @abstractmethod
@@ -93,3 +88,9 @@ class ContentStore(object):
     @contextmanager
     def locked(self):
         pass
+
+
+__all__ = [
+    "ContentStore",
+    "AppData",
+]

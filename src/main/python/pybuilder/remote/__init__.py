@@ -96,8 +96,8 @@ class Process:
         if tracker:
             tracker.getfd()
 
-        old_python_exe = patch_module._python_exe
-        patch_module._python_exe = pyenv.executable[0]  # pyenv's actual sys.executable
+        old_python_exe = patch_module.get_executable()
+        patch_module.set_executable(pyenv.executable[0])  # pyenv's actual sys.executable
 
         old_get_command_line = patch_module.get_command_line
 
@@ -135,7 +135,7 @@ class Process:
         try:
             return self.proc.start()
         finally:
-            patch_module._python_exe = old_python_exe
+            patch_module.set_executable(old_python_exe)
             patch_module.get_command_line = old_get_command_line
             patch_module.get_preparation_data = old_preparation_data
 

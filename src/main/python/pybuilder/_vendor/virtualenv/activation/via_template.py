@@ -1,12 +1,6 @@
-from __future__ import absolute_import, unicode_literals
-
 import os
 import sys
 from abc import ABCMeta, abstractmethod
-
-from ...six import add_metaclass
-
-from ..util.six import ensure_text
 
 from .activator import Activator
 
@@ -16,8 +10,7 @@ else:
     from ...importlib_resources import read_binary
 
 
-@add_metaclass(ABCMeta)
-class ViaTemplateActivator(Activator):
+class ViaTemplateActivator(Activator, metaclass=ABCMeta):
     @abstractmethod
     def templates(self):
         raise NotImplementedError
@@ -30,13 +23,13 @@ class ViaTemplateActivator(Activator):
             creator.pyenv_cfg["prompt"] = self.flag_prompt
         return generated
 
-    def replacements(self, creator, dest_folder):
+    def replacements(self, creator, dest_folder):  # noqa: U100
         return {
             "__VIRTUAL_PROMPT__": "" if self.flag_prompt is None else self.flag_prompt,
-            "__VIRTUAL_ENV__": ensure_text(str(creator.dest)),
+            "__VIRTUAL_ENV__": str(creator.dest),
             "__VIRTUAL_NAME__": creator.env_name,
-            "__BIN_NAME__": ensure_text(str(creator.bin_dir.relative_to(creator.dest))),
-            "__PATH_SEP__": ensure_text(os.pathsep),
+            "__BIN_NAME__": str(creator.bin_dir.relative_to(creator.dest)),
+            "__PATH_SEP__": os.pathsep,
         }
 
     def _generate(self, replacements, templates, to_folder, creator):
@@ -62,6 +55,10 @@ class ViaTemplateActivator(Activator):
         return text
 
     @staticmethod
-    def _repr_unicode(creator, value):
-        # by default we just let it be unicode
-        return value
+    def _repr_unicode(creator, value):  # noqa: U100
+        return value  # by default, we just let it be unicode
+
+
+__all__ = [
+    "ViaTemplateActivator",
+]

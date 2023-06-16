@@ -25,6 +25,11 @@ import unittest
 from io import StringIO
 from uuid import uuid4
 
+try:
+    from unittest.case import _addError
+except ImportError:
+    _addError = None
+
 
 class BaseIntegrationTestSupport(unittest.TestCase):
     def setUp(self):
@@ -89,6 +94,12 @@ class BaseIntegrationTestSupport(unittest.TestCase):
             content = file.read()
             self.assertTrue(expected_content_part in content)
 
+    def assert_file_not_contains(self, name, unexpected_content_part):
+        full_path = self.full_path(name)
+        with open(full_path) as file:
+            content = file.read()
+            self.assertFalse(unexpected_content_part in content)
+
     def assert_file_content(self, name, expected_file_content):
         if expected_file_content == "":
             self.assert_file_empty(name)
@@ -122,10 +133,15 @@ class BaseIntegrationTestSupport(unittest.TestCase):
         result = self._get_result()
         return self._list2reason(result.errors), self._list2reason(result.failures)
 
-    def _get_result(self):
-        result = self.defaultTestResult()  # these 2 methods have no side effects
-        self._feedErrorsToResult(result, self._outcome.errors)
-        return result
+    if _addError:
+        def _get_result(self):
+            return self._outcome.result
+
+    else:
+        def _get_result(self):
+            result = self.defaultTestResult()  # these 2 methods have no side effects
+            self._feedErrorsToResult(result, self._outcome.errors)
+            return result
 
     def _list2reason(self, exc_list):
         if exc_list and exc_list[-1][0] is self:
