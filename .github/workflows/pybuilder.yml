@@ -14,6 +14,7 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
+          - '3.12-dev'
           - '3.11'
           - '3.10'
           - '3.9'
@@ -33,7 +34,7 @@ jobs:
           python-version: '${{ matrix.python-version }}'
           with-venv: '${{ matrix.with-venv }}'
           with-homebrew: 'false'
-          deploy-on-python: '["3.10"]'
+          deploy-on-python: '["3.11"]'
           deploy-on-os: '["Linux"]'
           deploy-on-branch: '["refs/heads/master"]'
   build-secondary:

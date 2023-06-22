@@ -88,6 +88,11 @@ class CompleteDirs(InitializedState, zipfile.ZipFile):
     """
     A ZipFile subclass that ensures that implied directories
     are always included in the namelist.
+
+    >>> list(CompleteDirs._implied_dirs(['foo/bar.txt', 'foo/bar/baz.txt']))
+    ['foo/', 'foo/bar/']
+    >>> list(CompleteDirs._implied_dirs(['foo/bar.txt', 'foo/bar/baz.txt', 'foo/bar/']))
+    ['foo/']
     """
 
     @staticmethod
@@ -217,7 +222,7 @@ class Path:
 
     Read text:
 
-    >>> c.read_text()
+    >>> c.read_text(encoding='utf-8')
     'content of c'
 
     existence:

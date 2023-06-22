@@ -51,4 +51,5 @@ try:
     subprocess.check_call([sys.executable, "setup.py"] + setup_args, cwd=script_dir)
 except subprocess.CalledProcessError as e:
     exit_code = e.returncode
-sys.exit(exit_code)
+if exit_code:
+    sys.exit(exit_code)

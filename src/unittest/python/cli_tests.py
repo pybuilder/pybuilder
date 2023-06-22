@@ -121,7 +121,7 @@ class FormattedTimestampLoggerTest(unittest.TestCase):
             sys.stdout = self.StreamWrapper(sys.stdout)
 
             self.stdout_logger.info("Test")
-            self.assertRegexpMatches(sys.stdout.text, "^" + self.DEFAULT_LOG_FORMAT)
+            self.assertRegex(sys.stdout.text, "^" + self.DEFAULT_LOG_FORMAT)
         finally:
             sys.stdout = original
 
@@ -308,10 +308,10 @@ class ErrorHandlingTests(unittest.TestCase):
         try:
             raise Exception("test")
         except Exception:
-            self.assertRegexpMatches(get_failure_message(), r"Exception: test \(cli_tests.py\:\d+\)")
+            self.assertRegex(get_failure_message(), r"Exception: test \(cli_tests.py\:\d+\)")
 
     def test_pyb_error_message(self):
         try:
             raise PyBuilderException("test")
         except Exception:
-            self.assertRegexpMatches(get_failure_message(), r"test \(cli_tests.py\:\d+\)")
+            self.assertRegex(get_failure_message(), r"test \(cli_tests.py\:\d+\)")

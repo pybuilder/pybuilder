@@ -1,11 +1,12 @@
+from __future__ import annotations
+
 from abc import ABCMeta
 from collections import OrderedDict
 from pathlib import Path
 
 from virtualenv.create.describe import PosixSupports, WindowsSupports
 from virtualenv.create.via_global_ref.builtin.ref import RefMust, RefWhen
-
-from ..via_global_self_do import ViaGlobalRefVirtualenvBuiltin
+from virtualenv.create.via_global_ref.builtin.via_global_self_do import ViaGlobalRefVirtualenvBuiltin
 
 
 class CPython(ViaGlobalRefVirtualenvBuiltin, metaclass=ABCMeta):
@@ -19,15 +20,14 @@ class CPython(ViaGlobalRefVirtualenvBuiltin, metaclass=ABCMeta):
 
 
 class CPythonPosix(CPython, PosixSupports, metaclass=ABCMeta):
-    """Create a CPython virtual environment on POSIX platforms"""
+    """Create a CPython virtual environment on POSIX platforms."""
 
     @classmethod
     def _executables(cls, interpreter):
         host_exe = Path(interpreter.system_executable)
         major, minor = interpreter.version_info.major, interpreter.version_info.minor
         targets = OrderedDict((i, None) for i in ["python", f"python{major}", f"python{major}.{minor}", host_exe.name])
-        must = RefMust.COPY if interpreter.version_info.major == 2 else RefMust.NA
-        yield host_exe, list(targets.keys()), must, RefWhen.ANY
+        yield host_exe, list(targets.keys()), RefMust.NA, RefWhen.ANY
 
 
 class CPythonWindows(CPython, WindowsSupports, metaclass=ABCMeta):
@@ -37,7 +37,7 @@ class CPythonWindows(CPython, WindowsSupports, metaclass=ABCMeta):
         # - https://bugs.python.org/issue42013
         # - venv
         host = cls.host_python(interpreter)
-        for path in (host.parent / n for n in {"python.exe", host.name}):
+        for path in (host.parent / n for n in {"python.exe", host.name}):  # noqa: PLC0208
             yield host, [path.name], RefMust.COPY, RefWhen.ANY
         # for more info on pythonw.exe see https://stackoverflow.com/a/30313091
         python_w = host.parent / "pythonw.exe"
@@ -50,9 +50,7 @@ class CPythonWindows(CPython, WindowsSupports, metaclass=ABCMeta):
 
 def is_mac_os_framework(interpreter):
     if interpreter.platform == "darwin":
-        framework_var = interpreter.sysconfig_vars.get("PYTHONFRAMEWORK")
-        value = "Python3" if interpreter.version_info.major == 3 else "Python"
-        return framework_var == value
+        return interpreter.sysconfig_vars.get("PYTHONFRAMEWORK") == "Python3"
     return False
 
 

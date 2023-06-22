@@ -22,7 +22,6 @@
     execution module.
 """
 
-import imp
 import os
 import os.path
 import sys
@@ -39,7 +38,7 @@ from pybuilder.pluginloader import (BuiltinPluginLoader,
                                     DispatchingPluginLoader,
                                     DownloadingPluginLoader)
 from pybuilder.python_env import PythonEnvRegistry, PythonEnv
-from pybuilder.python_utils import odict, patch_mp_pyb_env, prepend_env_to_path
+from pybuilder.python_utils import odict, patch_mp_pyb_env, prepend_env_to_path, load_source
 from pybuilder.utils import (as_list,
                              get_dist_version_string,
                              np, jp)
@@ -458,7 +457,7 @@ class Reactor:
     @staticmethod
     def load_project_module(project_descriptor):
         try:
-            return imp.load_source("build", project_descriptor)
+            return load_source("build", project_descriptor)
         except ImportError as e:
             raise PyBuilderException(
                 "Error importing project descriptor %s: %s" % (project_descriptor, e))
