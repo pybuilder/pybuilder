@@ -105,6 +105,11 @@ if __name__ == '__main__':
         setup_requires = $setup_requires,
     )
 """)
+PYPROJECT_TOML_TEMPLATE = string.Template("""
+[build-system]
+requires = $toml_build_system_requires
+""")
+
 
 
 def default(value, default=""):
@@ -250,12 +255,11 @@ def render_setup_script(project):
     author_email = ", ".join(map(lambda a: a.email, project.authors))
     maintainer = ", ".join(map(lambda a: a.name, project.maintainers))
     maintainer_email = ",".join(map(lambda a: a.email, project.maintainers))
+    setup_requires = []
 
     # If there are modules to be cythonized, setup will require cython
     if project.get_property("distutils_cython_ext_modules"):
-        setup_requires = ["Cython"]
-    else:
-        setup_requires = []
+        setup_requires.append("Cython")
 
     template_values = {
         "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
@@ -379,6 +383,36 @@ class build_py(_build_py):
 """.format(cython_module_list=cython_module_list, cython_exclude=cython_exclude)
 
     return SETUP_TEMPLATE.substitute(template_values)
+
+
+@after("package")
+def write_pyproject_toml(project, logger):
+    pyproject_toml = project.expand_path("$dir_dist", "pyproject.toml")
+
+    if os.path.exists(pyproject_toml):
+        logger.warning("pyproject.toml already exists as %s, not overwriting", pyproject_toml)
+        return
+
+    logger.info("Writing pyproject.toml as %s", pyproject_toml)
+
+    with io.open(pyproject_toml, "wt", encoding="utf-8") as pyproject_toml_file:
+        script = render_pyproject_toml(project)
+        pyproject_toml_file.write(script)
+
+    os.chmod(pyproject_toml, 0o755)
+
+
+def render_pyproject_toml(project):
+    build_system_requires = []
+
+    # If there are modules to be cythonized, build system will require cython
+    if project.get_property("distutils_cython_ext_modules"):
+        build_system_requires.append("Cython")
+
+    template_values = {
+        "toml_build_system_requires": build_string_from_array(build_system_requires)
+    }
+    return PYPROJECT_TOML_TEMPLATE.substitute(template_values)
 
 
 @after("package")
