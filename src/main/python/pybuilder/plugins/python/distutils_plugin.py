@@ -233,6 +233,12 @@ def render_setup_script(project):
     maintainer = ", ".join(map(lambda a: a.name, project.maintainers))
     maintainer_email = ",".join(map(lambda a: a.email, project.maintainers))
 
+    # If there are modules to be cythonized, setup will require cython
+    if project.get_property("distutils_cython_ext_modules"):
+        setup_requires = ["Cython"]
+    else:
+        setup_requires = []
+
     template_values = {
         "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
         "cython_imports": "",
@@ -272,7 +278,7 @@ def render_setup_script(project):
         "python_requires": as_str(default(project.requires_python)),
         "obsoletes": build_string_from_array(project.obsoletes),
         "zip_safe": project.get_property("distutils_zip_safe"),
-        "setup_requires": "[]"
+        "setup_requires": build_string_from_array(setup_requires),
     }
 
     # If there are modules to be cythonized, do some necessary imports
