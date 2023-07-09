@@ -47,7 +47,7 @@ def init (project):
             from importlib import metadata
 
             def run_code():
-                return metadata.version("setuptools")
+                return metadata.version("pip")
             """))
         self.write_file("src/unittest/python/code_tests.py", textwrap.dedent(
             """

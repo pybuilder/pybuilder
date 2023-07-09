@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from stat import S_IREAD, S_IRGRP, S_IROTH
 from subprocess import PIPE, Popen
@@ -14,7 +16,7 @@ class SymlinkPipInstall(PipInstall):
     def _generate_new_files(self):
         # create the pyc files, as the build image will be R/O
         cmd = [str(self._creator.exe), "-m", "compileall", str(self._image_dir)]
-        process = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        process = Popen(cmd, stdout=PIPE, stderr=PIPE)  # noqa: S603
         process.communicate()
         # the root pyc is shared, so we'll not symlink that - but still add the pyc files to the RECORD for close
         root_py_cache = self._image_dir / "__pycache__"

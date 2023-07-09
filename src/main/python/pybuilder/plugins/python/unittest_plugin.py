@@ -35,7 +35,7 @@ use_plugin("python.core")
 
 @init
 def init_test_source_directory(project):
-    project.plugin_depends_on("unittest-xml-reporting", "~=3.0.4")
+    project.plugin_depends_on("unittest-xml-reporting", ">=3.0.4")
 
     project.set_property_if_unset("dir_source_unittest_python", "src/unittest/python")
     project.set_property_if_unset("unittest_breaks_build", True)

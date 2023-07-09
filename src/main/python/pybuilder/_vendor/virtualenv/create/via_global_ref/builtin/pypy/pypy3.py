@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 from pathlib import Path
 
@@ -18,7 +20,7 @@ class PyPy3(PyPy, Python3Supports, metaclass=abc.ABCMeta):
 
 
 class PyPy3Posix(PyPy3, PosixSupports):
-    """PyPy 3 on POSIX"""
+    """PyPy 3 on POSIX."""
 
     @classmethod
     def _shared_libs(cls, python_dir):
@@ -53,11 +55,11 @@ class PyPy3Posix(PyPy3, PosixSupports):
 
 
 class Pypy3Windows(PyPy3, WindowsSupports):
-    """PyPy 3 on Windows"""
+    """PyPy 3 on Windows."""
 
     @property
     def less_v37(self):
-        return self.interpreter.version_info.minor < 7
+        return self.interpreter.version_info.minor < 7  # noqa: PLR2004
 
     @classmethod
     def _shared_libs(cls, python_dir):
