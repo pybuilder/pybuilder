@@ -105,10 +105,6 @@ if __name__ == '__main__':
         setup_requires = $setup_requires,
     )
 """)
-PYPROJECT_TOML_TEMPLATE = string.Template("""
-[build-system]
-requires = $toml_build_system_requires
-""")
 
 
 
@@ -127,6 +123,7 @@ def initialize_distutils_plugin(project):
     project.plugin_depends_on("pypandoc", "~=1.4")
     project.plugin_depends_on("setuptools", ">=38.6.0")
     project.plugin_depends_on("twine", ">=1.15.0")
+    project.plugin_depends_on("toml", "~=0.10.0")
     project.plugin_depends_on("wheel", ">=0.34.0")
 
     project.set_property_if_unset("distutils_commands", ["sdist", "bdist_wheel"])
@@ -390,30 +387,36 @@ def write_pyproject_toml(project, logger):
     pyproject_toml = project.expand_path("$dir_dist", "pyproject.toml")
 
     if os.path.exists(pyproject_toml):
-        logger.warning("pyproject.toml already exists as %s, not overwriting", pyproject_toml)
-        return
+        import toml
+        with open(pyproject_toml, "rt", encoding="utf-8") as pyproject_toml_file:
+            pyproject_toml_content = pyproject_toml_file.read()
+        pyproject_toml_dict = toml.loads(pyproject_toml_content)
+        del pyproject_toml_content
+    else:
+        pyproject_toml_dict = {}
 
     logger.info("Writing pyproject.toml as %s", pyproject_toml)
 
     with io.open(pyproject_toml, "wt", encoding="utf-8") as pyproject_toml_file:
-        script = render_pyproject_toml(project)
-        pyproject_toml_file.write(script)
+        pyproject_toml_file.write(render_pyproject_toml(project, logger, pyproject_toml_dict))
 
     os.chmod(pyproject_toml, 0o755)
 
+def render_pyproject_toml(project, logger, pyproject_toml=None):
+    import toml
+    if not pyproject_toml:
+        pyproject_toml = {}
+    if "build-system" in pyproject_toml:
+        logger.warn("pyproject.toml already exists. Overwriting its build-system section to use setuptools.")
 
-def render_pyproject_toml(project):
-    build_system_requires = []
-
-    # If there are modules to be cythonized, build system will require cython
-    if project.get_property("distutils_cython_ext_modules"):
-        build_system_requires.append("Cython")
-
-    template_values = {
-        "toml_build_system_requires": build_string_from_array(build_system_requires)
+    pyproject_toml["build-system"] = {
+        "requires": ["setuptools>=40.8.0", "wheel"],
+        "build-backend": "setuptools.build_meta"
     }
-    return PYPROJECT_TOML_TEMPLATE.substitute(template_values)
-
+    # add cython build requirement if needed
+    if project.get_property("distutils_cython_ext_modules"):
+        pyproject_toml["build-system"]["requires"].append("Cython")
+    return toml.dumps(pyproject_toml)
 
 @after("package")
 def write_manifest_file(project, logger):
