@@ -402,6 +402,7 @@ def write_pyproject_toml(project, logger):
 
     os.chmod(pyproject_toml, 0o755)
 
+
 def render_pyproject_toml(project, logger, pyproject_toml=None):
     import toml
     if not pyproject_toml:
@@ -417,6 +418,7 @@ def render_pyproject_toml(project, logger, pyproject_toml=None):
     if project.get_property("distutils_cython_ext_modules"):
         pyproject_toml["build-system"]["requires"].append("Cython")
     return toml.dumps(pyproject_toml)
+
 
 @after("package")
 def write_manifest_file(project, logger):
