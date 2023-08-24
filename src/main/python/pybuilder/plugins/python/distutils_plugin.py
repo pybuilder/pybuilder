@@ -355,6 +355,8 @@ class LazyCythonize(list):
             for ext_module_desc in cython_ext_modules_desc:
                 cython_module_list.extend(ext_module_desc.get("module_list", []))
                 cython_exclude.extend(ext_module_desc.get("exclude", []))
+            if cython_exclude:
+                cython_exclude = list(set(cython_exclude))
 
             # Next, put necessary functions into the setup.py template
             template_values["cmd_class"] = "{'install': install,'build_py': build_py}"
@@ -778,26 +780,17 @@ def build_ext_modules_string(project):
     # Cython extensions
     cython_ext_modules_strings = []
     cython_ext_modules_desc = project.get_property("distutils_cython_ext_modules")
-    cython_compiler_directives = project.get_property("distutils_cython_compiler_directives")
     if cython_ext_modules_desc is None:
         cython_ext_modules_desc = []
-    for ext_module_desc in cython_ext_modules_desc:
-        ext_module_kwargs_str = ",".join([u"{}={}".format(key, value) for key, value in ext_module_desc.items()])
-        if cython_compiler_directives:
-            cython_ext_modules_strings.append(
-                u"""cythonize({}, compiler_directives={})""".format(ext_module_kwargs_str, cython_compiler_directives)
-                )
-        else:
-            cython_ext_modules_strings.append(u"""cythonize({})""".format(ext_module_kwargs_str))
     ext_modules_final_string = build_string_from_array([mod for mod in ext_modules_strings], quote_item=False)
-    cython_ext_modules_final_string = u" + ".join(cython_ext_modules_strings)
-    if not cython_ext_modules_final_string:
+
+    if not cython_ext_modules_desc:
         return ext_modules_final_string
     for ext_module_desc in cython_ext_modules_desc:
         ext_module_kwargs_str = ",".join([u'"{}":{}'.format(key, value) for key, value in ext_module_desc.items()])
         cython_ext_modules_strings.append("{"+ext_module_kwargs_str+"}")
 
-    cython_ext_modules_final_string = build_string_from_array([mod for mod in cython_ext_modules_strings], quote_item=False)
+    cython_ext_modules_final_string = build_string_from_array(cython_ext_modules_strings, quote_item=False)
     return "LazyCythonize({},{})".format(ext_modules_final_string, cython_ext_modules_final_string)
 
 
@@ -869,7 +862,10 @@ def build_string_from_array(arr, indent=12, quote_item=True):
             if is_notstr_iterable(item):
                 result += (" " * indent) + build_string_from_array(item, indent + 4) + ",\n"
             else:
-                result += (" " * indent) + "'" + item + "',\n"
+                if quote_item:
+                    result += (" " * indent) + "'" + item + "',\n"
+                else:
+                    result += (" " * indent) + item + ",\n"
         result = result[:-2] + "\n"
         result += " " * (indent - 4)
         result += "]"
