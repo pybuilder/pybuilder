@@ -466,6 +466,7 @@ if __name__ == '__main__':
         cmdclass = {'install': install},
         python_requires = '',
         obsoletes = [],
+        setup_requires = [],
     )
 """, actual_setup_script)
 
@@ -553,6 +554,7 @@ if __name__ == '__main__':
         cmdclass = {'install': install},
         python_requires = '',
         obsoletes = [],
+        setup_requires = [],
     )
 """, actual_setup_script)
 
