@@ -1,12 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-
 import json
 import logging
 
-from ..util.six import ensure_text
 
-
-class Session(object):
+class Session:
     """Represents a virtual environment creation session"""
 
     def __init__(self, verbosity, app_data, interpreter, creator, seeder, activators):
@@ -49,7 +45,7 @@ class Session(object):
         self.creator.pyenv_cfg.write()
 
     def _create(self):
-        logging.info("create virtual environment via %s", ensure_text(str(self.creator)))
+        logging.info("create virtual environment via %s", self.creator)
         self.creator.run()
         logging.debug(_DEBUG_MARKER)
         logging.debug("%s", _Debug(self.creator))
@@ -61,31 +57,31 @@ class Session(object):
 
     def _activate(self):
         if self.activators:
-            logging.info(
-                "add activators for %s",
-                ", ".join(type(i).__name__.replace("Activator", "") for i in self.activators),
-            )
+            active = ", ".join(type(i).__name__.replace("Activator", "") for i in self.activators)
+            logging.info("add activators for %s", active)
             for activator in self.activators:
                 activator.generate(self.creator)
 
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb):  # noqa: U100
         self._app_data.close()
 
 
 _DEBUG_MARKER = "=" * 30 + " target debug " + "=" * 30
 
 
-class _Debug(object):
+class _Debug:
     """lazily populate debug"""
 
     def __init__(self, creator):
         self.creator = creator
 
-    def __unicode__(self):
-        return ensure_text(repr(self))
-
     def __repr__(self):
         return json.dumps(self.creator.debug, indent=2)
+
+
+__all__ = [
+    "Session",
+]

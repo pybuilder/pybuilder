@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import logging
 from tempfile import mkdtemp
 
@@ -13,7 +11,7 @@ class TempAppData(AppDataDiskFolder):
     can_update = False
 
     def __init__(self):
-        super(TempAppData, self).__init__(folder=mkdtemp())
+        super().__init__(folder=mkdtemp())
         logging.debug("created temporary app data folder %s", self.lock.path)
 
     def reset(self):
@@ -23,5 +21,10 @@ class TempAppData(AppDataDiskFolder):
         logging.debug("remove temporary app data folder %s", self.lock.path)
         safe_delete(self.lock.path)
 
-    def embed_update_log(self, distribution, for_py_version):
+    def embed_update_log(self, distribution, for_py_version):  # noqa: U100
         raise NotImplementedError
+
+
+__all__ = [
+    "TempAppData",
+]

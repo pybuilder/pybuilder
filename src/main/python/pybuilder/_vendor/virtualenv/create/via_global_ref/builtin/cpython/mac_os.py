@@ -1,44 +1,30 @@
-# -*- coding: utf-8 -*-
 """The Apple Framework builds require their own customization"""
 import logging
 import os
 import struct
 import subprocess
 from abc import ABCMeta, abstractmethod
+from pathlib import Path
 from textwrap import dedent
-
-from ......six import add_metaclass, text_type
 
 from ..ref import ExePathRefToDest, PathRefToDest, RefMust
 from .....info import IS_MAC_ARM64
-from .....util.path import Path
-from .....util.six import ensure_text
 
 from .common import CPython, CPythonPosix, is_mac_os_framework
 from .cpython2 import CPython2PosixBase
 from .cpython3 import CPython3
 
 
-@add_metaclass(ABCMeta)
-class CPythonmacOsFramework(CPython):
+class CPythonmacOsFramework(CPython, metaclass=ABCMeta):
     @classmethod
     def can_describe(cls, interpreter):
-        return is_mac_os_framework(interpreter) and super(CPythonmacOsFramework, cls).can_describe(interpreter)
-
-    @classmethod
-    def sources(cls, interpreter):
-        for src in super(CPythonmacOsFramework, cls).sources(interpreter):
-            yield src
-        # add a symlink to the host python image
-        exe = cls.image_ref(interpreter)
-        ref = PathRefToDest(exe, dest=lambda self, _: self.dest / ".Python", must=RefMust.SYMLINK)
-        yield ref
+        return is_mac_os_framework(interpreter) and super().can_describe(interpreter)
 
     def create(self):
-        super(CPythonmacOsFramework, self).create()
+        super().create()
 
         # change the install_name of the copied python executables
-        target = "@executable_path/../.Python"
+        target = self.desired_mach_o_image_path()
         current = self.current_mach_o_image_path()
         for src in self._sources:
             if isinstance(src, ExePathRefToDest):
@@ -51,7 +37,7 @@ class CPythonmacOsFramework(CPython):
 
     @classmethod
     def _executables(cls, interpreter):
-        for _, targets, must, when in super(CPythonmacOsFramework, cls)._executables(interpreter):
+        for _, targets, must, when in super()._executables(interpreter):
             # Make sure we use the embedded interpreter inside the framework, even if sys.executable points to the
             # stub executable in ${sys.prefix}/bin.
             # See http://groups.google.com/group/python-virtualenv/browse_thread/thread/17cab2f85da75951
@@ -62,50 +48,54 @@ class CPythonmacOsFramework(CPython):
     def current_mach_o_image_path(self):
         raise NotImplementedError
 
-    @classmethod
-    def image_ref(cls, interpreter):
+    @abstractmethod
+    def desired_mach_o_image_path(self):
         raise NotImplementedError
 
 
 class CPython2macOsFramework(CPythonmacOsFramework, CPython2PosixBase):
     @classmethod
     def can_create(cls, interpreter):
-        if not IS_MAC_ARM64 and super(CPython2macOsFramework, cls).can_describe(interpreter):
-            return super(CPython2macOsFramework, cls).can_create(interpreter)
+        if not IS_MAC_ARM64 and super().can_describe(interpreter):
+            return super().can_create(interpreter)
         return False
-
-    @classmethod
-    def image_ref(cls, interpreter):
-        return Path(interpreter.prefix) / "Python"
 
     def current_mach_o_image_path(self):
         return os.path.join(self.interpreter.prefix, "Python")
 
+    def desired_mach_o_image_path(self):
+        return "@executable_path/../Python"
+
     @classmethod
     def sources(cls, interpreter):
-        for src in super(CPython2macOsFramework, cls).sources(interpreter):
-            yield src
+        yield from super().sources(interpreter)
         # landmark for exec_prefix
         exec_marker_file, to_path, _ = cls.from_stdlib(cls.mappings(interpreter), "lib-dynload")
         yield PathRefToDest(exec_marker_file, dest=to_path)
 
+        # add a copy of the host python image
+        exe = Path(interpreter.prefix) / "Python"
+        yield PathRefToDest(exe, dest=lambda self, _: self.dest / "Python", must=RefMust.COPY)  # noqa: U101
+
+        # add a symlink to the Resources dir
+        resources = Path(interpreter.prefix) / "Resources"
+        yield PathRefToDest(resources, dest=lambda self, _: self.dest / "Resources")  # noqa: U101
+
     @property
     def reload_code(self):
-        result = super(CPython2macOsFramework, self).reload_code
+        result = super().reload_code
         result = dedent(
-            """
+            f"""
         # the bundled site.py always adds the global site package if we're on python framework build, escape this
         import sysconfig
         config = sysconfig.get_config_vars()
         before = config["PYTHONFRAMEWORK"]
         try:
             config["PYTHONFRAMEWORK"] = ""
-            {}
+            {result}
         finally:
             config["PYTHONFRAMEWORK"] = before
-        """.format(
-                result,
-            ),
+        """,
         )
         return result
 
@@ -134,11 +124,11 @@ class CPython2macOsArmFramework(CPython2macOsFramework, CPythonmacOsFramework, C
             # Reset the signing on Darwin since the exe has been modified.
             # Note codesign fails on the original exe, it needs to be copied and moved back.
             bak_dir.mkdir(parents=True, exist_ok=True)
-            subprocess.check_call(["cp", text_type(exe), text_type(bak_dir)])
-            subprocess.check_call(["mv", text_type(bak_dir / exe.name), text_type(exe)])
+            subprocess.check_call(["cp", str(exe), str(bak_dir)])
+            subprocess.check_call(["mv", str(bak_dir / exe.name), str(exe)])
             bak_dir.rmdir()
             metadata = "--preserve-metadata=identifier,entitlements,flags,runtime"
-            cmd = ["codesign", "-s", "-", metadata, "-f", text_type(exe)]
+            cmd = ["codesign", "-s", "-", metadata, "-f", str(exe)]
             logging.debug("Changing Signature: %s", cmd)
             subprocess.check_call(cmd)
         except Exception:
@@ -147,29 +137,34 @@ class CPython2macOsArmFramework(CPython2macOsFramework, CPythonmacOsFramework, C
 
 
 class CPython3macOsFramework(CPythonmacOsFramework, CPython3, CPythonPosix):
-    @classmethod
-    def image_ref(cls, interpreter):
-        return Path(interpreter.prefix) / "Python3"
-
     def current_mach_o_image_path(self):
         return "@executable_path/../../../../Python3"
 
+    def desired_mach_o_image_path(self):
+        return "@executable_path/../.Python"
+
+    @classmethod
+    def sources(cls, interpreter):
+        yield from super().sources(interpreter)
+
+        # add a symlink to the host python image
+        exe = Path(interpreter.prefix) / "Python3"
+        yield PathRefToDest(exe, dest=lambda self, _: self.dest / ".Python", must=RefMust.SYMLINK)  # noqa: U101
+
     @property
     def reload_code(self):
-        result = super(CPython3macOsFramework, self).reload_code
+        result = super().reload_code
         result = dedent(
-            """
+            f"""
         # the bundled site.py always adds the global site package if we're on python framework build, escape this
         import sys
         before = sys._framework
         try:
             sys._framework = None
-            {}
+            {result}
         finally:
             sys._framework = before
-        """.format(
-                result,
-            ),
+        """,
         )
         return result
 
@@ -199,7 +194,7 @@ def fix_mach_o(exe, current, new, max_size):
     unneeded bits of information, however Mac OS X 10.5 and earlier cannot read this new Link Edit table format.
     """
     try:
-        logging.debug("change Mach-O for %s from %s to %s", ensure_text(exe), current, ensure_text(new))
+        logging.debug("change Mach-O for %s from %s to %s", exe, current, new)
         _builtin_change_mach_o(max_size)(exe, current, new)
     except Exception as e:
         logging.warning("Could not call _builtin_change_mac_o: %s. " "Trying to call install_name_tool instead.", e)
@@ -212,16 +207,16 @@ def fix_mach_o(exe, current, new, max_size):
 
 
 def _builtin_change_mach_o(maxint):
-    MH_MAGIC = 0xFEEDFACE
-    MH_CIGAM = 0xCEFAEDFE
-    MH_MAGIC_64 = 0xFEEDFACF
-    MH_CIGAM_64 = 0xCFFAEDFE
-    FAT_MAGIC = 0xCAFEBABE
-    BIG_ENDIAN = ">"
-    LITTLE_ENDIAN = "<"
-    LC_LOAD_DYLIB = 0xC
+    MH_MAGIC = 0xFEEDFACE  # noqa: N806
+    MH_CIGAM = 0xCEFAEDFE  # noqa: N806
+    MH_MAGIC_64 = 0xFEEDFACF  # noqa: N806
+    MH_CIGAM_64 = 0xCFFAEDFE  # noqa: N806
+    FAT_MAGIC = 0xCAFEBABE  # noqa: N806
+    BIG_ENDIAN = ">"  # noqa: N806
+    LITTLE_ENDIAN = "<"  # noqa: N806
+    LC_LOAD_DYLIB = 0xC  # noqa: N806
 
-    class FileView(object):
+    class FileView:
         """A proxy for file-like objects that exposes a given view of a file. Modified from macholib."""
 
         def __init__(self, file_obj, start=0, size=maxint):
@@ -234,15 +229,15 @@ def _builtin_change_mach_o(maxint):
             self._pos = 0
 
         def __repr__(self):
-            return "<fileview [{:d}, {:d}] {!r}>".format(self._start, self._end, self._file_obj)
+            return f"<fileview [{self._start:d}, {self._end:d}] {self._file_obj!r}>"
 
         def tell(self):
             return self._pos
 
         def _checkwindow(self, seek_to, op):
             if not (self._start <= seek_to <= self._end):
-                msg = "{} to offset {:d} is outside window [{:d}, {:d}]".format(op, seek_to, self._start, self._end)
-                raise IOError(msg)
+                msg = f"{op} to offset {seek_to:d} is outside window [{self._start:d}, {self._end:d}]"
+                raise OSError(msg)
 
         def seek(self, offset, whence=0):
             seek_to = offset
@@ -253,7 +248,7 @@ def _builtin_change_mach_o(maxint):
             elif whence == os.SEEK_END:
                 seek_to += self._end
             else:
-                raise IOError("Invalid whence argument to seek: {!r}".format(whence))
+                raise OSError(f"Invalid whence argument to seek: {whence!r}")
             self._checkwindow(seek_to, "seek")
             self._file_obj.seek(seek_to)
             self._pos = seek_to - self._start
@@ -339,3 +334,10 @@ def _builtin_change_mach_o(maxint):
             do_file(f)
 
     return mach_o_change
+
+
+__all__ = [
+    "CPythonmacOsFramework",
+    "CPython2macOsFramework",
+    "CPython3macOsFramework",
+]

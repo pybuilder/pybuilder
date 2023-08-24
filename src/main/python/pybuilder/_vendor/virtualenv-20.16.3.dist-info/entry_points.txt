@@ -30,4 +30,3 @@ builtin = virtualenv.discovery.builtin:Builtin
 [virtualenv.seed]
 app-data = virtualenv.seed.embed.via_app_data.via_app_data:FromAppData
 pip = virtualenv.seed.embed.pip_invoke:PipInvoke
-

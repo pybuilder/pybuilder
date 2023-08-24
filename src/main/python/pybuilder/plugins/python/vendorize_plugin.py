@@ -36,7 +36,8 @@ from pybuilder.utils import as_list, makedirs, jp, np
 
 __author__ = "Arcadiy Ivanov"
 
-RE_FROM_IMPORT = re.compile(r"from\s+(\S+)\s+import\s+")
+_RE_FROM_IMPORT = re.compile(r"from\s+(\S+)\s+import\s+")
+_RE_DECODE_PY = re.compile(rb'^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+)')
 
 use_plugin("python.core")
 
@@ -255,7 +256,7 @@ class ImportTransformer(NodeVisitor):
                     import_changes = _relpkg_from(self.pkg_parts, module)
                     import_stmt, offset_start, offset_end = self.extract_source(node)
 
-                    m = RE_FROM_IMPORT.match(import_stmt)
+                    m = _RE_FROM_IMPORT.match(import_stmt)
 
                     ts = self.transformed_source
                     ts_prefix = ts[:offset_start + m.start(1) + self.offset]
@@ -276,15 +277,19 @@ def _vendorize(vendorized_path, logger):
         for py_path in files:
             if not py_path.endswith(".py"):
                 continue
+
             py_path = np(jp(root, py_path))
-            with open(py_path, "rt") as source_file:
-                source = source_file.read()
+            with open(py_path, "rb") as source_file:
+                source_b = source_file.read()
+            source_encoding, source = _decode_py(source_b)
+
             parsed_ast = ast.parse(source, filename=py_path)
             it = ImportTransformer(py_path, source, vendorized_path, vendorized_packages, [])
             it.visit(parsed_ast)
+
             if source != it.transformed_source:
                 logger.debug("Vendorized %r", py_path)
-                with open(py_path, "wt") as source_file:
+                with open(py_path, "wt", encoding=source_encoding) as source_file:
                     source_file.write(it.transformed_source)
 
     return vendorized_packages
@@ -339,3 +344,20 @@ def _extract_source(source_lines, node):
     end_line_offset = source_lines[end_lineno]
 
     return start_line_offset + col_offset, end_line_offset + end_col_offset
+
+
+def _decode_py(source_b):
+    encoding = "utf-8"
+    if source_b.startswith(b'\xef\xbb\xbf'):
+        encoding = "utf-8"
+    else:
+        source_b_lines = source_b.splitlines()
+        for idx, line in enumerate(source_b_lines):
+            if idx > 1:
+                break
+            match = _RE_DECODE_PY.match(line)
+            if match:
+                encoding = match.group(1).decode("utf-8")
+                break
+
+    return encoding, source_b.decode(encoding, errors='strict')

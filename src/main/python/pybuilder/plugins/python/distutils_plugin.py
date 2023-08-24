@@ -122,8 +122,6 @@ def initialize_distutils_plugin(project):
     project.plugin_depends_on("setuptools", ">=38.6.0")
     project.plugin_depends_on("twine", ">=1.15.0")
     project.plugin_depends_on("wheel", ">=0.34.0")
-    if project.get_property("distutils_cython_ext_modules"):
-        project.plugin_depends_on("Cython", "~=0.29.28")
 
     project.set_property_if_unset("distutils_commands", ["sdist", "bdist_wheel"])
     project.set_property_if_unset("distutils_command_options", None)
@@ -163,6 +161,26 @@ def initialize_distutils_plugin(project):
     project.set_property_if_unset("distutils_ext_modules", None)
 
 
+@before("prepare")
+def check_cython_dependency(project, logger):
+    # If there are modules to be cythonized, add Cython dependency
+    # if not already specified
+    if project.get_property("distutils_cython_ext_modules"):
+        cython_re = re.compile(r'^\W*cython\W*')
+        for dependency in project.build_dependencies + as_list(project.plugin_dependencies) + as_list(project.dependencies):
+            if isinstance(dependency, Dependency) and dependency.name.lower() == "cython":
+                break
+            elif isinstance(dependency, RequirementsFile):
+                for line in flatten_and_quote(dependency):
+                    if cython_re.match(line.lower()):
+                        break
+                else:
+                    continue
+                break
+        else:
+            project.plugin_depends_on("Cython", "~=0.29.0")
+
+
 @after("prepare")
 def set_description(project, logger, reactor):
     if project.get_property("distutils_readme_description"):
@@ -188,6 +206,15 @@ def set_description(project, logger, reactor):
                     project.description is None or
                     project.get_property("distutils_description_overwrite")):
                 setattr(project, "description", description)
+
+    if (not hasattr(project, "description") or
+            not project.description):
+        if hasattr(project, "summary") and project.summary:
+            description = project.summary
+        else:
+            description = project.name
+
+        setattr(project, "description", description)
 
     warn = False
     if len(project.summary) >= 512:
