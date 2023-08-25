@@ -187,7 +187,7 @@ def _create_runner(runner_generator, output_log_file=None):
 def _get_make_result_method_name(runner_generator):
     if (isinstance(runner_generator, list) or isinstance(runner_generator, tuple)) and len(runner_generator) > 1:
         method = runner_generator[1]
-        if type(method) == MethodType or type(method) == FunctionType:
+        if type(method) is MethodType or type(method) is FunctionType:
             method = method.__name__
     else:
         method = "_makeResult"
