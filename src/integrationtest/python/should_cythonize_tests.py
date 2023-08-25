@@ -47,9 +47,10 @@ def init (project):
         os.path.join("**", "__init__.py")
     ])
     project.set_property("distutils_cython_ext_modules", [{
-            "module_list": ["spam/**/*.py"],
+            "module_list": ["spam/**/*.py", "eggs/**/*.py"],
             "exclude": ["**/__init__.py"],
-        }])
+            "compiler_directives": {"language_level": "3"}
+    }])
     project.set_property("distutils_cython_remove_python_sources", True)
     project.set_property("copy_resources_target", "$dir_dist")
 """)
@@ -57,6 +58,12 @@ def init (project):
         self.write_file("src/main/python/spam/__init__.py", "")
         self.write_file("src/main/python/spam/eggs.py", """
 def spam ():
+    pass
+""")
+        self.create_directory("src/main/python/eggs")
+        self.write_file("src/main/python/eggs/__init__.py", "")
+        self.write_file("src/main/python/eggs/spam.py", """
+def eggs ():
     pass
 """)
 
@@ -129,7 +136,7 @@ class install(_install):
         self.post_install_script()
 
 
-cython_module_list = ['spam/**/*.py']
+cython_module_list = ['spam/**/*.py', 'eggs/**/*.py']
 cython_excludes = ['**/__init__.py']
 def not_cythonized(tup):
     (package, module, filepath) = tup
@@ -173,10 +180,13 @@ if __name__ == '__main__':
         project_urls = {},
 
         scripts = [],
-        packages = ['spam'],
+        packages = [
+            'eggs',
+            'spam'
+        ],
         namespace_packages = [],
         py_modules = [],
-        ext_modules = LazyCythonize([],[{"module_list":['spam/**/*.py'],"exclude":['**/__init__.py']}]),
+        ext_modules = LazyCythonize([],[{"module_list":['spam/**/*.py', 'eggs/**/*.py'],"exclude":['**/__init__.py'],"compiler_directives":{'language_level': '3'}}]),
         entry_points = {},
         data_files = [],
         package_data = {},
@@ -189,7 +199,7 @@ if __name__ == '__main__':
         obsoletes = [],
         setup_requires = ["Cython~=0.29.0"],
     )
-""")
+""")  # noqa: E501
 
 
 if __name__ == "__main__":
