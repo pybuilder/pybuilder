@@ -14,7 +14,7 @@ import sys
 try:
     abs_file = os.path.abspath(__file__)
 except NameError as exc:
-    msg = "You must use exec(open(this_file).read(), {'__file__': this_file}))"
+    msg = "You must use exec(open(this_file).read(), {'__file__': this_file})"
     raise AssertionError(msg) from exc
 
 bin_dir = os.path.dirname(abs_file)
@@ -23,6 +23,7 @@ base = bin_dir[: -len("__BIN_NAME__") - 1]  # strip away the bin part from the _
 # prepend bin to PATH (this file is inside the bin directory)
 os.environ["PATH"] = os.pathsep.join([bin_dir, *os.environ.get("PATH", "").split(os.pathsep)])
 os.environ["VIRTUAL_ENV"] = base  # virtual env is right above bin directory
+os.environ["VIRTUAL_ENV_PROMPT"] = "__VIRTUAL_PROMPT__" or os.path.basename(base)  # noqa: SIM222
 
 # add the virtual environments libraries to the host python import mechanism
 prev_length = len(sys.path)

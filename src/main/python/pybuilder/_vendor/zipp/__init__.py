@@ -5,9 +5,9 @@ import itertools
 import contextlib
 import pathlib
 import re
-import fnmatch
 
 from .py310compat import text_encoding
+from .glob import translate
 
 
 __all__ = ['Path']
@@ -148,6 +148,16 @@ class CompleteDirs(InitializedState, zipfile.ZipFile):
         source.__class__ = cls
         return source
 
+    @classmethod
+    def inject(cls, zf: zipfile.ZipFile) -> zipfile.ZipFile:
+        """
+        Given a writable zip file zf, inject directory entries for
+        any directories implied by the presence of children.
+        """
+        for name in cls._implied_dirs(zf.namelist()):
+            zf.writestr(name, b"")
+        return zf
+
 
 class FastLookup(CompleteDirs):
     """
@@ -195,13 +205,13 @@ class Path:
 
     Path accepts the zipfile object itself or a filename
 
-    >>> root = Path(zf)
+    >>> path = Path(zf)
 
     From there, several path operations are available.
 
     Directory iteration (including the zip file itself):
 
-    >>> a, b = root.iterdir()
+    >>> a, b = path.iterdir()
     >>> a
     Path('mem/abcde.zip', 'a.txt')
     >>> b
@@ -239,16 +249,38 @@ class Path:
     'mem/abcde.zip/b/c.txt'
 
     At the root, ``name``, ``filename``, and ``parent``
-    resolve to the zipfile. Note these attributes are not
-    valid and will raise a ``ValueError`` if the zipfile
-    has no filename.
+    resolve to the zipfile.
 
-    >>> root.name
+    >>> str(path)
+    'mem/abcde.zip/'
+    >>> path.name
     'abcde.zip'
-    >>> str(root.filename).replace(os.sep, posixpath.sep)
-    'mem/abcde.zip'
-    >>> str(root.parent)
+    >>> path.filename == pathlib.Path('mem/abcde.zip')
+    True
+    >>> str(path.parent)
     'mem'
+
+    If the zipfile has no filename, such attribtues are not
+    valid and accessing them will raise an Exception.
+
+    >>> zf.filename = None
+    >>> path.name
+    Traceback (most recent call last):
+    ...
+    TypeError: ...
+
+    >>> path.filename
+    Traceback (most recent call last):
+    ...
+    TypeError: ...
+
+    >>> path.parent
+    Traceback (most recent call last):
+    ...
+    TypeError: ...
+
+    # workaround python/cpython#106763
+    >>> pass
     """
 
     __repr = "{self.__class__.__name__}({self.root.filename!r}, {self.at!r})"
@@ -298,21 +330,24 @@ class Path:
         encoding, args, kwargs = _extract_text_encoding(*args, **kwargs)
         return io.TextIOWrapper(stream, encoding, *args, **kwargs)
 
+    def _base(self):
+        return pathlib.PurePosixPath(self.at or self.root.filename)
+
     @property
     def name(self):
-        return pathlib.Path(self.at).name or self.filename.name
+        return self._base().name
 
     @property
     def suffix(self):
-        return pathlib.Path(self.at).suffix or self.filename.suffix
+        return self._base().suffix
 
     @property
     def suffixes(self):
-        return pathlib.Path(self.at).suffixes or self.filename.suffixes
+        return self._base().suffixes
 
     @property
     def stem(self):
-        return pathlib.Path(self.at).stem or self.filename.stem
+        return self._base().stem
 
     @property
     def filename(self):
@@ -349,7 +384,7 @@ class Path:
         return filter(self._is_child, subs)
 
     def match(self, path_pattern):
-        return pathlib.Path(self.at).match(path_pattern)
+        return pathlib.PurePosixPath(self.at).match(path_pattern)
 
     def is_symlink(self):
         """
@@ -357,22 +392,13 @@ class Path:
         """
         return False
 
-    def _descendants(self):
-        for child in self.iterdir():
-            yield child
-            if child.is_dir():
-                yield from child._descendants()
-
     def glob(self, pattern):
         if not pattern:
             raise ValueError(f"Unacceptable pattern: {pattern!r}")
 
-        matches = re.compile(fnmatch.translate(pattern)).fullmatch
-        return (
-            child
-            for child in self._descendants()
-            if matches(str(child.relative_to(self)))
-        )
+        prefix = re.escape(self.at)
+        matches = re.compile(prefix + translate(pattern)).fullmatch
+        return map(self._next, filter(matches, self.root.namelist()))
 
     def rglob(self, pattern):
         return self.glob(f'**/{pattern}')
