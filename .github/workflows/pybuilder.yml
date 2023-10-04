@@ -14,12 +14,11 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
-          - '3.12-dev'
+          - '3.12'
           - '3.11'
           - '3.10'
           - '3.9'
           - '3.8'
-          - '3.7'
         with-venv:
           - 'true'
           - 'false'
@@ -46,14 +45,13 @@ jobs:
       matrix:
         os:
           - windows-latest
-          - macos-11
-          - macos-12
+          - macos-latest
         python-version:
+          - '3.12'
           - '3.11'
           - '3.10'
           - '3.9'
           - '3.8'
-          - '3.7'
         with-venv:
           - 'true'
           - 'false'
@@ -61,12 +59,6 @@ jobs:
           - 'true'
           - 'false'
         exclude:
-          - os: macos-11
-            python-version: '3.7'
-            with-homebrew: 'true'
-          - os: macos-12
-            python-version: '3.7'
-            with-homebrew: 'true'
           - os: macos-11
             python-version: '3.8'
             with-homebrew: 'true'
@@ -95,10 +87,9 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
-          - macos-11
-          - macos-12
+          - macos-latest
         python-version:
-          - 'pypy-3.7'
+          - '3.13-dev'
           - 'pypy-3.8'
           - 'pypy-3.9'
         with-venv:

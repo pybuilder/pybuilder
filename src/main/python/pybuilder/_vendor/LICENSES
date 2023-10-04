@@ -1,4 +1,4 @@
-importlib_metadata-4.13.0
+importlib_metadata-6.8.0
 ==========
 
                                  Apache License
@@ -204,7 +204,7 @@ importlib_metadata-4.13.0
    limitations under the License.
 
 
-importlib_resources-5.12.0
+importlib_resources-6.1.0
 ==========
 
                                  Apache License
@@ -410,7 +410,7 @@ importlib_resources-5.12.0
    limitations under the License.
 
 
-setuptools-68.0.0
+setuptools-68.2.2
 ==========
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
@@ -455,10 +455,8 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWIS
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-zipp-3.15.0
+zipp-3.17.0
 ==========
-Copyright Jason R. Coombs
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
 deal in the Software without restriction, including without limitation the
@@ -478,7 +476,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 
 
-distlib-0.3.6
+distlib-0.3.7
 ==========
 A. HISTORY OF THE SOFTWARE
 ==========================
@@ -787,7 +785,7 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-typing_extensions-4.7.1
+typing_extensions-4.8.0
 ==========
 A. HISTORY OF THE SOFTWARE
 ==========================

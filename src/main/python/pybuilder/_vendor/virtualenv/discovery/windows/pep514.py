@@ -139,14 +139,12 @@ def parse_version(version_str):
 
 
 def msg(path, what):
-    LOGGER.warning(f"PEP-514 violation in Windows Registry at {path} error: {what}")
+    LOGGER.warning("PEP-514 violation in Windows Registry at %s error: %s", path, what)
 
 
 def _run():
     basicConfig()
-    interpreters = []
-    for spec in discover_pythons():
-        interpreters.append(repr(spec))
+    interpreters = [repr(spec) for spec in discover_pythons()]
     print("\n".join(sorted(interpreters)))  # noqa: T201
 
 
