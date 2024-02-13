@@ -17,7 +17,7 @@ import warnings
 from collections import OrderedDict, namedtuple
 from string import digits
 
-VersionInfo = namedtuple("VersionInfo", ["major", "minor", "micro", "releaselevel", "serial"])
+VersionInfo = namedtuple("VersionInfo", ["major", "minor", "micro", "releaselevel", "serial"])  # noqa: PYI024
 
 
 def _get_path_extensions():
@@ -278,10 +278,7 @@ class PythonInfo:
                     ),
                     (
                         "original"
-                        if (
-                            self.original_executable != self.system_executable
-                            and self.original_executable != self.executable
-                        )
+                        if self.original_executable not in {self.system_executable, self.executable}
                         else None,
                         self.original_executable,
                     ),
@@ -434,7 +431,7 @@ class PythonInfo:
         target.executable = start_executable
         return target
 
-    _cache_exe_discovery = {}
+    _cache_exe_discovery = {}  # noqa: RUF012
 
     def discover_exe(self, app_data, prefix, exact=True, env=None):  # noqa: FBT002
         key = prefix, exact
