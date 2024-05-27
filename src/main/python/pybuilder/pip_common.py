@@ -16,19 +16,22 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from pkg_resources import packaging
 
-import pkg_resources.extern.packaging.specifiers
-import pkg_resources.extern.packaging.version
-import pkg_resources.extern.packaging.requirements
-import pkg_resources.extern.packaging.utils
+import pkg_resources
 
-SpecifierSet = packaging.specifiers.SpecifierSet
-InvalidSpecifier = packaging.specifiers.InvalidSpecifier
-Version = packaging.version.Version
-InvalidVersion = packaging.version.InvalidVersion
-Requirement = packaging.requirements.Requirement
-InvalidRequirement = packaging.requirements.InvalidRequirement
-canonicalize_name = packaging.utils.canonicalize_name
+from packaging.specifiers import SpecifierSet, InvalidSpecifier
+from packaging.version import Version, InvalidVersion
+from packaging.requirements import Requirement, InvalidRequirement
+from packaging.utils import canonicalize_name
+
+__all__ = ["SpecifierSet", "InvalidSpecifier"]
+
+SpecifierSet = SpecifierSet
+InvalidSpecifier = InvalidSpecifier
+Version = Version
+InvalidVersion = InvalidVersion
+Requirement = Requirement
+InvalidRequirement = InvalidRequirement
+canonicalize_name = canonicalize_name
 
 WorkingSet = pkg_resources.WorkingSet

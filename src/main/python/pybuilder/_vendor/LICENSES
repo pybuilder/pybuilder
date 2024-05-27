@@ -307,7 +307,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 
-zipp-3.17.0
+zipp-3.19.0
 ==========
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
@@ -352,7 +352,7 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWIS
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-setuptools-69.1.0
+setuptools-70.0.0
 ==========
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
@@ -373,7 +373,14 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 
 
-importlib_resources-6.1.1
+packaging-24.0
+==========
+This software is made available under the terms of *either* of the licenses
+found in LICENSE.APACHE or LICENSE.BSD. Contributions to this software is made
+under the terms of *both* these licenses.
+
+
+importlib_resources-6.4.0
 ==========
 
                                  Apache License
@@ -579,7 +586,7 @@ importlib_resources-6.1.1
    limitations under the License.
 
 
-importlib_metadata-7.0.1
+importlib_metadata-7.1.0
 ==========
 
                                  Apache License
@@ -785,7 +792,7 @@ importlib_metadata-7.0.1
    limitations under the License.
 
 
-typing_extensions-4.9.0
+typing_extensions-4.12.0
 ==========
 A. HISTORY OF THE SOFTWARE
 ==========================
