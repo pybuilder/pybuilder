@@ -121,10 +121,10 @@ def as_str(value):
 @init
 def initialize_distutils_plugin(project):
     project.plugin_depends_on("pypandoc", "~=1.4")
-    project.plugin_depends_on("setuptools", ">=38.6.0")
     project.plugin_depends_on("twine", ">=1.15.0")
     project.plugin_depends_on("toml", "~=0.10.0")
-    project.plugin_depends_on("wheel", ">=0.34.0")
+    project.plugin_depends_on("setuptools", ">=38.6.0", eager_update=False)
+    project.plugin_depends_on("wheel", ">=0.34.0", eager_update=False)
 
     project.set_property_if_unset("distutils_commands", ["sdist", "bdist_wheel"])
     project.set_property_if_unset("distutils_command_options", None)
@@ -613,7 +613,7 @@ def flatten_and_quote(requirements_file):
     with open(requirements_file.name, 'r') as requirements_file:
         requirements = [requirement.strip("\n") for requirement in requirements_file.readlines()]
         requirements = [requirement for requirement in requirements if requirement]
-        return quote(strip_options(strip_comments(requirements)))
+        return quote(strip_comments(requirements))
 
 
 def format_single_dependency(dependency):
