@@ -334,7 +334,7 @@ class ProjectValidationTest(unittest.TestCase):
         validation_messages = self.project.validate()
 
         self.assertTrue("Runtime dependency 'spam' has been defined multiple times." in validation_messages)
-        self.assertEquals(len(validation_messages), 1)
+        self.assertEqual(len(validation_messages), 1)
 
     def test_should_not_validate_project_with_duplicate_build_dependency_but_different_versions(self):
         self.project.build_depends_on('spam', version='1')
@@ -369,7 +369,7 @@ class ProjectValidationTest(unittest.TestCase):
 
         self.assertTrue(
             "Build dependency 'spam' has been defined multiple times." in validation_messages)
-        self.assertEquals(len(validation_messages), 1)
+        self.assertEqual(len(validation_messages), 1)
 
     def test_should_not_validate_project_with_runtime_dependency_being_also_given_as_build_dependency(self):
         self.project.depends_on('spam')
@@ -378,7 +378,7 @@ class ProjectValidationTest(unittest.TestCase):
 
         self.assertTrue(
             "Runtime dependency 'spam' has also been given as build dependency." in validation_messages)
-        self.assertEquals(len(validation_messages), 1)
+        self.assertEqual(len(validation_messages), 1)
 
 
 class LoggerTest(unittest.TestCase):

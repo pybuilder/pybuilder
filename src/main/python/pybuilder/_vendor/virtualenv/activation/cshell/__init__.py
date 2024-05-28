@@ -1,4 +1,6 @@
-from ..via_template import ViaTemplateActivator
+from __future__ import annotations
+
+from virtualenv.activation.via_template import ViaTemplateActivator
 
 
 class CShellActivator(ViaTemplateActivator):

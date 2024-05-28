@@ -18,10 +18,12 @@
 
 import ast
 import sys
+from importlib.abc import Loader, MetaPathFinder
+from importlib.util import spec_from_loader
 from os.path import dirname
 
 
-class CoverageImporter:
+class CoverageImporter(Loader, MetaPathFinder):
     def __init__(self, coverage_parent_dir):
         self.coverage_parent_dir = coverage_parent_dir
         self._in_import = False
@@ -46,6 +48,13 @@ class CoverageImporter:
         finally:
             self._in_import = False
             del sys.path[-1]
+
+    def find_spec(self, fullname, path=None, target=None):
+        """Return a module spec for vendored names."""
+        return (
+            spec_from_loader(fullname, self)
+            if fullname == "coverage" else None
+        )
 
     def install(self):
         """

@@ -35,7 +35,7 @@ use_plugin("python.core")
 
 @init
 def init_test_source_directory(project):
-    project.plugin_depends_on("unittest-xml-reporting", "~=3.0.4")
+    project.plugin_depends_on("unittest-xml-reporting", ">=3.0.4")
 
     project.set_property_if_unset("dir_source_unittest_python", "src/unittest/python")
     project.set_property_if_unset("unittest_breaks_build", True)
@@ -187,7 +187,7 @@ def _create_runner(runner_generator, output_log_file=None):
 def _get_make_result_method_name(runner_generator):
     if (isinstance(runner_generator, list) or isinstance(runner_generator, tuple)) and len(runner_generator) > 1:
         method = runner_generator[1]
-        if type(method) is MethodType or type(method) is FunctionType:
+        if isinstance(method, (MethodType, FunctionType)):
             method = method.__name__
     else:
         method = "_makeResult"

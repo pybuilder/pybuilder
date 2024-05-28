@@ -1,15 +1,26 @@
-from collections import OrderedDict, defaultdict, namedtuple
+from __future__ import annotations
+
+from collections import OrderedDict, defaultdict
+from typing import TYPE_CHECKING, NamedTuple
 
 from virtualenv.create.describe import Describe
 from virtualenv.create.via_global_ref.builtin.builtin_way import VirtualenvBuiltin
 
 from .base import ComponentBuilder
 
-CreatorInfo = namedtuple("CreatorInfo", ["key_to_class", "key_to_meta", "describe", "builtin_key"])
+if TYPE_CHECKING:
+    from virtualenv.create.creator import Creator, CreatorMeta
+
+
+class CreatorInfo(NamedTuple):
+    key_to_class: dict[str, type[Creator]]
+    key_to_meta: dict[str, CreatorMeta]
+    describe: type[Describe] | None
+    builtin_key: str
 
 
 class CreatorSelector(ComponentBuilder):
-    def __init__(self, interpreter, parser):
+    def __init__(self, interpreter, parser) -> None:
         creators, self.key_to_meta, self.describe, self.builtin_key = self.for_interpreter(interpreter)
         super().__init__(interpreter, parser, "creator", creators)
 
@@ -19,7 +30,8 @@ class CreatorSelector(ComponentBuilder):
         errors = defaultdict(list)
         for key, creator_class in cls.options("virtualenv.create").items():
             if key == "builtin":
-                raise RuntimeError("builtin creator is a reserved name")
+                msg = "builtin creator is a reserved name"
+                raise RuntimeError(msg)
             meta = creator_class.can_create(interpreter)
             if meta:
                 if meta.error:
@@ -37,8 +49,8 @@ class CreatorSelector(ComponentBuilder):
             if errors:
                 rows = [f"{k} for creators {', '.join(i.__name__ for i in v)}" for k, v in errors.items()]
                 raise RuntimeError("\n".join(rows))
-            else:
-                raise RuntimeError(f"No virtualenv implementation for {interpreter}")
+            msg = f"No virtualenv implementation for {interpreter}"
+            raise RuntimeError(msg)
         return CreatorInfo(
             key_to_class=key_to_class,
             key_to_meta=key_to_meta,

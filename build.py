@@ -87,9 +87,9 @@ urls = {"Bug Tracker": "https://github.com/pybuilder/pybuilder/issues",
         "Twitter": "https://twitter.com/pybuilder_",
         }
 license = "Apache License, Version 2.0"
-version = "0.13.10.dev"
+version = "0.13.11"
 
-requires_python = ">=3.7"
+requires_python = ">=3.8"
 
 default_task = ["analyze", "publish"]
 
@@ -106,7 +106,7 @@ def initialize(project):
                                                 "setuptools>=45.0.0",
                                                 "virtualenv>=20.0.0",
                                                 "importlib-resources>=1.0",
-                                                "importlib-metadata>=0.12,<5.0",
+                                                "importlib-metadata>=0.12",
                                                 "typing-extensions",
                                                 "colorama~=0.4.3"
                                                 ])
@@ -176,11 +176,11 @@ def initialize(project):
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: POSIX :: Linux",
         "Operating System :: Microsoft :: Windows",

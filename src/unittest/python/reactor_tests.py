@@ -414,14 +414,14 @@ class ReactorTest(unittest.TestCase):
         jp.assert_called_with("/spam", "eggs")
         os_path_isfile.assert_called_with("/spam/eggs")
 
-    @patch("pybuilder.reactor.imp.load_source", side_effect=ImportError("spam"))
+    @patch("pybuilder.reactor.load_source", side_effect=ImportError("spam"))
     def test_should_raise_when_loading_project_module_and_import_raises_exception(self, imp_load_source):
         self.assertRaises(
             PyBuilderException, self.reactor.load_project_module, "spam")
 
         imp_load_source.assert_called_with("build", "spam")
 
-    @patch("pybuilder.reactor.imp.load_source", return_value=Mock())
+    @patch("pybuilder.reactor.load_source", return_value=Mock())
     def test_should_return_module_when_loading_project_module_and_import_raises_exception(self, imp_load_source):
         self.assertTrue(imp_load_source.return_value is self.reactor.load_project_module("spam"))
 

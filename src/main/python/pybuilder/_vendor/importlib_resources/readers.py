@@ -1,12 +1,14 @@
 import collections
+import contextlib
 import itertools
 import pathlib
 import operator
+import re
 
 from . import abc
 
 from ._itertools import only
-from ._compat import ZipPath
+from ._compat import ZipPath, ensure_traversable
 
 
 def remove_duplicates(items):
@@ -62,7 +64,7 @@ class MultiplexedPath(abc.Traversable):
     """
 
     def __init__(self, *paths):
-        self._paths = list(map(pathlib.Path, remove_duplicates(paths)))
+        self._paths = list(map(ensure_traversable, remove_duplicates(paths)))
         if not self._paths:
             message = 'MultiplexedPath must contain at least one path'
             raise FileNotFoundError(message)
@@ -130,7 +132,33 @@ class NamespaceReader(abc.TraversableResources):
     def __init__(self, namespace_path):
         if 'NamespacePath' not in str(namespace_path):
             raise ValueError('Invalid path')
-        self.path = MultiplexedPath(*list(namespace_path))
+        self.path = MultiplexedPath(*map(self._resolve, namespace_path))
+
+    @classmethod
+    def _resolve(cls, path_str) -> abc.Traversable:
+        r"""
+        Given an item from a namespace path, resolve it to a Traversable.
+
+        path_str might be a directory on the filesystem or a path to a
+        zipfile plus the path within the zipfile, e.g. ``/foo/bar`` or
+        ``/foo/baz.zip/inner_dir`` or ``foo\baz.zip\inner_dir\sub``.
+        """
+        (dir,) = (cand for cand in cls._candidate_paths(path_str) if cand.is_dir())
+        return dir
+
+    @classmethod
+    def _candidate_paths(cls, path_str):
+        yield pathlib.Path(path_str)
+        yield from cls._resolve_zip_path(path_str)
+
+    @staticmethod
+    def _resolve_zip_path(path_str):
+        for match in reversed(list(re.finditer(r'[\\/]', path_str))):
+            with contextlib.suppress(
+                FileNotFoundError, IsADirectoryError, PermissionError
+            ):
+                inner = path_str[match.end() :].replace('\\', '/') + '/'
+                yield ZipPath(path_str[: match.start()], inner.lstrip('/'))
 
     def resource_path(self, resource):
         """

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 from abc import ABCMeta, abstractmethod
@@ -27,7 +29,7 @@ class ViaTemplateActivator(Activator, metaclass=ABCMeta):
             creator.pyenv_cfg["prompt"] = self.flag_prompt
         return generated
 
-    def replacements(self, creator, dest_folder):  # noqa: U100
+    def replacements(self, creator, dest_folder):  # noqa: ARG002
         return {
             "__VIRTUAL_PROMPT__": "" if self.flag_prompt is None else self.flag_prompt,
             "__VIRTUAL_ENV__": str(creator.dest),
@@ -41,6 +43,10 @@ class ViaTemplateActivator(Activator, metaclass=ABCMeta):
         for template in templates:
             text = self.instantiate_template(replacements, template, creator)
             dest = to_folder / self.as_name(template)
+            # remove the file if it already exists - this prevents permission
+            # errors when the dest is not writable
+            if dest.exists():
+                dest.unlink()
             # use write_bytes to avoid platform specific line normalization (\n -> \r\n)
             dest.write_bytes(text.encode("utf-8"))
             generated.append(dest)
@@ -54,12 +60,12 @@ class ViaTemplateActivator(Activator, metaclass=ABCMeta):
         binary = read_binary(self.__module__, template)
         text = binary.decode("utf-8", errors="strict")
         for key, value in replacements.items():
-            value = self._repr_unicode(creator, value)
-            text = text.replace(key, value)
+            value_uni = self._repr_unicode(creator, value)
+            text = text.replace(key, value_uni)
         return text
 
     @staticmethod
-    def _repr_unicode(creator, value):  # noqa: U100
+    def _repr_unicode(creator, value):  # noqa: ARG004
         return value  # by default, we just let it be unicode
 
 

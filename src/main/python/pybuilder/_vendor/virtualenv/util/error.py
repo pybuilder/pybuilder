@@ -1,10 +1,13 @@
-"""Errors"""
+"""Errors."""
 
 
-class ProcessCallFailed(RuntimeError):
-    """Failed a process call"""
+from __future__ import annotations
 
-    def __init__(self, code, out, err, cmd):
+
+class ProcessCallFailedError(RuntimeError):
+    """Failed a process call."""
+
+    def __init__(self, code, out, err, cmd) -> None:
         super().__init__(code, out, err, cmd)
         self.code = code
         self.out = out

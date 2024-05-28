@@ -14,11 +14,11 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
+          - '3.12'
           - '3.11'
           - '3.10'
           - '3.9'
           - '3.8'
-          - '3.7'
         with-venv:
           - 'true'
           - 'false'
@@ -27,13 +27,13 @@ jobs:
       TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/
         with:
           python-version: '${{ matrix.python-version }}'
           with-venv: '${{ matrix.with-venv }}'
           with-homebrew: 'false'
-          deploy-on-python: '["3.10"]'
+          deploy-on-python: '["3.11"]'
           deploy-on-os: '["Linux"]'
           deploy-on-branch: '["refs/heads/master"]'
   build-secondary:
@@ -45,14 +45,13 @@ jobs:
       matrix:
         os:
           - windows-latest
-          - macos-11
-          - macos-12
+          - macos-latest
         python-version:
+          - '3.12'
           - '3.11'
           - '3.10'
           - '3.9'
           - '3.8'
-          - '3.7'
         with-venv:
           - 'true'
           - 'false'
@@ -61,21 +60,18 @@ jobs:
           - 'false'
         exclude:
           - os: macos-11
-            python-version: '3.7'
-            with-homebrew: 'true'
-          - os: macos-12
-            python-version: '3.7'
-            with-homebrew: 'true'
-          - os: macos-11
             python-version: '3.8'
             with-homebrew: 'true'
           - os: macos-12
+            python-version: '3.8'
+            with-homebrew: 'true'
+          - os: macos-latest
             python-version: '3.8'
             with-homebrew: 'true'
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/
         with:
           python-version: '${{ matrix.python-version }}'
@@ -93,11 +89,8 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - windows-latest
-          - macos-11
-          - macos-12
         python-version:
-          - 'pypy-3.7'
+          - '3.13-dev'
           - 'pypy-3.8'
           - 'pypy-3.9'
         with-venv:
@@ -109,7 +102,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/
         with:
           python-version: '${{ matrix.python-version }}'
