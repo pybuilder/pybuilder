@@ -13,7 +13,6 @@ IS_WIN = sys.platform == "win32"
 IS_MAC_ARM64 = sys.platform == "darwin" and platform.machine() == "arm64"
 ROOT = os.path.realpath(os.path.join(os.path.abspath(__file__), os.path.pardir, os.path.pardir))
 IS_ZIPAPP = os.path.isfile(ROOT)
-
 _CAN_SYMLINK = _FS_CASE_SENSITIVE = _CFG_DIR = _DATA_DIR = None
 
 
@@ -49,13 +48,18 @@ def fs_supports_symlink():
     return _CAN_SYMLINK
 
 
+def fs_path_id(path: str) -> str:
+    return path.casefold() if fs_is_case_sensitive() else path
+
+
 __all__ = (
-    "IS_PYPY",
     "IS_CPYTHON",
-    "IS_WIN",
-    "fs_is_case_sensitive",
-    "fs_supports_symlink",
-    "ROOT",
-    "IS_ZIPAPP",
     "IS_MAC_ARM64",
+    "IS_PYPY",
+    "IS_WIN",
+    "IS_ZIPAPP",
+    "ROOT",
+    "fs_is_case_sensitive",
+    "fs_path_id",
+    "fs_supports_symlink",
 )

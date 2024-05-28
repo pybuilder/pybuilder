@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import sys
-from contextlib import suppress
 
 VIRTUALENV_PATCH_FILE = os.path.join(__file__)
 
@@ -51,10 +50,10 @@ class _Finder:
     lock = []  # noqa: RUF012
 
     def find_spec(self, fullname, path, target=None):  # noqa: ARG002
-        if fullname in _DISTUTILS_PATCH and self.fullname is None:
+        if fullname in _DISTUTILS_PATCH and self.fullname is None:  # noqa: PLR1702
             # initialize lock[0] lazily
             if len(self.lock) == 0:
-                import threading
+                import threading  # noqa: PLC0415
 
                 lock = threading.Lock()
                 # there is possibility that two threads T1 and T2 are simultaneously running into find_spec,
@@ -64,8 +63,8 @@ class _Finder:
                 # https://docs.python.org/3/faq/library.html#what-kinds-of-global-value-mutation-are-thread-safe
                 self.lock.append(lock)
 
-            from functools import partial
-            from importlib.util import find_spec
+            from functools import partial  # noqa: PLC0415
+            from importlib.util import find_spec  # noqa: PLC0415
 
             with self.lock[0]:
                 self.fullname = fullname
@@ -78,8 +77,10 @@ class _Finder:
                         old = getattr(spec.loader, func_name)
                         func = self.exec_module if is_new_api else self.load_module
                         if old is not func:
-                            with suppress(AttributeError):  # C-Extension loaders are r/o such as zipimporter with <3.7
+                            try:  # noqa: SIM105
                                 setattr(spec.loader, func_name, partial(func, old))
+                            except AttributeError:
+                                pass  # C-Extension loaders are r/o such as zipimporter with <3.7
                         return spec
                 finally:
                     self.fullname = None

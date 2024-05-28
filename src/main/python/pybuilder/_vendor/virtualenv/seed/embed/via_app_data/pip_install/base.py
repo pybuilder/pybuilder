@@ -4,7 +4,7 @@ import logging
 import os
 import re
 import zipfile
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from configparser import ConfigParser
 from itertools import chain
 from pathlib import Path
@@ -15,7 +15,7 @@ from ......distlib.scripts import ScriptMaker, enquote_executable
 from virtualenv.util.path import safe_delete
 
 
-class PipInstall(metaclass=ABCMeta):
+class PipInstall(ABC):
     def __init__(self, wheel, creator, image_folder) -> None:
         self._wheel = wheel
         self._creator = creator
@@ -63,7 +63,7 @@ class PipInstall(metaclass=ABCMeta):
             if path_len > 260:  # noqa: PLR2004
                 self._image_dir.mkdir(exist_ok=True)  # to get a short path must exist
 
-                from virtualenv.util.path import get_short_path_name
+                from virtualenv.util.path import get_short_path_name  # noqa: PLC0415
 
                 to_folder = get_short_path_name(to_folder)
                 self._image_dir = Path(to_folder)

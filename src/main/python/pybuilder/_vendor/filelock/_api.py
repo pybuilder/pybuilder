@@ -8,7 +8,7 @@ import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from threading import local
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any
 from weakref import WeakValueDictionary
 
 from ._error import Timeout
@@ -30,7 +30,7 @@ _LOGGER = logging.getLogger("filelock")
 # is not called twice when entering the with statement. If we would simply return *self*, the lock would be acquired
 # again in the *__enter__* method of the BaseFileLock, but not released again automatically. issue #37 (memory leak)
 class AcquireReturnProxy:
-    """A context aware object that will release the lock file when exiting."""
+    """A context-aware object that will release the lock file when exiting."""
 
     def __init__(self, lock: BaseFileLock) -> None:
         self.lock = lock
@@ -63,6 +63,9 @@ class FileLockContext:
     #: The mode for the lock files
     mode: int
 
+    #: Whether the lock should be blocking or not
+    blocking: bool
+
     #: The file descriptor for the *_lock_file* as it is returned by the os.open() function, not None when lock held
     lock_file_fd: int | None = None
 
@@ -77,15 +80,16 @@ class ThreadLocalFileContext(FileLockContext, local):
 class BaseFileLock(ABC, contextlib.ContextDecorator):
     """Abstract base class for a file lock object."""
 
-    _instances: ClassVar[WeakValueDictionary[str, BaseFileLock]] = WeakValueDictionary()
+    _instances: WeakValueDictionary[str, BaseFileLock]
 
     def __new__(  # noqa: PLR0913
         cls,
         lock_file: str | os.PathLike[str],
-        timeout: float = -1,  # noqa: ARG003
-        mode: int = 0o644,  # noqa: ARG003
+        timeout: float = -1,
+        mode: int = 0o644,
         thread_local: bool = True,  # noqa: ARG003, FBT001, FBT002
         *,
+        blocking: bool = True,  # noqa: ARG003
         is_singleton: bool = False,
         **kwargs: dict[str, Any],  # capture remaining kwargs for subclasses  # noqa: ARG003
     ) -> Self:
@@ -97,8 +101,16 @@ class BaseFileLock(ABC, contextlib.ContextDecorator):
         if not instance:
             instance = super().__new__(cls)
             cls._instances[str(lock_file)] = instance
+        elif timeout != instance.timeout or mode != instance.mode:
+            msg = "Singleton lock instances cannot be initialized with differing arguments"
+            raise ValueError(msg)
 
         return instance  # type: ignore[return-value] # https://github.com/python/mypy/issues/15322
+
+    def __init_subclass__(cls, **kwargs: dict[str, Any]) -> None:
+        """Setup unique state for lock subclasses."""
+        super().__init_subclass__(**kwargs)
+        cls._instances = WeakValueDictionary()
 
     def __init__(  # noqa: PLR0913
         self,
@@ -107,6 +119,7 @@ class BaseFileLock(ABC, contextlib.ContextDecorator):
         mode: int = 0o644,
         thread_local: bool = True,  # noqa: FBT001, FBT002
         *,
+        blocking: bool = True,
         is_singleton: bool = False,
     ) -> None:
         """
@@ -115,23 +128,26 @@ class BaseFileLock(ABC, contextlib.ContextDecorator):
         :param lock_file: path to the file
         :param timeout: default timeout when acquiring the lock, in seconds. It will be used as fallback value in \
             the acquire method, if no timeout value (``None``) is given. If you want to disable the timeout, set it \
-            to a negative value. A timeout of 0 means, that there is exactly one attempt to acquire the file lock.
+            to a negative value. A timeout of 0 means that there is exactly one attempt to acquire the file lock.
         :param mode: file permissions for the lockfile
         :param thread_local: Whether this object's internal context should be thread local or not. If this is set to \
             ``False`` then the lock will be reentrant across threads.
+        :param blocking: whether the lock should be blocking or not
         :param is_singleton: If this is set to ``True`` then only one instance of this class will be created \
             per lock file. This is useful if you want to use the lock object for reentrant locking without needing \
             to pass the same object around.
+
         """
         self._is_thread_local = thread_local
         self._is_singleton = is_singleton
 
-        # Create the context. Note that external code should not work with the context directly  and should instead use
+        # Create the context. Note that external code should not work with the context directly and should instead use
         # properties of this class.
         kwargs: dict[str, Any] = {
             "lock_file": os.fspath(lock_file),
             "timeout": timeout,
             "mode": mode,
+            "blocking": blocking,
         }
         self._context: FileLockContext = (ThreadLocalFileContext if thread_local else FileLockContext)(**kwargs)
 
@@ -164,8 +180,29 @@ class BaseFileLock(ABC, contextlib.ContextDecorator):
         Change the default timeout value.
 
         :param value: the new value, in seconds
+
         """
         self._context.timeout = float(value)
+
+    @property
+    def blocking(self) -> bool:
+        """:return: whether the locking is blocking or not"""
+        return self._context.blocking
+
+    @blocking.setter
+    def blocking(self, value: bool) -> None:
+        """
+        Change the default blocking value.
+
+        :param value: the new value as bool
+
+        """
+        self._context.blocking = value
+
+    @property
+    def mode(self) -> int:
+        """:return: the file permissions for the lockfile"""
+        return self._context.mode
 
     @abstractmethod
     def _acquire(self) -> None:
@@ -200,7 +237,7 @@ class BaseFileLock(ABC, contextlib.ContextDecorator):
         poll_interval: float = 0.05,
         *,
         poll_intervall: float | None = None,
-        blocking: bool = True,
+        blocking: bool | None = None,
     ) -> AcquireReturnProxy:
         """
         Try to acquire the file lock.
@@ -237,6 +274,9 @@ class BaseFileLock(ABC, contextlib.ContextDecorator):
         if timeout is None:
             timeout = self._context.timeout
 
+        if blocking is None:
+            blocking = self._context.blocking
+
         if poll_intervall is not None:
             msg = "use poll_interval instead of poll_intervall"
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
@@ -272,10 +312,11 @@ class BaseFileLock(ABC, contextlib.ContextDecorator):
 
     def release(self, force: bool = False) -> None:  # noqa: FBT001, FBT002
         """
-        Releases the file lock. Please note, that the lock is only completely released, if the lock counter is 0. Also
-        note, that the lock file itself is not automatically deleted.
+        Releases the file lock. Please note, that the lock is only completely released, if the lock counter is 0.
+        Also note, that the lock file itself is not automatically deleted.
 
         :param force: If true, the lock counter is ignored and the lock is released in every case/
+
         """
         if self.is_locked:
             self._context.lock_counter -= 1
@@ -293,6 +334,7 @@ class BaseFileLock(ABC, contextlib.ContextDecorator):
         Acquire the lock.
 
         :return: the lock object
+
         """
         self.acquire()
         return self
@@ -309,6 +351,7 @@ class BaseFileLock(ABC, contextlib.ContextDecorator):
         :param exc_type: the exception type if raised
         :param exc_value: the exception value if raised
         :param traceback: the exception traceback if raised
+
         """
         self.release()
 
@@ -318,6 +361,6 @@ class BaseFileLock(ABC, contextlib.ContextDecorator):
 
 
 __all__ = [
-    "BaseFileLock",
     "AcquireReturnProxy",
+    "BaseFileLock",
 ]

@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import sys
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from argparse import ArgumentTypeError
 from ast import literal_eval
 from collections import OrderedDict
@@ -26,7 +26,7 @@ class CreatorMeta:
         self.error = None
 
 
-class Creator(metaclass=ABCMeta):
+class Creator(ABC):
     """A class that given a python Interpreter creates a virtual environment."""
 
     def __init__(self, options, interpreter) -> None:
@@ -195,8 +195,8 @@ def get_env_debug_info(env_exe, debug_script, app_data, env):
     env = env.copy()
     env.pop("PYTHONPATH", None)
 
-    with app_data.ensure_extracted(debug_script) as debug_script:
-        cmd = [str(env_exe), str(debug_script)]
+    with app_data.ensure_extracted(debug_script) as debug_script_extracted:
+        cmd = [str(env_exe), str(debug_script_extracted)]
         logging.debug("debug via %r", LogCmd(cmd))
         code, out, err = run_cmd(cmd)
 
