@@ -302,7 +302,8 @@ def render_setup_script(project):
 
     # If there are modules to be cythonized, do some necessary imports
     if project.get_property("distutils_cython_ext_modules"):
-        template_values["setup_requires"] = '["Cython~=0.29.0"]'
+        template_values["setup_requires"] = \
+            """["cython~=0.29.0; python_version <= '3.7'", "cython~=3.0.10; python_version > '3.7'"]"""
         # setup_requires installs Cython as a first thing in the setup() call
         # We can't import cython directly in the setup script, so we
         # import it once there's need for it - upon accessing the ext_modules list.
@@ -782,7 +783,6 @@ def build_ext_modules_string(project):
     cython_ext_modules_desc = project.get_property("distutils_cython_ext_modules")
     if cython_ext_modules_desc is None:
         cython_ext_modules_desc = []
-    ext_modules_final_string = build_string_from_array([mod for mod in ext_modules_strings], quote_item=False)
 
     if not cython_ext_modules_desc:
         return ext_modules_final_string
