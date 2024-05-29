@@ -8,7 +8,7 @@ import contextlib
 
 from . import data01
 from ..abc import ResourceReader
-from ._compat import import_helper, os_helper
+from .compat.py39 import import_helper, os_helper
 from . import zip as zip_
 
 
@@ -148,8 +148,7 @@ class ZipSetupBase:
         self.fixtures = contextlib.ExitStack()
         self.addCleanup(self.fixtures.close)
 
-        modules = import_helper.modules_setup()
-        self.addCleanup(import_helper.modules_cleanup, *modules)
+        self.fixtures.enter_context(import_helper.isolated_modules())
 
         temp_dir = self.fixtures.enter_context(os_helper.temp_dir())
         modules = pathlib.Path(temp_dir) / 'zipped modules.zip'

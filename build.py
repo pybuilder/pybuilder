@@ -87,7 +87,7 @@ urls = {"Bug Tracker": "https://github.com/pybuilder/pybuilder/issues",
         "Twitter": "https://twitter.com/pybuilder_",
         }
 license = "Apache License, Version 2.0"
-version = "0.13.11"
+version = "0.13.12"
 
 requires_python = ">=3.8"
 
@@ -103,6 +103,7 @@ def initialize(project):
     project.set_property("vendorize_target_dir", "$dir_source_main_python/pybuilder/_vendor")
     project.set_property("vendorize_packages", ["tblib~=1.5",
                                                 "tailer~=0.4",
+                                                "packaging>=24.0",
                                                 "setuptools>=45.0.0",
                                                 "virtualenv>=20.0.0",
                                                 "importlib-resources>=1.0",

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from abc import ABCMeta
+from abc import ABC
 
 from virtualenv.create.creator import Creator
 from virtualenv.create.describe import Describe
 
 
-class VirtualenvBuiltin(Creator, Describe, metaclass=ABCMeta):
+class VirtualenvBuiltin(Creator, Describe, ABC):
     """A creator that does operations itself without delegation, if we can create it we can also describe it."""
 
     def __init__(self, options, interpreter) -> None:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
 from .activator import Activator
 
@@ -16,7 +16,7 @@ else:
     from importlib.resources import read_binary
 
 
-class ViaTemplateActivator(Activator, metaclass=ABCMeta):
+class ViaTemplateActivator(Activator, ABC):
     @abstractmethod
     def templates(self):
         raise NotImplementedError
@@ -47,8 +47,10 @@ class ViaTemplateActivator(Activator, metaclass=ABCMeta):
             # errors when the dest is not writable
             if dest.exists():
                 dest.unlink()
+            # Powershell assumes Windows 1252 encoding when reading files without BOM
+            encoding = "utf-8-sig" if str(template).endswith(".ps1") else "utf-8"
             # use write_bytes to avoid platform specific line normalization (\n -> \r\n)
-            dest.write_bytes(text.encode("utf-8"))
+            dest.write_bytes(text.encode(encoding))
             generated.append(dest)
         return generated
 
