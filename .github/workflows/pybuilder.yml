@@ -45,7 +45,7 @@ jobs:
       matrix:
         os:
           - windows-latest
-          - macos-latest
+          - macos-13
         python-version:
           - '3.12'
           - '3.11'
@@ -59,13 +59,7 @@ jobs:
           - 'true'
           - 'false'
         exclude:
-          - os: macos-11
-            python-version: '3.8'
-            with-homebrew: 'true'
-          - os: macos-12
-            python-version: '3.8'
-            with-homebrew: 'true'
-          - os: macos-latest
+          - os: macos-13
             python-version: '3.8'
             with-homebrew: 'true'
     env:
