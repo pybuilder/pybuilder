@@ -284,16 +284,19 @@ class Dependency(object):
                     version = str(pip_common.SpecifierSet(version))
                 except pip_common.InvalidSpecifier:
                     raise ValueError("'%s' must be either PEP 0440 version or a version specifier set" % version)
-        else:
-            try:
-                req = pip_common.Requirement(name)
-                name = req.name
-                version = version or str(req.specifier) or None
-                url = url or req.url
-            except pip_common.InvalidRequirement:
-                pass
+
+        extras = None
+        try:
+            req = pip_common.Requirement(name)
+            name = req.name
+            extras = list(req.extras) if req.extras else None
+            version = version or str(req.specifier) or None
+            url = url or req.url
+        except pip_common.InvalidRequirement:
+            pass
 
         self.name = name
+        self.extras = extras
         self.version = version
         self.url = url
         self.declaration_only = declaration_only
@@ -323,8 +326,8 @@ class Dependency(object):
 
     def __repr__(self):
         return (self.name +
-                ("," + self.version if self.version else "") +
-                ("," + self.url if self.url else "") +
+                (("," + self.version) if self.version else "") +
+                (("," + self.url) if self.url else "") +
                 (" (declaration only)" if self.declaration_only else ""))
 
 
