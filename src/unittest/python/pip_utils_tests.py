@@ -103,6 +103,18 @@ class PipVersionTests(unittest.TestCase):
 
 
 class PipUtilsTests(unittest.TestCase):
+
+    def test_as_constraint_target(self):
+        dep = core.Dependency("abc[extra]", ">=1.2.3")
+        self.assertEqual(["abc>=1.2.3"], pip_utils.as_constraints_target([dep]))
+
+    def test_as_pip_install_target(self):
+        dep = core.Dependency("abc[extra1,extra2]", ">=1.2.3")
+        try:
+            self.assertEqual(["abc[extra1,extra2]>=1.2.3"], pip_utils.as_pip_install_target([dep]))
+        except AssertionError:
+            self.assertEqual(["abc[extra2,extra1]>=1.2.3"], pip_utils.as_pip_install_target([dep]))
+
     def test_pip_install_environ_inherited(self):
         python_env = Mock()
         python_env.executable = []
