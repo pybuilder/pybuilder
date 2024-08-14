@@ -12,21 +12,20 @@ import inspect
 import pathlib
 import operator
 import textwrap
-import warnings
 import functools
 import itertools
 import posixpath
 import collections
 
-from . import _adapters, _meta
-from .compat import py39
+from . import _meta
+from .compat import py39, py311
 from ._collections import FreezableDefaultDict, Pair
 from ._compat import (
     NullFinder,
     install,
 )
 from ._functools import method_cache, pass_none
-from ._itertools import always_iterable, unique_everseen
+from ._itertools import always_iterable, bucket, unique_everseen
 from ._meta import PackageMetadata, SimplePath
 
 from contextlib import suppress
@@ -40,6 +39,7 @@ __all__ = [
     'DistributionFinder',
     'PackageMetadata',
     'PackageNotFoundError',
+    'SimplePath',
     'distribution',
     'distributions',
     'entry_points',
@@ -334,27 +334,7 @@ class FileHash:
         return f'<FileHash mode: {self.mode} value: {self.value}>'
 
 
-class DeprecatedNonAbstract:
-    # Required until Python 3.14
-    def __new__(cls, *args, **kwargs):
-        all_names = {
-            name for subclass in inspect.getmro(cls) for name in vars(subclass)
-        }
-        abstract = {
-            name
-            for name in all_names
-            if getattr(getattr(cls, name), '__isabstractmethod__', False)
-        }
-        if abstract:
-            warnings.warn(
-                f"Unimplemented abstract methods {abstract}",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        return super().__new__(cls)
-
-
-class Distribution(DeprecatedNonAbstract):
+class Distribution(metaclass=abc.ABCMeta):
     """
     An abstract Python distribution package.
 
@@ -409,7 +389,7 @@ class Distribution(DeprecatedNonAbstract):
         if not name:
             raise ValueError("A distribution name is required.")
         try:
-            return next(iter(cls.discover(name=name)))
+            return next(iter(cls._prefer_valid(cls.discover(name=name))))
         except StopIteration:
             raise PackageNotFoundError(name)
 
@@ -432,6 +412,16 @@ class Distribution(DeprecatedNonAbstract):
         return itertools.chain.from_iterable(
             resolver(context) for resolver in cls._discover_resolvers()
         )
+
+    @staticmethod
+    def _prefer_valid(dists: Iterable[Distribution]) -> Iterable[Distribution]:
+        """
+        Prefer (move to the front) distributions that have metadata.
+
+        Ref python/importlib_resources#489.
+        """
+        buckets = bucket(dists, lambda dist: bool(dist.metadata))
+        return itertools.chain(buckets[True], buckets[False])
 
     @staticmethod
     def at(path: str | os.PathLike[str]) -> Distribution:
@@ -461,6 +451,9 @@ class Distribution(DeprecatedNonAbstract):
         Custom providers may provide the METADATA file or override this
         property.
         """
+        # deferred for performance (python/cpython#109829)
+        from . import _adapters
+
         opt_text = (
             self.read_text('METADATA')
             or self.read_text('PKG-INFO')
@@ -567,9 +560,8 @@ class Distribution(DeprecatedNonAbstract):
             return
 
         paths = (
-            (subdir / name)
-            .resolve()
-            .relative_to(self.locate_file('').resolve())
+            py311.relative_fix((subdir / name).resolve())
+            .relative_to(self.locate_file('').resolve(), walk_up=True)
             .as_posix()
             for name in text.splitlines()
         )
