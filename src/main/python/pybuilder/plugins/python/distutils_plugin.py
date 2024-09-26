@@ -181,7 +181,7 @@ def check_cython_dependency(project, logger):
                     continue
                 break
         else:
-            project.plugin_depends_on("Cython", "~=0.29.0")
+            project.plugin_depends_on("Cython")
 
 
 @after("prepare")
@@ -256,7 +256,7 @@ def render_setup_script(project):
 
     # If there are modules to be cythonized, setup will require cython
     if project.get_property("distutils_cython_ext_modules"):
-        setup_requires.append("Cython")
+        setup_requires.append("cython")
 
     template_values = {
         "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
@@ -302,8 +302,6 @@ def render_setup_script(project):
 
     # If there are modules to be cythonized, do some necessary imports
     if project.get_property("distutils_cython_ext_modules"):
-        template_values["setup_requires"] = \
-            """["cython~=0.29.0; python_version <= '3.7'", "cython~=3.0.10; python_version > '3.7'"]"""
         # setup_requires installs Cython as a first thing in the setup() call
         # We can't import cython directly in the setup script, so we
         # import it once there's need for it - upon accessing the ext_modules list.
@@ -419,7 +417,7 @@ def render_pyproject_toml(project, logger, pyproject_toml=None):
     }
     # add cython build requirement if needed
     if project.get_property("distutils_cython_ext_modules"):
-        pyproject_toml["build-system"]["requires"].append("Cython")
+        pyproject_toml["build-system"]["requires"].append("cython")
     return toml.dumps(pyproject_toml)
 
 

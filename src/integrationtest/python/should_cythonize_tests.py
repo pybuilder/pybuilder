@@ -197,7 +197,7 @@ if __name__ == '__main__':
         cmdclass = {'install': install,'build_py': build_py},
         python_requires = '',
         obsoletes = [],
-        setup_requires = ["cython~=0.29.0; python_version <= '3.7'", "cython~=3.0.10; python_version > '3.7'"],
+        setup_requires = ['cython'],
     )
 """)  # noqa: E501
 
