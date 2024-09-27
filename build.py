@@ -87,7 +87,7 @@ urls = {"Bug Tracker": "https://github.com/pybuilder/pybuilder/issues",
         "Twitter": "https://twitter.com/pybuilder_",
         }
 license = "Apache License, Version 2.0"
-version = "0.13.12"
+version = "0.13.14.dev"
 
 requires_python = ">=3.8"
 
@@ -104,15 +104,17 @@ def initialize(project):
     project.set_property("vendorize_packages", ["tblib~=1.5",
                                                 "tailer~=0.4",
                                                 "packaging>=24.0",
-                                                "setuptools>=45.0.0",
+                                                "setuptools[core]>=71.0",
                                                 "virtualenv>=20.0.0",
                                                 "importlib-resources>=1.0",
                                                 "importlib-metadata>=0.12",
+                                                "backports.tarfile",
                                                 "typing-extensions",
                                                 "colorama~=0.4.3"
                                                 ])
     project.set_property("vendorize_cleanup_globs", ["bin",
                                                      "setuptools",
+                                                     "setuptools*/_vendor",
                                                      "easy_install.py",
                                                      "*.pth"])
     project.set_property("vendorize_preserve_metadata", ["virtualenv*", "importlib_metadata*"])

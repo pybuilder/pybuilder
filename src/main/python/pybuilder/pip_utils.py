@@ -15,7 +15,7 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-
+import re
 from collections import namedtuple
 
 from pybuilder.core import Dependency, RequirementsFile
@@ -197,8 +197,24 @@ def build_pip_install_options(index_url=None, extra_index_url=None, upgrade=Fals
 
 def create_constraint_file(file_name, constraints):
     with open(file_name, "wt") as fout:
-        for constraint in as_pip_install_target(constraints):
+        for constraint in as_constraints_target(constraints):
             fout.write("%s\n" % constraint)
+
+
+RE_PACKAGE_WITH_EXTRAS = re.compile(r"^([a-zA-Z0-9_]+)\[[^\]]+\](.*)$")
+
+
+def as_constraints_target(mixed):
+    results = []
+
+    for argument in as_pip_install_target(mixed):
+        m = RE_PACKAGE_WITH_EXTRAS.match(argument)
+        if m:
+            results.append(f"{m.group(1)}{m.group(2)}")
+        else:
+            results.append(argument)
+
+    return results
 
 
 def as_pip_install_target(mixed):
@@ -212,7 +228,8 @@ def as_pip_install_target(mixed):
             if target.url:
                 arguments.append(target.url)
             else:
-                arguments.append("{0}{1}".format(target.name, build_dependency_version_string(target)))
+                arguments.append(f"{target.name}{('[' + ','.join(target.extras) + ']') if target.extras else ''}"
+                                 f"{build_dependency_version_string(target)}")
         else:
             arguments.append(str(target))
     return arguments
