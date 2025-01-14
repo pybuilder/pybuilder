@@ -22,6 +22,7 @@ __version__ = "${dist_version}"
 def bootstrap():
     import sys
     import inspect
+    from pybuilder import extern
     from pybuilder.errors import BuildFailedException
 
     try:

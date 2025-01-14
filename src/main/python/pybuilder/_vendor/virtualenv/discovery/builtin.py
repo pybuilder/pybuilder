@@ -3,8 +3,9 @@ from __future__ import annotations
 import logging
 import os
 import sys
+from contextlib import suppress
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from virtualenv.info import IS_WIN, fs_path_id
 
@@ -14,9 +15,10 @@ from .py_spec import PythonSpec
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser
-    from collections.abc import Generator, Iterable, Mapping, Sequence
+    from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 
     from virtualenv.app_data.base import AppData
+LOGGER = logging.getLogger(__name__)
 
 
 class Builtin(Discover):
@@ -69,16 +71,16 @@ def get_interpreter(
     key, try_first_with: Iterable[str], app_data: AppData | None = None, env: Mapping[str, str] | None = None
 ) -> PythonInfo | None:
     spec = PythonSpec.from_string_spec(key)
-    logging.info("find interpreter for spec %r", spec)
+    LOGGER.info("find interpreter for spec %r", spec)
     proposed_paths = set()
     env = os.environ if env is None else env
     for interpreter, impl_must_match in propose_interpreters(spec, try_first_with, app_data, env):
         key = interpreter.system_executable, impl_must_match
         if key in proposed_paths:
             continue
-        logging.info("proposed %s", interpreter)
+        LOGGER.info("proposed %s", interpreter)
         if interpreter.satisfies(spec, impl_must_match):
-            logging.debug("accepted %s", interpreter)
+            LOGGER.debug("accepted %s", interpreter)
             return interpreter
         proposed_paths.add(key)
     return None
@@ -145,7 +147,7 @@ def propose_interpreters(  # noqa: C901, PLR0912, PLR0915
     # finally just find on path, the path order matters (as the candidates are less easy to control by end user)
     find_candidates = path_exe_finder(spec)
     for pos, path in enumerate(get_paths(env)):
-        logging.debug(LazyPathDump(pos, path, env))
+        LOGGER.debug(LazyPathDump(pos, path, env))
         for exe, impl_must_match in find_candidates(path):
             exe_raw = str(exe)
             exe_id = fs_path_id(exe_raw)
@@ -166,8 +168,9 @@ def get_paths(env: Mapping[str, str]) -> Generator[Path, None, None]:
             path = os.defpath
     if path:
         for p in map(Path, path.split(os.pathsep)):
-            if p.exists():
-                yield p
+            with suppress(OSError):
+                if p.exists():
+                    yield p
 
 
 class LazyPathDump:

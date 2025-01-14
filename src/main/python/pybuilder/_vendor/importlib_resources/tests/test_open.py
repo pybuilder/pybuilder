@@ -1,7 +1,7 @@
 import unittest
 
 from ... import importlib_resources as resources
-from . import data01
+
 from . import util
 
 
@@ -65,16 +65,12 @@ class OpenTests:
             target.open(encoding='utf-8')
 
 
-class OpenDiskTests(OpenTests, unittest.TestCase):
-    def setUp(self):
-        self.data = data01
+class OpenDiskTests(OpenTests, util.DiskSetup, unittest.TestCase):
+    pass
 
 
-class OpenDiskNamespaceTests(OpenTests, unittest.TestCase):
-    def setUp(self):
-        from . import namespacedata01
-
-        self.data = namespacedata01
+class OpenDiskNamespaceTests(OpenTests, util.DiskSetup, unittest.TestCase):
+    MODULE = 'namespacedata01'
 
 
 class OpenZipTests(OpenTests, util.ZipSetup, unittest.TestCase):
@@ -82,7 +78,7 @@ class OpenZipTests(OpenTests, util.ZipSetup, unittest.TestCase):
 
 
 class OpenNamespaceZipTests(OpenTests, util.ZipSetup, unittest.TestCase):
-    ZIP_MODULE = 'namespacedata01'
+    MODULE = 'namespacedata01'
 
 
 if __name__ == '__main__':

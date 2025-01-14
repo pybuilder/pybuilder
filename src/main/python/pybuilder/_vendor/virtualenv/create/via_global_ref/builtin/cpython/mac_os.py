@@ -20,6 +20,8 @@ from virtualenv.create.via_global_ref.builtin.via_global_self_do import BuiltinV
 from .common import CPython, CPythonPosix, is_mac_os_framework, is_macos_brew
 from .cpython3 import CPython3
 
+LOGGER = logging.getLogger(__name__)
+
 
 class CPythonmacOsFramework(CPython, ABC):
     @classmethod
@@ -115,13 +117,13 @@ def fix_mach_o(exe, current, new, max_size):
     unneeded bits of information, however Mac OS X 10.5 and earlier cannot read this new Link Edit table format.
     """
     try:
-        logging.debug("change Mach-O for %s from %s to %s", exe, current, new)
+        LOGGER.debug("change Mach-O for %s from %s to %s", exe, current, new)
         _builtin_change_mach_o(max_size)(exe, current, new)
     except Exception as e:  # noqa: BLE001
-        logging.warning("Could not call _builtin_change_mac_o: %s. Trying to call install_name_tool instead.", e)
+        LOGGER.warning("Could not call _builtin_change_mac_o: %s. Trying to call install_name_tool instead.", e)
         try:
             cmd = ["install_name_tool", "-change", current, new, exe]
-            subprocess.check_call(cmd)  # noqa: S603
+            subprocess.check_call(cmd)
         except Exception:
             logging.fatal("Could not call install_name_tool -- you must have Apple's development tools installed")
             raise

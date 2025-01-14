@@ -36,6 +36,10 @@ def build_sdist(sdist_directory, config_settings=None):
     return build_with_pyb(sdist_directory, "SDist", artifact_filter, config_settings)
 
 
+def get_requires_for_build_wheel(config_settings=None):
+    return ["pip"]
+
+
 def build_with_pyb(target_dir, artifact_name, artifact_filter, config_settings=None, metadata_directory=None):
     from pybuilder.cli import main
     # verbose, debug, skip all optional...

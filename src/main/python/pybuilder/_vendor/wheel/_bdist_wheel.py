@@ -34,6 +34,15 @@ from .wheelfile import WheelFile
 if TYPE_CHECKING:
     import types
 
+# ensure Python logging is configured
+try:
+    __import__("setuptools.logging")
+except ImportError:
+    # setuptools < ??
+    from . import _setuptools_logging
+
+    _setuptools_logging.configure()
+
 
 def safe_name(name: str) -> str:
     """Convert an arbitrary string to a standard distribution name

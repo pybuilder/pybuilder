@@ -8,6 +8,8 @@ from virtualenv.discovery.cached_py_info import LogCmd
 from virtualenv.seed.embed.base_embed import BaseEmbed
 from virtualenv.seed.wheels import Version, get_wheel, pip_wheel_env_run
 
+LOGGER = logging.getLogger(__name__)
+
 
 class PipInvoke(BaseEmbed):
     def __init__(self, options) -> None:
@@ -23,8 +25,8 @@ class PipInvoke(BaseEmbed):
 
     @staticmethod
     def _execute(cmd, env):
-        logging.debug("pip seed by running: %s", LogCmd(cmd, env))
-        process = Popen(cmd, env=env)  # noqa: S603
+        LOGGER.debug("pip seed by running: %s", LogCmd(cmd, env))
+        process = Popen(cmd, env=env)
         process.communicate()
         if process.returncode != 0:
             msg = f"failed seed with code {process.returncode}"

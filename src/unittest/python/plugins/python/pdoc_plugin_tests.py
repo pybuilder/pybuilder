@@ -85,7 +85,7 @@ class PdocPluginTests(unittest.TestCase):
         self.project.set_property("pdoc_command_args", ["--html"])
         pdoc_compile_docs(self.project, self.logger, self.reactor)
         pyb_env.execute_command.assert_called_with(
-            ["pdoc", "--html", "--html-dir", self.project.expand_path("$dir_target", "pdocs"),
+            ["pdoc", "--html", "--output-dir", self.project.expand_path("$dir_target", "pdocs"),
              "pdoc_module_name_value"],
             cwd=self.project.expand_path("$dir_target", "pdocs"),
             env={

@@ -1,28 +1,23 @@
 from __future__ import annotations
 
 import builtins
+import datetime
+import os
+import plistlib
+import stat
+import subprocess
 import sys
 import tempfile
-import os
 import zipfile
-import datetime
-import plistlib
-import subprocess
-import stat
-import distutils.dist
-import distutils.command.install_egg_info
-
 from unittest import mock
-
-from .. import (
-    DistInfoDistribution,
-    Distribution,
-    EggInfoDistribution,
-)
 
 import pytest
 
 from ... import pkg_resources
+from .. import DistInfoDistribution, Distribution, EggInfoDistribution
+
+import distutils.command.install_egg_info
+import distutils.dist
 
 
 class EggRemover(str):
@@ -75,7 +70,7 @@ class TestZipProvider:
             finalizer()
 
     def test_resource_listdir(self):
-        import mod
+        import mod  # pyright: ignore[reportMissingImports] # Temporary package for test
 
         zp = pkg_resources.ZipProvider(mod)
 
@@ -89,7 +84,7 @@ class TestZipProvider:
         assert zp.resource_listdir('nonexistent') == []
         assert zp.resource_listdir('nonexistent/') == []
 
-        import mod2
+        import mod2  # pyright: ignore[reportMissingImports] # Temporary package for test
 
         zp2 = pkg_resources.ZipProvider(mod2)
 
@@ -105,7 +100,7 @@ class TestZipProvider:
         same size and modification time, it should not be overwritten on a
         subsequent call to get_resource_filename.
         """
-        import mod
+        import mod  # pyright: ignore[reportMissingImports] # Temporary package for test
 
         manager = pkg_resources.ResourceManager()
         zp = pkg_resources.ZipProvider(mod)
@@ -219,8 +214,8 @@ def test_get_metadata__bad_utf8(tmpdir):
         "codec can't decode byte 0xe9 in position 1: "
         'invalid continuation byte in METADATA file at path: '
     )
-    assert expected in actual, 'actual: {}'.format(actual)
-    assert actual.endswith(metadata_path), 'actual: {}'.format(actual)
+    assert expected in actual, f'actual: {actual}'
+    assert actual.endswith(metadata_path), f'actual: {actual}'
 
 
 def make_distribution_no_version(tmpdir, basename):
@@ -241,7 +236,7 @@ def make_distribution_no_version(tmpdir, basename):
 
 
 @pytest.mark.parametrize(
-    'suffix, expected_filename, expected_dist_type',
+    ("suffix", "expected_filename", "expected_dist_type"),
     [
         ('egg-info', 'PKG-INFO', EggInfoDistribution),
         ('dist-info', 'METADATA', DistInfoDistribution),
@@ -257,11 +252,11 @@ def test_distribution_version_missing(
     """
     Test Distribution.version when the "Version" header is missing.
     """
-    basename = 'foo.{}'.format(suffix)
+    basename = f'foo.{suffix}'
     dist, dist_dir = make_distribution_no_version(tmpdir, basename)
 
-    expected_text = ("Missing 'Version:' header and/or {} file at path: ").format(
-        expected_filename
+    expected_text = (
+        f"Missing 'Version:' header and/or {expected_filename} file at path: "
     )
     metadata_path = os.path.join(dist_dir, expected_filename)
 
@@ -381,7 +376,7 @@ class TestDeepVersionLookupDistutils:
         assert dist.version == version
 
     @pytest.mark.parametrize(
-        'unnormalized, normalized',
+        ("unnormalized", "normalized"),
         [
             ('foo', 'foo'),
             ('foo/', 'foo'),
@@ -403,7 +398,7 @@ class TestDeepVersionLookupDistutils:
         reason='Testing case-insensitive filesystems.',
     )
     @pytest.mark.parametrize(
-        'unnormalized, normalized',
+        ("unnormalized", "normalized"),
         [
             ('MiXeD/CasE', 'mixed/case'),
         ],
@@ -419,7 +414,7 @@ class TestDeepVersionLookupDistutils:
         reason='Testing systems using backslashes as path separators.',
     )
     @pytest.mark.parametrize(
-        'unnormalized, expected',
+        ("unnormalized", "expected"),
         [
             ('forward/slash', 'forward\\slash'),
             ('forward/slash/', 'forward\\slash'),

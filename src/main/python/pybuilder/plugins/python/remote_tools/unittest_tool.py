@@ -20,7 +20,7 @@ import sys
 
 from pybuilder.plugins.python.remote_tools import start_tool, RemoteObjectPipe, Tool, logger, PipeShutdownError
 
-__all__ = ["start_unittest_tool", "PipeShutdownError", logger]
+__all__ = ["start_unittest_tool", "PipeShutdownError", "logger"]
 
 
 class UnitTestTool(Tool):

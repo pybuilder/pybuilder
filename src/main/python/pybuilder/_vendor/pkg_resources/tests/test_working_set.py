@@ -1,7 +1,7 @@
+import functools
 import inspect
 import re
 import textwrap
-import functools
 
 import pytest
 
@@ -56,7 +56,7 @@ def parse_distributions(s):
 
 
 class FakeInstaller:
-    def __init__(self, installable_dists):
+    def __init__(self, installable_dists) -> None:
         self._installable_dists = installable_dists
 
     def __call__(self, req):

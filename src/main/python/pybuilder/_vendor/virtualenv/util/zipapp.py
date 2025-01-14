@@ -1,10 +1,12 @@
-from __future__ import annotations
+from __future__ import annotations  # noqa: A005
 
 import logging
 import os
 import zipfile
 
 from virtualenv.info import IS_WIN, ROOT
+
+LOGGER = logging.getLogger(__name__)
 
 
 def read(full_path):
@@ -14,7 +16,7 @@ def read(full_path):
 
 
 def extract(full_path, dest):
-    logging.debug("extract %s to %s", full_path, dest)
+    LOGGER.debug("extract %s to %s", full_path, dest)
     sub_file = _get_path_within_zip(full_path)
     with zipfile.ZipFile(ROOT, "r") as zip_file:
         info = zip_file.getinfo(sub_file)

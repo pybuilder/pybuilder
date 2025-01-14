@@ -119,12 +119,10 @@ class VendorImporter(Loader, MetaPathFinder):
         if self not in sys.meta_path:
             sys.meta_path.insert(0, self)
 
-        for pkg in self.vendored_names:
-            for p in list(sys.modules):
-                if p == pkg or p.startswith(pkg + "."):
-                    sys.modules.pop(p, None)
+            for pkg in self.vendored_names:
+                for p in list(sys.modules):
+                    if p == pkg or p.startswith(pkg + "."):
+                        sys.modules.pop(p, None)
 
 
-# Don't run if we're actually in PDoc
-# if not (sys.version_info[0] == 2 and basename(sys.argv[0]) == "pdoc"):
 VendorImporter(__name__, pybuilder._vendor.__names__, pybuilder._vendor.__package__).install()
