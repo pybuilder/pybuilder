@@ -2,7 +2,6 @@ import io
 import unittest
 
 from ... import importlib_resources as resources
-
 from .._adapters import (
     CompatibilityFiles,
     wrap_spec,

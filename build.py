@@ -89,7 +89,7 @@ urls = {"Bug Tracker": "https://github.com/pybuilder/pybuilder/issues",
 license = "Apache License, Version 2.0"
 version = "0.13.14.dev"
 
-requires_python = ">=3.8"
+requires_python = ">=3.9"
 
 default_task = ["analyze", "publish"]
 
@@ -179,11 +179,11 @@ def initialize(project):
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: POSIX :: Linux",
         "Operating System :: Microsoft :: Windows",

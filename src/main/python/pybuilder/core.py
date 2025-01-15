@@ -32,6 +32,13 @@ import re
 import sys
 from datetime import datetime
 
+try:
+    from datetime import UTC
+except ImportError:
+    from datetime import timezone
+
+    UTC = timezone.utc
+
 # Plugin install_dependencies_plugin can reload pip_common and pip_utils. Do not use from ... import ...
 from pybuilder.errors import MissingPropertyException, UnspecifiedPluginNameException
 from pybuilder.utils import as_list, np, ap, jp
@@ -476,7 +483,7 @@ class Project(object):
     def version(self, value):
         self._version = value
         if value.endswith('.dev'):
-            value += datetime.utcnow().strftime("%Y%m%d%H%M%S")
+            value += datetime.now(UTC).strftime("%Y%m%d%H%M%S")
         self._dist_version = value
 
     @property

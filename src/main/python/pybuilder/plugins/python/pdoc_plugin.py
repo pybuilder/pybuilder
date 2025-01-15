@@ -37,7 +37,7 @@ def pdoc_init(project):
     project.plugin_depends_on("pdoc3", ">=0.8.3")
 
     project.set_property_if_unset("pdoc_command_args",
-                                  ["--html", "--overwrite", "--external-links", "--skip-errors"])
+                                  ["--html", "--force", "-c", "external_links=True", "--skip-errors"])
 
     project.set_property_if_unset("pdoc_source", "$dir_source_main_python")
     project.set_property_if_unset("pdoc_output_dir", "$dir_target/pdocs")
@@ -71,7 +71,7 @@ def pdoc_compile_docs(project, logger, reactor):
 
     command_and_arguments = ["pdoc"] + pdoc_command_args
     if "--html" in pdoc_command_args:
-        command_and_arguments += ["--html-dir", pdoc_output_dir]
+        command_and_arguments += ["--output-dir", pdoc_output_dir]
     command_and_arguments += [project.get_property("pdoc_module_name")]
 
     source_directory = project.expand_path("$pdoc_source")

@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__ import annotations  # noqa: A005
 
 import logging
 from copy import copy
@@ -12,6 +12,8 @@ from virtualenv.util.subprocess import run_cmd
 from .api import ViaGlobalRefApi, ViaGlobalRefMeta
 from .builtin.cpython.mac_os import CPython3macOsBrew
 from .builtin.pypy.pypy3 import Pypy3Windows
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Venv(ViaGlobalRefApi):
@@ -70,7 +72,7 @@ class Venv(ViaGlobalRefApi):
 
     def create_via_sub_process(self):
         cmd = self.get_host_create_cmd()
-        logging.info("using host built-in venv to create via %s", " ".join(cmd))
+        LOGGER.info("using host built-in venv to create via %s", " ".join(cmd))
         code, out, err = run_cmd(cmd)
         if code != 0:
             raise ProcessCallFailedError(code, out, err, cmd)
