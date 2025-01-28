@@ -47,8 +47,9 @@ DATA_FILES_PROPERTY = "distutils_data_files"
 SETUP_TEMPLATE = string.Template("""#!/usr/bin/env python
 #   -*- coding: utf-8 -*-
 $remove_hardlink_capabilities_for_shared_filesystems
-from $module import setup
+from $module import setup, Extension
 from $module.command.install import install as _install
+$cython_imports
 
 class install(_install):
     def pre_install_script(self):
@@ -63,6 +64,8 @@ $postinstall_script
         _install.run(self)
 
         self.post_install_script()
+
+$cython_definitions
 
 if __name__ == '__main__':
     setup(
@@ -88,17 +91,21 @@ if __name__ == '__main__':
         packages = $packages,
         namespace_packages = $namespace_packages,
         py_modules = $modules,
+        ext_modules = $ext_modules,
         entry_points = $entry_points,
         data_files = $data_files,
         package_data = $package_data,
+        include_package_data = $include_package_data,
         install_requires = $dependencies,
         dependency_links = $dependency_links,
         zip_safe = $zip_safe,
-        cmdclass = {'install': install},
+        cmdclass = $cmd_class,
         python_requires = $python_requires,
         obsoletes = $obsoletes,
+        setup_requires = $setup_requires,
     )
 """)
+
 
 
 def default(value, default=""):
@@ -115,6 +122,7 @@ def as_str(value):
 def initialize_distutils_plugin(project):
     project.plugin_depends_on("pypandoc", "~=1.4")
     project.plugin_depends_on("twine", ">=1.15.0")
+    project.plugin_depends_on("toml", "~=0.10.0")
     project.plugin_depends_on("setuptools", ">=38.6.0", eager_update=False)
     project.plugin_depends_on("wheel", ">=0.34.0", eager_update=False)
 
@@ -152,6 +160,28 @@ def initialize_distutils_plugin(project):
     project.set_property_if_unset("distutils_entry_points", None)
     project.set_property_if_unset("distutils_setup_keywords", None)
     project.set_property_if_unset("distutils_zip_safe", True)
+
+    project.set_property_if_unset("distutils_ext_modules", None)
+
+
+@before("prepare")
+def check_cython_dependency(project, logger):
+    # If there are modules to be cythonized, add Cython dependency
+    # if not already specified
+    if project.get_property("distutils_cython_ext_modules"):
+        cython_re = re.compile(r'^\W*cython\W*')
+        for dependency in project.build_dependencies + as_list(project.plugin_dependencies) + as_list(project.dependencies):
+            if isinstance(dependency, Dependency) and dependency.name.lower() == "cython":
+                break
+            elif isinstance(dependency, RequirementsFile):
+                for line in flatten_and_quote(dependency):
+                    if cython_re.match(line.lower()):
+                        break
+                else:
+                    continue
+                break
+        else:
+            project.plugin_depends_on("Cython")
 
 
 @after("prepare")
@@ -222,9 +252,17 @@ def render_setup_script(project):
     author_email = ", ".join(map(lambda a: a.email, project.authors))
     maintainer = ", ".join(map(lambda a: a.name, project.maintainers))
     maintainer_email = ",".join(map(lambda a: a.email, project.maintainers))
+    setup_requires = []
+
+    # If there are modules to be cythonized, setup will require cython
+    if project.get_property("distutils_cython_ext_modules"):
+        setup_requires.append("cython")
 
     template_values = {
         "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
+        "cython_imports": "",
+        "cython_definitions": "",
+        "cmd_class": "{'install': install}",
         "name": as_str(project.name),
         "version": as_str(project.dist_version),
         "summary": as_str(default(project.summary)),
@@ -241,10 +279,12 @@ def render_setup_script(project):
         "packages": build_packages_string(project),
         "namespace_packages": build_namespace_packages_string(project),
         "modules": build_modules_string(project),
+        "ext_modules": build_ext_modules_string(project),
         "classifiers": build_classifiers_string(project),
         "entry_points": build_entry_points_string(project),
         "data_files": build_data_files_string(project),
         "package_data": build_package_data_string(project),
+        "include_package_data": project.get_property("include_package_data", False),
         "dependencies": build_install_dependencies_string(project),
         "dependency_links": build_dependency_links_string(project),
         "remove_hardlink_capabilities_for_shared_filesystems": (
@@ -256,10 +296,129 @@ def render_setup_script(project):
         "setup_keywords": build_setup_keywords(project),
         "python_requires": as_str(default(project.requires_python)),
         "obsoletes": build_string_from_array(project.obsoletes),
-        "zip_safe": project.get_property("distutils_zip_safe")
+        "zip_safe": project.get_property("distutils_zip_safe"),
+        "setup_requires": build_string_from_array(setup_requires),
     }
 
+    # If there are modules to be cythonized, do some necessary imports
+    if project.get_property("distutils_cython_ext_modules"):
+        # setup_requires installs Cython as a first thing in the setup() call
+        # We can't import cython directly in the setup script, so we
+        # import it once there's need for it - upon accessing the ext_modules list.
+        template_values["cython_imports"] = """
+from setuptools.command.build_py import build_py as _build_py
+import glob
+
+class LazyCythonize(list):
+    def __init__(self, ext_modules, cythonize_modules_kwargs):
+        self.ext_modules = ext_modules if ext_modules is not None else []
+        self.cythonize_modules_kwargs = cythonize_modules_kwargs if cythonize_modules_kwargs is not None else []
+        self.cythonized_modules = []
+
+    def _cythonize(self):
+        if self.cythonized_modules:
+            return
+
+        from Cython.Build import cythonize
+
+        for kwargs in self.cythonize_modules_kwargs:
+            self.cythonized_modules.extend(cythonize(**kwargs))
+        self.cythonized_modules.extend(self.ext_modules)
+
+    def __iter__(self):
+        self._cythonize()
+        return iter(self.cythonized_modules)
+
+    def __getitem__(self, key):
+        self._cythonize()
+        if 0<=key<len(self.cythonized_modules):
+            return self.cythonized_modules[key]
+        else:
+            raise IndexError("Index out of range")
+
+    def __len__(self):
+        self._cythonize()
+        return len(self.cythonized_modules)
+"""
+        # If the Python sources should not be included in the distribution, add some other necessary functions
+        # Note: The Python sources will be removed even from sdist (as this is modifying build_py command that
+        # is used by both bdist & sdist) -> you must add them manually into the MANIFEST.in file to put them back.
+        if project.get_property("distutils_cython_remove_python_sources", False):
+
+            # First, get a list of Cython modules (might be glob patterns) to include and to exclude
+            cython_ext_modules_desc = project.get_property("distutils_cython_ext_modules")
+            if cython_ext_modules_desc is None:
+                cython_ext_modules_desc = []
+            cython_module_list = []
+            cython_exclude = []
+            for ext_module_desc in cython_ext_modules_desc:
+                cython_module_list.extend(ext_module_desc.get("module_list", []))
+                cython_exclude.extend(ext_module_desc.get("exclude", []))
+            if cython_exclude:
+                cython_exclude = list(set(cython_exclude))
+
+            # Next, put necessary functions into the setup.py template
+            template_values["cmd_class"] = "{'install': install,'build_py': build_py}"
+            template_values["cython_definitions"] = """
+cython_module_list = {cython_module_list}
+cython_excludes = {cython_exclude}
+def not_cythonized(tup):
+    (package, module, filepath) = tup
+    return any(
+        [filepath in glob.iglob(pattern, recursive=True) for pattern in cython_excludes]
+    ) or not any(
+        [filepath in glob.iglob(pattern, recursive=True) for pattern in cython_module_list]
+    )
+
+class build_py(_build_py):
+    def find_modules(self):
+        modules = super().find_modules()
+        return list(filter(not_cythonized, modules))
+
+    def find_package_modules(self, package, package_dir):
+        modules = super().find_package_modules(package, package_dir)
+        return list(filter(not_cythonized, modules))
+""".format(cython_module_list=cython_module_list, cython_exclude=cython_exclude)
+
     return SETUP_TEMPLATE.substitute(template_values)
+
+
+@after("package")
+def write_pyproject_toml(project, logger):
+    pyproject_toml = project.expand_path("$dir_dist", "pyproject.toml")
+
+    if os.path.exists(pyproject_toml):
+        import toml
+        with open(pyproject_toml, "rt", encoding="utf-8") as pyproject_toml_file:
+            pyproject_toml_content = pyproject_toml_file.read()
+        pyproject_toml_dict = toml.loads(pyproject_toml_content)
+        del pyproject_toml_content
+    else:
+        pyproject_toml_dict = {}
+
+    logger.info("Writing pyproject.toml as %s", pyproject_toml)
+
+    with io.open(pyproject_toml, "wt", encoding="utf-8") as pyproject_toml_file:
+        pyproject_toml_file.write(render_pyproject_toml(project, logger, pyproject_toml_dict))
+
+    os.chmod(pyproject_toml, 0o755)
+
+
+def render_pyproject_toml(project, logger, pyproject_toml=None):
+    import toml
+    if not pyproject_toml:
+        pyproject_toml = {}
+    if "build-system" in pyproject_toml:
+        logger.warn("pyproject.toml already exists. Overwriting its build-system section to use setuptools.")
+
+    pyproject_toml["build-system"] = {
+        "requires": ["setuptools>=40.8.0", "wheel"],
+        "build-backend": "setuptools.build_meta"
+    }
+    # add cython build requirement if needed
+    if project.get_property("distutils_cython_ext_modules"):
+        pyproject_toml["build-system"]["requires"].append("cython")
+    return toml.dumps(pyproject_toml)
 
 
 @after("package")
@@ -436,6 +595,11 @@ def strip_comments(requirements):
             if not requirement.strip().startswith("#")]
 
 
+def strip_options(requirements):
+    return [requirement for requirement in requirements
+            if not requirement.strip().startswith("--") or is_editable_requirement(requirement)]
+
+
 def quote(requirements):
     return ['"%s"' % requirement for requirement in requirements]
 
@@ -599,6 +763,35 @@ def build_modules_string(project):
     return build_string_from_array([mod for mod in project.list_modules()])
 
 
+def build_ext_modules_string(project):
+
+    # Standard extensions
+    ext_modules_strings = []
+    ext_modules_desc = project.get_property("distutils_ext_modules")
+    if ext_modules_desc is None:
+        ext_modules_desc = []
+    for ext_module_desc in ext_modules_desc:
+        ext_module_kwargs_str = ",".join(["{}={}".format(key, value) for key, value in ext_module_desc.items()])
+        ext_modules_strings.append("Extension({})".format(ext_module_kwargs_str))
+
+    ext_modules_final_string = build_string_from_array([mod for mod in ext_modules_strings], quote_item=False)
+
+    # Cython extensions
+    cython_ext_modules_strings = []
+    cython_ext_modules_desc = project.get_property("distutils_cython_ext_modules")
+    if cython_ext_modules_desc is None:
+        cython_ext_modules_desc = []
+
+    if not cython_ext_modules_desc:
+        return ext_modules_final_string
+    for ext_module_desc in cython_ext_modules_desc:
+        ext_module_kwargs_str = ",".join([u'"{}":{}'.format(key, value) for key, value in ext_module_desc.items()])
+        cython_ext_modules_strings.append("{"+ext_module_kwargs_str+"}")
+
+    cython_ext_modules_final_string = build_string_from_array(cython_ext_modules_strings, quote_item=False)
+    return "LazyCythonize({},{})".format(ext_modules_final_string, cython_ext_modules_final_string)
+
+
 def build_entry_points_string(project):
     console_scripts = project.get_property('distutils_console_scripts')
     entry_points = project.get_property('distutils_entry_points')
@@ -643,7 +836,7 @@ def build_classifiers_string(project):
     return build_string_from_array(classifiers, indent=12)
 
 
-def build_string_from_array(arr, indent=12):
+def build_string_from_array(arr, indent=12, quote_item=True):
     result = ""
 
     if len(arr) == 1:
@@ -654,7 +847,10 @@ def build_string_from_array(arr, indent=12):
             if is_notstr_iterable(arr[0]):
                 result += "[" + build_string_from_array(arr[0], indent + 4) + "]"
             else:
-                result += "['%s']" % arr[0]
+                if quote_item:
+                    result += "['%s']" % arr[0]
+                else:
+                    result += "[%s]" % arr[0]
         else:
             result = '[[]]'
     elif len(arr) > 1:
@@ -664,7 +860,10 @@ def build_string_from_array(arr, indent=12):
             if is_notstr_iterable(item):
                 result += (" " * indent) + build_string_from_array(item, indent + 4) + ",\n"
             else:
-                result += (" " * indent) + "'" + item + "',\n"
+                if quote_item:
+                    result += (" " * indent) + "'" + item + "',\n"
+                else:
+                    result += (" " * indent) + item + ",\n"
         result = result[:-2] + "\n"
         result += " " * (indent - 4)
         result += "]"
