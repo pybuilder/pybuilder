@@ -440,6 +440,7 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
+        package_dir = {},
         namespace_packages = [
             'foo.bar',
             'quick.brown.fox'
@@ -522,6 +523,7 @@ if __name__ == '__main__':
             'spam',
             'eggs'
         ],
+        package_dir = {},
         namespace_packages = [
             'foo.bar',
             'quick.brown.fox'
