@@ -11,6 +11,7 @@ import logging
 import os
 import platform
 import re
+import struct
 import sys
 import sysconfig
 import warnings
@@ -44,7 +45,10 @@ class PythonInfo:  # noqa: PLR0904
 
         # this is a tuple in earlier, struct later, unify to our own named tuple
         self.version_info = VersionInfo(*sys.version_info)
-        self.architecture = 64 if sys.maxsize > 2**32 else 32
+        # Use the same implementation as found in stdlib platform.architecture
+        # to account for platforms where the maximum integer is not equal the
+        # pointer size.
+        self.architecture = 32 if struct.calcsize("P") == 4 else 64  # noqa: PLR2004
 
         # Used to determine some file names.
         # See `CPython3Windows.python_zip()`.
@@ -52,6 +56,7 @@ class PythonInfo:  # noqa: PLR0904
 
         self.version = sys.version
         self.os = os.name
+        self.free_threaded = sysconfig.get_config_var("Py_GIL_DISABLED") == 1
 
         # information about the prefix - determines python home
         self.prefix = abs_path(getattr(sys, "prefix", None))  # prefix we think
@@ -290,7 +295,12 @@ class PythonInfo:  # noqa: PLR0904
 
     @property
     def spec(self):
-        return "{}{}-{}".format(self.implementation, ".".join(str(i) for i in self.version_info), self.architecture)
+        return "{}{}{}-{}".format(
+            self.implementation,
+            ".".join(str(i) for i in self.version_info),
+            "t" if self.free_threaded else "",
+            self.architecture,
+        )
 
     @classmethod
     def clear_cache(cls, app_data):
@@ -300,7 +310,7 @@ class PythonInfo:  # noqa: PLR0904
         clear(app_data)
         cls._cache_exe_discovery.clear()
 
-    def satisfies(self, spec, impl_must_match):  # noqa: C901
+    def satisfies(self, spec, impl_must_match):  # noqa: C901, PLR0911
         """Check if a given specification can be satisfied by the this python interpreter instance."""
         if spec.path:
             if self.executable == os.path.abspath(spec.path):
@@ -324,6 +334,9 @@ class PythonInfo:  # noqa: PLR0904
             return False
 
         if spec.architecture is not None and spec.architecture != self.architecture:
+            return False
+
+        if spec.free_threaded is not None and spec.free_threaded != self.free_threaded:
             return False
 
         for our, req in zip(self.version_info[0:3], (spec.major, spec.minor, spec.micro)):
@@ -522,10 +535,14 @@ class PythonInfo:  # noqa: PLR0904
         for name in self._possible_base():
             for at in (3, 2, 1, 0):
                 version = ".".join(str(i) for i in self.version_info[:at])
-                for arch in [f"-{self.architecture}", ""]:
-                    for ext in EXTENSIONS:
-                        candidate = f"{name}{version}{arch}{ext}"
-                        name_candidate[candidate] = None
+                mods = [""]
+                if self.free_threaded:
+                    mods.append("t")
+                for mod in mods:
+                    for arch in [f"-{self.architecture}", ""]:
+                        for ext in EXTENSIONS:
+                            candidate = f"{name}{version}{mod}{arch}{ext}"
+                            name_candidate[candidate] = None
         return list(name_candidate.keys())
 
     def _possible_base(self):

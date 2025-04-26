@@ -29,6 +29,8 @@ class Builtin(Discover):
     def __init__(self, options) -> None:
         super().__init__(options)
         self.python_spec = options.python or [sys.executable]
+        if self._env.get("VIRTUALENV_PYTHON"):
+            self.python_spec = self.python_spec[1:] + self.python_spec[:1]  # Rotate the list
         self.app_data = options.app_data
         self.try_first_with = options.try_first_with
 
@@ -169,7 +171,7 @@ def get_paths(env: Mapping[str, str]) -> Generator[Path, None, None]:
     if path:
         for p in map(Path, path.split(os.pathsep)):
             with suppress(OSError):
-                if p.exists():
+                if next(p.iterdir(), None):
                     yield p
 
 
