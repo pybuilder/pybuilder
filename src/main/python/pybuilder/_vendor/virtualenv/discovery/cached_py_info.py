@@ -76,7 +76,11 @@ def _get_via_file_cache(cls, app_data, path, exe, env):
         if py_info is None:  # if not loaded run and save
             failure, py_info = _run_subprocess(cls, exe, app_data, env)
             if failure is None:
-                data = {"st_mtime": path_modified, "path": path_text, "content": py_info._to_dict()}  # noqa: SLF001
+                data = {
+                    "st_mtime": path_modified,
+                    "path": path_text,
+                    "content": py_info._to_dict(),  # noqa: SLF001
+                }
                 py_info_store.write(data)
             else:
                 py_info = failure
