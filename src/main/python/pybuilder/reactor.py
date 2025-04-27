@@ -409,6 +409,7 @@ class Reactor:
         self.propagate_property("url")
         self.propagate_property("urls")
         self.propagate_property("explicit_namespaces")
+        self.propagate_property("package_dir")
         self.propagate_property("requires_python")
         self.propagate_property("obsoletes")
 
