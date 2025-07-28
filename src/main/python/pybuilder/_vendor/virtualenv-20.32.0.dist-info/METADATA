@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: virtualenv
-Version: 20.30.0
+Version: 20.32.0
 Summary: Virtual Python Environment builder
 Project-URL: Documentation, https://virtualenv.pypa.io
 Project-URL: Homepage, https://github.com/pypa/virtualenv

@@ -265,7 +265,7 @@ def tail(file_path, lines=20):
     except ImportError:
         return read_file(file_path)
 
-    with open(file_path) as f:
+    with open(file_path, "rt", errors="surrogateescape") as f:
         return tailer.tail(f, lines)
 
 
@@ -279,12 +279,12 @@ def read_file(file_name):
         file_name.seek(0)
         return file_name.readlines()
     else:
-        with open(file_name, "r") as file_handle:
+        with open(file_name, "rt", errors="surrogateescape") as file_handle:
             return file_handle.readlines()
 
 
 def write_file(file_name, *lines):
-    with open(file_name, "w") as file_handle:
+    with open(file_name, "wt", errors="surrogateescape") as file_handle:
         file_handle.writelines(lines)
 
 

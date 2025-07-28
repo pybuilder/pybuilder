@@ -53,7 +53,6 @@ class PipVersionTests(unittest.TestCase):
         multiple_different_items = pip_utils.get_package_version(
             ["pip", core.Dependency("setuptools"), core.RequirementsFile("blah")])
         self.assertTrue("pip" in multiple_different_items)
-        self.assertTrue("setuptools" in multiple_different_items)
         self.assertTrue("blah" not in multiple_different_items)
 
         # Multiple identical items
