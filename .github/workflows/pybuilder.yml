@@ -80,9 +80,13 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
+          - '3.15-dev'
           - '3.14-dev'
+          - '3.14t-dev'
+          - '3.13t'
           - 'pypy-3.9'
           - 'pypy-3.10'
+          - 'pypy-3.11'
         with-venv:
           - 'true'
           - 'false'

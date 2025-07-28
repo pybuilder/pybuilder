@@ -34,6 +34,7 @@ _base_executable = getattr(sys, "_base_executable", None)
 _sys_executable = sys.executable
 _executable = sys.executable
 _platform = sys.platform
+_free_threaded = sysconfig.get_config_var("Py_GIL_DISABLED")
 if _platform == "linux2":
     _platform = "linux"
 print({
@@ -46,10 +47,12 @@ print({
 "_name": platform.python_implementation(),
 "_type": platform.python_implementation().lower(),
 "_version": tuple(sys.version_info),
+"_free_threaded": _free_threaded,
 "_is_pypy": "__pypy__" in sys.builtin_module_names,
 "_is_64bit": (getattr(sys, "maxsize", None) or getattr(sys, "maxint")) > 2 ** 32,
-"_versioned_dir_name": "%s-%s%s" % (platform.python_implementation().lower(),
+"_versioned_dir_name": "%s-%s%s%s" % (platform.python_implementation().lower(),
                                   ".".join(str(f) for f in sys.version_info),
+                                  "t" if _free_threaded else "",
                                   "-debug" if hasattr(sys, "abiflags") and "d" in sys.abiflags else ""),
 "_environ": dict(os.environ),
 "_darwin_python_framework": sysconfig.get_config_var("PYTHONFRAMEWORK")
@@ -156,6 +159,11 @@ class PythonEnv(object):
     def version(self):
         self._check_not_populated()
         return self._version
+
+    @property
+    def free_threaded(self):
+        self._check_not_populated()
+        return self._free_threaded
 
     @property
     def env_dir(self):
