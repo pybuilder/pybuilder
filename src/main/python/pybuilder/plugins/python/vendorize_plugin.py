@@ -91,12 +91,12 @@ def vendorize(project, reactor, logger):
                 logger.warn("No license file found in package %r", package_name)
                 continue
 
-            with open(lic_file, "rt") as f:
+            with open(lic_file, "rt", encoding="utf8") as f:
                 licenses_content += "%s\n==========\n%s\n\n" % (package_name, f.read())
 
             logger.debug("Collected license file for package %r", package_name)
 
-        with open(project.expand_path("$vendorize_licenses"), "wt") as f:
+        with open(project.expand_path("$vendorize_licenses"), "wt", encoding="utf8") as f:
             f.write(licenses_content)
 
     def delete(p):

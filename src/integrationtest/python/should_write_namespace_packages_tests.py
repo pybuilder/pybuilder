@@ -73,8 +73,9 @@ def spam ():
         self.assert_file_content(setup_py, """#!/usr/bin/env python
 #   -*- coding: utf-8 -*-
 
-from setuptools import setup
+from setuptools import setup, Extension
 from setuptools.command.install import install as _install
+
 
 class install(_install):
     def pre_install_script(self):
@@ -89,6 +90,8 @@ class install(_install):
         _install.run(self)
 
         self.post_install_script()
+
+
 
 if __name__ == '__main__':
     setup(
@@ -117,9 +120,11 @@ if __name__ == '__main__':
         packages = ['spam'],
         namespace_packages = ['spam'],
         py_modules = ['standalone_module'],
+        ext_modules = [],
         entry_points = {},
         data_files = [],
         package_data = {},
+        include_package_data = False,
         install_requires = [
             'eggs==0.2.3',
             'spam'
@@ -129,6 +134,7 @@ if __name__ == '__main__':
         cmdclass = {'install': install},
         python_requires = '',
         obsoletes = [],
+        setup_requires = [],
     )
 """)
 
