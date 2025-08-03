@@ -33,7 +33,7 @@ use_plugin("python.coverage")
 
 @init(environments="ci")
 def init_coveralls_properties(project):
-    project.plugin_depends_on("coveralls", "~=3.0")
+    project.plugin_depends_on("coveralls", "~=4.0")
 
     project.set_property_if_unset("coveralls_dry_run", False)
     project.set_property_if_unset("coveralls_report", False)
@@ -60,13 +60,15 @@ def finalize_coveralls(project, logger, reactor):
 
             workman = coverage(**coverage_config)
             workman.load()
+            workman.get_data()
 
-            if hasattr(workman, '_harvest_data'):
-                workman._harvest_data()  # pylint: disable=W0212
-            else:
-                workman.get_data()
+            return CoverallReporter(workman).coverage
 
-            return CoverallReporter(workman, workman.config).coverage
+        def wear(self, dry_run=False):
+            json_string = self.create_report()
+            if dry_run:
+                return json_string
+            return self.submit_report(json_string)
 
     coveralls_logger = logging.getLogger("coveralls")
     coveralls_logger.addHandler(logger)
@@ -89,8 +91,9 @@ def finalize_coveralls(project, logger, reactor):
                     staging = True
 
                 if dry_run:
-                    pyb_coveralls.wear(dry_run=True)
+                    report = pyb_coveralls.wear(dry_run=True)
                     logger.info("Coveralls dry-run coverage test has been completed!")
+                    logger.debug("Coveralls report %s", report)
                     staging = True
 
                 if staging:
