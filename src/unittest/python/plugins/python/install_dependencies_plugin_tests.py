@@ -18,6 +18,7 @@
 
 
 import unittest
+import os
 
 from pybuilder.core import (Project,
                             Logger)
@@ -63,7 +64,7 @@ class InstallRuntimeDependenciesTest(unittest.TestCase):
         exec_cmd = self.pyb_env.execute_command
         call_stanza = self.pyb_env.executable + PIP_MODULE_STANZA + ["install", "-c", ANY]
         exec_cmd.assert_called_with(call_stanza +
-                                    ["eggs", "spam", "-r", "requirements.txt"],
+                                    ["eggs", "spam", "-r", os.path.join(self.project.basedir, "requirements.txt")],
                                     outfile_name=ANY,
                                     error_file_name=ANY,
                                     env=ANY, cwd=None, shell=False, no_path_search=True)
@@ -135,7 +136,7 @@ class InstallBuildDependenciesTest(unittest.TestCase):
         call_stanza = self.pyb_env.executable + PIP_MODULE_STANZA + ["install", "-c", ANY]
 
         exec_cmd.assert_called_with(call_stanza +
-                                    ["eggs", "spam", "-r", "requirements-dev.txt"],
+                                    ["eggs", "spam", "-r", os.path.join(self.project.basedir, "requirements-dev.txt")],
                                     outfile_name=ANY,
                                     error_file_name=ANY,
                                     env=ANY, cwd=None, shell=False, no_path_search=True)
