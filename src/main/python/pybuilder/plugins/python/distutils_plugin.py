@@ -115,10 +115,10 @@ def as_str(value):
 def initialize_distutils_plugin(project):
     project.plugin_depends_on("pypandoc", "~=1.4")
     project.plugin_depends_on("twine", ">=1.15.0")
-    project.plugin_depends_on("setuptools", ">=38.6.0", eager_update=False)
-    project.plugin_depends_on("wheel", ">=0.34.0", eager_update=False)
+    project.plugin_depends_on("setuptools", ">=76.0", eager_update=False)
+    project.plugin_depends_on("build", ">=1.3.0", eager_update=False)
 
-    project.set_property_if_unset("distutils_commands", ["sdist", "bdist_wheel"])
+    project.set_property_if_unset("distutils_commands", ["sdist", "wheel"])
     project.set_property_if_unset("distutils_command_options", None)
 
     # Workaround for http://bugs.python.org/issue8876 , unable to build a bdist
@@ -128,8 +128,6 @@ def initialize_distutils_plugin(project):
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python"
     ])
-    project.set_property_if_unset("distutils_use_setuptools", True)
-
     project.set_property_if_unset("distutils_fail_on_warnings", False)
 
     project.set_property_if_unset("distutils_upload_register", False)
@@ -224,7 +222,7 @@ def render_setup_script(project):
     maintainer_email = ",".join(map(lambda a: a.email, project.maintainers))
 
     template_values = {
-        "module": "setuptools" if project.get_property("distutils_use_setuptools") else "distutils.core",
+        "module": "setuptools",
         "name": as_str(project.name),
         "version": as_str(project.dist_version),
         "summary": as_str(default(project.summary)),
@@ -287,7 +285,7 @@ def build_binary_distribution(project, logger, reactor):
 
     commands = [build_command_with_options(cmd, project.get_property("distutils_command_options"))
                 for cmd in as_list(project.get_property("distutils_commands"))]
-    execute_distutils(project, logger, reactor.pybuilder_venv, commands, True)
+    execute_distutils(project, logger, reactor.pybuilder_venv, commands)
     upload_check(project, logger, reactor)
 
 
@@ -368,19 +366,20 @@ def render_manifest_file(project):
 
 
 def build_command_with_options(command, distutils_command_options=None):
-    commands = [command]
+    if command == "bdist_wheel":
+        command = "wheel"
+    commands = [f"--{command}"]
     if distutils_command_options:
         try:
-            command_options = as_list(distutils_command_options[command])
-            commands.extend(command_options)
+            commands.extend([f"-C{cmd}" for cmd in as_list(distutils_command_options[command])])
         except KeyError:
             pass
     return commands
 
 
-def execute_distutils(project, logger, python_env, distutils_commands, clean=False):
+def execute_distutils(project, logger, python_env, distutils_commands):
     reports_dir = _prepare_reports_dir(project)
-    setup_script = project.expand_path("$dir_dist", "setup.py")
+    setup_script_dir = project.expand_path("$dir_dist")
 
     for command in distutils_commands:
         if is_string(command):
@@ -388,15 +387,17 @@ def execute_distutils(project, logger, python_env, distutils_commands, clean=Fal
         else:
             out_file = os.path.join(reports_dir, safe_log_file_name("__".join(command)))
         with open(out_file, "w") as out_f:
-            commands = python_env.executable + [setup_script]
+            commands = python_env.executable + ["-c",
+                                                "import sys; del sys.path[0]; "
+                                                "import runpy; runpy.run_module('build.__main__', run_name='__main__')"
+                                                ]
             if project.get_property("verbose"):
                 commands.append("-v")
-            if clean:
-                commands.extend(["clean", "--all"])
             if is_string(command):
                 commands.extend(command.split())
             else:
                 commands.extend(command)
+            commands.append(setup_script_dir)
             logger.debug("Executing distutils command: %s", commands)
             return_code = python_env.run_process_and_wait(commands, project.expand_path("$dir_dist"), out_f)
             if return_code != 0:

@@ -86,7 +86,7 @@ urls = {"Bug Tracker": "https://github.com/pybuilder/pybuilder/issues",
         "Documentation": "https://pybuilder.io/documentation",
         "Twitter": "https://twitter.com/pybuilder_",
         }
-license = "Apache License, Version 2.0"
+license = "Apache-2.0"
 version = "0.13.17.dev"
 
 requires_python = ">=3.9"
@@ -184,6 +184,7 @@ def initialize(project):
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: POSIX :: Linux",
         "Operating System :: Microsoft :: Windows",
@@ -191,7 +192,6 @@ def initialize(project):
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: Apache Software License",
         "Topic :: Software Development :: Build Tools",
         "Topic :: Software Development :: Quality Assurance",
         "Topic :: Software Development :: Testing"])

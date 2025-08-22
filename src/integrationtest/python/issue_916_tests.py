@@ -71,9 +71,9 @@ class Issue916Test(SmokeIntegrationTestSupport):
                 "Source Code": "https://github.com/karellen/wheel-axle/",
                 "Documentation": "https://github.com/karellen/wheel-axle/"
             }
-            license = "Apache License, Version 2.0"
+            license = "Apache-2.0"
 
-            requires_python = ">=3.7"
+            requires_python = ">=3.9"
 
             default_task = ["analyze", "publish"]
 
@@ -86,8 +86,6 @@ class Issue916Test(SmokeIntegrationTestSupport):
 
             @init
             def set_properties(project):
-                project.depends_on("wheel", ">=0.37.0")
-
                 project.set_property("distutils_readme_description", True)
                 project.set_property("distutils_description_overwrite", True)
                 project.set_property("distutils_upload_skip_existing", True)

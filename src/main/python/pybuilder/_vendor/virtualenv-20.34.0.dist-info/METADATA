@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: virtualenv
-Version: 20.32.0
+Version: 20.34.0
 Summary: Virtual Python Environment builder
 Project-URL: Documentation, https://virtualenv.pypa.io
 Project-URL: Homepage, https://github.com/pypa/virtualenv
@@ -33,6 +33,7 @@ Requires-Dist: distlib<1,>=0.3.7
 Requires-Dist: filelock<4,>=3.12.2
 Requires-Dist: importlib-metadata>=6.6; python_version < '3.8'
 Requires-Dist: platformdirs<5,>=3.9.1
+Requires-Dist: typing-extensions>=4.13.2; python_version < '3.11'
 Provides-Extra: docs
 Requires-Dist: furo>=2023.7.26; extra == 'docs'
 Requires-Dist: proselint>=0.13; extra == 'docs'

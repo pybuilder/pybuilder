@@ -521,7 +521,4 @@ def main(*args):
             print_summary(
                 successful, summary, start, end, options, failure_message)
 
-        if not successful:
-            return 1
-
-        return 0
+    return 0 if successful else 1
