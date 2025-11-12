@@ -14,7 +14,7 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
-          - '3.14-dev'
+          - '3.14'
           - '3.13'
           - '3.12'
           - '3.11'
@@ -46,8 +46,9 @@ jobs:
       matrix:
         os:
           - windows-latest
-          - macos-13
+          - macos-15-intel
         python-version:
+          - '3.14'
           - '3.13'
           - '3.12'
           - '3.11'
@@ -82,7 +83,7 @@ jobs:
           - ubuntu-latest
         python-version:
           - '3.15-dev'
-          - '3.14t-dev'
+          - '3.14t'
           - '3.13t'
           - 'pypy-3.9'
           - 'pypy-3.10'
