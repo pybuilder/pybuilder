@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: virtualenv
-Version: 20.34.0
+Version: 20.35.4
 Summary: Virtual Python Environment builder
 Project-URL: Documentation, https://virtualenv.pypa.io
 Project-URL: Homepage, https://github.com/pypa/virtualenv
@@ -23,6 +23,7 @@ Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
 Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3.14
 Classifier: Programming Language :: Python :: Implementation :: CPython
 Classifier: Programming Language :: Python :: Implementation :: PyPy
 Classifier: Topic :: Software Development :: Libraries
