@@ -16,13 +16,15 @@ class SoftFileLock(BaseFileLock):
     def _acquire(self) -> None:
         raise_on_not_writable_file(self.lock_file)
         ensure_directory_exists(self.lock_file)
-        # first check for exists and read-only mode as the open will mask this case as EEXIST
         flags = (
             os.O_WRONLY  # open for writing only
             | os.O_CREAT
             | os.O_EXCL  # together with above raise EEXIST if the file specified by filename exists
             | os.O_TRUNC  # truncate the file to zero byte
         )
+        o_nofollow = getattr(os, "O_NOFOLLOW", None)
+        if o_nofollow is not None:
+            flags |= o_nofollow
         try:
             file_handler = os.open(self.lock_file, flags, self._context.mode)
         except OSError as exception:  # re-raise unless expected exception

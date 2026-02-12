@@ -39,6 +39,9 @@ else:  # pragma: win32 no cover
         def _acquire(self) -> None:
             ensure_directory_exists(self.lock_file)
             open_flags = os.O_RDWR | os.O_TRUNC
+            o_nofollow = getattr(os, "O_NOFOLLOW", None)
+            if o_nofollow is not None:
+                open_flags |= o_nofollow
             if not Path(self.lock_file).exists():
                 open_flags |= os.O_CREAT
             fd = os.open(self.lock_file, open_flags, self._context.mode)

@@ -307,7 +307,7 @@ def version_satisfies_spec(spec, version):
         spec = SpecifierSet(spec)
     if not isinstance(version, Version):
         version = Version(version)
-    return spec.contains(version)
+    return spec.contains(version, prereleases=bool(spec.prereleases))
 
 
 def should_update_package(version):

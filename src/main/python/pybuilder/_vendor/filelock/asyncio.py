@@ -10,7 +10,7 @@ import time
 from dataclasses import dataclass
 from inspect import iscoroutinefunction
 from threading import local
-from typing import TYPE_CHECKING, Any, Callable, NoReturn, cast
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 from ._api import BaseFileLock, FileLockContext, FileLockMeta
 from ._error import Timeout
@@ -20,6 +20,7 @@ from ._windows import WindowsFileLock
 
 if TYPE_CHECKING:
     import sys
+    from collections.abc import Callable
     from concurrent import futures
     from types import TracebackType
 
