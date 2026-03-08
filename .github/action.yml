@@ -22,15 +22,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Configure
-      if: |
-        contains(fromJSON(inputs.deploy-on-os), runner.os) &&
-        contains(fromJSON(inputs.deploy-on-python), inputs.python-version) &&
-        contains(fromJSON(inputs.deploy-on-branch), github.ref) &&
-        inputs.with-venv == 'true'
-      shell: bash
-      run: |
-        echo "PYB_EXTRA_ARGS=+upload" >> $GITHUB_ENV
     - name: Build
       if: |
         !(inputs.with-homebrew == 'true' && runner.os != 'macOS' ||
@@ -48,7 +39,12 @@ runs:
         with-venv: '${{ inputs.with-venv }}'
         install-pyb: 'false'
         pyb-command: $PYTHON build.py
-        pyb-extra-args: +install ${{ env.PYB_EXTRA_ARGS }}
+        pyb-extra-args: +install
+        is-upload: >-
+          ${{ contains(fromJSON(inputs.deploy-on-os), runner.os)
+          && contains(fromJSON(inputs.deploy-on-python), inputs.python-version)
+          && contains(fromJSON(inputs.deploy-on-branch), github.ref)
+          && inputs.with-venv == 'true' }}
     - name: Print Logs on Failure
       if: failure()
       shell: bash

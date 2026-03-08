@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+permissions:
+  contents: write
+
 jobs:
   build-primary:
     runs-on: ${{ matrix.os }}
