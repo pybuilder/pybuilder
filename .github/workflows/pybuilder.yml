@@ -39,6 +39,8 @@ jobs:
           deploy-on-python: '["3.13"]'
           deploy-on-os: '["Linux"]'
           deploy-on-branch: '["refs/heads/master"]'
+          release-app-id: ${{ secrets.PYBUILDER_RELEASE_APP_ID }}
+          release-app-private-key: ${{ secrets.PYBUILDER_RELEASE_APP_PRIVATE_KEY }}
   build-secondary:
     runs-on: ${{ matrix.os }}
     continue-on-error: false

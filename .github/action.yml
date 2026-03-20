@@ -19,6 +19,14 @@ inputs:
   deploy-on-branch:
     description: 'Deploy on Branches'
     required: true
+  release-app-id:
+    description: 'GitHub App ID for generating release tokens'
+    required: false
+    default: ''
+  release-app-private-key:
+    description: 'GitHub App private key for generating release tokens'
+    required: false
+    default: ''
 runs:
   using: "composite"
   steps:
@@ -45,6 +53,8 @@ runs:
           && contains(fromJSON(inputs.deploy-on-python), inputs.python-version)
           && contains(fromJSON(inputs.deploy-on-branch), github.ref)
           && inputs.with-venv == 'true' }}
+        release-app-id: ${{ inputs.release-app-id }}
+        release-app-private-key: ${{ inputs.release-app-private-key }}
     - name: Print Logs on Failure
       if: failure()
       shell: bash
