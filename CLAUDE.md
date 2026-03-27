@@ -36,10 +36,35 @@ pyb clean package
 
 # Verbose output
 pyb -v
+
+# Debug verbose output (includes all debug logging)
+pyb -vX
 ```
 
 The build script (`build.py`) bootstraps by inserting `src/main/python` into
 `sys.path` so PyBuilder can build itself.
+
+## Virtual Environments
+
+PyBuilder manages isolated venvs during builds:
+
+- `.pybuilder/plugins/{version}/` — plugin dependencies (committed to `.gitignore`)
+- `target/venv/build/{version}/` — build + runtime deps (unit tests run here)
+- `target/venv/test/{version}/` — runtime deps only (integration tests run here)
+
+Unit tests use subprocess remoting: a child process is spawned with the build
+venv's Python, `sys.path` is remapped to use the build venv's site-packages,
+and tests execute via RPC. Integration tests run each file as a standalone
+subprocess with `PYTHONPATH` pointing to `target/dist/` (the built distribution).
+
+## Logs and Reports
+
+- `target/reports/unittest` — unit test console output
+- `target/reports/unittest.json` — structured unit test results (JSON)
+- `target/reports/integrationtests/{name}` — per-integration-test stdout
+- `target/reports/integrationtests/{name}.err` — per-integration-test stderr
+- `target/reports/*_coverage*` — coverage reports (JSON, XML, HTML)
+- `target/logs/install_dependencies/` — pip install logs
 
 ## Python Version Support
 
@@ -66,6 +91,19 @@ via the `python.vendorize` plugin. Do not modify vendored code directly.
 - flake8 is enforced and breaks the build
 - Extend ignore: E303, F401, F824
 - Apache License 2.0 header on source files
+
+## Releasing
+
+The version in `build.py` is always `X.Y.Z.dev` on master. Do **not** change it
+manually to cut a release. Instead, append `[release]` (or `[release X.Y.Z]` for
+a specific version) to the **first line** of the commit message and PR title. The
+CI detects this tag and handles version finalization, tagging, and PyPI upload
+automatically. After the release, CI bumps the version to the next `.dev`.
+
+Example commit message first line:
+```
+Release 0.13.19 [release]
+```
 
 ## Git Workflow
 
