@@ -324,6 +324,11 @@ class PythonEnv(object):
             yield os.path.join(prefix, "lib",
                                "python%d.%d" % self.version[:2],
                                "site-packages")
+            lib64_path = os.path.join(prefix, "lib64",
+                                      "python%d.%d" % self.version[:2],
+                                      "site-packages")
+            if os.path.isdir(lib64_path):
+                yield lib64_path
         else:
             yield prefix
             yield os.path.join(prefix, "lib", "site-packages")
