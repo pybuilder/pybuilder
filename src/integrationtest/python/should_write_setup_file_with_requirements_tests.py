@@ -126,6 +126,7 @@ if __name__ == '__main__':
             'awesome>=1.3.37',
             'foo==42'
         ],
+        extras_require = {},
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,
         cmdclass = {'install': install},
