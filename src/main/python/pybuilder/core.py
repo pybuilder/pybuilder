@@ -280,7 +280,8 @@ class Dependency(object):
     method from class Project to add a dependency to a project.
     """
 
-    def __init__(self, name, version=None, url=None, declaration_only=False, eager_update=None):
+    def __init__(self, name, version=None, url=None, declaration_only=False, eager_update=None,
+                 extra=None, markers=None):
         from pybuilder import pip_common
         if version:
             try:
@@ -299,6 +300,7 @@ class Dependency(object):
             extras = list(req.extras) if req.extras else None
             version = version or str(req.specifier) or None
             url = url or req.url
+            markers = markers or (str(req.marker) if req.marker else None)
         except pip_common.InvalidRequirement:
             pass
 
@@ -308,17 +310,20 @@ class Dependency(object):
         self.url = url
         self.declaration_only = declaration_only
         self.eager_update = eager_update
+        self.extra = extra
+        self.markers = markers
 
     def __eq__(self, other):
         if not isinstance(other, Dependency):
             return False
-        return self.name == other.name and self.version == other.version and self.url == other.url
+        return (self.name == other.name and self.version == other.version
+                and self.url == other.url and self.extra == other.extra)
 
     def __ne__(self, other):
         return not (self == other)
 
     def __hash__(self):
-        return 13 * hash(self.name) + 17 * hash(self.version)
+        return 13 * hash(self.name) + 17 * hash(self.version) + 19 * hash(self.extra)
 
     def __lt__(self, other):
         if not isinstance(other, Dependency):
@@ -550,6 +555,17 @@ class Project(object):
             if dependency.name in build_dependencies_found:
                 result.append("Runtime dependency '%s' has also been given as build dependency." % dependency.name)
 
+        for extra_name, deps in self.extras_dependencies.items():
+            extra_deps_found = {}
+            for dependency in deps:
+                if dependency.name in extra_deps_found:
+                    if extra_deps_found[dependency.name] == 1:
+                        result.append("Extra '%s' dependency '%s' has been defined multiple times." %
+                                      (extra_name, dependency.name))
+                    extra_deps_found[dependency.name] += 1
+                else:
+                    extra_deps_found[dependency.name] = 1
+
         return result
 
     @property
@@ -560,7 +576,7 @@ class Project(object):
 
     @property
     def dependencies(self):
-        return list(sorted(self._install_dependencies))
+        return list(sorted(d for d in self._install_dependencies if getattr(d, 'extra', None) is None))
 
     @property
     def build_dependencies(self):
@@ -570,11 +586,14 @@ class Project(object):
     def plugin_dependencies(self):
         return list(sorted(self._plugin_dependencies))
 
-    def depends_on(self, name, version=None, url=None, declaration_only=False, eager_update=None):
-        self._install_dependencies.add(Dependency(name, version, url, declaration_only, eager_update=eager_update))
+    def depends_on(self, name, version=None, url=None, declaration_only=False, eager_update=None,
+                   extra=None, markers=None):
+        self._install_dependencies.add(Dependency(name, version, url, declaration_only,
+                                                  eager_update=eager_update, extra=extra, markers=markers))
 
-    def build_depends_on(self, name, version=None, url=None, declaration_only=False, eager_update=None):
-        self._build_dependencies.add(Dependency(name, version, url, declaration_only, eager_update=eager_update))
+    def build_depends_on(self, name, version=None, url=None, declaration_only=False, eager_update=None, markers=None):
+        self._build_dependencies.add(Dependency(name, version, url, declaration_only,
+                                                eager_update=eager_update, markers=markers))
 
     def depends_on_requirements(self, file, declaration_only=False):
         self._install_dependencies.add(RequirementsFile(file, declaration_only=declaration_only))
@@ -582,8 +601,18 @@ class Project(object):
     def build_depends_on_requirements(self, file):
         self._build_dependencies.add(RequirementsFile(file))
 
-    def plugin_depends_on(self, name, version=None, url=None, declaration_only=False, eager_update=None):
-        self._plugin_dependencies.add(Dependency(name, version, url, declaration_only, eager_update=eager_update))
+    def plugin_depends_on(self, name, version=None, url=None, declaration_only=False, eager_update=None, markers=None):
+        self._plugin_dependencies.add(Dependency(name, version, url, declaration_only,
+                                                 eager_update=eager_update, markers=markers))
+
+    @property
+    def extras_dependencies(self):
+        result = OrderedDict()
+        for dep in sorted(self._install_dependencies):
+            extra = getattr(dep, 'extra', None)
+            if extra is not None:
+                result.setdefault(extra, []).append(dep)
+        return result
 
     @property
     def environments(self):

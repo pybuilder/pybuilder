@@ -128,6 +128,58 @@ class ProjectTest(unittest.TestCase):
         self.assertEqual("spam", self.project.dependencies[0].name)
         self.assertEqual(">=0.7", self.project.dependencies[0].version)
 
+    def test_should_add_extra_dependency(self):
+        self.project.depends_on("spam", "0.7", extra="security")
+        self.project.depends_on("eggs", "1.0", extra="security")
+        self.assertEqual(0, len(self.project.dependencies))
+        extras = self.project.extras_dependencies
+        self.assertIn("security", extras)
+        self.assertEqual(2, len(extras["security"]))
+        names = [d.name for d in extras["security"]]
+        self.assertIn("spam", names)
+        self.assertIn("eggs", names)
+
+    def test_should_separate_extras_from_regular_dependencies(self):
+        self.project.depends_on("spam", "0.7")
+        self.project.depends_on("eggs", "1.0", extra="dev")
+        self.project.depends_on("ham", "2.0", extra="security")
+        self.assertEqual(1, len(self.project.dependencies))
+        self.assertEqual("spam", self.project.dependencies[0].name)
+        extras = self.project.extras_dependencies
+        self.assertEqual(2, len(extras))
+        self.assertEqual(1, len(extras["dev"]))
+        self.assertEqual("eggs", extras["dev"][0].name)
+        self.assertEqual(1, len(extras["security"]))
+        self.assertEqual("ham", extras["security"][0].name)
+
+    def test_should_add_extra_dependency_only_once(self):
+        self.project.depends_on("spam", "0.7", extra="dev")
+        self.project.depends_on("spam", "0.7", extra="dev")
+        self.assertEqual(1, len(self.project.extras_dependencies["dev"]))
+
+    def test_same_dependency_can_be_in_different_extras(self):
+        self.project.depends_on("spam", "0.7", extra="dev")
+        self.project.depends_on("spam", "0.7", extra="test")
+        extras = self.project.extras_dependencies
+        self.assertEqual(1, len(extras["dev"]))
+        self.assertEqual(1, len(extras["test"]))
+
+    def test_extras_dependencies_returns_empty_when_no_extras(self):
+        self.project.depends_on("spam", "0.7")
+        self.assertEqual(0, len(self.project.extras_dependencies))
+
+    def test_should_add_dependency_with_markers(self):
+        self.project.depends_on("pywin32", ">=300", markers="sys_platform == 'win32'")
+        self.assertEqual(1, len(self.project.dependencies))
+        self.assertEqual("sys_platform == 'win32'", self.project.dependencies[0].markers)
+
+    def test_should_add_extra_dependency_with_markers(self):
+        self.project.depends_on("pywin32", ">=300", extra="windows", markers="sys_platform == 'win32'")
+        self.assertEqual(0, len(self.project.dependencies))
+        extras = self.project.extras_dependencies
+        self.assertIn("windows", extras)
+        self.assertEqual("sys_platform == 'win32'", extras["windows"][0].markers)
+
 
 class ProjectManifestTests(unittest.TestCase):
     def setUp(self):
@@ -379,6 +431,18 @@ class ProjectValidationTest(unittest.TestCase):
         self.assertTrue(
             "Runtime dependency 'spam' has also been given as build dependency." in validation_messages)
         self.assertEqual(len(validation_messages), 1)
+
+    def test_should_not_validate_project_with_duplicate_extra_dependency(self):
+        self.project.depends_on('spam', version='1', extra='dev')
+        self.project.depends_on('spam', version='2', extra='dev')
+        validation_messages = self.project.validate()
+        self.assertIn("Extra 'dev' dependency 'spam' has been defined multiple times.", validation_messages)
+
+    def test_should_validate_same_dependency_in_different_extras(self):
+        self.project.depends_on('spam', version='1', extra='dev')
+        self.project.depends_on('spam', version='1', extra='test')
+        validation_messages = self.project.validate()
+        self.assertFalse(validation_messages)
 
 
 class LoggerTest(unittest.TestCase):

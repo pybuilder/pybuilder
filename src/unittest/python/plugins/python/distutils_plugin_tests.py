@@ -30,6 +30,7 @@ from pybuilder.errors import BuildFailedException
 from pybuilder.pip_utils import PIP_MODULE_STANZA
 from pybuilder.plugins.python.distutils_plugin import (build_data_files_string,
                                                        build_dependency_links_string,
+                                                       build_extras_require_string,
                                                        build_install_dependencies_string,
                                                        build_package_data_string,
                                                        build_entry_points_string,
@@ -183,6 +184,56 @@ class InstallDependenciesTest(unittest.TestCase):
 
         self.assertEqual(
             "['foo']", build_install_dependencies_string(self.project))
+
+
+class ExtrasRequireTest(unittest.TestCase):
+    def setUp(self):
+        self.project = Project(".")
+
+    def test_should_return_empty_dict_when_no_extras(self):
+        self.assertEqual("{}", build_extras_require_string(self.project))
+
+    def test_should_return_empty_dict_when_only_regular_dependencies(self):
+        self.project.depends_on("spam")
+        self.assertEqual("{}", build_extras_require_string(self.project))
+
+    def test_should_return_single_extra_with_single_dependency(self):
+        self.project.depends_on("spam", "0.7", extra="dev")
+        result = build_extras_require_string(self.project)
+        self.assertIn("'dev'", result)
+        self.assertIn("'spam>=0.7'", result)
+
+    def test_should_return_single_extra_with_multiple_dependencies(self):
+        self.project.depends_on("spam", "0.7", extra="dev")
+        self.project.depends_on("eggs", extra="dev")
+        result = build_extras_require_string(self.project)
+        self.assertIn("'dev'", result)
+        self.assertIn("'spam>=0.7'", result)
+        self.assertIn("'eggs'", result)
+
+    def test_should_return_multiple_extras(self):
+        self.project.depends_on("spam", extra="dev")
+        self.project.depends_on("eggs", extra="security")
+        result = build_extras_require_string(self.project)
+        self.assertIn("'dev'", result)
+        self.assertIn("'security'", result)
+        self.assertIn("'spam'", result)
+        self.assertIn("'eggs'", result)
+
+    def test_should_not_include_extras_in_install_dependencies(self):
+        self.project.depends_on("spam")
+        self.project.depends_on("eggs", extra="dev")
+        self.assertEqual("['spam']", build_install_dependencies_string(self.project))
+
+    def test_should_include_markers_in_extras_dependency(self):
+        self.project.depends_on("pywin32", ">=300", extra="windows", markers="sys_platform == 'win32'")
+        result = build_extras_require_string(self.project)
+        self.assertIn("pywin32>=300; sys_platform == 'win32'", result)
+
+    def test_should_include_markers_in_install_dependencies(self):
+        self.project.depends_on("pywin32", ">=300", markers="sys_platform == 'win32'")
+        result = build_install_dependencies_string(self.project)
+        self.assertIn("pywin32>=300; sys_platform == 'win32'", result)
 
 
 class DependencyLinksTest(unittest.TestCase):
@@ -456,6 +507,7 @@ if __name__ == '__main__':
             'spam': ['eggs']
         },
         install_requires = ['sometool'],
+        extras_require = {},
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,
         cmdclass = {'install': install},
@@ -538,6 +590,7 @@ if __name__ == '__main__':
             'spam': ['eggs']
         },
         install_requires = ['sometool'],
+        extras_require = {},
         dependency_links = ['https://github.com/downloads/halimath/pyassert/pyassert-0.2.2.tar.gz'],
         zip_safe = True,
         cmdclass = {'install': install},

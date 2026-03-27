@@ -228,8 +228,12 @@ def as_pip_install_target(mixed):
             if target.url:
                 arguments.append(target.url)
             else:
-                arguments.append(f"{target.name}{('[' + ','.join(target.extras) + ']') if target.extras else ''}"
-                                 f"{build_dependency_version_string(target)}")
+                spec = (f"{target.name}{('[' + ','.join(target.extras) + ']') if target.extras else ''}"
+                        f"{build_dependency_version_string(target)}")
+                markers = getattr(target, 'markers', None)
+                if markers:
+                    spec = f"{spec}; {markers}"
+                arguments.append(spec)
         else:
             arguments.append(str(target))
     return arguments
