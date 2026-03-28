@@ -61,8 +61,6 @@ runs:
           && contains(fromJSON(inputs.deploy-on-branch), github.ref)
           && inputs.with-venv == 'true' }}
         github-token: ${{ steps.release-token.outputs.token || github.token }}
-        release-app-id: ${{ inputs.release-app-id }}
-        release-app-private-key: ${{ inputs.release-app-private-key }}
     - name: Print Logs on Failure
       if: failure()
       shell: bash
