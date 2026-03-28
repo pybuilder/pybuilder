@@ -30,6 +30,13 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Generate Release Token
+      id: release-token
+      if: inputs.release-app-id != '' && inputs.release-app-private-key != ''
+      uses: actions/create-github-app-token@v2
+      with:
+        app-id: ${{ inputs.release-app-id }}
+        private-key: ${{ inputs.release-app-private-key }}
     - name: Build
       if: |
         !(inputs.with-homebrew == 'true' && runner.os != 'macOS' ||
@@ -53,6 +60,7 @@ runs:
           && contains(fromJSON(inputs.deploy-on-python), inputs.python-version)
           && contains(fromJSON(inputs.deploy-on-branch), github.ref)
           && inputs.with-venv == 'true' }}
+        github-token: ${{ steps.release-token.outputs.token || github.token }}
         release-app-id: ${{ inputs.release-app-id }}
         release-app-private-key: ${{ inputs.release-app-private-key }}
     - name: Print Logs on Failure
