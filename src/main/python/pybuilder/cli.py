@@ -22,6 +22,7 @@
 """
 
 import datetime
+import json
 import optparse
 import re
 import sys
@@ -83,6 +84,21 @@ class ColoredStdOutLogger(StdOutLogger):
         return styled_text("[ERROR]", BOLD, fg(RED))
 
 
+class StdErrLogger(StdOutLogger):
+    def _do_log(self, level, message, *arguments):
+        formatted_message = self._format_message(message, *arguments)
+        log_level = self._level_to_string(level)
+        if self.log_time_format is not None:
+            timestamp = datetime.datetime.now().strftime(self.log_time_format) + ' '
+        else:
+            timestamp = ''
+        print_error_line("{0}{1} {2}".format(timestamp, log_level, formatted_message))
+
+
+class ColoredStdErrLogger(ColoredStdOutLogger, StdErrLogger):
+    pass
+
+
 def _log_time_format_argument__check_if_timestamp_passed(option, opt_str, value, parser):
     assert value is None
     value = DEFAULT_LOG_TIME_FORMAT
@@ -123,6 +139,12 @@ def parse_options(args):
                                                dest="list_plan_tasks",
                                                default=False,
                                                help="List tasks that will be run with current execution plan")
+
+    project_info_option = parser.add_option("-i", "--project-info",
+                                            action="store_true",
+                                            dest="project_info",
+                                            default=False,
+                                            help="Output project configuration as JSON")
 
     start_project_option = parser.add_option("--start-project",
                                              action="store_true",
@@ -252,6 +274,12 @@ def parse_options(args):
 
     if options.list_tasks and options.list_plan_tasks:
         parser.error("%s and %s are mutually exclusive" % (list_tasks_option, list_plan_tasks_option))
+    if options.project_info and (options.list_tasks or options.list_plan_tasks):
+        parser.error("%s is mutually exclusive with %s and %s" % (
+            project_info_option, list_tasks_option, list_plan_tasks_option))
+    if options.project_info and (options.start_project or options.update_project):
+        parser.error("%s is mutually exclusive with %s and %s" % (
+            project_info_option, start_project_option, update_project_option))
     if options.start_project and options.update_project:
         parser.error("%s and %s are mutually exclusive" % (start_project_option, update_project_option))
 
@@ -280,7 +308,7 @@ def should_colorize(options):
     return options.force_color or (sys.stdout.isatty() and not options.no_color)
 
 
-def init_logger(options):
+def init_logger(options, use_stderr=False):
     threshold = Logger.INFO
     if options.debug:
         threshold = Logger.DEBUG
@@ -288,12 +316,18 @@ def init_logger(options):
         threshold = Logger.WARN
 
     if not should_colorize(options):
-        logger = StdOutLogger(threshold, options.log_time_format)
+        if use_stderr:
+            logger = StdErrLogger(threshold, options.log_time_format)
+        else:
+            logger = StdOutLogger(threshold, options.log_time_format)
     else:
         if IS_WIN:
             import colorama
             colorama.init()
-        logger = ColoredStdOutLogger(threshold, options.log_time_format)
+        if use_stderr:
+            logger = ColoredStdErrLogger(threshold, options.log_time_format)
+        else:
+            logger = ColoredStdOutLogger(threshold, options.log_time_format)
 
     return logger
 
@@ -409,6 +443,115 @@ def print_plan_list_of_tasks(options, arguments, reactor, quiet=False):
     print_task_list(execution_plan, quiet)
 
 
+def _serialize_dependency(dep):
+    from pybuilder.core import RequirementsFile
+    if isinstance(dep, RequirementsFile):
+        return {
+            "name": dep.name,
+            "version": None,
+            "declaration_only": dep.declaration_only,
+            "type": "requirements_file"
+        }
+    return {
+        "name": dep.name,
+        "version": dep.version,
+        "url": dep.url,
+        "extras": dep.extras,
+        "markers": dep.markers,
+        "declaration_only": dep.declaration_only,
+        "type": "dependency"
+    }
+
+
+def _safe_property_value(value):
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return value
+    if isinstance(value, (list, tuple)):
+        return [_safe_property_value(v) for v in value]
+    if isinstance(value, dict):
+        return {str(k): _safe_property_value(v) for k, v in value.items()}
+    if isinstance(value, set):
+        return sorted([_safe_property_value(v) for v in value], key=str)
+    return repr(value)
+
+
+def _build_project_info(reactor):
+    project = reactor.project
+
+    def serialize_person(p):
+        if isinstance(p, (dict, str)):
+            return p
+        result = {"name": p.name}
+        if p.email:
+            result["email"] = p.email
+        if p.roles:
+            result["roles"] = list(p.roles)
+        return result
+
+    def serialize_person_list(persons):
+        return [serialize_person(p) for p in persons]
+
+    tasks_info = []
+    for task in sorted(reactor.get_tasks()):
+        task_deps = []
+        for dep in task.dependencies:
+            task_deps.append({
+                "name": str(dep.name),
+                "optional": dep.optional
+            })
+        tasks_info.append({
+            "name": task.name,
+            "description": task_description(task),
+            "dependencies": task_deps
+        })
+
+    return {
+        "pybuilder_version": __version__,
+        "project": {
+            "name": project.name,
+            "version": project.version,
+            "dist_version": project.dist_version,
+            "basedir": project.basedir,
+            "summary": project.summary,
+            "description": project.description,
+            "author": project.author,
+            "authors": serialize_person_list(project.authors),
+            "maintainer": project.maintainer,
+            "maintainers": serialize_person_list(project.maintainers),
+            "license": project.license,
+            "url": project.url,
+            "urls": project.urls,
+            "requires_python": project.requires_python,
+            "default_task": project.default_task,
+            "obsoletes": project.obsoletes,
+            "explicit_namespaces": project.explicit_namespaces,
+        },
+        "environments": list(project.environments),
+        "properties": {str(k): _safe_property_value(v) for k, v in sorted(project.properties.items())},
+        "plugins": list(reactor.get_plugins()),
+        "dependencies": {
+            "runtime": [_serialize_dependency(d) for d in project.dependencies],
+            "build": [_serialize_dependency(d) for d in project.build_dependencies],
+            "plugin": [_serialize_dependency(d) for d in project.plugin_dependencies],
+            "extras": {name: [_serialize_dependency(d) for d in deps]
+                       for name, deps in project.extras_dependencies.items()}
+        },
+        "tasks": tasks_info,
+        "manifest_included_files": project.manifest_included_files,
+        "package_data": dict(project.package_data),
+        "files_to_install": [[dest, files] for dest, files in project.files_to_install],
+    }
+
+
+def print_project_info(reactor, environments):
+    reactor.project._environments = tuple(environments)
+    reactor.execution_manager.execute_initializers(
+        environments, logger=reactor.logger, project=reactor.project, reactor=reactor)
+
+    info = _build_project_info(reactor)
+    print_text_line(json.dumps(info, indent=2, default=str))
+
+
 def get_failure_message():
     exc_type, exc_obj, exc_tb = sys.exc_info()
 
@@ -448,7 +591,7 @@ def main(*args):
 
     start = datetime.datetime.now()
 
-    logger = init_logger(options)
+    logger = init_logger(options, use_stderr=options.project_info)
     reactor = init_reactor(logger)
 
     if options.start_project:
@@ -456,6 +599,22 @@ def main(*args):
 
     if options.update_project:
         return update_project()
+
+    if options.project_info:
+        try:
+            reactor.prepare_build(property_overrides=options.property_overrides,
+                                  project_directory=options.project_directory,
+                                  exclude_optional_tasks=options.exclude_optional_tasks,
+                                  exclude_tasks=options.exclude_tasks,
+                                  exclude_all_optional=options.exclude_all_optional,
+                                  offline=options.offline,
+                                  no_venvs=options.no_venvs
+                                  )
+            print_project_info(reactor, options.environments)
+            return 0
+        except PyBuilderException:
+            print_build_status(get_failure_message(), options, successful=False)
+            return 1
 
     if options.list_tasks or options.list_plan_tasks:
         try:
