@@ -39,6 +39,12 @@ pyb -v
 
 # Debug verbose output (includes all debug logging)
 pyb -vX
+
+# Dump project configuration as JSON (no build, runs initializers only)
+pyb -i
+# JSON goes to stdout, log messages go to stderr
+pyb -i 2>/dev/null | jq .project.name
+pyb -i -E ci -P verbose=true 2>/dev/null | jq .
 ```
 
 The build script (`build.py`) bootstraps by inserting `src/main/python` into
@@ -109,3 +115,55 @@ Release 0.13.19 [release]
 
 This is a fork. PRs go from `origin` (arcivanov) to `upstream` (pybuilder).
 Always pull from `upstream` before branching. Never push directly to `master`.
+
+## Documentation Updates (pybuilder.github.io)
+
+The project website is in the `pybuilder/pybuilder.github.io` GitHub repo
+(branch `source`). Changes to PyBuilder code must be accompanied by
+corresponding documentation updates.
+
+### For new features (new CLI flag, new plugin, new API):
+
+1. **Release notes** — add entry under the next version in
+   `articles/_release-notes/v0.13.x.md` (section `### New Features`)
+2. **Manual** — add or update the relevant section in `documentation/manual.md`
+3. **Tutorial** — if the feature is user-facing and discoverable, add a brief
+   section or example to `documentation/tutorial.md`
+4. **Coding agents** — update `documentation/coding-agents.md` (both the
+   "Quick Reference for Agents" section and the example CLAUDE.md) if the
+   feature affects how agents interact with builds (e.g. new CLI flags,
+   new build commands, new output formats)
+5. **Dedicated page** (optional) — for substantial features, create a new page
+   under `documentation/` and add it to `documentation/index.md`
+6. **Blog post** — create `articles/_posts/YYYY-MM-DD-slug.md` with front matter
+   `layout: post`, `author: arcivanov`, `categories: news`
+
+### For bug fixes:
+
+1. **Release notes** — add entry under `### Bugs Fixed` in
+   `articles/_release-notes/v0.13.x.md`
+2. **Manual/tutorial** — update only if the fix changes documented behavior or
+   corrects a misleading example
+
+### For parameter/property additions to existing plugins:
+
+1. **Release notes** — add entry under `### New Features` (if user-visible) or
+   `### Bugs Fixed` (if correcting behavior)
+2. **Plugin reference** — update property tables in `documentation/plugins.md`
+3. **Manual** — update if the property affects a workflow described there
+
+### For dependency upgrades and vendorized bumps:
+
+1. **Release notes** — add entry under `### Vendorized Dependency Upgrades`
+
+### File reference:
+
+| File | Purpose |
+|------|---------|
+| `articles/_release-notes/v0.13.x.md` | Release notes (add new version at top) |
+| `articles/_posts/YYYY-MM-DD-*.md` | Blog posts / announcements |
+| `documentation/manual.md` | Usage manual (CLI, properties, venvs, testing) |
+| `documentation/tutorial.md` | Getting started tutorial |
+| `documentation/plugins.md` | Plugin reference with property tables |
+| `documentation/coding-agents.md` | Agent instruction guidance and examples |
+| `documentation/index.md` | Documentation hub (add links for new pages) |

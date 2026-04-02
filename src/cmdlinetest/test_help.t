@@ -27,6 +27,7 @@ Usage:
     -T, --list-plan-tasks
                           List tasks that will be run with current execution
                           plan
+    -i, --project-info    Output project configuration as JSON
     --start-project       Initialize build descriptors and Python project
                           structure
     --update-project      Update build descriptors and Python project structure
