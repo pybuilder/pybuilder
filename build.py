@@ -47,6 +47,7 @@ use_plugin("python.integrationtest")
 use_plugin("python.coverage")
 use_plugin("python.coveralls")
 use_plugin("python.flake8")
+use_plugin("python.mypy")
 use_plugin("filter_resources")
 
 use_plugin("python.pydev")
@@ -132,6 +133,10 @@ def initialize(project):
         project.expand_path("$dir_source_main_python", "pybuilder/_vendor/*")
     ]))
     project.set_property("flake8_max_line_length", 130)
+
+    project.set_property("mypy_break_build", True)
+    project.set_property("mypy_include_test_sources", True)
+    project.set_property("mypy_include_scripts", True)
 
     project.set_property("frosted_include_test_sources", True)
     project.set_property("frosted_include_scripts", True)
