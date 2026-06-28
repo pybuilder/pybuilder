@@ -134,6 +134,11 @@ def initialize(project):
     ]))
     project.set_property("flake8_max_line_length", 130)
 
+    project.set_property("mypy_break_build", False)
+    project.set_property("mypy_include_test_sources", True)
+    project.set_property("mypy_include_scripts", False)
+    project.set_property("mypy_exclude_patterns", "pybuilder/_vendor")
+
     project.set_property("frosted_include_test_sources", True)
     project.set_property("frosted_include_scripts", True)
 

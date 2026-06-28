@@ -43,6 +43,7 @@ def initialize_mypy_plugin(project):
     project.set_property_if_unset("mypy_break_build", False)
     project.set_property_if_unset("mypy_include_test_sources", False)
     project.set_property_if_unset("mypy_include_scripts", False)
+    project.set_property_if_unset("mypy_exclude_patterns", None)
 
 
 @after("prepare")
@@ -61,6 +62,10 @@ def execute_mypy(project, logger, reactor):
 
     for opt in project.get_property("mypy_options"):
         command.use_argument(opt)
+
+    exclude_patterns = project.get_property("mypy_exclude_patterns")
+    if exclude_patterns:
+        command.use_argument("--exclude={0}".format(exclude_patterns))
 
     include_test_sources = project.get_property("mypy_include_test_sources")
     include_scripts = project.get_property("mypy_include_scripts")
