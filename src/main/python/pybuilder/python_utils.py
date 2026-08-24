@@ -21,14 +21,16 @@ import platform
 import sys
 import traceback
 from collections import OrderedDict
+from glob import glob, iglob, escape
 from io import StringIO
+from os import symlink
+from shutil import which
 
 
 def is_windows(platform=sys.platform, win_platforms={"win32", "cygwin", "msys"}):
     return platform in win_platforms
 
 
-StringIO = StringIO
 IS_PYPY = '__pypy__' in sys.builtin_module_names
 IS_WIN = is_windows()
 
@@ -41,25 +43,12 @@ def is_string(val):
     return isinstance(val, str)
 
 
-from shutil import which  # noqa: E402
-
-
-def save_tb(ex):
-    pass
-
-
-is_string = is_string
 makedirs = os.makedirs
-which = which
 
 odict = OrderedDict
 
-_mp_get_context = None  # This will be patched at runtime
-mp_ForkingPickler = None  # This will be patched at runtime
-mp_log_to_stderr = None  # This will be patched at runtime
 _mp_billiard_pyb_env = None  # This will be patched at runtime
 
-_old_billiard_spawn_passfds = None  # This will be patched at runtime
 _installed_tblib = False
 
 from multiprocessing import log_to_stderr as mp_log_to_stderr, get_context as _mp_get_context  # noqa: E402
@@ -90,11 +79,6 @@ def patch_mp():
 def mp_get_context(context):
     global _mp_get_context
     return _mp_get_context(context)
-
-
-mp_ForkingPickler = mp_ForkingPickler
-mp_log_to_stderr = mp_log_to_stderr
-_mp_get_context = _mp_get_context
 
 
 def _instrumented_target(q, target, *args, **kwargs):
@@ -159,12 +143,6 @@ def add_env_to_path(python_env, sys_path):
         if path not in sys_path:
             sys_path.append(path)
 
-
-from glob import glob, iglob, escape  # noqa: E402
-
-from os import symlink  # noqa: E402
-
-symlink = symlink
 
 sys_executable_suffix = sys.executable[len(sys.exec_prefix) + 1:]
 

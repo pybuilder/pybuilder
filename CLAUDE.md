@@ -75,8 +75,8 @@ subprocess with `PYTHONPATH` pointing to `target/dist/` (the built distribution)
 ## Python Version Support
 
 - Required: Python >= 3.10
-- Supported: CPython 3.10, 3.11, 3.12, 3.13, 3.14
-- Experimental: CPython 3.15-dev, free-threaded 3.14t/3.13t, PyPy 3.10/3.11
+- Supported: CPython 3.10, 3.11, 3.12, 3.13, 3.14, 3.15
+- Experimental: free-threaded 3.15t/3.14t/3.13t, PyPy 3.10/3.11
 
 ## CI
 

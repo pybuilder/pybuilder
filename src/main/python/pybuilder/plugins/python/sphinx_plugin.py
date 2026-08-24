@@ -302,7 +302,7 @@ def get_sphinx_apidoc_command(project, reactor):
     try:
         import sphinx
 
-        if reactor.pybuilder_venv.version[:2] >= (3, 3) and sphinx.version_info[:2] >= (1, 5):
+        if sphinx.version_info[:2] >= (1, 5):
             implicit_namespaces = True
     except ImportError:
         pass

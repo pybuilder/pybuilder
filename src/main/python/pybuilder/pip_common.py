@@ -29,10 +29,7 @@ from packaging.specifiers import SpecifierSet, InvalidSpecifier
 from packaging.utils import canonicalize_name
 from packaging.version import Version, InvalidVersion
 
-try:
-    import importlib.metadata as meta
-except ImportError:
-    import importlib_metadata as meta
+import importlib.metadata as meta
 
 __all__ = ["SpecifierSet", "InvalidSpecifier"]
 

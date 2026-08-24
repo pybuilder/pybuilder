@@ -16,7 +16,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import sys
 import unittest
 
 from itest_support import IntegrationTestSupport
@@ -48,5 +47,4 @@ def annotated_action(project: Project, logger: Logger):
 
 
 if __name__ == "__main__":
-    if sys.version_info[0] > 2:
-        unittest.main()
+    unittest.main()

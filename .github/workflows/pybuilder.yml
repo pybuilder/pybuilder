@@ -17,6 +17,7 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
+          - '3.15-dev'
           - '3.14'
           - '3.13'
           - '3.12'
@@ -54,6 +55,7 @@ jobs:
           - windows-latest
           - macos-15-intel
         python-version:
+          - '3.15-dev'
           - '3.14'
           - '3.13'
           - '3.12'
@@ -89,7 +91,7 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
-          - '3.15-dev'
+          - '3.15t-dev'
           - '3.14t'
           - '3.13t'
           - 'pypy-3.10'
