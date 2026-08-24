@@ -4,7 +4,7 @@
 
     Lexer for the Chapel language.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -65,7 +65,7 @@ class ChapelLexer(RegexLexer):
             (r'\\\n', Text),
 
             (r'//(.*?)\n', Comment.Single),
-            (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?[*][\s\S]*?[*](\\\n)?/', Comment.Multiline),
 
             (words(declarations, suffix=r'\b'), Keyword.Declaration),
             (words(constants, suffix=r'\b'), Keyword.Constant),

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2013-2023 Vinay Sajip.
+# Copyright (C) 2013-2026 Vinay Sajip.
 # Licensed to the Python Software Foundation under a contributor agreement.
 # See LICENSE.txt and CONTRIBUTORS.txt.
 #
@@ -26,7 +26,7 @@ from .compat import sysconfig, ZipFile, fsdecode, text_type, filter
 from .database import InstalledDistribution
 from .metadata import Metadata, WHEEL_METADATA_FILENAME, LEGACY_METADATA_FILENAME
 from .util import (FileOperator, convert_path, CSVReader, CSVWriter, Cache, cached_property, get_cache_base,
-                   read_exports, tempdir, get_platform)
+                   read_exports, tempdir, get_platform, is_in_directory)
 from .version import NormalizedVersion, UnsupportedVersionError
 
 logger = logging.getLogger(__name__)
@@ -606,12 +606,18 @@ class Wheel(object):
 
                     if u_arcname.startswith(data_pfx):
                         _, where, rp = u_arcname.split('/', 2)
-                        outfile = os.path.join(paths[where], convert_path(rp))
+                        base = paths[where]
+                        cp = convert_path(rp)
                     else:
                         # meant for site-packages.
                         if u_arcname in (wheel_metadata_name, record_name):
                             continue
-                        outfile = os.path.join(libdir, convert_path(u_arcname))
+                        base = libdir
+                        cp = convert_path(u_arcname)
+                    # outfile = os.path.join(base, cp)
+                    outfile = os.path.abspath(os.path.join(base, cp))
+                    if not is_in_directory(outfile, base):
+                        raise DistlibException('Wheel member escapes installation directory: %r' % cp)
                     if not is_script:
                         with zf.open(arcname) as bf:
                             fileop.copy_stream(bf, outfile)
@@ -762,7 +768,18 @@ class Wheel(object):
                     if not os.path.isdir(cache_base):
                         os.makedirs(cache_base)
                     for name, relpath in extensions.items():
+                        # See verify()/update(): reject any '..' in the
+                        # directory portions of the entry, then confine the
+                        # resolved destination to the cache directory so a
+                        # crafted EXTENSIONS entry cannot point _load_dynamic
+                        # at a path outside the dylib cache.
+                        if '..' in relpath.split('/'):
+                            raise DistlibException('invalid extension entry '
+                                                   'in wheel: %r' % relpath)
                         dest = os.path.join(cache_base, convert_path(relpath))
+                        if not is_in_directory(dest, cache_base):
+                            raise DistlibException('extension escapes dylib '
+                                                   'cache: %r' % relpath)
                         if not os.path.exists(dest):
                             extract = True
                         else:
@@ -992,7 +1009,9 @@ def compatible_tags():
     """
     Return (pyver, abi, arch) tuples compatible with this Python.
     """
+
     class _Version:
+
         def __init__(self, major, minor):
             self.major = major
             self.major_minor = (major, minor)
@@ -1001,10 +1020,8 @@ def compatible_tags():
         def __str__(self):
             return self.string
 
-
     versions = [
-        _Version(sys.version_info.major, minor_version)
-        for minor_version in range(sys.version_info.minor, -1, -1)
+        _Version(sys.version_info.major, minor_version) for minor_version in range(sys.version_info.minor, -1, -1)
     ]
     abis = []
     for suffix in _get_suffixes():

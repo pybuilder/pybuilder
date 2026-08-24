@@ -4,7 +4,7 @@
 
     Lexer for other Numba Intermediate Representation.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -58,6 +58,6 @@ class NumbaIRLexer(RegexLexer):
         ],
 
         'whitespace': [
-            (r'(\n|\s)+', Whitespace),
+            (r'\s+', Whitespace),
         ],
     }

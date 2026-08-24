@@ -4,7 +4,7 @@
 
     Lexers for automation scripting languages.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -315,7 +315,7 @@ class AutoItLexer(RegexLexer):
     tokens = {
         'root': [
             (r';.*\n', Comment.Single),
-            (r'(#comments-start|#cs)(.|\n)*?(#comments-end|#ce)',
+            (r'(#comments-start|#cs)[\s\S]*?(#comments-end|#ce)',
              Comment.Multiline),
             (r'[\[\]{}(),;]', Punctuation),
             (r'(and|or|not)\b', Operator.Word),

@@ -21,7 +21,7 @@ def unpack_f(args: argparse.Namespace) -> None:
 def pack_f(args: argparse.Namespace) -> None:
     from .pack import pack
 
-    pack(args.directory, args.dest_dir, args.build_number)
+    pack(args.directory, args.dest_dir, args.build_number, args.local_version)
 
 
 def convert_f(args: argparse.Namespace) -> None:
@@ -47,6 +47,15 @@ def tags_f(args: argparse.Namespace) -> None:
 
     for name in names:
         print(name)
+
+
+def info_f(args: argparse.Namespace) -> None:
+    from .info import info
+
+    try:
+        info(args.wheelfile, args.verbose)
+    except FileNotFoundError as e:
+        raise WheelError(str(e)) from e
 
 
 def version_f(args: argparse.Namespace) -> None:
@@ -95,6 +104,9 @@ def parser() -> argparse.ArgumentParser:
     repack_parser.add_argument(
         "--build-number", help="Build tag to use in the wheel name"
     )
+    repack_parser.add_argument(
+        "--local-version", help="Local version identifier to add or replace"
+    )
     repack_parser.set_defaults(func=pack_f)
 
     convert_parser = s.add_parser("convert", help="Convert egg or wininst to wheel")
@@ -128,6 +140,13 @@ def parser() -> argparse.ArgumentParser:
         "--build", type=parse_build_tag, metavar="BUILD", help="Specify a build tag"
     )
     tags_parser.set_defaults(func=tags_f)
+
+    info_parser = s.add_parser("info", help="Show information about a wheel file")
+    info_parser.add_argument("wheelfile", help="Wheel file to show information for")
+    info_parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Show detailed file listing"
+    )
+    info_parser.set_defaults(func=info_f)
 
     version_parser = s.add_parser("version", help="Print version and exit")
     version_parser.set_defaults(func=version_f)

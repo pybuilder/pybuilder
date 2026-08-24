@@ -4,7 +4,7 @@
 
     Pygments lexers for JVM languages.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -55,16 +55,17 @@ class JavaLexer(RegexLexer):
              r'(\s*)(\()',                              # signature start
              bygroups(using(this), Name.Function, Whitespace, Punctuation)),
             (r'@[^\W\d][\w.]*', Name.Decorator),
-            (r'(abstract|const|enum|extends|final|implements|native|private|'
-             r'protected|public|sealed|static|strictfp|super|synchronized|throws|'
-             r'transient|volatile|yield)\b', Keyword.Declaration),
+            (r'(abstract|const|enum|exports|extends|final|implements|native|non-sealed|'
+             r'open|opens|permits|private|protected|provides|public|requires|sealed|static|strictfp|'
+             r'super|synchronized|throws|to|transient|transitive|uses|volatile|with|yield)\b', Keyword.Declaration),
             (r'(boolean|byte|char|double|float|int|long|short|void)\b',
              Keyword.Type),
             (r'(package)(\s+)', bygroups(Keyword.Namespace, Whitespace), 'import'),
             (r'(true|false|null)\b', Keyword.Constant),
             (r'(class|interface)\b', Keyword.Declaration, 'class'),
+            (r'(module)\b', Keyword.Declaration, 'module'),
             (r'(var)(\s+)', bygroups(Keyword.Declaration, Whitespace), 'var'),
-            (r'(import(?:\s+static)?)(\s+)', bygroups(Keyword.Namespace, Whitespace),
+            (r'(import(?:\s+(?:static|module))?)(\s+)', bygroups(Keyword.Namespace, Whitespace),
              'import'),
             (r'"""\n', String, 'multiline_string'),
             (r'"', String, 'string'),
@@ -92,6 +93,10 @@ class JavaLexer(RegexLexer):
             (r'\n', Whitespace)
         ],
         'class': [
+            (r'\s+', Text),
+            (r'([^\W\d]|\$)[\w$]*', Name.Class, '#pop')
+        ],
+        'module': [
             (r'\s+', Text),
             (r'([^\W\d]|\$)[\w$]*', Name.Class, '#pop')
         ],
@@ -906,7 +911,8 @@ class ClojureLexer(RegexLexer):
             # strings, symbols and characters
             (r'"(\\\\|\\[^\\]|[^"\\])*"', String),
             (r"'" + valid_name, String.Symbol),
-            (r"\\(.|[a-z]+)", String.Char),
+            (r"\\(?:newline|space|tab|formfeed|backspace|return"
+             r"|u[0-9a-fA-F]{4}|o[0-7]{1,3}|.)", String.Char),
 
             # keywords
             (r'::?#?' + valid_name, String.Symbol),
@@ -1172,9 +1178,13 @@ class KotlinLexer(RegexLexer):
             (r"[0-9](\.[0-9]*)?([eE][+-][0-9]+)?[flFL]?|"
              r"0[xX][0-9a-fA-F]+[Ll]?", Number),
             # Identifiers
-            (r'' + kt_id + r'((\?[^.])?)', Name) # additionally handle nullable types
+            # A trailing ``?`` marks a nullable type (e.g. ``Foo?``); use a
+            # negative lookahead so we don't consume the following character and
+            # so ``?.`` (safe call) and ``?:`` (elvis) stay separate operators.
+            (r'' + kt_id + r'(\?(?![.:]))?', Name)
         ],
         'class': [
+            (r'\{', Punctuation, '#pop'),
             (kt_id, Name.Class, '#pop')
         ],
         'variable': [
@@ -1438,7 +1448,7 @@ class GoloLexer(RegexLexer):
             (r'"""', String, combined('stringescape', 'triplestring')),
             (r'"', String, combined('stringescape', 'doublestring')),
             (r"'", String, combined('stringescape', 'singlestring')),
-            (r'----((.|\n)*?)----', String.Doc)
+            (r'----([\s\S]*?)----', String.Doc)
 
         ],
 

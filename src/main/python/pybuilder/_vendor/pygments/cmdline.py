@@ -4,7 +4,7 @@
 
     Command line interface.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -185,7 +185,7 @@ def main_inner(parser, argns):
         return 0
 
     if argns.V:
-        print(f'Pygments version {__version__}, (c) 2006-2024 by Georg Brandl, Matthäus '
+        print(f'Pygments version {__version__}, (c) 2006-present by Georg Brandl, Matthäus '
               'Chajdas and contributors.')
         return 0
 
@@ -206,14 +206,14 @@ def main_inner(parser, argns):
             parser.print_help(sys.stderr)
             return 2
 
-        # print version
-        if not argns.json:
-            main(['', '-V'])
         allowed_types = {'lexer', 'formatter', 'filter', 'style'}
         largs = [arg.rstrip('s') for arg in argns.L]
         if any(arg not in allowed_types for arg in largs):
             parser.print_help(sys.stderr)
-            return 0
+            return 2
+        # print version
+        if not argns.json:
+            main(['', '-V'])
         if not largs:
             largs = allowed_types
         if not argns.json:

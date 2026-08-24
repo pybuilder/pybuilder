@@ -4,7 +4,7 @@
 
     Lexers for the JMESPath language
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -27,7 +27,7 @@ class JMESPathLexer(RegexLexer):
 
     tokens = {
         'string': [
-            (r"'(\\(.|\n)|[^'\\])*'", String),
+            (r"'(\\([\s\S])|[^'\\])*'", String),
         ],
         'punctuation': [
             (r'(\[\?|[\.\*\[\],:\(\)\{\}\|])', Punctuation),

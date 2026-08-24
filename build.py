@@ -117,7 +117,8 @@ def initialize(project):
                                                      "setuptools*/_vendor",
                                                      "easy_install.py",
                                                      "*.pth"])
-    project.set_property("vendorize_preserve_metadata", ["virtualenv*", "importlib_metadata*"])
+    project.set_property("vendorize_preserve_metadata", ["virtualenv*", "importlib_metadata*",
+                                                         "python_discovery*"])
 
     project.set_property("coverage_break_build", False)
     project.get_property("coverage_exceptions").extend(["pybuilder._vendor",

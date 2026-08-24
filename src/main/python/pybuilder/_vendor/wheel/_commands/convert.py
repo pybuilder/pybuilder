@@ -17,7 +17,7 @@ from packaging.tags import parse_tag
 
 from .. import __version__
 from .._metadata import generate_requirements
-from ..wheelfile import WheelFile
+from ..wheelfile import WheelError, WheelFile
 
 egg_filename_re = re.compile(
     r"""
@@ -66,6 +66,7 @@ def convert_requires(requires: str, metadata: Message) -> None:
 
 def convert_pkg_info(pkginfo: str, metadata: Message) -> None:
     parsed_message = Parser().parsestr(pkginfo)
+    metadata_version = parsed_message.get("Metadata-Version", "1.0")
     for key, value in parsed_message.items():
         key_lower = key.lower()
         if value == "UNKNOWN":
@@ -92,7 +93,23 @@ def convert_pkg_info(pkginfo: str, metadata: Message) -> None:
         else:
             metadata.add_header(key, value)
 
-    metadata.replace_header("Metadata-Version", "2.4")
+    metadata.replace_header(
+        "Metadata-Version",
+        _compatible_metadata_version(metadata_version),
+    )
+
+
+def _compatible_metadata_version(metadata_version: str) -> str:
+    try:
+        major_str, minor_str = metadata_version.split(".", 1)
+        major_minor = (int(major_str), int(minor_str))
+    except ValueError:
+        return "1.2"
+
+    if major_minor < (1, 2):
+        return "1.2"
+
+    return metadata_version
 
 
 def normalize(name: str) -> str:
@@ -303,6 +320,11 @@ def convert(files: list[str], dest_dir: str, verbose: bool) -> None:
                 f"{source.name}-{source.version}-{source.pyver}-{source.abi}"
                 f"-{source.platform}.whl"
             )
+            if dest_path.parent != Path(dest_dir):
+                # name/version come from the input archive and may contain path
+                # separators; never write outside the destination directory
+                raise WheelError(f"Invalid distribution name or version in {archive!r}")
+
             with WheelFile(dest_path, "w") as wheelfile:
                 for name_or_zinfo, contents in source.generate_contents():
                     wheelfile.writestr(name_or_zinfo, contents)

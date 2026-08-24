@@ -273,7 +273,7 @@ def get_packages_info(entry_paths=None):
         package = _PackageInfo(canonicalize_name(dist.project_name),
                                dist.version,
                                dist.location,
-                               [dep.project_name for dep in dist.requires()])
+                               [dep.name for dep in dist.requires()])
 
         installed[package.name] = package
 
@@ -296,7 +296,7 @@ def search_packages_info(query, ws):
             'name': dist.project_name,
             'version': dist.version,
             'location': dist.location,
-            'requires': [dep.project_name for dep in dist.requires()],
+            'requires': [dep.name for dep in dist.requires()],
         }
 
         yield package

@@ -4,7 +4,7 @@
 
     Lexers for C/C++ languages.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -36,7 +36,7 @@ class CFamilyLexer(RegexLexer):
     # This includes decimal separators matching.
     _decpart = r'\d(\'?\d)*'
     # Integer literal suffix (e.g. 'ull' or 'll').
-    _intsuffix = r'(([uU][lL]{0,2})|[lL]{1,2}[uU]?)?'
+    _intsuffix = r'(([uU]?[zZ])|([zZ][uU])|([uU][lL]{0,2})|([lL]{1,2}[uU]?))?'
 
     # Identifier regex with C and C++ Universal Character Name (UCN) support.
     _ident = r'(?!\d)(?:[\w$]|\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8})+'
@@ -100,7 +100,7 @@ class CFamilyLexer(RegexLexer):
             (r'(-)?' + _decpart + _intsuffix, Number.Integer),
             (r'[~!%^&*+=|?:<>/-]', Operator),
             (r'[()\[\],.]', Punctuation),
-            (r'(true|false|NULL)\b', Name.Builtin),
+            (r'(true|false|NULL|nullptr)\b', Name.Builtin),
             (_ident, Name)
         ],
         'types': [
@@ -113,11 +113,11 @@ class CFamilyLexer(RegexLexer):
         'keywords': [
             (r'(struct|union)(\s+)', bygroups(Keyword, Whitespace), 'classname'),
             (r'case\b', Keyword, 'case-value'),
-            (words(('asm', 'auto', 'break', 'const', 'continue', 'default',
-                    'do', 'else', 'enum', 'extern', 'for', 'goto', 'if',
-                    'register', 'restricted', 'return', 'sizeof', 'struct',
-                    'static', 'switch', 'typedef', 'volatile', 'while', 'union',
-                    'thread_local', 'alignas', 'alignof', 'static_assert', '_Pragma'),
+            (words(('asm', 'auto', 'break', 'const', 'constexpr', 'continue', 'countof', 'default',
+                    'defer', 'do', 'else', 'enum', 'extern', 'for', 'goto', 'if', 'register', 
+                    'restricted', 'return', 'sizeof', 'struct', 'static', 'switch', 
+                    'typedef', 'typeof', 'typeof_unqual', 'volatile', 'while', 'union',
+                    'thread_local', 'alignas', 'alignof', 'static_assert', '_Pragma', 'fortran'),
                    suffix=r'\b'), Keyword),
             (words(('inline', '_inline', '__inline', 'naked', 'restrict',
                     'thread'), suffix=r'\b'), Keyword.Reserved),
@@ -128,7 +128,7 @@ class CFamilyLexer(RegexLexer):
                 'asm', 'based', 'except', 'stdcall', 'cdecl',
                 'fastcall', 'declspec', 'finally', 'try',
                 'leave', 'w64', 'unaligned', 'raise', 'noop',
-                'identifier', 'forceinline', 'assume'),
+                'identifier', 'forceinline', 'assume', 'null'),
                 prefix=r'__', suffix=r'\b'), Keyword.Reserved)
         ],
         'root': [
@@ -184,14 +184,14 @@ class CFamilyLexer(RegexLexer):
             (r'\\', String),  # stray backslash
         ],
         'macro': [
-            (r'('+_ws1+r')(include)('+_ws1+r')("[^"]+")([^\n]*)',
+            (r'('+_ws1+r')(include)('+_ws1+r')("[^"]+"|<[^>]+>)([^\S\n]*)([^/\n]*/[*][\s\S]*?[*]/)',
                 bygroups(using(this), Comment.Preproc, using(this),
-                         Comment.PreprocFile, Comment.Single)),
-            (r'('+_ws1+r')(include)('+_ws1+r')(<[^>]+>)([^\n]*)',
+                         Comment.PreprocFile, using(this), Comment.Multiline)),
+            (r'('+_ws1+r')(include)('+_ws1+r')("[^"]+"|<[^>]+>)([^\S\n]*)([^\n]*)',
                 bygroups(using(this), Comment.Preproc, using(this),
-                         Comment.PreprocFile, Comment.Single)),
+                         Comment.PreprocFile, using(this), Comment.Single)),
             (r'[^/\n]+', Comment.Preproc),
-            (r'/[*](.|\n)*?[*]/', Comment.Multiline),
+            (r'/[*][\s\S]*?[*]/', Comment.Multiline),
             (r'//.*?\n', Comment.Single, '#pop'),
             (r'/', Comment.Preproc),
             (r'(?<=\\)\n', Comment.Preproc),
@@ -204,6 +204,9 @@ class CFamilyLexer(RegexLexer):
             (r'.*?\n', Comment),
         ],
         'classname': [
+            include('whitespace'),
+            # C/C++ attributes before type name
+            (r'\[\[(?=[^\[\]]*\]\])', Punctuation, 'attribute'),
             (_ident, Name.Class, '#pop'),
             # template specification
             (r'\s*(?=>)', Text, '#pop'),
@@ -215,13 +218,26 @@ class CFamilyLexer(RegexLexer):
             (_ident, Name.Constant),
             include('whitespace'),
             include('statements'),
-        ]
+        ],
+        'attribute': [
+            (r'\]\]', Punctuation, '#pop'),
+            (_ident, Name.Attribute),
+            (r'\(', Punctuation, 'attribute-args'),
+            (r'::', Punctuation),
+            (r',', Punctuation),
+            include('whitespace'),
+        ],
+        'attribute-args': [
+            (r'\)', Punctuation, '#pop'),
+            (r'\(', Punctuation, '#push'),
+            include('statements'),
+        ],
     }
 
     stdlib_types = {
         'size_t', 'ssize_t', 'off_t', 'wchar_t', 'ptrdiff_t', 'sig_atomic_t', 'fpos_t',
         'clock_t', 'time_t', 'va_list', 'jmp_buf', 'FILE', 'DIR', 'div_t', 'ldiv_t',
-        'mbstate_t', 'wctrans_t', 'wint_t', 'wctype_t'}
+        'mbstate_t', 'wctrans_t', 'wint_t', 'wctype_t', 'byte'}
     c99_types = {
         'int8_t', 'int16_t', 'int32_t', 'int64_t', 'uint8_t',
         'uint16_t', 'uint32_t', 'uint64_t', 'int_least8_t', 'int_least16_t',
@@ -299,15 +315,20 @@ class CLexer(CFamilyLexer):
     priority = 0.1
 
     tokens = {
+        'statements': [
+            # C23 attributes [[...]] — lookahead to avoid matching ObjC's [[obj msg] msg]
+            (r'\[\[(?=[^\[\]]*\]\])', Punctuation, 'attribute'),
+            inherit,
+        ],
         'keywords': [
             (words((
-                '_Alignas', '_Alignof', '_Noreturn', '_Generic', '_Thread_local',
+                '_Alignas', '_Alignof', '_Noreturn', '_Countof', '_Generic', '_Thread_local',
                 '_Static_assert', '_Imaginary', 'noreturn', 'imaginary', 'complex'),
                 suffix=r'\b'), Keyword),
             inherit
         ],
         'types': [
-            (words(('_Bool', '_Complex', '_Atomic'), suffix=r'\b'), Keyword.Type),
+            (words(('_Bool', '_Complex', '_Atomic', '_Decimal32', '_Decimal64', '_Decimal128'), suffix=r'\b'), Keyword.Type),
             inherit
         ]
     }
@@ -347,7 +368,8 @@ class CppLexer(CFamilyLexer):
     aliases = ['cpp', 'c++']
     filenames = ['*.cpp', '*.hpp', '*.c++', '*.h++',
                  '*.cc', '*.hh', '*.cxx', '*.hxx',
-                 '*.C', '*.H', '*.cp', '*.CPP', '*.tpp']
+                 '*.C', '*.H', '*.cp', '*.CPP', '*.tpp',
+                 '*.cppm', '*.ixx', '*.mxx', '*.ipp']
     mimetypes = ['text/x-c++hdr', 'text/x-c++src']
     version_added = ''
     priority = 0.1
@@ -355,28 +377,55 @@ class CppLexer(CFamilyLexer):
     tokens = {
         'statements': [
             # C++11 raw strings
-            (r'((?:[LuU]|u8)?R)(")([^\\()\s]{,16})(\()((?:.|\n)*?)(\)\3)(")',
+            (r'((?:[LuU]|u8)?R)(")([^\\()\s]{,16})(\()([\s\S]*?)(\)\3)(")',
              bygroups(String.Affix, String, String.Delimiter, String.Delimiter,
                       String, String.Delimiter, String)),
+            # C++26 annotations [[=Annotation]]
+            (r'(\[\[)(=)(' + CFamilyLexer._ident + r')',
+             bygroups(Punctuation, Punctuation, Name.Decorator), 'annotation'),
+            # C++11 attributes [[...]]
+            (r'\[\[(?=[^\[\]]*\]\])', Punctuation, 'attribute'),
             inherit,
         ],
         'root': [
             inherit,
             # C++ Microsoft-isms
-            (words(('virtual_inheritance', 'uuidof', 'super', 'single_inheritance',
-                    'multiple_inheritance', 'interface', 'event'),
+            (words(('virtual_inheritance', 'uuidof', 'super', 'extends', 'single_inheritance',
+                    'multiple_inheritance', 'interface', 'implements', 'event', 'finally', 'null'),
                    prefix=r'__', suffix=r'\b'), Keyword.Reserved),
             # Offload C++ extensions, http://offload.codeplay.com/
             (r'__(offload|blockingoffload|outer)\b', Keyword.Pseudo),
+        ],
+        'classname': [
+            include('whitespace'),
+            # C++26 annotations before type name
+            (r'(\[\[)(=)(' + CFamilyLexer._ident + r')',
+             bygroups(Punctuation, Punctuation, Name.Decorator), 'annotation'),
+            # C++ attributes before type name
+            (r'\[\[(?=[^\[\]]*\]\])', Punctuation, 'attribute'),
+            (CFamilyLexer._ident, Name.Class, '#pop'),
+            # template specification
+            (r'\s*(?=>)', Text, '#pop'),
+            default('#pop')
         ],
         'enumname': [
             include('whitespace'),
             # 'enum class' and 'enum struct' C++11 support
             (words(('class', 'struct'), suffix=r'\b'), Keyword),
+            # C++26 annotations before enum name
+            (r'(\[\[)(=)(' + CFamilyLexer._ident + r')',
+             bygroups(Punctuation, Punctuation, Name.Decorator), 'annotation'),
+            # C++ attributes before enum name
+            (r'\[\[(?=[^\[\]]*\]\])', Punctuation, 'attribute'),
             (CFamilyLexer._ident, Name.Class, '#pop'),
             # template specification
             (r'\s*(?=>)', Text, '#pop'),
             default('#pop')
+        ],
+        'attribute': [
+            (r'using\b', Keyword),
+            (r':', Punctuation),
+            inherit,
         ],
         'keywords': [
             (r'(class|concept|typename)(\s+)', bygroups(Keyword, Whitespace), 'classname'),
@@ -385,11 +434,11 @@ class CppLexer(CFamilyLexer):
                 'export', 'friend', 'mutable', 'new', 'operator',
                 'private', 'protected', 'public', 'reinterpret_cast', 'class',
                 '__restrict', 'static_cast', 'template', 'this', 'throw', 'throws',
-                'try', 'typeid', 'using', 'virtual', 'constexpr', 'nullptr', 'concept',
+                'try', 'typeid', 'using', 'virtual', 'concept',
                 'decltype', 'noexcept', 'override', 'final', 'constinit', 'consteval',
                 'co_await', 'co_return', 'co_yield', 'requires', 'import', 'module',
                 'typename', 'and', 'and_eq', 'bitand', 'bitor', 'compl', 'not',
-                'not_eq', 'or', 'or_eq', 'xor', 'xor_eq'),
+                'not_eq', 'or', 'or_eq', 'xor', 'xor_eq', 'contract_assert', 'pre', 'post'),
                suffix=r'\b'), Keyword),
             (r'namespace\b', Keyword, 'namespace'),
             (r'(enum)(\s+)', bygroups(Keyword, Whitespace), 'enumname'),
@@ -400,11 +449,29 @@ class CppLexer(CFamilyLexer):
             inherit
         ],
         'namespace': [
-            (r'[;{]', Punctuation, ('#pop', 'root')),
+            (r';', Punctuation, ('#pop', 'root')),
+            (r'\{', Punctuation, ('#pop', 'namespace-body')),
             (r'inline\b', Keyword.Reserved),
             (CFamilyLexer._ident, Name.Namespace),
             include('statement')
-        ]
+        ],
+        'namespace-body': [
+            (r'\}', Punctuation, '#pop'),
+            include('root'),
+        ],
+        'annotation': [
+            (r'\]\]', Punctuation, '#pop'),
+            (r'\(', Punctuation, 'annotation-args'),
+            (r'::', Punctuation),
+            (r',', Punctuation),
+            (CFamilyLexer._ident, Name.Decorator),
+            include('whitespace'),
+        ],
+        'annotation-args': [
+            (r'\)', Punctuation, '#pop'),
+            (r'\(', Punctuation, '#push'),
+            include('statements'),
+        ],
     }
 
     def analyse_text(text):

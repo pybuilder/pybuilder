@@ -4,7 +4,7 @@
 
     Lexers for the ECL language.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -39,7 +39,7 @@ class ECLLexer(RegexLexer):
         'whitespace': [
             (r'\s+', Whitespace),
             (r'\/\/.*', Comment.Single),
-            (r'/(\\\n)?\*(.|\n)*?\*(\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?\*[\s\S]*?\*(\\\n)?/', Comment.Multiline),
         ],
         'statements': [
             include('types'),

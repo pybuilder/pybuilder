@@ -4,7 +4,7 @@
 
     Lexers for Zig.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -22,7 +22,7 @@ class ZigLexer(RegexLexer):
     grammar: https://ziglang.org/documentation/master/#Grammar
     """
     name = 'Zig'
-    url = 'http://www.ziglang.org'
+    url = 'http://ziglang.org'
     aliases = ['zig']
     filenames = ['*.zig']
     mimetypes = ['text/zig']
@@ -32,7 +32,7 @@ class ZigLexer(RegexLexer):
         words(('bool', 'f16', 'f32', 'f64', 'f128', 'void', 'noreturn', 'type',
                'anyerror', 'promise', 'i0', 'u0', 'isize',  'usize', 'comptime_int',
                'comptime_float', 'c_short', 'c_ushort', 'c_int', 'c_uint', 'c_long',
-               'c_ulong', 'c_longlong', 'c_ulonglong', 'c_longdouble', 'c_void'
+               'c_ulong', 'c_longlong', 'c_ulonglong', 'c_longdouble', 'c_void',
                'i8', 'u8', 'i16', 'u16', 'i32', 'u32', 'i64', 'u64', 'i128',
                'u128'), suffix=r'\b'),
         Keyword.Type)

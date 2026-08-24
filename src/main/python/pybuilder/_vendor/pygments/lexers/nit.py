@@ -4,7 +4,7 @@
 
     Lexer for the Nit language.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -52,7 +52,7 @@ class NitLexer(RegexLexer):
             (r'(\'[^\'\\]\')|(\'\\.\')', String.Char),
             (r'[0-9]+', Number.Integer),
             (r'[0-9]*.[0-9]+', Number.Float),
-            (r'0(x|X)[0-9A-Fa-f]+', Number.Hex),
+            (r'0[xX][0-9A-Fa-f]+', Number.Hex),
             (r'[a-z]\w*', Name),
             (r'_\w+', Name.Variable.Instance),
             (r'==|!=|<==>|>=|>>|>|<=|<<|<|\+|-|=|/|\*|%|\+=|-=|!|@', Operator),

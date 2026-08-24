@@ -4,7 +4,7 @@
 
     Lexers for Tcl and related languages.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -87,7 +87,9 @@ class TclLexer(RegexLexer):
             (r'0[0-7]+', Number.Oct),
             (r'\d+\.\d+', Number.Float),
             (r'\d+', Number.Integer),
-            (r'\$[\w.:-]+', Name.Variable),
+            # `$name` notation stops at a dash (e.g. `$foo-bar` reads `$foo`),
+            # whereas the braced `${name}` form may contain dashes.
+            (r'\$[\w.:]+', Name.Variable),
             (r'\$\{[\w.:-]+\}', Name.Variable),
             (r'[\w.,@:-]+', Text),
         ],

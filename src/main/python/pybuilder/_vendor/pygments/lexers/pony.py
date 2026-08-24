@@ -4,7 +4,7 @@
 
     Lexers for Pony and related languages.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -34,7 +34,7 @@ class PonyLexer(RegexLexer):
             (r'[^\S\n]+', Text),
             (r'//.*\n', Comment.Single),
             (r'/\*', Comment.Multiline, 'nested_comment'),
-            (r'"""(?:.|\n)*?"""', String.Doc),
+            (r'"""[\s\S]*?"""', String.Doc),
             (r'"', String, 'string'),
             (r'\'.*\'', String.Char),
             (r'=>|[]{}:().~;,|&!^?[]', Punctuation),

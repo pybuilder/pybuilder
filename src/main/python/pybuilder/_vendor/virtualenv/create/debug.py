@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys  # built-in
 
 
-def encode_path(value):
+def encode_path(value: object) -> str | None:
     if value is None:
         return None
     if not isinstance(value, (str, bytes)):
@@ -15,25 +15,19 @@ def encode_path(value):
     return value
 
 
-def encode_list_path(value):
+def encode_list_path(value: list[object]) -> list[str | None]:
     return [encode_path(i) for i in value]
 
 
-def run():
+def run() -> None:
     """Print debug data about the virtual environment."""
-    try:
-        from collections import OrderedDict  # noqa: PLC0415
-    except ImportError:  # pragma: no cover
-        # this is possible if the standard library cannot be accessed
-
-        OrderedDict = dict  # pragma: no cover  # noqa: N806
-    result = OrderedDict([("sys", OrderedDict())])
+    sys_info: dict[str, str | list[str | None] | None] = {}
+    result: dict[str, str | dict[str, str | list[str | None] | None] | None] = {"sys": sys_info}
     path_keys = (
         "executable",
         "_base_executable",
         "prefix",
         "base_prefix",
-        "real_prefix",
         "exec_prefix",
         "base_exec_prefix",
         "path",
@@ -42,40 +36,38 @@ def run():
     for key in path_keys:
         value = getattr(sys, key, None)
         value = encode_list_path(value) if isinstance(value, list) else encode_path(value)
-        result["sys"][key] = value
-    result["sys"]["fs_encoding"] = sys.getfilesystemencoding()
-    result["sys"]["io_encoding"] = getattr(sys.stdout, "encoding", None)
+        sys_info[key] = value
+    sys_info["fs_encoding"] = sys.getfilesystemencoding()
+    sys_info["io_encoding"] = getattr(sys.stdout, "encoding", None)
     result["version"] = sys.version
 
     try:
-        import sysconfig  # noqa: PLC0415
+        import sysconfig  # ruff:ignore[import-outside-top-level]
 
-        # https://bugs.python.org/issue22199
-        makefile = getattr(sysconfig, "get_makefile_filename", getattr(sysconfig, "_get_makefile_filename", None))
-        result["makefile_filename"] = encode_path(makefile())
+        result["makefile_filename"] = encode_path(sysconfig.get_makefile_filename())
     except ImportError:
         pass
 
-    import os  # landmark  # noqa: PLC0415
+    import os  # landmark  # ruff:ignore[import-outside-top-level]
 
     result["os"] = repr(os)
 
     try:
-        import site  # site  # noqa: PLC0415
+        import site  # site  # ruff:ignore[import-outside-top-level]
 
         result["site"] = repr(site)
     except ImportError as exception:  # pragma: no cover
         result["site"] = repr(exception)  # pragma: no cover
 
     try:
-        import datetime  # site  # noqa: PLC0415
+        import datetime  # site  # ruff:ignore[import-outside-top-level]
 
         result["datetime"] = repr(datetime)
     except ImportError as exception:  # pragma: no cover
         result["datetime"] = repr(exception)  # pragma: no cover
 
     try:
-        import math  # site  # noqa: PLC0415
+        import math  # site  # ruff:ignore[import-outside-top-level]
 
         result["math"] = repr(math)
     except ImportError as exception:  # pragma: no cover
@@ -83,7 +75,7 @@ def run():
 
     # try to print out, this will validate if other core modules are available (json in this case)
     try:
-        import json  # noqa: PLC0415
+        import json  # ruff:ignore[import-outside-top-level]
 
         result["json"] = repr(json)
     except ImportError as exception:
@@ -95,7 +87,7 @@ def run():
         except (ValueError, TypeError) as exception:  # pragma: no cover
             sys.stderr.write(repr(exception))
             sys.stdout.write(repr(result))  # pragma: no cover
-            raise SystemExit(1)  # noqa: B904  # pragma: no cover
+            raise SystemExit(1)  # ruff:ignore[raise-without-from-inside-except]  # pragma: no cover
 
 
 if __name__ == "__main__":

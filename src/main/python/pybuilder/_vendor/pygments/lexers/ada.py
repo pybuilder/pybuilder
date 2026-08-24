@@ -4,7 +4,7 @@
 
     Lexers for Ada family languages.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -37,7 +37,6 @@ class AdaLexer(RegexLexer):
         'root': [
             (r'[^\S\n]+', Text),
             (r'--.*?\n', Comment.Single),
-            (r'[^\S\n]+', Text),
             (r'function|procedure|entry', Keyword.Declaration, 'subprogram'),
             (r'(subtype|type)(\s+)(\w+)',
              bygroups(Keyword.Declaration, Text, Keyword.Type), 'type_def'),

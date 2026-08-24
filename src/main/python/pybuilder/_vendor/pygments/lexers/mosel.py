@@ -5,7 +5,7 @@
     Lexers for the mosel language.
     http://www.fico.com/en/products/fico-xpress-optimization
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -403,7 +403,7 @@ class MoselLexer(RegexLexer):
             (r'\n', Text),
             (r'\s+', Text.Whitespace),
             (r'!.*?\n', Comment.Single),
-            (r'\(!(.|\n)*?!\)', Comment.Multiline),
+            (r'\(![\s\S]*?!\)', Comment.Multiline),
             (words((
                 'and', 'as', 'break', 'case', 'count', 'declarations', 'do',
                 'dynamic', 'elif', 'else', 'end-', 'end', 'evaluation', 'false',

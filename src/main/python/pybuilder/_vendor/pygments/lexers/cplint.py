@@ -4,7 +4,7 @@
 
     Lexer for the cplint language
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -36,7 +36,7 @@ class CplintLexer(PrologLexer):
                     'finite')), Name.Builtin),
             # annotations of atoms
             (r'([a-z]+)(:)', bygroups(String.Atom, Punctuation)),
-            (r':(-|=)|::?|~=?|=>', Operator),
+            (r':[-=]|::?|~=?|=>', Operator),
             (r'\?', Name.Builtin),
             inherit,
         ],

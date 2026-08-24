@@ -4,7 +4,7 @@
 
     Other formatters: NullFormatter, RawTokenFormatter.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -106,7 +106,7 @@ class RawTokenFormatter(Formatter):
             for ttype, value in tokensource:
                 line = b"%r\t%r\n" % (ttype, value)
                 if ttype is Token.Error:
-                    write(colorize(self.error_color, line))
+                    write(colorize(self.error_color, line.decode()).encode())
                 else:
                     write(line)
         else:

@@ -4,7 +4,7 @@
 
     Lexers for hexadecimal dumps.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -39,7 +39,7 @@ class HexdumpLexer(RegexLexer):
     url = 'https://en.wikipedia.org/wiki/Hex_dump'
     version_added = '2.1'
 
-    hd = r'[0-9A-Ha-h]'
+    hd = r'[0-9A-Fa-f]'
 
     tokens = {
         'root': [

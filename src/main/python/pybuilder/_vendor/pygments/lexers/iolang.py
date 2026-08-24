@@ -4,7 +4,7 @@
 
     Lexers for the Io language.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -32,7 +32,7 @@ class IoLexer(RegexLexer):
             # Comments
             (r'//(.*?)$', Comment.Single),
             (r'#(.*?)$', Comment.Single),
-            (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?[*][\s\S]*?[*](\\\n)?/', Comment.Multiline),
             (r'/\+', Comment.Multiline, 'nestedcomment'),
             # DoubleQuotedString
             (r'"(\\\\|\\[^\\]|[^"\\])*"', String),

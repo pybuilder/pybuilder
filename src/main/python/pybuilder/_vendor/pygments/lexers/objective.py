@@ -4,7 +4,7 @@
 
     Lexers for Objective-C family languages.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -436,6 +436,12 @@ class SwiftLexer(RegexLexer):
              r'|__FILE__|__FUNCTION__|__LINE__|_'
              r'|#(?:file|line|column|function))\b', Keyword.Constant),
             (r'import\b', Keyword.Declaration, 'module'),
+            (r'(class)(\s+)(func)(\s+)([a-zA-Z_]\w*)',
+             bygroups(Keyword.Declaration, Whitespace, Keyword.Declaration,
+                      Whitespace, Name.Function)),
+            (r'(class)(\s+)(var)(\s+)([a-zA-Z_]\w*)',
+             bygroups(Keyword.Declaration, Whitespace, Keyword.Declaration,
+                      Whitespace, Name.Variable)),
             (r'(class|enum|extension|struct|protocol)(\s+)([a-zA-Z_]\w*)',
              bygroups(Keyword.Declaration, Whitespace, Name.Class)),
             (r'(func)(\s+)([a-zA-Z_]\w*)',

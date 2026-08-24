@@ -4,7 +4,7 @@
 
     Pygments lexer for the Meson build system
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -30,7 +30,7 @@ class MesonLexer(RegexLexer):
     name = 'Meson'
     url = 'https://mesonbuild.com/'
     aliases = ['meson', 'meson.build']
-    filenames = ['meson.build', 'meson_options.txt']
+    filenames = ['meson.build', 'meson.options', 'meson_options.txt']
     mimetypes = ['text/x-meson']
     version_added = '2.10'
 
@@ -48,7 +48,7 @@ class MesonLexer(RegexLexer):
             (r'\s+', Whitespace),
         ],
         'string': [
-            (r"[']{3}([']{0,2}([^\\']|\\(.|\n)))*[']{3}", String),
+            (r"[']{3}([']{0,2}([^\\']|\\([\s\S])))*[']{3}", String),
             (r"'.*?(?<!\\)(\\\\)*?'", String),
         ],
         'keywords': [
@@ -66,7 +66,7 @@ class MesonLexer(RegexLexer):
         ],
         'expr': [
             (r'(in|and|or|not)\b', Operator.Word),
-            (r'(\*=|/=|%=|\+]=|-=|==|!=|\+|-|=)', Operator),
+            (r'([\*/%\+-]=?|==|!=|=)', Operator),
             (r'[\[\]{}:().,?]', Punctuation),
             (words(('true', 'false'), suffix=r'\b'), Keyword.Constant),
             include('builtins'),

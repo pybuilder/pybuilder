@@ -4,7 +4,7 @@
 
     Lexer for the Fantom language.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -245,7 +245,6 @@ class FantomLexer(RegexLexer):
             (r'\s+', Whitespace),
             (r'(\s*)(\w+)(\s*)(=)', bygroups(Whitespace, Name, Whitespace, Operator)),
             (r'\}', Punctuation, '#pop'),
-            (r'\s+', Whitespace),
             (r'.', Text)
         ],
     }

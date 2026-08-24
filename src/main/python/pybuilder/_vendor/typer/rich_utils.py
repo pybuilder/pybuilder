@@ -6,9 +6,8 @@ from collections import defaultdict
 from collections.abc import Iterable
 from gettext import gettext as _
 from os import getenv
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
-import click
 from rich import box
 from rich.align import Align
 from rich.columns import Columns
@@ -25,13 +24,17 @@ from rich.theme import Theme
 from rich.traceback import Traceback
 from typer.models import DeveloperExceptionConfig
 
+from . import _click
+from ._click import types
+from .core import TyperArgument, TyperGroup, TyperOption
+
 # Default styles
 STYLE_OPTION = "bold cyan"
 STYLE_SWITCH = "bold green"
 STYLE_NEGATIVE_OPTION = "bold magenta"
 STYLE_NEGATIVE_SWITCH = "bold red"
-STYLE_METAVAR = "bold yellow"
-STYLE_METAVAR_SEPARATOR = "dim"
+STYLE_TYPES = "bold yellow"
+STYLE_TYPES_SEPARATOR = "dim"
 STYLE_USAGE = "yellow"
 STYLE_USAGE_COMMAND = "bold"
 STYLE_DEPRECATED = "red"
@@ -68,7 +71,7 @@ STYLE_ERRORS_SUGGESTION = "dim"
 STYLE_ABORTED = "red"
 _TERMINAL_WIDTH = getenv("TERMINAL_WIDTH")
 MAX_WIDTH = int(_TERMINAL_WIDTH) if _TERMINAL_WIDTH else None
-COLOR_SYSTEM: Optional[Literal["auto", "standard", "256", "truecolor", "windows"]] = (
+COLOR_SYSTEM: Literal["auto", "standard", "256", "truecolor", "windows"] | None = (
     "auto"  # Set to None to disable colors
 )
 _TYPER_FORCE_DISABLE_TERMINAL = getenv("_TYPER_FORCE_DISABLE_TERMINAL")
@@ -109,7 +112,7 @@ class OptionHighlighter(RegexHighlighter):
     highlights = [
         r"(^|\W)(?P<switch>\-\w+)(?![a-zA-Z0-9])",
         r"(^|\W)(?P<option>\-\-[\w\-]+)(?![a-zA-Z0-9])",
-        r"(?P<metavar>\<[^\>]+\>)",
+        r"(?P<types>\<[^\>]+\>)",
         r"(?P<usage>Usage: )",
     ]
 
@@ -122,17 +125,17 @@ class NegativeOptionHighlighter(RegexHighlighter):
 
 
 # Highlighter to make [ | ] and <> dim
-class MetavarHighlighter(RegexHighlighter):
+class TypesHighlighter(RegexHighlighter):
     highlights = [
-        r"^(?P<metavar_sep>(\[|<))",
-        r"(?P<metavar_sep>\|)",
-        r"(?P<metavar_sep>(\]|>))(\.\.\.)?$",
+        r"^(?P<types_sep>(\[|<))",
+        r"(?P<types_sep>\|)",
+        r"(?P<types_sep>(\]|>))(\.\.\.)?$",
     ]
 
 
 highlighter = OptionHighlighter()
 negative_highlighter = NegativeOptionHighlighter()
-metavar_highlighter = MetavarHighlighter()
+types_highlighter = TypesHighlighter()
 
 
 def _has_ansi_character(text: str) -> bool:
@@ -147,8 +150,8 @@ def _get_rich_console(stderr: bool = False) -> Console:
                 "switch": STYLE_SWITCH,
                 "negative_option": STYLE_NEGATIVE_OPTION,
                 "negative_switch": STYLE_NEGATIVE_SWITCH,
-                "metavar": STYLE_METAVAR,
-                "metavar_sep": STYLE_METAVAR_SEPARATOR,
+                "types": STYLE_TYPES,
+                "types_sep": STYLE_TYPES_SEPARATOR,
                 "usage": STYLE_USAGE,
             },
         ),
@@ -162,7 +165,7 @@ def _get_rich_console(stderr: bool = False) -> Console:
 
 def _make_rich_text(
     *, text: str, style: str = "", markup_mode: MarkupModeStrict
-) -> Union[Markdown, Text]:
+) -> Markdown | Text:
     """Take a string, remove indentations, and return styled text.
 
     If `markup_mode` is `"rich"`, the text is parsed for Rich markup strings.
@@ -184,9 +187,9 @@ def _make_rich_text(
 @group()
 def _get_help_text(
     *,
-    obj: Union[click.Command, click.Group],
+    obj: _click.Command | TyperGroup,
     markup_mode: MarkupModeStrict,
-) -> Iterable[Union[Markdown, Text]]:
+) -> Iterable[Markdown | Text]:
     """Build primary help text for a click command or group.
 
     Returns the prose help text for a command or group, rendered either as a
@@ -219,8 +222,7 @@ def _get_help_text(
     if remaining_paragraphs:
         # Add a newline inbetween the header and the remaining paragraphs
         yield Text("")
-        # Join with double linebreaks for markdown and Rich markup
-        remaining_lines = "\n\n".join(remaining_paragraphs)
+        remaining_lines = _fix_linebreaks(remaining_paragraphs, markup_mode)
 
         yield _make_rich_text(
             text=remaining_lines,
@@ -229,10 +231,15 @@ def _get_help_text(
         )
 
 
+def _fix_linebreaks(paragraphs: list[str], markup_mode: MarkupModeStrict) -> str:
+    # Join with double linebreaks for markdown and Rich markup
+    return "\n\n".join(paragraphs)
+
+
 def _get_parameter_help(
     *,
-    param: Union[click.Option, click.Argument, click.Parameter],
-    ctx: click.Context,
+    param: TyperOption | TyperArgument | _click.Parameter,
+    ctx: _click.Context,
     markup_mode: MarkupModeStrict,
 ) -> Columns:
     """Build primary help text for a click option or argument.
@@ -245,7 +252,7 @@ def _get_parameter_help(
     # import here to avoid cyclic imports
     from .core import TyperArgument, TyperOption
 
-    items: list[Union[Text, Markdown]] = []
+    items: list[Text | Markdown] = []
 
     # Get the environment variable first
 
@@ -265,7 +272,7 @@ def _get_parameter_help(
         )
 
     # Main help text
-    help_value: Union[str, None] = getattr(param, "help", None)
+    help_value: str | None = getattr(param, "help", None)
     if help_value:
         paragraphs = help_value.split("\n\n")
         # Remove single linebreaks
@@ -322,7 +329,7 @@ def _make_command_help(
     *,
     help_text: str,
     markup_mode: MarkupModeStrict,
-) -> Union[Text, Markdown]:
+) -> Text | Markdown:
     """Build cli help text for a click group command.
 
     That is, when calling help on groups with multiple subcommands
@@ -348,66 +355,72 @@ def _make_command_help(
 def _print_options_panel(
     *,
     name: str,
-    params: Union[list[click.Option], list[click.Argument]],
-    ctx: click.Context,
+    params: list[TyperOption] | list[TyperArgument],
+    ctx: _click.Context,
     markup_mode: MarkupModeStrict,
     console: Console,
 ) -> None:
     options_rows: list[list[RenderableType]] = []
-    required_rows: list[Union[str, Text]] = []
+    required_rows: list[str | Text] = []
     for param in params:
         # Short and long form
         opt_long_strs = []
         opt_short_strs = []
         secondary_opt_long_strs = []
         secondary_opt_short_strs = []
+
+        # check whether argument has a metavar name or type set
+        metavar_name = None
+        metavar_type = None
+        metavar_str = param.make_metavar(ctx=ctx)
+        if isinstance(param, TyperArgument):
+            if param.metavar is not None:
+                metavar_name = param.metavar
+            else:
+                metavar_name = param.name or ""
+        if isinstance(param, TyperOption):
+            metavar_type = metavar_str
+        elif isinstance(param, TyperArgument):
+            metavar_type = param.type.get_metavar(param=param, ctx=ctx)
+            if metavar_type is None:
+                metavar_type = f"<{param.type.name}>"
+
         for opt_str in param.opts:
             if "--" in opt_str:
                 opt_long_strs.append(opt_str)
+            elif metavar_name:
+                opt_short_strs.append(metavar_name)
             else:
                 opt_short_strs.append(opt_str)
         for opt_str in param.secondary_opts:
             if "--" in opt_str:
                 secondary_opt_long_strs.append(opt_str)
+            elif metavar_name:  # pragma: no cover
+                secondary_opt_short_strs.append(metavar_name)
             else:
                 secondary_opt_short_strs.append(opt_str)
 
-        # Column for a metavar, if we have one
-        metavar = Text(style=STYLE_METAVAR, overflow="fold")
-        # TODO: when deprecating Click < 8.2, make ctx required
-        signature = inspect.signature(param.make_metavar)
-        if "ctx" in signature.parameters:
-            metavar_str = param.make_metavar(ctx=ctx)
-        else:
-            # Click < 8.2
-            metavar_str = param.make_metavar()  # type: ignore[call-arg]
+        # Column for recording the type
+        types_data = Text(style=STYLE_TYPES, overflow="fold")
 
-        # Do it ourselves if this is a positional argument
-        if (
-            isinstance(param, click.Argument)
-            and param.name
-            and metavar_str == param.name.upper()
-        ):
-            metavar_str = param.type.name.upper()
-
-        # Skip booleans and choices (handled above)
-        if metavar_str != "BOOLEAN":
-            metavar.append(metavar_str)
+        # Fetch type
+        if metavar_type and "bool" not in metavar_type.lower():
+            types_data.append(metavar_type)
 
         # Range - from
         # https://github.com/pallets/click/blob/c63c70dabd3f86ca68678b4f00951f78f52d0270/src/click/core.py#L2698-L2706  # noqa: E501
         # skip count with default range type
         if (
-            isinstance(param.type, click.types._NumberRangeBase)
-            and isinstance(param, click.Option)
+            isinstance(param.type, types._NumberRangeBase)
+            and isinstance(param, TyperOption)
             and not (param.count and param.type.min == 0 and param.type.max is None)
         ):
             range_str = param.type._describe_range()
             if range_str:
-                metavar.append(RANGE_STRING.format(range_str))
+                types_data.append(RANGE_STRING.format(range_str))
 
         # Required asterisk
-        required: Union[str, Text] = ""
+        required: str | Text = ""
         if param.required:
             required = Text(REQUIRED_SHORT_STRING, style=STYLE_REQUIRED_SHORT)
 
@@ -418,7 +431,7 @@ def _print_options_panel(
                 highlighter(",".join(opt_short_strs)),
                 negative_highlighter(",".join(secondary_opt_long_strs)),
                 negative_highlighter(",".join(secondary_opt_short_strs)),
-                metavar_highlighter(metavar),
+                types_highlighter(types_data),
                 _get_parameter_help(
                     param=param,
                     ctx=ctx,
@@ -428,7 +441,7 @@ def _print_options_panel(
         )
     rows_with_required: list[list[RenderableType]] = []
     if any(required_rows):
-        for required, row in zip(required_rows, options_rows):
+        for required, row in zip(required_rows, options_rows, strict=True):
             rows_with_required.append([required, *row])
     else:
         rows_with_required = options_rows
@@ -466,7 +479,7 @@ def _print_options_panel(
 def _print_commands_panel(
     *,
     name: str,
-    commands: list[click.Command],
+    commands: list[_click.Command],
     markup_mode: MarkupModeStrict,
     console: Console,
     cmd_len: int,
@@ -501,8 +514,8 @@ def _print_commands_panel(
     # available instead of allowing the command column to grow and misalign with
     # other panels.
     commands_table.add_column("Description", justify="left", no_wrap=False, ratio=10)
-    rows: list[list[Union[RenderableType, None]]] = []
-    deprecated_rows: list[Union[RenderableType, None]] = []
+    rows: list[list[RenderableType | None]] = []
+    deprecated_rows: list[RenderableType | None] = []
     for command in commands:
         helptext = command.short_help or command.help or ""
         command_name = command.name or ""
@@ -524,7 +537,7 @@ def _print_commands_panel(
     rows_with_deprecated = rows
     if any(deprecated_rows):
         rows_with_deprecated = []
-        for row, deprecated_text in zip(rows, deprecated_rows):
+        for row, deprecated_text in zip(rows, deprecated_rows, strict=True):
             rows_with_deprecated.append([*row, deprecated_text])
     for row in rows_with_deprecated:
         commands_table.add_row(*row)
@@ -541,8 +554,8 @@ def _print_commands_panel(
 
 def rich_format_help(
     *,
-    obj: Union[click.Command, click.Group],
-    ctx: click.Context,
+    obj: _click.Command | TyperGroup,
+    ctx: _click.Context,
     markup_mode: MarkupModeStrict,
 ) -> None:
     """Print nicely formatted help text using rich.
@@ -575,18 +588,18 @@ def rich_format_help(
                 (0, 1, 1, 1),
             )
         )
-    panel_to_arguments: defaultdict[str, list[click.Argument]] = defaultdict(list)
-    panel_to_options: defaultdict[str, list[click.Option]] = defaultdict(list)
+    panel_to_arguments: defaultdict[str, list[TyperArgument]] = defaultdict(list)
+    panel_to_options: defaultdict[str, list[TyperOption]] = defaultdict(list)
     for param in obj.get_params(ctx):
         # Skip if option is hidden
         if getattr(param, "hidden", False):
             continue
-        if isinstance(param, click.Argument):
+        if isinstance(param, TyperArgument):
             panel_name = (
                 getattr(param, _RICH_HELP_PANEL_NAME, None) or ARGUMENTS_PANEL_TITLE
             )
             panel_to_arguments[panel_name].append(param)
-        elif isinstance(param, click.Option):
+        elif isinstance(param, TyperOption):
             panel_name = (
                 getattr(param, _RICH_HELP_PANEL_NAME, None) or OPTIONS_PANEL_TITLE
             )
@@ -630,8 +643,8 @@ def rich_format_help(
             console=console,
         )
 
-    if isinstance(obj, click.Group):
-        panel_to_commands: defaultdict[str, list[click.Command]] = defaultdict(list)
+    if isinstance(obj, TyperGroup):
+        panel_to_commands: defaultdict[str, list[_click.Command]] = defaultdict(list)
         for command_name in obj.list_commands(ctx):
             command = obj.get_command(ctx, command_name)
             if command and not command.hidden:
@@ -676,30 +689,31 @@ def rich_format_help(
     if obj.epilog:
         # Remove single linebreaks, replace double with single
         lines = obj.epilog.split("\n\n")
-        epilogue = "\n".join([x.replace("\n", " ").strip() for x in lines])
+        epilogue = _fix_linebreaks(lines, markup_mode)
         epilogue_text = _make_rich_text(text=epilogue, markup_mode=markup_mode)
         console.print(Padding(Align(epilogue_text, pad=False), 1))
 
 
-def rich_format_error(self: click.ClickException) -> None:
+def rich_format_error(self: _click.ClickException) -> None:
     """Print richly formatted click errors.
 
     Called by custom exception handler to print richly formatted click errors.
-    Mimics original click.ClickException.echo() function but with rich formatting.
+    Mimics original _click.ClickException.echo() function but with rich formatting.
     """
     # Don't do anything when it's a NoArgsIsHelpError (without importing it, cf. #1278)
     if self.__class__.__name__ == "NoArgsIsHelpError":
         return
 
     console = _get_rich_console(stderr=True)
-    ctx: Union[click.Context, None] = getattr(self, "ctx", None)
+    ctx: _click.Context | None = getattr(self, "ctx", None)
     if ctx is not None:
-        console.print(ctx.get_usage())
+        console.print(highlighter(ctx.get_usage()), style=STYLE_USAGE_COMMAND)
 
     if ctx is not None and ctx.command.get_help_option(ctx) is not None:
         console.print(
             RICH_HELP.format(
-                command_path=ctx.command_path, help_option=ctx.help_option_names[0]
+                command_path=escape(ctx.command_path),
+                help_option=ctx.help_option_names[0],
             ),
             style=STYLE_ERRORS_SUGGESTION,
         )
@@ -756,5 +770,7 @@ def get_traceback(
         show_locals=exception_config.pretty_exceptions_show_locals,
         suppress=internal_dir_names,
         width=MAX_WIDTH,
+        code_width=None,
+        word_wrap=True,
     )
     return rich_tb

@@ -4,7 +4,7 @@
 
     Lexers for Perl, Raku and related languages.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -131,7 +131,7 @@ class PerlLexer(RegexLexer):
             (r'(q|qq|qw|qr|qx)\(', String.Other, 'rb-string'),
             (r'(q|qq|qw|qr|qx)\[', String.Other, 'sb-string'),
             (r'(q|qq|qw|qr|qx)\<', String.Other, 'lt-string'),
-            (r'(q|qq|qw|qr|qx)([\W_])(.|\n)*?\2', String.Other),
+            (r'(q|qq|qw|qr|qx)([\W_])[\s\S]*?\2', String.Other),
             (r'(package)(\s+)([a-zA-Z_]\w*(?:::[a-zA-Z_]\w*)*)',
              bygroups(Keyword, Whitespace, Name.Namespace)),
             (r'(use|require|no)(\s+)([a-zA-Z_]\w*(?:::[a-zA-Z_]\w*)*)',

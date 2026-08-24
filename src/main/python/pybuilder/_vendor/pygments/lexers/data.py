@@ -4,7 +4,7 @@
 
     Lexers for data file format.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -35,7 +35,7 @@ class YamlLexer(ExtendedRegexLexer):
 
     name = 'YAML'
     url = 'http://yaml.org/'
-    aliases = ['yaml']
+    aliases = ['yaml', 'yml']
     filenames = ['*.yaml', '*.yml']
     mimetypes = ['text/x-yaml']
     version_added = '0.11'
@@ -350,7 +350,7 @@ class YamlLexer(ExtendedRegexLexer):
             # line breaks are ignored
             (r'\n+', Whitespace),
             # other whitespaces are a part of the value
-            (r'[ ]+', Name.Variable),
+            (r'[ \xa0]+', Name.Variable),
         ],
 
         # single-quoted scalars
@@ -403,7 +403,7 @@ class YamlLexer(ExtendedRegexLexer):
             # line breaks are ignored
             (r'\n+', Whitespace, 'plain-scalar-in-block-context-new-line'),
             # other whitespaces are a part of the value
-            (r'[ ]+', Literal.Scalar.Plain),
+            (r'[ \xa0]+', Literal.Scalar.Plain),
             # regular non-whitespace characters
             (r'(?::(?!\s)|[^\s:])+', Literal.Scalar.Plain),
         ],
@@ -420,7 +420,7 @@ class YamlLexer(ExtendedRegexLexer):
             # line breaks are ignored
             (r'\n+', Whitespace),
             # other whitespaces are a part of the value
-            (r'[ ]+', Name.Variable),
+            (r'[ \xa0]+', Name.Variable),
             # regular non-whitespace characters
             (r'[^\s,:?\[\]{}]+', Name.Variable),
         ],
@@ -447,7 +447,7 @@ class JsonLexer(Lexer):
     name = 'JSON'
     url = 'https://www.json.org'
     aliases = ['json', 'json-object']
-    filenames = ['*.json', '*.jsonl', '*.ndjson', 'Pipfile.lock']
+    filenames = ['*.json', '*.jsonl', '*.ndjson', 'Pipfile.lock', '*.module', '*.xc']
     mimetypes = ['application/json', 'application/json-object', 'application/x-ndjson', 'application/jsonl', 'application/json-seq']
     version_added = '1.5'
 
