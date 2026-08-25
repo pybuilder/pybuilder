@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012-2023 Vinay Sajip.
+# Copyright (C) 2012-2026 Vinay Sajip.
 # Licensed to the Python Software Foundation under a contributor agreement.
 # See LICENSE.txt and CONTRIBUTORS.txt.
 #
@@ -572,7 +572,7 @@ href\\s*=\\s*(?:"(?P<url1>[^"]*)"|'(?P<url2>[^']*)'|(?P<url3>[^>\\s\n]*))
             url = d['url1'] or d['url2'] or d['url3']
             url = urljoin(self.base_url, url)
             url = unescape(url)
-            url = self._clean_re.sub(lambda m: '%%%2x' % ord(m.group(0)), url)
+            url = self._clean_re.sub(lambda m: '%%%02x' % ord(m.group(0)), url)
             result.add((url, rel))
         # We sort the result, hoping to bring the most recent versions
         # to the front
@@ -587,12 +587,28 @@ class SimpleScrapingLocator(Locator):
     as pip's PackageFinder, which works in an analogous fashion.
     """
 
-    # These are used to deal with various Content-Encoding schemes.
-    decoders = {
-        'deflate': zlib.decompress,
-        'gzip': lambda b: gzip.GzipFile(fileobj=BytesIO(b)).read(),
-        'none': lambda b: b,
-    }
+    # Upper bound, in bytes, on the size a Content-Encoded index response
+    # may inflate to. A compressed response can expand by a very large ratio
+    # (a few hundred KB inflating to hundreds of MB), so decompression is
+    # capped to avoid unbounded memory use from a malicious or compromised
+    # index. Index pages are HTML listings, so this limit is generous.
+    decode_size_limit = 100 * 1024 * 1024
+
+    def _decompress(self, data, decompressor):
+        # Decompress and abort if the inflated output would exceed
+        # decode_size_limit. zlib's decompress(max_length) bounds the output
+        # of a single call; ask for one byte past the limit to detect
+        # overflow, then ensure nothing remains unconsumed.
+        limit = self.decode_size_limit
+        produced = decompressor.decompress(data, limit + 1)
+        if len(produced) > limit or decompressor.unconsumed_tail:
+            raise DistlibException('Decompressed index response exceeds '
+                                   '%d bytes' % limit)
+        produced += decompressor.flush()
+        if len(produced) > limit:
+            raise DistlibException('Decompressed index response exceeds '
+                                   '%d bytes' % limit)
+        return produced
 
     def __init__(self, url, timeout=None, num_workers=10, **kwargs):
         """
@@ -620,6 +636,15 @@ class SimpleScrapingLocator(Locator):
         # in _prepare_threads.
         self._gplock = threading.RLock()
         self.platform_check = False  # See issue #112
+        # These are used to deal with various Content-Encoding schemes. Each
+        # decoder bounds its inflated output to decode_size_limit (see
+        # _decompress) to avoid unbounded memory use from a hostile index.
+        self.decoders = {
+            'deflate': lambda b: self._decompress(b, zlib.decompressobj()),
+            # wbits 16 + MAX_WBITS selects gzip framing in zlib.
+            'gzip': lambda b: self._decompress(b, zlib.decompressobj(16 + zlib.MAX_WBITS)),
+            'none': lambda b: b,
+        }
 
     def _prepare_threads(self):
         """

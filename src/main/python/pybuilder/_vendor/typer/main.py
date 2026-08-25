@@ -5,20 +5,22 @@ import shutil
 import subprocess
 import sys
 import traceback
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import datetime
 from enum import Enum
 from functools import update_wrapper
 from pathlib import Path
 from traceback import FrameSummary, StackSummary
 from types import TracebackType
-from typing import Annotated, Any, Callable, Optional, Union
+from typing import Annotated, Any
 from uuid import UUID
 
-import click
 from annotated_doc import Doc
 from typer._types import TyperChoice
 
+from . import _click
+from ._click import types
+from ._click.globals import get_current_context
 from ._typing import get_args, get_origin, is_literal_type, is_union, literal_values
 from .completion import get_completion_inspect_parameters
 from .core import (
@@ -57,9 +59,9 @@ _typer_developer_exception_attr_name = "__typer_developer_exception__"
 
 
 def except_hook(
-    exc_type: type[BaseException], exc_value: BaseException, tb: Optional[TracebackType]
+    exc_type: type[BaseException], exc_value: BaseException, tb: TracebackType | None
 ) -> None:
-    exception_config: Union[DeveloperExceptionConfig, None] = getattr(
+    exception_config: DeveloperExceptionConfig | None = getattr(
         exc_value, _typer_developer_exception_attr_name, None
     )
     standard_traceback = os.getenv(
@@ -73,7 +75,7 @@ def except_hook(
         _original_except_hook(exc_type, exc_value, tb)
         return
     typer_path = os.path.dirname(__file__)
-    click_path = os.path.dirname(click.__file__)  # ty: ignore[no-matching-overload]
+    click_path = os.path.dirname(_click.__file__)
     internal_dir_names = [typer_path, click_path]
     exc = exc_value
     if HAS_RICH:
@@ -107,7 +109,7 @@ def except_hook(
     return
 
 
-def get_install_completion_arguments() -> tuple[click.Parameter, click.Parameter]:
+def get_install_completion_arguments() -> tuple[_click.Parameter, _click.Parameter]:
     install_param, show_param = get_completion_inspect_parameters()
     click_install_param, _ = get_click_param(install_param)
     click_show_param, _ = get_click_param(show_param)
@@ -134,7 +136,7 @@ class Typer:
         self,
         *,
         name: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 The name of this application.
@@ -151,7 +153,7 @@ class Typer:
             ),
         ] = Default(None),
         cls: Annotated[
-            Optional[type[TyperGroup]],
+            type[TyperGroup] | None,
             Doc(
                 """
                 The class of this app. Mainly used when [using the Click library underneath](https://typer.tiangolo.com/tutorial/using-click/). Can usually be left at the default value `None`.
@@ -200,7 +202,7 @@ class Typer:
             ),
         ] = Default(False),
         subcommand_metavar: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 **Note**: you probably shouldn't use this parameter, it is inherited
@@ -226,7 +228,7 @@ class Typer:
             ),
         ] = Default(False),
         result_callback: Annotated[
-            Optional[Callable[..., Any]],
+            Callable[..., Any] | None,
             Doc(
                 """
                 **Note**: you probably shouldn't use this parameter, it is inherited
@@ -240,7 +242,7 @@ class Typer:
         ] = Default(None),
         # Command
         context_settings: Annotated[
-            Optional[dict[Any, Any]],
+            dict[Any, Any] | None,
             Doc(
                 """
                 Pass configurations for the [context](https://typer.tiangolo.com/tutorial/commands/context/).
@@ -257,7 +259,7 @@ class Typer:
             ),
         ] = Default(None),
         callback: Annotated[
-            Optional[Callable[..., Any]],
+            Callable[..., Any] | None,
             Doc(
                 """
                 Add a callback to the main Typer app. Can be overridden with `@app.callback()`.
@@ -277,7 +279,7 @@ class Typer:
             ),
         ] = Default(None),
         help: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 Help text for the main Typer app.
@@ -295,7 +297,7 @@ class Typer:
             ),
         ] = Default(None),
         epilog: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 Text that will be printed right after the help text.
@@ -311,7 +313,7 @@ class Typer:
             ),
         ] = Default(None),
         short_help: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 A shortened version of the help text that can be used e.g. in the help table listing subcommands.
@@ -426,7 +428,7 @@ class Typer:
             ),
         ] = DEFAULT_MARKUP_MODE,
         rich_help_panel: Annotated[
-            Union[str, None],
+            str | None,
             Doc(
                 """
                 Set the panel name of the command when the help is printed with Rich.
@@ -542,13 +544,13 @@ class Typer:
         )
         self.registered_groups: list[TyperInfo] = []
         self.registered_commands: list[CommandInfo] = []
-        self.registered_callback: Optional[TyperInfo] = None
+        self.registered_callback: TyperInfo | None = None
 
     def callback(
         self,
         *,
         cls: Annotated[
-            Optional[type[TyperGroup]],
+            type[TyperGroup] | None,
             Doc(
                 """
                 The class of this app. Mainly used when [using the Click library underneath](https://typer.tiangolo.com/tutorial/using-click/). Can usually be left at the default value `None`.
@@ -573,7 +575,7 @@ class Typer:
             ),
         ] = Default(False),
         subcommand_metavar: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 **Note**: you probably shouldn't use this parameter, it is inherited
@@ -599,7 +601,7 @@ class Typer:
             ),
         ] = Default(False),
         result_callback: Annotated[
-            Optional[Callable[..., Any]],
+            Callable[..., Any] | None,
             Doc(
                 """
                 **Note**: you probably shouldn't use this parameter, it is inherited
@@ -613,7 +615,7 @@ class Typer:
         ] = Default(None),
         # Command
         context_settings: Annotated[
-            Optional[dict[Any, Any]],
+            dict[Any, Any] | None,
             Doc(
                 """
                 Pass configurations for the [context](https://typer.tiangolo.com/tutorial/commands/context/).
@@ -622,7 +624,7 @@ class Typer:
             ),
         ] = Default(None),
         help: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 Help text for the command.
@@ -632,7 +634,7 @@ class Typer:
             ),
         ] = Default(None),
         epilog: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 Text that will be printed right after the help text.
@@ -640,7 +642,7 @@ class Typer:
             ),
         ] = Default(None),
         short_help: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 A shortened version of the help text that can be used e.g. in the help table listing subcommands.
@@ -649,7 +651,7 @@ class Typer:
             ),
         ] = Default(None),
         options_metavar: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 In the example usage string of the help text for a command, the default placeholder for various arguments is `[OPTIONS]`.
@@ -688,7 +690,7 @@ class Typer:
         ] = Default(False),
         # Rich settings
         rich_help_panel: Annotated[
-            Union[str, None],
+            str | None,
             Doc(
                 """
                 Set the panel name of the command when the help is printed with Rich.
@@ -751,7 +753,7 @@ class Typer:
     def command(
         self,
         name: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 The name of this command.
@@ -760,7 +762,7 @@ class Typer:
         ] = None,
         *,
         cls: Annotated[
-            Optional[type[TyperCommand]],
+            type[TyperCommand] | None,
             Doc(
                 """
                 The class of this command. Mainly used when [using the Click library underneath](https://typer.tiangolo.com/tutorial/using-click/). Can usually be left at the default value `None`.
@@ -769,7 +771,7 @@ class Typer:
             ),
         ] = None,
         context_settings: Annotated[
-            Optional[dict[Any, Any]],
+            dict[Any, Any] | None,
             Doc(
                 """
                 Pass configurations for the [context](https://typer.tiangolo.com/tutorial/commands/context/).
@@ -778,7 +780,7 @@ class Typer:
             ),
         ] = None,
         help: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 Help text for the command.
@@ -788,7 +790,7 @@ class Typer:
             ),
         ] = None,
         epilog: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 Text that will be printed right after the help text.
@@ -796,7 +798,7 @@ class Typer:
             ),
         ] = None,
         short_help: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 A shortened version of the help text that can be used e.g. in the help table listing subcommands.
@@ -805,7 +807,7 @@ class Typer:
             ),
         ] = None,
         options_metavar: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 In the example usage string of the help text for a command, the default placeholder for various arguments is `[OPTIONS]`.
@@ -852,7 +854,7 @@ class Typer:
         ] = False,
         # Rich settings
         rich_help_panel: Annotated[
-            Union[str, None],
+            str | None,
             Doc(
                 """
                 Set the panel name of the command when the help is printed with Rich.
@@ -915,7 +917,7 @@ class Typer:
         typer_instance: "Typer",
         *,
         name: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 The name of this subcommand.
@@ -925,7 +927,7 @@ class Typer:
             ),
         ] = Default(None),
         cls: Annotated[
-            Optional[type[TyperGroup]],
+            type[TyperGroup] | None,
             Doc(
                 """
                 The class of this subcommand. Mainly used when [using the Click library underneath](https://typer.tiangolo.com/tutorial/using-click/). Can usually be left at the default value `None`.
@@ -950,7 +952,7 @@ class Typer:
             ),
         ] = Default(False),
         subcommand_metavar: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 **Note**: you probably shouldn't use this parameter, it is inherited
@@ -976,7 +978,7 @@ class Typer:
             ),
         ] = Default(False),
         result_callback: Annotated[
-            Optional[Callable[..., Any]],
+            Callable[..., Any] | None,
             Doc(
                 """
                 **Note**: you probably shouldn't use this parameter, it is inherited
@@ -990,7 +992,7 @@ class Typer:
         ] = Default(None),
         # Command
         context_settings: Annotated[
-            Optional[dict[Any, Any]],
+            dict[Any, Any] | None,
             Doc(
                 """
                 Pass configurations for the [context](https://typer.tiangolo.com/tutorial/commands/context/).
@@ -999,7 +1001,7 @@ class Typer:
             ),
         ] = Default(None),
         callback: Annotated[
-            Optional[Callable[..., Any]],
+            Callable[..., Any] | None,
             Doc(
                 """
                 Add a callback to this app.
@@ -1008,7 +1010,7 @@ class Typer:
             ),
         ] = Default(None),
         help: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 Help text for the subcommand.
@@ -1018,7 +1020,7 @@ class Typer:
             ),
         ] = Default(None),
         epilog: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 Text that will be printed right after the help text.
@@ -1026,7 +1028,7 @@ class Typer:
             ),
         ] = Default(None),
         short_help: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 A shortened version of the help text that can be used e.g. in the help table listing subcommands.
@@ -1035,7 +1037,7 @@ class Typer:
             ),
         ] = Default(None),
         options_metavar: Annotated[
-            Optional[str],
+            str | None,
             Doc(
                 """
                 In the example usage string of the help text for a command, the default placeholder for various arguments is `[OPTIONS]`.
@@ -1074,7 +1076,7 @@ class Typer:
         ] = False,
         # Rich settings
         rich_help_panel: Annotated[
-            Union[str, None],
+            str | None,
             Doc(
                 """
                 Set the panel name of the command when the help is printed with Rich.
@@ -1168,7 +1170,7 @@ def get_group(typer_instance: Typer) -> TyperGroup:
     return group
 
 
-def get_command(typer_instance: Typer) -> click.Command:
+def get_command(typer_instance: Typer) -> _click.Command:
     if typer_instance._add_completion:
         click_install_param, click_show_param = get_install_completion_arguments()
     if (
@@ -1178,7 +1180,7 @@ def get_command(typer_instance: Typer) -> click.Command:
         or len(typer_instance.registered_commands) > 1
     ):
         # Create a Group
-        click_command: click.Command = get_group(typer_instance)
+        click_command: _click.Command = get_group(typer_instance)
         if typer_instance._add_completion:
             click_command.params.append(click_install_param)
             click_command.params.append(click_show_param)
@@ -1288,7 +1290,7 @@ def get_group_from_info(
     assert group_info.typer_instance, (
         "A Typer instance is needed to generate a Click Group"
     )
-    commands: dict[str, click.Command] = {}
+    commands: dict[str, _click.Command] = {}
     for command_info in group_info.typer_instance.registered_commands:
         command = get_command_from_info(
             command_info=command_info,
@@ -1330,7 +1332,6 @@ def get_group_from_info(
         invoke_without_command=solved_info.invoke_without_command,
         no_args_is_help=solved_info.no_args_is_help,
         subcommand_metavar=solved_info.subcommand_metavar,
-        chain=solved_info.chain,
         result_callback=solved_info.result_callback,
         context_settings=solved_info.context_settings,
         callback=get_callback(
@@ -1360,16 +1361,25 @@ def get_command_name(name: str) -> str:
     return name.lower().replace("_", "-")
 
 
+def get_default_option_flag_name(name: str, metavar: str | None) -> str:
+    flag_name = name.replace("_", "-")
+    if metavar is not None:
+        meta_flag = metavar.replace("_", "-")
+        if meta_flag.lower() == flag_name.lower():
+            return meta_flag
+    return flag_name
+
+
 def get_params_convertors_ctx_param_name_from_function(
-    callback: Optional[Callable[..., Any]],
-) -> tuple[list[Union[click.Argument, click.Option]], dict[str, Any], Optional[str]]:
+    callback: Callable[..., Any] | None,
+) -> tuple[list[TyperArgument | TyperOption], dict[str, Any], str | None]:
     params = []
     convertors = {}
     context_param_name = None
     if callback:
         parameters = get_params_from_function(callback)
         for param_name, param in parameters.items():
-            if lenient_issubclass(param.annotation, click.Context):
+            if lenient_issubclass(param.annotation, _click.Context):
                 context_param_name = param_name
                 continue
             click_param, convertor = get_click_param(param)
@@ -1384,9 +1394,9 @@ def get_command_from_info(
     *,
     pretty_exceptions_short: bool,
     rich_markup_mode: MarkupMode,
-) -> click.Command:
+) -> _click.Command:
     assert command_info.callback, "A command must have a callback function"
-    name = command_info.name or get_command_name(command_info.callback.__name__)  # ty: ignore[possibly-missing-attribute]
+    name = command_info.name or get_command_name(command_info.callback.__name__)  # ty: ignore
     use_help = command_info.help
     if use_help is None:
         use_help = inspect.getdoc(command_info.callback)
@@ -1424,8 +1434,8 @@ def get_command_from_info(
     return command
 
 
-def determine_type_convertor(type_: Any) -> Optional[Callable[[Any], Any]]:
-    convertor: Optional[Callable[[Any], Any]] = None
+def determine_type_convertor(type_: Any) -> Callable[[Any], Any] | None:
+    convertor: Callable[[Any], Any] | None = None
     if lenient_issubclass(type_, Path):
         convertor = param_path_convertor
     if lenient_issubclass(type_, Enum):
@@ -1433,7 +1443,7 @@ def determine_type_convertor(type_: Any) -> Optional[Callable[[Any], Any]]:
     return convertor
 
 
-def param_path_convertor(value: Optional[str] = None) -> Optional[Path]:
+def param_path_convertor(value: str | None = None) -> Path | None:
     if value is not None:
         # allow returning any subclass of Path created by an annotated parser without converting
         # it back to a Path
@@ -1455,9 +1465,9 @@ def generate_enum_convertor(enum: type[Enum]) -> Callable[[Any], Any]:
 
 
 def generate_list_convertor(
-    convertor: Optional[Callable[[Any], Any]], default_value: Optional[Any]
-) -> Callable[[Optional[Sequence[Any]]], Optional[list[Any]]]:
-    def internal_convertor(value: Optional[Sequence[Any]]) -> Optional[list[Any]]:
+    convertor: Callable[[Any], Any] | None, default_value: Any | None
+) -> Callable[[Sequence[Any] | None], list[Any] | None]:
+    def internal_convertor(value: Sequence[Any] | None) -> list[Any] | None:
         if (value is None) or (default_value is None and len(value) == 0):
             return None
         return [convertor(v) if convertor else v for v in value]
@@ -1467,17 +1477,17 @@ def generate_list_convertor(
 
 def generate_tuple_convertor(
     types: Sequence[Any],
-) -> Callable[[Optional[tuple[Any, ...]]], Optional[tuple[Any, ...]]]:
+) -> Callable[[tuple[Any, ...] | None], tuple[Any, ...] | None]:
     convertors = [determine_type_convertor(type_) for type_ in types]
 
     def internal_convertor(
-        param_args: Optional[tuple[Any, ...]],
-    ) -> Optional[tuple[Any, ...]]:
+        param_args: tuple[Any, ...] | None,
+    ) -> tuple[Any, ...] | None:
         if param_args is None:
             return None
         return tuple(
             convertor(arg) if convertor else arg
-            for (convertor, arg) in zip(convertors, param_args)
+            for (convertor, arg) in zip(convertors, param_args, strict=False)
         )
 
     return internal_convertor
@@ -1485,12 +1495,12 @@ def generate_tuple_convertor(
 
 def get_callback(
     *,
-    callback: Optional[Callable[..., Any]] = None,
-    params: Sequence[click.Parameter] = [],
-    convertors: Optional[dict[str, Callable[[str], Any]]] = None,
-    context_param_name: Optional[str] = None,
+    callback: Callable[..., Any] | None = None,
+    params: Sequence[_click.Parameter] = [],
+    convertors: dict[str, Callable[[str], Any]] | None = None,
+    context_param_name: str | None = None,
     pretty_exceptions_short: bool,
-) -> Optional[Callable[..., Any]]:
+) -> Callable[..., Any] | None:
     use_convertors = convertors or {}
     if not callback:
         return None
@@ -1510,7 +1520,7 @@ def get_callback(
             else:
                 use_params[k] = v
         if context_param_name:
-            use_params[context_param_name] = click.get_current_context()
+            use_params[context_param_name] = get_current_context()
         return callback(**use_params)
 
     update_wrapper(wrapper, callback)
@@ -1519,15 +1529,15 @@ def get_callback(
 
 def get_click_type(
     *, annotation: Any, parameter_info: ParameterInfo
-) -> click.ParamType:
+) -> types.ParamType:
     if parameter_info.click_type is not None:
         return parameter_info.click_type
 
     elif parameter_info.parser is not None:
-        return click.types.FuncParamType(parameter_info.parser)
+        return types.FuncParamType(parameter_info.parser)
 
     elif annotation is str:
-        return click.STRING
+        return types.STRING
     elif annotation is int:
         if parameter_info.min is not None or parameter_info.max is not None:
             min_ = None
@@ -1536,24 +1546,24 @@ def get_click_type(
                 min_ = int(parameter_info.min)
             if parameter_info.max is not None:
                 max_ = int(parameter_info.max)
-            return click.IntRange(min=min_, max=max_, clamp=parameter_info.clamp)
+            return types.IntRange(min=min_, max=max_, clamp=parameter_info.clamp)
         else:
-            return click.INT
+            return types.INT
     elif annotation is float:
         if parameter_info.min is not None or parameter_info.max is not None:
-            return click.FloatRange(
+            return types.FloatRange(
                 min=parameter_info.min,
                 max=parameter_info.max,
                 clamp=parameter_info.clamp,
             )
         else:
-            return click.FLOAT
+            return types.FLOAT
     elif annotation is bool:
-        return click.BOOL
+        return types.BOOL
     elif annotation == UUID:
-        return click.UUID
+        return types.UUID
     elif annotation == datetime:
-        return click.DateTime(formats=parameter_info.formats)
+        return types.DateTime(formats=parameter_info.formats)
     elif (
         annotation == Path
         or parameter_info.allow_dash
@@ -1571,7 +1581,7 @@ def get_click_type(
             path_type=parameter_info.path_type,
         )
     elif lenient_issubclass(annotation, FileTextWrite):
-        return click.File(
+        return types.File(
             mode=parameter_info.mode or "w",
             encoding=parameter_info.encoding,
             errors=parameter_info.errors,
@@ -1579,7 +1589,7 @@ def get_click_type(
             atomic=parameter_info.atomic,
         )
     elif lenient_issubclass(annotation, FileText):
-        return click.File(
+        return types.File(
             mode=parameter_info.mode or "r",
             encoding=parameter_info.encoding,
             errors=parameter_info.errors,
@@ -1587,7 +1597,7 @@ def get_click_type(
             atomic=parameter_info.atomic,
         )
     elif lenient_issubclass(annotation, FileBinaryRead):
-        return click.File(
+        return types.File(
             mode=parameter_info.mode or "rb",
             encoding=parameter_info.encoding,
             errors=parameter_info.errors,
@@ -1595,7 +1605,7 @@ def get_click_type(
             atomic=parameter_info.atomic,
         )
     elif lenient_issubclass(annotation, FileBinaryWrite):
-        return click.File(
+        return types.File(
             mode=parameter_info.mode or "wb",
             encoding=parameter_info.encoding,
             errors=parameter_info.errors,
@@ -1603,32 +1613,25 @@ def get_click_type(
             atomic=parameter_info.atomic,
         )
     elif lenient_issubclass(annotation, Enum):
-        # The custom TyperChoice is only needed for Click < 8.2.0, to parse the
-        # command line values matching them to the enum values. Click 8.2.0 added
-        # support for enum values but reading enum names.
-        # Passing here the list of enum values (instead of just the enum) accounts for
-        # Click < 8.2.0.
         return TyperChoice(
             [item.value for item in annotation],
             case_sensitive=parameter_info.case_sensitive,
         )
     elif is_literal_type(annotation):
-        return click.Choice(
+        return TyperChoice(
             literal_values(annotation),
             case_sensitive=parameter_info.case_sensitive,
         )
     raise RuntimeError(f"Type not yet supported: {annotation}")  # pragma: no cover
 
 
-def lenient_issubclass(
-    cls: Any, class_or_tuple: Union[AnyType, tuple[AnyType, ...]]
-) -> bool:
+def lenient_issubclass(cls: Any, class_or_tuple: AnyType | tuple[AnyType, ...]) -> bool:
     return isinstance(cls, type) and issubclass(cls, class_or_tuple)
 
 
 def get_click_param(
     param: ParamMeta,
-) -> tuple[Union[click.Argument, click.Option], Any]:
+) -> tuple[TyperArgument | TyperOption, Any]:
     # First, find out what will be:
     # * ParamInfo (ArgumentInfo or OptionInfo)
     # * default_value
@@ -1705,7 +1708,9 @@ def get_click_param(
             # Click doesn't accept a flag of type bool, only None, and then it sets it
             # to bool internally
             parameter_type = None
-        default_option_name = get_command_name(param.name)
+        default_option_name = get_default_option_flag_name(
+            param.name, parameter_info.metavar
+        )
         if is_flag:
             default_option_declaration = (
                 f"--{default_option_name}/--no-{default_option_name}"
@@ -1786,14 +1791,14 @@ def get_click_param(
             ),
             convertor,
         )
-    raise AssertionError("A click.Parameter should be returned")  # pragma: no cover
+    raise AssertionError("A _click.Parameter should be returned")  # pragma: no cover
 
 
 def get_param_callback(
     *,
-    callback: Optional[Callable[..., Any]] = None,
-    convertor: Optional[Callable[..., Any]] = None,
-) -> Optional[Callable[..., Any]]:
+    callback: Callable[..., Any] | None = None,
+    convertor: Callable[..., Any] | None = None,
+) -> Callable[..., Any] | None:
     if not callback:
         return None
     parameters = get_params_from_function(callback)
@@ -1802,9 +1807,9 @@ def get_param_callback(
     value_name = None
     untyped_names: list[str] = []
     for param_name, param_sig in parameters.items():
-        if lenient_issubclass(param_sig.annotation, click.Context):
+        if lenient_issubclass(param_sig.annotation, _click.Context):
             ctx_name = param_name
-        elif lenient_issubclass(param_sig.annotation, click.Parameter):
+        elif lenient_issubclass(param_sig.annotation, _click.Parameter):
             click_param_name = param_name
         else:
             untyped_names.append(param_name)
@@ -1819,11 +1824,11 @@ def get_param_callback(
             if untyped_names:
                 click_param_name = untyped_names.pop(0)
         if untyped_names:
-            raise click.ClickException(
+            raise _click.ClickException(
                 "Too many CLI parameter callback function parameters"
             )
 
-    def wrapper(ctx: click.Context, param: click.Parameter, value: Any) -> Any:
+    def wrapper(ctx: _click.Context, param: _click.Parameter, value: Any) -> Any:
         use_params: dict[str, Any] = {}
         if ctx_name:
             use_params[ctx_name] = ctx
@@ -1842,8 +1847,8 @@ def get_param_callback(
 
 
 def get_param_completion(
-    callback: Optional[Callable[..., Any]] = None,
-) -> Optional[Callable[..., Any]]:
+    callback: Callable[..., Any] | None = None,
+) -> Callable[..., Any] | None:
     if not callback:
         return None
     parameters = get_params_from_function(callback)
@@ -1853,7 +1858,7 @@ def get_param_completion(
     unassigned_params = list(parameters.values())
     for param_sig in unassigned_params[:]:
         origin = get_origin(param_sig.annotation)
-        if lenient_issubclass(param_sig.annotation, click.Context):
+        if lenient_issubclass(param_sig.annotation, _click.Context):
             ctx_name = param_sig.name
             unassigned_params.remove(param_sig)
         elif lenient_issubclass(origin, list):
@@ -1876,11 +1881,11 @@ def get_param_completion(
     # Extract value param name first
     if unassigned_params:
         show_params = " ".join([param.name for param in unassigned_params])
-        raise click.ClickException(
+        raise _click.ClickException(
             f"Invalid autocompletion callback parameters: {show_params}"
         )
 
-    def wrapper(ctx: click.Context, args: list[str], incomplete: Optional[str]) -> Any:
+    def wrapper(ctx: _click.Context, args: list[str], incomplete: str | None) -> Any:
         use_params: dict[str, Any] = {}
         if ctx_name:
             use_params[ctx_name] = ctx
@@ -1949,7 +1954,6 @@ def launch(
         Doc(
             """
             Wait for the program to exit before returning. This only works if the launched program blocks.
-            In particular, `xdg-open` on Linux does not block.
             """
         ),
     ] = False,
@@ -2001,9 +2005,12 @@ def launch(
         has_xdg_open = _is_linux_or_bsd() and shutil.which("xdg-open") is not None
 
         if has_xdg_open:
-            return subprocess.Popen(
+            process = subprocess.Popen(
                 ["xdg-open", url], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT
-            ).wait()
+            )
+            if wait:
+                return process.wait()
+            return 0
 
         import webbrowser
 
@@ -2012,4 +2019,4 @@ def launch(
         return 0
 
     else:
-        return click.launch(url)
+        return _click.launch(url, wait=wait, locate=locate)

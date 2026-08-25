@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012-2023 Python Software Foundation.
+# Copyright (C) 2012-2026 Python Software Foundation.
 # See LICENSE.txt and CONTRIBUTORS.txt.
 #
 """
@@ -17,7 +17,6 @@ import sys
 from . import DistlibException
 from .compat import fsdecode
 from .util import convert_path
-
 
 __all__ = ['Manifest']
 
@@ -76,7 +75,7 @@ class Manifest(object):
                 fullname = os.path.join(root, name)
 
                 # Avoid excess stat calls -- just one will do, thank you!
-                stat = os.stat(fullname)
+                stat = os.lstat(fullname)
                 mode = stat.st_mode
                 if S_ISREG(mode):
                     allfiles.append(fsdecode(fullname))
@@ -115,14 +114,13 @@ class Manifest(object):
                 assert parent not in ('', '/')
                 add_dir(dirs, parent)
 
-        result = set(self.files)    # make a copy!
+        result = set(self.files)  # make a copy!
         if wantdirs:
             dirs = set()
             for f in result:
                 add_dir(dirs, os.path.dirname(f))
             result |= dirs
-        return [os.path.join(*path_tuple) for path_tuple in
-                sorted(os.path.split(path) for path in result)]
+        return [os.path.join(*path_tuple) for path_tuple in sorted(os.path.split(path) for path in result)]
 
     def clear(self):
         """Clear all collected files."""
@@ -180,18 +178,16 @@ class Manifest(object):
 
         elif action == 'graft':
             if not self._include_pattern(None, prefix=dirpattern):
-                logger.warning('no directories found matching %r',
-                               dirpattern)
+                logger.warning('no directories found matching %r', dirpattern)
 
         elif action == 'prune':
             if not self._exclude_pattern(None, prefix=dirpattern):
                 logger.warning('no previously-included directories found '
                                'matching %r', dirpattern)
-        else:   # pragma: no cover
+        else:  # pragma: no cover
             # This should never happen, as it should be caught in
             # _parse_template_line
-            raise DistlibException(
-                'invalid action %r' % action)
+            raise DistlibException('invalid action %r' % action)
 
     #
     # Private API
@@ -204,38 +200,30 @@ class Manifest(object):
         :return: A tuple of action, patterns, thedir, dir_patterns
         """
         words = directive.split()
-        if len(words) == 1 and words[0] not in ('include', 'exclude',
-                                                'global-include',
-                                                'global-exclude',
-                                                'recursive-include',
-                                                'recursive-exclude',
-                                                'graft', 'prune'):
+        if len(words) == 1 and words[0] not in ('include', 'exclude', 'global-include', 'global-exclude',
+                                                'recursive-include', 'recursive-exclude', 'graft', 'prune'):
             # no action given, let's use the default 'include'
             words.insert(0, 'include')
 
         action = words[0]
         patterns = thedir = dir_pattern = None
 
-        if action in ('include', 'exclude',
-                      'global-include', 'global-exclude'):
+        if action in ('include', 'exclude', 'global-include', 'global-exclude'):
             if len(words) < 2:
-                raise DistlibException(
-                    '%r expects <pattern1> <pattern2> ...' % action)
+                raise DistlibException('%r expects <pattern1> <pattern2> ...' % action)
 
             patterns = [convert_path(word) for word in words[1:]]
 
         elif action in ('recursive-include', 'recursive-exclude'):
             if len(words) < 3:
-                raise DistlibException(
-                    '%r expects <dir> <pattern1> <pattern2> ...' % action)
+                raise DistlibException('%r expects <dir> <pattern1> <pattern2> ...' % action)
 
             thedir = convert_path(words[1])
             patterns = [convert_path(word) for word in words[2:]]
 
         elif action in ('graft', 'prune'):
             if len(words) != 2:
-                raise DistlibException(
-                    '%r expects a single <dir_pattern>' % action)
+                raise DistlibException('%r expects a single <dir_pattern>' % action)
 
             dir_pattern = convert_path(words[1])
 
@@ -244,8 +232,7 @@ class Manifest(object):
 
         return action, patterns, thedir, dir_pattern
 
-    def _include_pattern(self, pattern, anchor=True, prefix=None,
-                         is_regex=False):
+    def _include_pattern(self, pattern, anchor=True, prefix=None, is_regex=False):
         """Select strings (presumably filenames) from 'self.files' that
         match 'pattern', a Unix-style wildcard (glob) pattern.
 
@@ -285,8 +272,7 @@ class Manifest(object):
                 found = True
         return found
 
-    def _exclude_pattern(self, pattern, anchor=True, prefix=None,
-                         is_regex=False):
+    def _exclude_pattern(self, pattern, anchor=True, prefix=None, is_regex=False):
         """Remove strings (presumably filenames) from 'files' that match
         'pattern'.
 
@@ -305,8 +291,7 @@ class Manifest(object):
                 found = True
         return found
 
-    def _translate_pattern(self, pattern, anchor=True, prefix=None,
-                           is_regex=False):
+    def _translate_pattern(self, pattern, anchor=True, prefix=None, is_regex=False):
         """Translate a shell-like wildcard pattern to a compiled regular
         expression.
 
@@ -340,17 +325,15 @@ class Manifest(object):
             else:
                 prefix_re = self._glob_to_re(prefix)
                 assert prefix_re.startswith(start) and prefix_re.endswith(end)
-                prefix_re = prefix_re[len(start): len(prefix_re) - len(end)]
+                prefix_re = prefix_re[len(start):len(prefix_re) - len(end)]
             sep = os.sep
             if os.sep == '\\':
                 sep = r'\\'
             if _PYTHON_VERSION <= (3, 2):
-                pattern_re = '^' + base + sep.join((prefix_re,
-                                                    '.*' + pattern_re))
+                pattern_re = '^' + base + sep.join((prefix_re, '.*' + pattern_re))
             else:
-                pattern_re = pattern_re[len(start): len(pattern_re) - len(end)]
-                pattern_re = r'%s%s%s%s.*%s%s' % (start, base, prefix_re, sep,
-                                                  pattern_re, end)
+                pattern_re = pattern_re[len(start):len(pattern_re) - len(end)]
+                pattern_re = r'%s%s%s%s.*%s%s' % (start, base, prefix_re, sep, pattern_re, end)
         else:  # no prefix -- respect anchor flag
             if anchor:
                 if _PYTHON_VERSION <= (3, 2):

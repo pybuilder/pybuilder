@@ -24,7 +24,6 @@
 
 import ast
 import re
-import sys
 from itertools import chain
 from os import sep, unlink, walk
 from os.path import exists, relpath, isdir, splitext, basename, dirname
@@ -155,56 +154,7 @@ def _path_to_package(path):
     return pkg_parts
 
 
-if sys.version_info[:2] < (3, 8):
-    class NodeVisitor(object):
-        def __init__(self):
-            self._count = 0
-            self._q = []
-            self.source_lines = None
-
-        def _visit(self, node):
-            if hasattr(node, "lineno") and hasattr(node, "col_offset"):
-                self._q.append(node)
-
-            for field, value in ast.iter_fields(node):
-                if isinstance(value, list):
-                    for item in value:
-                        if isinstance(item, ast.AST):
-                            self._visit(item)
-                elif isinstance(value, ast.AST):
-                    self._visit(value)
-
-        def visit(self, node):
-            """Visit a node."""
-            self._visit(node)
-
-            q = self._q
-            len_q = len(self._q)
-            sl = self.source_lines
-
-            for idx, node in enumerate(q):
-                method = 'visit_' + node.__class__.__name__
-                visitor = getattr(self, method, None)
-                if visitor:
-                    next_idx = idx + 1
-                    if next_idx < len_q:
-                        next_node = q[next_idx]
-                        if node.lineno == next_node.lineno:
-                            node.end_lineno = next_node.lineno
-                            node.end_col_offset = next_node.col_offset - 1
-                        else:
-                            node.end_lineno = next_node.lineno - 1
-                            node.end_col_offset = sl[node.end_lineno] - sl[node.end_lineno - 1]
-                    else:
-                        node.end_lineno = len(sl) - 1
-                        node.end_col_offset = sl[node.end_lineno] - sl[node.end_lineno - 1]
-
-                    visitor(node)
-else:
-    NodeVisitor = ast.NodeVisitor
-
-
-class ImportTransformer(NodeVisitor):
+class ImportTransformer(ast.NodeVisitor):
     def __init__(self, source_path, source, vendor_path, vendorized_packages, results):
         super(ImportTransformer, self).__init__()
         self.source_path = source_path

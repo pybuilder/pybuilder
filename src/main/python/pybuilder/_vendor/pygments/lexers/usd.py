@@ -4,7 +4,7 @@
 
     The module that parses Pixar's Universal Scene Description file format.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -70,8 +70,8 @@ class UsdLexer(RegexLexer):
             (";", Punctuation),  # ";"s are allowed to combine separate metadata lines
             ("=", Operator),
             (r"[-]*([0-9]*[.])?[0-9]+(?:e[+-]*\d+)?", Number),
-            (r"'''(?:.|\n)*?'''", String),
-            (r'"""(?:.|\n)*?"""', String),
+            (r"'''[\s\S]*?'''", String),
+            (r'"""[\s\S]*?"""', String),
             (r"'.*?'", String),
             (r'".*?"', String),
             (r"<(\.\./)*([\w/]+|[\w/]+\.\w+[\w:]*)>", Name.Namespace),

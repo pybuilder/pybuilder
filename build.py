@@ -117,7 +117,8 @@ def initialize(project):
                                                      "setuptools*/_vendor",
                                                      "easy_install.py",
                                                      "*.pth"])
-    project.set_property("vendorize_preserve_metadata", ["virtualenv*", "importlib_metadata*"])
+    project.set_property("vendorize_preserve_metadata", ["virtualenv*", "importlib_metadata*",
+                                                         "python_discovery*"])
 
     project.set_property("coverage_break_build", False)
     project.get_property("coverage_exceptions").extend(["pybuilder._vendor",
@@ -184,6 +185,7 @@ def initialize(project):
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
         "Programming Language :: Python :: 3.14",
+        "Programming Language :: Python :: 3.15",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: POSIX :: Linux",
         "Operating System :: Microsoft :: Windows",

@@ -6,12 +6,19 @@ import re
 from email.generator import BytesGenerator
 from email.parser import BytesParser
 
+from packaging.version import InvalidVersion, Version
+
 from ..wheelfile import WheelError, WheelFile
 
 DIST_INFO_RE = re.compile(r"^(?P<namever>(?P<name>.+?)-(?P<ver>\d.*?))\.dist-info$")
 
 
-def pack(directory: str, dest_dir: str, build_number: str | None) -> None:
+def pack(
+    directory: str,
+    dest_dir: str,
+    build_number: str | None,
+    local_version: str | None = None,
+) -> None:
     """Repack a previously unpacked wheel directory into a new wheel file.
 
     The .dist-info/WHEEL file must contain one or more tags so that the target
@@ -19,6 +26,8 @@ def pack(directory: str, dest_dir: str, build_number: str | None) -> None:
 
     :param directory: The unpacked wheel directory
     :param dest_dir: Destination directory (defaults to the current directory)
+    :param build_number: Build tag to use in the wheel name
+    :param local_version: Local version identifier to add or replace
     """
     # Find the .dist-info directory
     dist_info_dirs = [
@@ -33,7 +42,50 @@ def pack(directory: str, dest_dir: str, build_number: str | None) -> None:
 
     # Determine the target wheel filename
     dist_info_dir = dist_info_dirs[0]
-    name_version = DIST_INFO_RE.match(dist_info_dir).group("namever")
+    match = DIST_INFO_RE.match(dist_info_dir)
+    name_version = match.group("namever")
+    name = match.group("name")
+    version = match.group("ver")
+
+    # Update the local version identifier if requested
+    if local_version is not None:
+        base_version = version.split("+", 1)[0]
+        new_version = (
+            base_version if local_version == "" else f"{base_version}+{local_version}"
+        )
+        try:
+            Version(new_version)
+        except InvalidVersion as e:
+            raise WheelError(f"Invalid version {new_version!r}: {e}") from None
+
+        if "-" in new_version:
+            raise WheelError(
+                f"Invalid local version identifier {local_version!r}: "
+                "wheel filenames cannot contain '-' in the version; "
+                "use '_' instead of '-'"
+            )
+
+        new_namever = f"{name}-{new_version}"
+        new_dist_info_dir = f"{new_namever}.dist-info"
+        os.rename(
+            os.path.join(directory, dist_info_dir),
+            os.path.join(directory, new_dist_info_dir),
+        )
+        dist_info_dir = new_dist_info_dir
+        name_version = new_namever
+
+        # Update the Version field in .dist-info/METADATA
+        metadata_path = os.path.join(directory, dist_info_dir, "METADATA")
+        try:
+            with open(metadata_path, "rb") as f:
+                metadata = BytesParser(policy=email.policy.compat32).parse(f)
+        except FileNotFoundError:
+            raise WheelError(f"Missing {dist_info_dir}/METADATA file") from None
+
+        del metadata["Version"]
+        metadata["Version"] = new_version
+        with open(metadata_path, "wb") as f:
+            BytesGenerator(f, maxheaderlen=0).flatten(metadata)
 
     # Read the tags and the existing build number from .dist-info/WHEEL
     wheel_file_path = os.path.join(directory, dist_info_dir, "WHEEL")

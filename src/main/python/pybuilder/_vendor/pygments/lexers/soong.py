@@ -4,7 +4,7 @@
 
     Lexers for Soong (Android.bp Blueprint) files.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -64,7 +64,7 @@ class SoongLexer(RegexLexer):
         ],
         'comments': [
             (r'//.*', Comment.Single),
-            (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?[*][\s\S]*?[*](\\\n)?/', Comment.Multiline),
         ],
         'expr': [
             (r'(true|false)\b', Name.Builtin),

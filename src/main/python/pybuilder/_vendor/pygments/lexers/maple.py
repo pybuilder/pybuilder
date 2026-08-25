@@ -4,7 +4,7 @@
 
     Lexers for Maple.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -267,7 +267,7 @@ class MapleLexer(ExtendedRegexLexer):
             (r'#.*\n', Comment.Single),
             (r'\(\*', Comment.Multiline, 'comment'),
             (r'"(\\.|.|\s)*?"', String),
-            (r"('+)((.|\n)*?)\1", delayed_callback),
+            (r"('+)(([\s\S])*?)\1", delayed_callback),
             (r'`(\\`|.)*?`', Name),
             (words(keywords, prefix=r'\b', suffix=r'\b'), Keyword),
             (words(builtins, prefix=r'\b', suffix=r'\b'), Name.Builtin),

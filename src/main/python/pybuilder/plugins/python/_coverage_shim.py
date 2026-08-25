@@ -27,6 +27,7 @@ class CoverageImporter(Loader, MetaPathFinder):
     def __init__(self, coverage_parent_dir):
         self.coverage_parent_dir = coverage_parent_dir
         self._in_import = False
+        self._coverage_spec = None
 
     def find_module(self, fullname, path=None):
         """
@@ -48,6 +49,31 @@ class CoverageImporter(Loader, MetaPathFinder):
         finally:
             self._in_import = False
             del sys.path[-1]
+
+    def create_module(self, spec):
+        """
+        Return the real `coverage` module.
+
+        Python 3.15 removed the legacy `load_module()` fallback from the import
+        machinery, so a PEP 451 loader is required.
+        """
+        module = self.load_module(spec.name)
+        # `module_from_spec()` overwrites `__spec__` with this importer's spec
+        # right after this returns, so remember the real one for `exec_module()`.
+        self._coverage_spec = module.__spec__
+        return module
+
+    def exec_module(self, module):
+        """
+        Restore the spec of the module returned by `create_module`.
+
+        `coverage` has already been imported and executed by `load_module`; only
+        its `__spec__` needs undoing so that it keeps pointing at the real origin
+        and loader.
+        """
+        if self._coverage_spec is not None:
+            module.__spec__ = self._coverage_spec
+            self._coverage_spec = None
 
     def find_spec(self, fullname, path=None, target=None):
         """Return a module spec for vendored names."""

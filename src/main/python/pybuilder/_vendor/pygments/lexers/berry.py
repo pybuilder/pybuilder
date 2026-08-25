@@ -4,7 +4,7 @@
 
     Lexer for Berry.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -54,7 +54,7 @@ class BerryLexer(RegexLexer):
         ],
         'whitespace': [
             (r'\s+', Whitespace),
-            (r'#-(.|\n)*?-#', Comment.Multiline),
+            (r'#-[\s\S]*?-#', Comment.Multiline),
             (r'#.*?$', Comment.Single)
         ],
         'keywords': [

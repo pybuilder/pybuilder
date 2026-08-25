@@ -4,7 +4,7 @@
 
     Lexer for the Slash programming language.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -52,13 +52,13 @@ class SlashLanguageLexer(ExtendedRegexLexer):
         ],
         "regexp": [
             (r'}[a-z]*',            String.Regex,       move_state("slash")),
-            (r'\\(.|\n)',           String.Regex),
+            (r'\\([\s\S])',           String.Regex),
             (r'{',                  String.Regex,       "regexp_r"),
             (r'.|\n',               String.Regex),
         ],
         "regexp_r": [
             (r'}[a-z]*',            String.Regex,       "#pop"),
-            (r'\\(.|\n)',           String.Regex),
+            (r'\\([\s\S])',           String.Regex),
             (r'{',                  String.Regex,       "regexp_r"),
         ],
         "slash": [
@@ -161,7 +161,7 @@ class SlashLanguageLexer(ExtendedRegexLexer):
             (r'\.',                     Operator),
             (r'::',                     Operator),
             (r':',                      Operator),
-            (r'(\s|\n)+',               Whitespace),
+            (r'\s+',                    Whitespace),
             (r'[a-z_][a-zA-Z0-9_\']*',  Name.Variable),
         ],
     }

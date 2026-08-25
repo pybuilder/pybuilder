@@ -4,7 +4,7 @@
 
     Lexer for the Futhark language
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -79,7 +79,6 @@ class FutharkLexer(RegexLexer):
             (r'"', String, 'string'),
             #  Special
             (r'\[[a-zA-Z_\d]*\]', Keyword.Type),
-            (r'\(\)', Name.Builtin),
         ],
         'character': [
             # Allows multi-chars, incorrectly.

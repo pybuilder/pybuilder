@@ -7,7 +7,7 @@
     Modified by Daniel J. Ramirez <djrmuv@gmail.com> based on the original
     python.py.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -50,9 +50,9 @@ class GDScriptLexer(RegexLexer):
     tokens = {
         "root": [
             (r"\n", Whitespace),
-            (r'^(\s*)([rRuUbB]{,2})("""(?:.|\n)*?""")',
+            (r'^(\s*)([rRuUbB]{,2})("""[\s\S]*?""")',
              bygroups(Whitespace, String.Affix, String.Doc)),
-            (r"^(\s*)([rRuUbB]{,2})('''(?:.|\n)*?''')",
+            (r"^(\s*)([rRuUbB]{,2})('''[\s\S]*?''')",
              bygroups(Whitespace, String.Affix, String.Doc)),
             (r"[^\S\n]+", Whitespace),
             (r"#.*$", Comment.Single),

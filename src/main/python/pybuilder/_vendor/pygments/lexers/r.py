@@ -4,7 +4,7 @@
 
     Lexers for the R/S languages.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -108,7 +108,7 @@ class SLexer(RegexLexer):
              r'letters|LETTERS|Inf|TRUE|FALSE|NaN|pi|\.\.(\.|[0-9]+))'
              r'(?![\w.])',
              Keyword.Constant),
-            (r'(T|F)\b', Name.Builtin.Pseudo),
+            (r'[TF]\b', Name.Builtin.Pseudo),
         ],
         'numbers': [
             # hex number

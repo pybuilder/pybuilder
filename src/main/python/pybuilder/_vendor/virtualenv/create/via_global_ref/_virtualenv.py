@@ -5,21 +5,26 @@ from __future__ import annotations
 import contextlib
 import os
 import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import types
+    from collections.abc import Callable
+    from importlib.machinery import ModuleSpec
 
 VIRTUALENV_PATCH_FILE = os.path.abspath(__file__)
 
 
-def patch_dist(dist):
-    """
-    Distutils allows user to configure some arguments via a configuration file:
-    https://docs.python.org/3/install/index.html#distutils-configuration-files.
+def patch_dist(dist: types.ModuleType) -> None:
+    """Distutils allows user to configure some arguments via a configuration file: https://docs.python.org/3/install/index.html#distutils-configuration-files.
 
     Some of this arguments though don't make sense in context of the virtual environment files, let's fix them up.
-    """  # noqa: D205
+
+    """
     # we cannot allow some install config as that would get packages installed outside of the virtual environment
     old_parse_config_files = dist.Distribution.parse_config_files
 
-    def parse_config_files(self, *args, **kwargs):
+    def parse_config_files(self, *args: object, **kwargs: object) -> object:  # ruff:ignore[missing-type-function-argument]
         result = old_parse_config_files(self, *args, **kwargs)
         install = self.get_option_dict("install")
 
@@ -48,9 +53,9 @@ class _Finder:
     # lock[0] is threading.Lock(), but initialized lazily to avoid importing threading very early at startup,
     # because there are gevent-based applications that need to be first to import threading by themselves.
     # See https://github.com/pypa/virtualenv/issues/1895 for details.
-    lock = []  # noqa: RUF012
+    lock = []  # ruff:ignore[mutable-class-default]
 
-    def find_spec(self, fullname, path, target=None):  # noqa: ARG002
+    def find_spec(self, fullname: str, path: object, target: object = None) -> ModuleSpec | None:  # ruff:ignore[unused-method-argument]
         # Guard against race conditions during file rewrite by checking if _DISTUTILS_PATCH is defined.
         # This can happen when the file is being overwritten while it's being imported by another process.
         # See https://github.com/pypa/virtualenv/issues/2969 for details.
@@ -58,10 +63,10 @@ class _Finder:
             distutils_patch = _DISTUTILS_PATCH
         except NameError:
             return None
-        if fullname in distutils_patch and self.fullname is None:  # noqa: PLR1702
+        if fullname in distutils_patch and self.fullname is None:
             # initialize lock[0] lazily
             if len(self.lock) == 0:
-                import threading  # noqa: PLC0415
+                import threading  # ruff:ignore[import-outside-top-level]
 
                 lock = threading.Lock()
                 # there is possibility that two threads T1 and T2 are simultaneously running into find_spec,
@@ -71,53 +76,39 @@ class _Finder:
                 # https://docs.python.org/3/faq/library.html#what-kinds-of-global-value-mutation-are-thread-safe
                 self.lock.append(lock)
 
-            from functools import partial  # noqa: PLC0415
-            from importlib.util import find_spec  # noqa: PLC0415
+            from functools import partial  # ruff:ignore[import-outside-top-level]
+            from importlib.util import find_spec  # ruff:ignore[import-outside-top-level]
 
             with self.lock[0]:
                 self.fullname = fullname
+                spec = None
                 try:
-                    spec = find_spec(fullname, path)
-                    if spec is not None:
-                        # https://www.python.org/dev/peps/pep-0451/#how-loading-will-work
-                        is_new_api = hasattr(spec.loader, "exec_module")
-                        func_name = "exec_module" if is_new_api else "load_module"
-                        old = getattr(spec.loader, func_name)
-                        func = self.exec_module if is_new_api else self.load_module
-                        if old is not func:
-                            try:  # noqa: SIM105
-                                setattr(spec.loader, func_name, partial(func, old))
-                            except AttributeError:
-                                pass  # C-Extension loaders are r/o such as zipimporter with <3.7
-                        return spec
+                    spec = find_spec(fullname, path)  # ty: ignore[invalid-argument-type]
                 finally:
                     self.fullname = None
+                if spec is not None:
+                    return self._patch_spec(spec, partial)
         return None
 
+    def _patch_spec(self, spec: ModuleSpec, partial: Callable[..., object]) -> ModuleSpec:
+        old = getattr(spec.loader, "exec_module", None)
+        if old is not None and old is not self.exec_module:
+            try:  # ruff:ignore[suppressible-exception]
+                spec.loader.exec_module = partial(self.exec_module, old)  # ty: ignore[invalid-assignment]
+            except AttributeError:
+                pass
+        return spec
+
     @staticmethod
-    def exec_module(old, module):
+    def exec_module(old: Callable[..., object], module: types.ModuleType) -> None:
         old(module)
         try:
             distutils_patch = _DISTUTILS_PATCH
         except NameError:
             return
         if module.__name__ in distutils_patch:
-            # patch_dist or its dependencies may not be defined during file rewrite
             with contextlib.suppress(NameError):
                 patch_dist(module)
-
-    @staticmethod
-    def load_module(old, name):
-        module = old(name)
-        try:
-            distutils_patch = _DISTUTILS_PATCH
-        except NameError:
-            return module
-        if module.__name__ in distutils_patch:
-            # patch_dist or its dependencies may not be defined during file rewrite
-            with contextlib.suppress(NameError):
-                patch_dist(module)
-        return module
 
 
 sys.meta_path.insert(0, _Finder())

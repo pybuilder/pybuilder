@@ -4,7 +4,7 @@
 
     Lexers for parser generators.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -33,11 +33,11 @@ __all__ = ['RagelLexer', 'RagelEmbeddedLexer', 'RagelCLexer', 'RagelDLexer',
 
 
 class RagelLexer(RegexLexer):
-    """A pure `Ragel <www.colm.net/open-source/ragel>`_ lexer.  Use this
-    for fragments of Ragel.  For ``.rl`` files, use
-    :class:`RagelEmbeddedLexer` instead (or one of the
-    language-specific subclasses).
+    """A pure `Ragel <www.colm.net/open-source/ragel>`_ lexer.
 
+    Use this for fragments of Ragel.  For ``.rl`` files, use
+    :class:`RagelEmbeddedLexer` instead (or one of the language-specific
+    subclasses).
     """
 
     name = 'Ragel'
@@ -109,7 +109,7 @@ class RagelLexer(RegexLexer):
                 r'"(\\\\|\\[^\\]|[^"\\])*"',
                 r"'(\\\\|\\[^\\]|[^'\\])*'",
                 r'//.*$\n?',            # single line comment
-                r'/\*(.|\n)*?\*/',      # multi-line javadoc-style comment
+                r'/\*[\s\S]*?\*/',      # multi-line javadoc-style comment
                 r'\#.*$\n?',            # ruby comment
 
                 # regular expression: There's no reason for it to start
@@ -149,7 +149,7 @@ class RagelEmbeddedLexer(RegexLexer):
                 # strings and comments may safely contain unsafe characters
                 r'"(\\\\|\\[^\\]|[^"\\])*"',
                 r"'(\\\\|\\[^\\]|[^'\\])*'",
-                r'/\*(.|\n)*?\*/',      # multi-line javadoc-style comment
+                r'/\*[\s\S]*?\*/',      # multi-line javadoc-style comment
                 r'//.*$\n?',  # single line comment
                 r'\#.*$\n?',  # ruby/ragel comment
                 r'/(?!\*)(\\\\|\\[^\\]|[^/\\])*/',  # regular expression
@@ -196,7 +196,7 @@ class RagelEmbeddedLexer(RegexLexer):
                 r'"(\\\\|\\[^\\]|[^"\\])*"',
                 r"'(\\\\|\\[^\\]|[^'\\])*'",
                 r"\[(\\\\|\\[^\\]|[^\]\\])*\]",  # square bracket literal
-                r'/\*(.|\n)*?\*/',          # multi-line javadoc-style comment
+                r'/\*[\s\S]*?\*/',          # multi-line javadoc-style comment
                 r'//.*$\n?',                # single line comment
                 r'\#.*$\n?',                # ruby/ragel comment
             )) + r')+', using(RagelLexer)),
@@ -342,7 +342,7 @@ class AntlrLexer(RegexLexer):
         ],
         'comments': [
             (r'//.*$', Comment),
-            (r'/\*(.|\n)*?\*/', Comment),
+            (r'/\*[\s\S]*?\*/', Comment),
         ],
         'root': [
             include('whitespace'),
@@ -457,7 +457,7 @@ class AntlrLexer(RegexLexer):
                 r'"(\\\\|\\[^\\]|[^"\\])*"',
                 r"'(\\\\|\\[^\\]|[^'\\])*'",
                 r'//.*$\n?',            # single line comment
-                r'/\*(.|\n)*?\*/',      # multi-line javadoc-style comment
+                r'/\*[\s\S]*?\*/',      # multi-line javadoc-style comment
 
                 # regular expression: There's no reason for it to start
                 # with a * and this stops confusion with comments.
@@ -484,7 +484,7 @@ class AntlrLexer(RegexLexer):
                 r'"(\\\\|\\[^\\]|[^"\\])*"',
                 r"'(\\\\|\\[^\\]|[^'\\])*'",
                 r'//.*$\n?',            # single line comment
-                r'/\*(.|\n)*?\*/',      # multi-line javadoc-style comment
+                r'/\*[\s\S]*?\*/',      # multi-line javadoc-style comment
 
                 # regular expression: There's no reason for it to start
                 # with a * and this stops confusion with comments.

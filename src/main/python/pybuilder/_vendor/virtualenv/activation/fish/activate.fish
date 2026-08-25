@@ -1,28 +1,10 @@
 # This file must be used using `source bin/activate.fish` *within a running fish ( http://fishshell.com ) session*.
 # Do not run it directly.
 
-function _bashify_path -d "Converts a fish path to something bash can recognize"
-    set fishy_path $argv
-    set bashy_path $fishy_path[1]
-    for path_part in $fishy_path[2..-1]
-        set bashy_path "$bashy_path:$path_part"
-    end
-    echo $bashy_path
-end
-
-function _fishify_path -d "Converts a bash path to something fish can recognize"
-    echo $argv | tr ':' '\n'
-end
-
 function deactivate -d 'Exit virtualenv mode and return to the normal environment.'
     # reset old environment variables
     if test -n "$_OLD_VIRTUAL_PATH"
-        # https://github.com/fish-shell/fish-shell/issues/436 altered PATH handling
-        if test (string sub -s 1 -l 1 $FISH_VERSION) -lt 3
-            set -gx PATH (_fishify_path "$_OLD_VIRTUAL_PATH")
-        else
-            set -gx PATH $_OLD_VIRTUAL_PATH
-        end
+        set -gx PATH $_OLD_VIRTUAL_PATH
         set -e _OLD_VIRTUAL_PATH
     end
 
@@ -43,20 +25,25 @@ function deactivate -d 'Exit virtualenv mode and return to the normal environmen
       end
     end
 
+    if test -n "$_OLD_PKG_CONFIG_PATH"
+        set -gx PKG_CONFIG_PATH "$_OLD_PKG_CONFIG_PATH"
+        set -e _OLD_PKG_CONFIG_PATH
+    end
+
     if test -n "$_OLD_VIRTUAL_PYTHONHOME"
         set -gx PYTHONHOME "$_OLD_VIRTUAL_PYTHONHOME"
         set -e _OLD_VIRTUAL_PYTHONHOME
     end
 
     if test -n "$_OLD_FISH_PROMPT_OVERRIDE"
-       and functions -q _old_fish_prompt
+       and builtin functions -q _old_fish_prompt
         # Set an empty local `$fish_function_path` to allow the removal of `fish_prompt` using `functions -e`.
         set -l fish_function_path
 
         # Erase virtualenv's `fish_prompt` and restore the original.
-        functions -e fish_prompt
-        functions -c _old_fish_prompt fish_prompt
-        functions -e _old_fish_prompt
+        builtin functions -e fish_prompt
+        builtin functions -c _old_fish_prompt fish_prompt
+        builtin functions -e _old_fish_prompt
         set -e _OLD_FISH_PROMPT_OVERRIDE
     end
 
@@ -65,10 +52,8 @@ function deactivate -d 'Exit virtualenv mode and return to the normal environmen
 
     if test "$argv[1]" != 'nondestructive'
         # Self-destruct!
-        functions -e pydoc
-        functions -e deactivate
-        functions -e _bashify_path
-        functions -e _fishify_path
+        builtin functions -e pydoc
+        builtin functions -e deactivate
     end
 end
 
@@ -76,13 +61,14 @@ end
 deactivate nondestructive
 
 set -gx VIRTUAL_ENV __VIRTUAL_ENV__
-
-# https://github.com/fish-shell/fish-shell/issues/436 altered PATH handling
-if test (string sub -s 1 -l 1 $FISH_VERSION) -lt 3
-    set -gx _OLD_VIRTUAL_PATH (_bashify_path $PATH)
-else
-    set -gx _OLD_VIRTUAL_PATH $PATH
+if string match -qr 'CYGWIN|MSYS|MINGW' (uname)
+    set -gx VIRTUAL_ENV (cygpath -u $VIRTUAL_ENV)
 end
+
+set -gx _OLD_PKG_CONFIG_PATH "$PKG_CONFIG_PATH"
+set -gx PKG_CONFIG_PATH "$VIRTUAL_ENV/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV"'/'__BIN_NAME__ $PATH
 
 if test -n __TCL_LIBRARY__
@@ -118,15 +104,20 @@ end
 
 if test -z "$VIRTUAL_ENV_DISABLE_PROMPT"
     # Copy the current `fish_prompt` function as `_old_fish_prompt`.
-    functions -c fish_prompt _old_fish_prompt
+    builtin functions -c fish_prompt _old_fish_prompt
 
+    # Route every builtin the prompt path uses through `builtin` so a user function that shadows
+    # `printf`, `string`, `echo`, or `source`/`.` cannot hijack the prompt (Issue #93858 follow-up,
+    # CPython gh-140006). A dot-style directory navigator redefining `.` is the common trigger.
     function fish_prompt
+        set -l old_status $status
         # Run the user's prompt first; it might depend on (pipe)status.
         set -l prompt (_old_fish_prompt)
 
-        printf '(%s) ' $VIRTUAL_ENV_PROMPT
+        builtin printf '(%s) ' $VIRTUAL_ENV_PROMPT
 
-        string join -- \n $prompt # handle multi-line prompts
+        builtin string join -- \n $prompt # handle multi-line prompts
+        builtin echo "exit $old_status" | builtin source -
     end
 
     set -gx _OLD_FISH_PROMPT_OVERRIDE "$VIRTUAL_ENV"

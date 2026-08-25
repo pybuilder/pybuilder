@@ -43,6 +43,7 @@ runs:
           inputs.with-homebrew == 'true' && runner.os == 'macOS' &&
           (contains(inputs.python-version, '-rc') ||
            contains(inputs.python-version, '-b') ||
+           contains(inputs.python-version, '-dev') ||
            contains(inputs.python-version, 'pypy-')
           )
          )

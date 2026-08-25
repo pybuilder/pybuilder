@@ -4,7 +4,7 @@
 
     Lexer for other PTX language.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -55,7 +55,7 @@ class PtxLexer(RegexLexer):
 
         ],
         'whitespace': [
-            (r'(\n|\s+)+', Whitespace),
+            (r'\s+', Whitespace),
             (r'//.*?\n', Comment)
         ],
 

@@ -29,10 +29,7 @@ from packaging.specifiers import SpecifierSet, InvalidSpecifier
 from packaging.utils import canonicalize_name
 from packaging.version import Version, InvalidVersion
 
-try:
-    import importlib.metadata as meta
-except ImportError:
-    import importlib_metadata as meta
+import importlib.metadata as meta
 
 __all__ = ["SpecifierSet", "InvalidSpecifier"]
 
@@ -89,7 +86,6 @@ class Distribution:
         def reqs_for_extra(extra):
             for req in reqs:
                 if not req.marker or req.marker.evaluate({'extra': extra}):
-                    req.project_name = req.name
                     yield req
 
         common = types.MappingProxyType(dict.fromkeys(reqs_for_extra(None)))

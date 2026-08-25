@@ -4,7 +4,7 @@
 
     Lexers for the Kuin language.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -302,8 +302,8 @@ class KuinLexer(RegexLexer):
             (r"'(?:\\.|.)+?'", String.Char),
 
             # Operator
-            (r'(?:\.|\$(?:>|<)?)', Operator),
-            (r'(?:\^)', Operator),
+            (r'(?:\.|\$[<>]?)', Operator),
+            (r'\^', Operator),
             (r'(?:\+|-|!|##?)', Operator),
             (r'(?:\*|/|%)', Operator),
             (r'(?:~)', Operator),

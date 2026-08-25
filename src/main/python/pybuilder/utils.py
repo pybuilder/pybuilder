@@ -35,10 +35,7 @@ from pybuilder.errors import MissingPrerequisiteException, PyBuilderException
 from pybuilder.python_utils import (is_string, which, makedirs,
                                     IS_WIN, iglob, escape)
 
-try:
-    from collections import abc
-except ImportError:
-    import collections as abc
+from collections import abc
 
 
 def get_all_dependencies_for_task(task):

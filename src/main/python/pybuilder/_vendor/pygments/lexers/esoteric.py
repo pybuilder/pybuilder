@@ -4,7 +4,7 @@
 
     Lexers for esoteric languages.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -121,7 +121,7 @@ class CAmkESLexer(RegexLexer):
 
             # Whitespace, comments
             (r'\s+', Whitespace),
-            (r'/\*(.|\n)*?\*/', Comment),
+            (r'/\*[\s\S]*?\*/', Comment),
             (r'//.*$', Comment),
 
             (r'[\[(){},.;\]]', Punctuation),
@@ -195,7 +195,7 @@ class CapDLLexer(RegexLexer):
 
             # Whitespace, comments
             (r'\s+', Whitespace),
-            (r'/\*(.|\n)*?\*/', Comment),
+            (r'/\*[\s\S]*?\*/', Comment),
             (r'(//|--).*$', Comment),
 
             (r'[<>\[(){},:;=\]]', Punctuation),
@@ -218,7 +218,7 @@ class CapDLLexer(RegexLexer):
 
             # Literals
             (r'0[xX][\da-fA-F]+', Number.Hex),
-            (r'\d+(\.\d+)?(k|M)?', Number),
+            (r'\d+(\.\d+)?[kM]?', Number),
             (words(('bits',), suffix=r'\b'), Number),
             (words(('cspace', 'vspace', 'reply_slot', 'caller_slot',
                     'ipc_buffer_slot'), suffix=r'\b'), Number),

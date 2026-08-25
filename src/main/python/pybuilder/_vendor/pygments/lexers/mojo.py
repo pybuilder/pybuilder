@@ -4,7 +4,7 @@
 
     Lexers for Mojo and related languages.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -101,11 +101,11 @@ class MojoLexer(RegexLexer):
         "root": [
             (r"\s+", Whitespace),
             (
-                r'^(\s*)([rRuUbB]{,2})("""(?:.|\n)*?""")',
+                r'^(\s*)([rRuUbB]{,2})("""[\s\S]*?""")',
                 bygroups(Whitespace, String.Affix, String.Doc),
             ),
             (
-                r"^(\s*)([rRuUbB]{,2})('''(?:.|\n)*?''')",
+                r"^(\s*)([rRuUbB]{,2})('''[\s\S]*?''')",
                 bygroups(Whitespace, String.Affix, String.Doc),
             ),
             (r"\A#!.+$", Comment.Hashbang),

@@ -18,10 +18,7 @@
 
 import unittest
 
-try:
-    from queue import Empty
-except ImportError:
-    from Queue import Empty
+from queue import Empty
 
 from test_utils import patch, Mock
 

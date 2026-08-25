@@ -4,7 +4,7 @@
 
     Lexers for "business-oriented" languages.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -87,7 +87,7 @@ class CobolLexer(RegexLexer):
             (words((
                 'ACCESS', 'ADDRESS', 'ADVANCING', 'AFTER', 'ALL',
                 'ALPHABET', 'ALPHABETIC', 'ALPHABETIC-LOWER', 'ALPHABETIC-UPPER',
-                'ALPHANUMERIC', 'ALPHANUMERIC-EDITED', 'ALSO', 'ALTER', 'ALTERNATE'
+                'ALPHANUMERIC', 'ALPHANUMERIC-EDITED', 'ALSO', 'ALTER', 'ALTERNATE',
                 'ANY', 'ARE', 'AREA', 'AREAS', 'ARGUMENT-NUMBER', 'ARGUMENT-VALUE', 'AS',
                 'ASCENDING', 'ASSIGN', 'AT', 'AUTO', 'AUTO-SKIP', 'AUTOMATIC',
                 'AUTOTERMINATE', 'BACKGROUND-COLOR', 'BASED', 'BEEP', 'BEFORE', 'BELL',
@@ -285,7 +285,7 @@ class ABAPLexer(RegexLexer):
             (r'(\s+)([\w\-]+)([=\-]>)([\w\-~]+)',
              bygroups(Whitespace, Name.Variable, Operator, Name.Function)),
             # call methodnames returning style
-            (r'(?<=(=|-)>)([\w\-~]+)(?=\()', Name.Function),
+            (r'(?<=[=-]>)([\w\-~]+)(?=\()', Name.Function),
 
             # text elements
             (r'(TEXT)(-)(\d{3})',

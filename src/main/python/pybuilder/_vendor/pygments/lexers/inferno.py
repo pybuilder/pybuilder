@@ -4,7 +4,7 @@
 
     Lexers for Inferno os and all the related stuff.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -38,7 +38,7 @@ class LimboLexer(RegexLexer):
              bygroups(Whitespace, Name.Label, Whitespace)),
             (r'\n', Whitespace),
             (r'\s+', Whitespace),
-            (r'#(\n|(.|\n)*?[^\\]\n)', Comment.Single),
+            (r'#(\n|[\s\S]*?[^\\]\n)', Comment.Single),
         ],
         'string': [
             (r'"', String, '#pop'),

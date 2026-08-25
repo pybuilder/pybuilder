@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2012 The Python Software Foundation.
+# Copyright (C) 2012-2026 The Python Software Foundation.
 # See LICENSE.txt and CONTRIBUTORS.txt.
 #
 """Implementation of the Metadata for Python packages PEPs.
 
-Supports all metadata formats (1.0, 1.1, 1.2, 1.3/2.1 and 2.2).
+Supports metadata formats 1.0, 1.1, 1.2, 1.3/2.1, 2.2, 2,3, 2.4, 2.5.
 """
 from __future__ import unicode_literals
 
@@ -85,9 +85,17 @@ _566_FIELDS = _426_FIELDS + ('Description-Content-Type', 'Requires', 'Provides',
 
 _566_MARKERS = ('Description-Content-Type', )
 
-_643_MARKERS = ('Dynamic', 'License-File')
+_643_MARKERS = ('Dynamic',)
 
 _643_FIELDS = _566_FIELDS + _643_MARKERS
+
+_639_MARKERS = ('License-Expression', 'License-File')
+
+_639_FIELDS = _643_FIELDS + _639_MARKERS
+
+_794_MARKERS = ('Import-Name', 'Import-Namespace')
+
+_794_FIELDS = _639_FIELDS + _794_MARKERS
 
 _ALL_FIELDS = set()
 _ALL_FIELDS.update(_241_FIELDS)
@@ -96,6 +104,8 @@ _ALL_FIELDS.update(_345_FIELDS)
 _ALL_FIELDS.update(_426_FIELDS)
 _ALL_FIELDS.update(_566_FIELDS)
 _ALL_FIELDS.update(_643_FIELDS)
+_ALL_FIELDS.update(_639_FIELDS)
+_ALL_FIELDS.update(_794_FIELDS)
 
 EXTRA_RE = re.compile(r'''extra\s*==\s*("([^"]+)"|'([^']+)')''')
 
@@ -113,8 +123,12 @@ def _version2fieldlist(version):
     elif version == '2.0':
         raise ValueError('Metadata 2.0 is withdrawn and not supported')
         # return _426_FIELDS
-    elif version == '2.2':
+    elif version in ('2.2', '2.3'):
         return _643_FIELDS
+    elif version == '2.4':
+        return _639_FIELDS
+    elif version == '2.5':
+        return _794_FIELDS
     raise MetadataUnrecognizedVersionError(version)
 
 
@@ -125,7 +139,7 @@ def _best_version(fields):
         return any(marker in keys for marker in markers)
 
     keys = [key for key, value in fields.items() if value not in ([], 'UNKNOWN', None)]
-    possible_versions = ['1.0', '1.1', '1.2', '1.3', '2.1', '2.2']  # 2.0 removed
+    possible_versions = ['1.0', '1.1', '1.2', '1.3', '2.1', '2.2', '2.4', '2.5']  # 2.0 removed
 
     # first let's try to see if a field is not part of one of the version
     for key in keys:
@@ -148,9 +162,13 @@ def _best_version(fields):
         if key not in _643_FIELDS and '2.2' in possible_versions:
             possible_versions.remove('2.2')
             logger.debug('Removed 2.2 due to %s', key)
-        # if key not in _426_FIELDS and '2.0' in possible_versions:
-        # possible_versions.remove('2.0')
-        # logger.debug('Removed 2.0 due to %s', key)
+        if key not in _639_FIELDS and '2.4' in possible_versions:
+            possible_versions.remove('2.4')
+            logger.debug('Removed 2.4 due to %s', key)
+        if key not in _794_FIELDS and '2.5' in possible_versions:
+            possible_versions.remove('2.5')
+            logger.debug('Removed 2.5 due to %s', key)
+
 
     # possible_version contains qualified versions
     if len(possible_versions) == 1:
@@ -165,16 +183,18 @@ def _best_version(fields):
     is_2_1 = '2.1' in possible_versions and _has_marker(keys, _566_MARKERS)
     # is_2_0 = '2.0' in possible_versions and _has_marker(keys, _426_MARKERS)
     is_2_2 = '2.2' in possible_versions and _has_marker(keys, _643_MARKERS)
-    if int(is_1_1) + int(is_1_2) + int(is_2_1) + int(is_2_2) > 1:
-        raise MetadataConflictError('You used incompatible 1.1/1.2/2.1/2.2 fields')
+    is_2_4 = '2.4' in possible_versions and _has_marker(keys, _639_MARKERS)
+    is_2_5 = '2.5' in possible_versions and _has_marker(keys, _794_MARKERS)
+    if int(is_1_1) + int(is_1_2) + int(is_2_1) + int(is_2_2) + int(is_2_4) + int(is_2_5) > 1:
+        raise MetadataConflictError('You used incompatible 1.1/1.2/2.1/2.2/2.4/2.5 fields')
 
-    # we have the choice, 1.0, or 1.2, 2.1 or 2.2
+    # we have the choice, 1.0, or 1.2, 2.1, 2.2, 2.4 or 2.5
     #   - 1.0 has a broken Summary field but works with all tools
     #   - 1.1 is to avoid
     #   - 1.2 fixes Summary but has little adoption
     #   - 2.1 adds more features
-    #   - 2.2 is the latest
-    if not is_1_1 and not is_1_2 and not is_2_1 and not is_2_2:
+    #   - 2.5 is the latest
+    if not (is_1_1 or is_1_2 or is_2_1 or is_2_2 or is_2_4 or is_2_5):
         # we couldn't find any specific marker
         if PKG_INFO_PREFERRED_VERSION in possible_versions:
             return PKG_INFO_PREFERRED_VERSION
@@ -184,10 +204,11 @@ def _best_version(fields):
         return '1.2'
     if is_2_1:
         return '2.1'
-    # if is_2_2:
-    # return '2.2'
-
-    return '2.2'
+    if is_2_2:
+        return '2.2'
+    if is_2_4:
+        return '2.4'
+    return '2.5'
 
 
 # This follows the rules about transforming keys as described in
@@ -200,7 +221,7 @@ _VERSIONS_FIELDS = ('Requires-Python', )
 _VERSION_FIELDS = ('Version', )
 _LISTFIELDS = ('Platform', 'Classifier', 'Obsoletes', 'Requires', 'Provides', 'Obsoletes-Dist', 'Provides-Dist',
                'Requires-Dist', 'Requires-External', 'Project-URL', 'Supported-Platform', 'Setup-Requires-Dist',
-               'Provides-Extra', 'Extension', 'License-File')
+               'Provides-Extra', 'Extension', 'License-File', 'Import-Name', 'Import-Namespace')
 _LISTTUPLEFIELDS = ('Project-URL', )
 
 _ELEMENTSFIELD = ('Keywords', )

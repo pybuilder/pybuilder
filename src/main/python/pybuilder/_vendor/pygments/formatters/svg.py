@@ -4,24 +4,15 @@
 
     Formatter for SVG output.
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
 from pygments.formatter import Formatter
 from pygments.token import Comment
-from pygments.util import get_bool_opt, get_int_opt
+from pygments.util import get_bool_opt, get_int_opt, html_escape
 
 __all__ = ['SvgFormatter']
-
-
-def escape_html(text):
-    """Escape &, <, > as well as single and double quotes for HTML."""
-    return text.replace('&', '&amp;').  \
-                replace('<', '&lt;').   \
-                replace('>', '&gt;').   \
-                replace('"', '&quot;'). \
-                replace("'", '&#39;')
 
 
 class2style = {}
@@ -148,7 +139,7 @@ class SvgFormatter(Formatter):
             style = self._get_style(ttype)
             tspan = style and '<tspan' + style + '>' or ''
             tspanend = tspan and '</tspan>' or ''
-            value = escape_html(value)
+            value = html_escape(value)
             if self.spacehack:
                 value = value.expandtabs().replace(' ', '&#160;')
             parts = value.split('\n')

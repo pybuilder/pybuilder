@@ -16,7 +16,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import sys
 import textwrap
 import unittest
 
@@ -25,10 +24,6 @@ from itest_support import IntegrationTestSupport
 
 class Issue807Test(IntegrationTestSupport):
     def test(self):
-        if sys.version_info[:2] < (3, 8):
-            # importlib.metadata does not exist before Python 3.8
-            return
-
         self.write_build_file("""
 from pybuilder.core import use_plugin, init
 

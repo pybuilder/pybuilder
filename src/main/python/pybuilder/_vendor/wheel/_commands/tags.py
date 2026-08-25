@@ -3,10 +3,14 @@ from __future__ import annotations
 import email.policy
 import itertools
 import os
+import struct
 from collections.abc import Iterable
 from email.parser import BytesParser
 
 from ..wheelfile import WheelFile
+
+# Header ID of the ZIP64 extended information extra field.
+_ZIP64_EXTRA_ID = 0x0001
 
 
 def _compute_tags(original_tags: Iterable[str], new_tags: str | None) -> set[str]:
@@ -21,6 +25,26 @@ def _compute_tags(original_tags: Iterable[str], new_tags: str | None) -> set[str
         return set(original_tags) - set(new_tags[1:].split("."))
 
     return set(new_tags.split("."))
+
+
+def _strip_zip64_extra(extra: bytes) -> bytes:
+    """Drop the ZIP64 extra field copied from a central-directory entry.
+
+    The ZIP64 field encodes the local-header offset, which is meaningful only
+    in the central directory. Keeping it in a local header produces an invalid
+    archive; removing it lets zipfile regenerate a correct field when needed.
+    """
+    kept: list[bytes] = []
+    while len(extra) >= 4:
+        field_id, field_size = struct.unpack("<HH", extra[:4])
+        field_end = 4 + field_size
+        if field_id != _ZIP64_EXTRA_ID:
+            kept.append(extra[:field_end])
+
+        extra = extra[field_end:]
+
+    kept.append(extra)
+    return b"".join(kept)
 
 
 def tags(
@@ -127,6 +151,7 @@ def tags(
             for item in fin.infolist():
                 if item.is_dir():
                     continue
+                item.extra = _strip_zip64_extra(item.extra)
                 if item.filename == f.dist_info_path + "/RECORD":
                     continue
                 if item.filename == f.dist_info_path + "/WHEEL":

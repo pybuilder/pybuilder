@@ -4,7 +4,7 @@
 
     Lexers for JSX (React) and TSX (TypeScript flavor).
 
-    :copyright: Copyright 2006-2025 by the Pygments team, see AUTHORS.
+    :copyright: Copyright 2006-present by the Pygments team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
@@ -74,6 +74,7 @@ class JsxLexer(JavascriptLexer):
         "root": [
             include("jsx"),
             inherit,
+            (r"'", Text),
         ],
     **_JSX_RULES}
 
@@ -96,5 +97,6 @@ class TsxLexer(TypeScriptLexer):
         "root": [
             include("jsx"),
             inherit,
+            (r"'", Text),
         ],
     **_JSX_RULES}

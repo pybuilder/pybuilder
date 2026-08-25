@@ -129,7 +129,7 @@ class SphinxBuildCommandTests(TestCase):
         self.reactor.pybuilder_venv = pyb_env
 
         pyb_env.execute_command.return_value = 0
-        pyb_env.version = (2, 7, 12, 'final', 0)
+        pyb_env.version = (3, 10, 0, 'final', 0)
         pyb_env.executable = ["/a/b"]
         pyb_env.exec_dir = "/a"
 
@@ -266,16 +266,6 @@ class SphinxBuildCommandTests(TestCase):
                              [ANY,
                               "-H",
                               "project_name",
-                              "-o",
-                              np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc")),
-                              np(jp(self.project.basedir, "dir_source"))
-                              ]
-                             )
-            self.reactor.pybuilder_venv.version = (3, 5, 6, 'final', 0)
-            self.assertEqual(get_sphinx_apidoc_command(self.project, self.reactor),
-                             [ANY,
-                              "-H",
-                              "project_name",
                               "--implicit-namespaces",
                               "-o",
                               np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc")),
@@ -369,7 +359,8 @@ from sphinx_pyb_conf import *
             "\nimport sys\nsys.path.insert(0, %r)\n" % np(jp(self.project.basedir, "dir_source")))], any_order=True)
         self.pyb_env.execute_command.assert_has_calls([
             call(self.reactor.pybuilder_venv.executable + ["-c", ANY,
-                                                           "-H", "project_name", "-o",
+                                                           "-H", "project_name",
+                                                           "--implicit-namespaces", "-o",
                                                            np(jp(self.project.basedir, "dir_target/sphinx_pyb/apidoc")),
                                                            np(jp(self.project.basedir, "dir_source"))],
                  np(jp(self.project.basedir, "dir_target/reports/sphinx-apidoc")), shell=False),
