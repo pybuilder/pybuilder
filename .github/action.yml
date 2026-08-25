@@ -33,7 +33,7 @@ runs:
     - name: Generate Release Token
       id: release-token
       if: inputs.release-app-id != '' && inputs.release-app-private-key != ''
-      uses: actions/create-github-app-token@v2
+      uses: actions/create-github-app-token@v3
       with:
         app-id: ${{ inputs.release-app-id }}
         private-key: ${{ inputs.release-app-private-key }}
