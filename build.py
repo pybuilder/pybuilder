@@ -46,6 +46,7 @@ if sys.platform != "win32":
 use_plugin("python.integrationtest")
 use_plugin("python.coverage")
 use_plugin("python.coveralls")
+use_plugin("python.mypy")
 use_plugin("python.flake8")
 use_plugin("filter_resources")
 
@@ -133,6 +134,11 @@ def initialize(project):
         project.expand_path("$dir_source_main_python", "pybuilder/_vendor/*")
     ]))
     project.set_property("flake8_max_line_length", 130)
+
+    project.set_property("mypy_break_build", False)
+    project.set_property("mypy_include_test_sources", True)
+    project.set_property("mypy_include_scripts", False)
+    project.set_property("mypy_exclude_patterns", "pybuilder/_vendor")
 
     project.set_property("frosted_include_test_sources", True)
     project.set_property("frosted_include_scripts", True)
