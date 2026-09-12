@@ -310,25 +310,36 @@ class Dependency(object):
         self.url = url
         self.declaration_only = declaration_only
         self.eager_update = eager_update
-        self.extra = extra
+        self.extra = pip_common.safe_extra(extra) if extra is not None else None
         self.markers = markers
+        # Markers participate in identity, so that the same distribution may be declared more than
+        # once under mutually exclusive conditions. Compared in canonical form so that expressions
+        # differing only in quoting or whitespace are one declaration rather than two.
+        self.markers_key = pip_common.normalize_markers(markers)
 
     def __eq__(self, other):
         if not isinstance(other, Dependency):
             return False
         return (self.name == other.name and self.version == other.version
-                and self.url == other.url and self.extra == other.extra)
+                and self.url == other.url and self.extra == other.extra
+                and self.markers_key == other.markers_key)
 
     def __ne__(self, other):
         return not (self == other)
 
     def __hash__(self):
-        return 13 * hash(self.name) + 17 * hash(self.version) + 19 * hash(self.extra)
+        return (13 * hash(self.name) + 17 * hash(self.version) + 19 * hash(self.extra)
+                + 23 * hash(self.markers_key))
 
     def __lt__(self, other):
         if not isinstance(other, Dependency):
             return True
-        return self.name < other.name
+        return self._sort_key() < other._sort_key()
+
+    def _sort_key(self):
+        # A name alone is no longer a unique key, so everything that participates in identity
+        # participates in ordering too, keeping generated output stable across builds.
+        return (self.name, self.version or "", self.extra or "", self.markers_key or "")
 
     def __str__(self):
         return self.name
@@ -431,6 +442,84 @@ class PluginDef:
         return self._val.__hash__()
 
 
+def _applicable_dependencies(dependencies, marker_env):
+    """Dependencies whose environment markers hold in the given marker environment.
+
+    A dependency belonging to an extras group is evaluated with the PEP 508 `extra` variable bound
+    to that group, which is what makes `extra == "security"` markers resolvable.
+    """
+    from pybuilder import pip_common
+
+    return [dependency for dependency in dependencies
+            if pip_common.markers_apply(getattr(dependency, "markers", None), marker_env,
+                                        getattr(dependency, "extra", None))]
+
+
+def _duplicated_dependency_names(dependencies, marker_env):
+    """Names declared more than once in a way that no environment can satisfy: either more than one
+    declaration applies here, or two declarations carry the same condition and so can never be told
+    apart. Declarations with mutually exclusive markers are legitimate and are not reported.
+    """
+    from pybuilder import pip_common
+
+    dependencies_by_name = OrderedDict()
+    for dependency in dependencies:
+        dependencies_by_name.setdefault(pip_common.canonicalize_name(dependency.name), []).append(dependency)
+
+    result = []
+    for candidates in dependencies_by_name.values():
+        if len(candidates) < 2:
+            continue
+        markers_keys = [getattr(dependency, "markers_key", None) for dependency in candidates]
+        if (len(_applicable_dependencies(candidates, marker_env)) > 1
+                or len(set(markers_keys)) < len(markers_keys)):
+            result.append(candidates[0].name)
+
+    return result
+
+
+def _dependency_origin(dependency, capitalized=False):
+    extra = getattr(dependency, "extra", None)
+    origin = "runtime dependency" if extra is None else "extra '%s' dependency" % extra
+    return origin[0].upper() + origin[1:] if capitalized else origin
+
+
+def _dependency_spec(dependency):
+    return "%s%s" % (dependency.name, dependency.version or "")
+
+
+def _conflicting_dependency_messages(dependencies, marker_env):
+    """Report same-name dependencies drawn from different buckets - the base requirements and the
+    selected extras groups - whose specifiers cannot both be satisfied in this environment.
+
+    Duplicates within one bucket are a declaration error reported separately; across buckets only a
+    provable conflict is an error, so that an extra may legitimately tighten a base requirement.
+    """
+    from pybuilder import pip_common
+
+    dependencies_by_name = OrderedDict()
+    for dependency in _applicable_dependencies(dependencies, marker_env):
+        if not isinstance(dependency, Dependency):
+            continue
+        dependencies_by_name.setdefault(pip_common.canonicalize_name(dependency.name), []).append(dependency)
+
+    result = []
+    for candidates in dependencies_by_name.values():
+        if len(candidates) < 2:
+            continue
+        candidates = sorted(candidates)
+        for index, left in enumerate(candidates):
+            for right in candidates[index + 1:]:
+                if left.extra == right.extra:
+                    continue
+                if pip_common.specifiers_conflict(left.version, right.version):
+                    result.append("%s '%s' conflicts with %s '%s' in this environment." %
+                                  (_dependency_origin(left, capitalized=True), _dependency_spec(left),
+                                   _dependency_origin(right), _dependency_spec(right)))
+
+    return result
+
+
 class Project(object):
     """
     Descriptor for a project to be built. A project has a number of attributes
@@ -531,40 +620,39 @@ class Project(object):
         return result
 
     def validate_dependencies(self):
+        from pybuilder import pip_common
+
+        # Validation runs before any target venv exists, so markers are evaluated against the
+        # interpreter running the build - which is the interpreter every venv is created from.
+        marker_env = pip_common.default_environment()
+        extras = self.extras_dependencies
         result = []
 
-        build_dependencies_found = {}
+        for name in _duplicated_dependency_names(self.build_dependencies, marker_env):
+            result.append("Build dependency '%s' has been defined multiple times." % name)
 
-        for dependency in self.build_dependencies:
-            if dependency.name in build_dependencies_found:
-                if build_dependencies_found[dependency.name] == 1:
-                    result.append("Build dependency '%s' has been defined multiple times." % dependency.name)
-                build_dependencies_found[dependency.name] += 1
-            else:
-                build_dependencies_found[dependency.name] = 1
+        for name in _duplicated_dependency_names(self.base_dependencies, marker_env):
+            result.append("Runtime dependency '%s' has been defined multiple times." % name)
 
-        runtime_dependencies_found = {}
-
-        for dependency in self.dependencies:
-            if dependency.name in runtime_dependencies_found:
-                if runtime_dependencies_found[dependency.name] == 1:
-                    result.append("Runtime dependency '%s' has been defined multiple times." % dependency.name)
-                runtime_dependencies_found[dependency.name] += 1
-            else:
-                runtime_dependencies_found[dependency.name] = 1
-            if dependency.name in build_dependencies_found:
+        live_build_dependencies = {pip_common.canonicalize_name(d.name): d
+                                   for d in _applicable_dependencies(self.build_dependencies, marker_env)}
+        for dependency in _applicable_dependencies(self.dependencies, marker_env):
+            if pip_common.canonicalize_name(dependency.name) in live_build_dependencies:
                 result.append("Runtime dependency '%s' has also been given as build dependency." % dependency.name)
 
-        for extra_name, deps in self.extras_dependencies.items():
-            extra_deps_found = {}
-            for dependency in deps:
-                if dependency.name in extra_deps_found:
-                    if extra_deps_found[dependency.name] == 1:
-                        result.append("Extra '%s' dependency '%s' has been defined multiple times." %
-                                      (extra_name, dependency.name))
-                    extra_deps_found[dependency.name] += 1
-                else:
-                    extra_deps_found[dependency.name] = 1
+        for extra_name, extra_dependencies in extras.items():
+            for name in _duplicated_dependency_names(extra_dependencies, marker_env):
+                result.append("Extra '%s' dependency '%s' has been defined multiple times." % (extra_name, name))
+
+        result.extend(_conflicting_dependency_messages(self.dependencies, marker_env))
+
+        for extra_name in self.selected_extras:
+            if extra_name not in extras:
+                declared = sorted(extras.keys())
+                result.append("Extra '%s' selected by 'install_dependencies_extras' is not declared by this "
+                              "project. %s" % (extra_name,
+                                               ("Declared extras are: %s." % ", ".join(declared)) if declared
+                                               else "This project declares no extras."))
 
         return result
 
@@ -575,8 +663,43 @@ class Project(object):
         return result
 
     @property
-    def dependencies(self):
+    def base_dependencies(self):
+        """Runtime dependencies declared without an extras group.
+
+        This is what is published as the distribution's mandatory requirements; a build-time
+        decision to install an extra must never reach it.
+        """
         return list(sorted(d for d in self._install_dependencies if getattr(d, 'extra', None) is None))
+
+    @property
+    def selected_extras(self):
+        """Normalized names of the extras groups selected by the `install_dependencies_extras`
+        property. Unknown names are retained here and reported by `validate`.
+        """
+        from pybuilder import pip_common
+
+        selection = self.get_property("install_dependencies_extras")
+        if not selection:
+            return []
+
+        selection = as_list(selection)
+        if "*" in selection:
+            return list(self.extras_dependencies.keys())
+
+        return [pip_common.safe_extra(extra_name) for extra_name in selection]
+
+    @property
+    def dependencies(self):
+        """Runtime dependencies to install: the base ones plus every selected extras group."""
+        selected = self.selected_extras
+        if not selected:
+            return self.base_dependencies
+
+        extras = self.extras_dependencies
+        result = self.base_dependencies
+        for extra_name in selected:
+            result.extend(extras.get(extra_name, ()))
+        return list(sorted(result))
 
     @property
     def build_dependencies(self):

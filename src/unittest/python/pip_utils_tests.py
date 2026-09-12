@@ -16,13 +16,42 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import os
+import shutil
+import tempfile
 import unittest
+from os.path import join as jp
 
 from pybuilder import extern, core
 from pybuilder import pip_utils
+from pybuilder.pip_common import UnknownExtra, WorkingSet
 from test_utils import ANY, Mock
 
 _extern = extern
+
+CPYTHON_MARKER_ENV = {"platform_python_implementation": "CPython",
+                      "python_version": "3.13",
+                      "sys_platform": "linux",
+                      }
+PYPY_MARKER_ENV = {"platform_python_implementation": "PyPy",
+                   "python_version": "3.11",
+                   "sys_platform": "linux",
+                   }
+
+
+def write_dist_info(site_dir, name, version, requires=(), provides_extras=()):
+    dist_info = jp(site_dir, "%s-%s.dist-info" % (name, version))
+    os.makedirs(dist_info)
+    with open(jp(dist_info, "METADATA"), "wt") as metadata:
+        metadata.write("Metadata-Version: 2.1\n")
+        metadata.write("Name: %s\n" % name)
+        metadata.write("Version: %s\n" % version)
+        for extra in provides_extras:
+            metadata.write("Provides-Extra: %s\n" % extra)
+        for requirement in requires:
+            metadata.write("Requires-Dist: %s\n" % requirement)
+        metadata.write("\n")
+    return dist_info
 
 
 class PipVersionTests(unittest.TestCase):
@@ -143,3 +172,61 @@ class PipUtilsTests(unittest.TestCase):
         python_env.execute_command.assert_called_once_with(ANY, cwd=None, env=env_dict, error_file_name=None,
                                                            outfile_name=None,
                                                            shell=False, no_path_search=True)
+
+
+class GetPackagesInfoTests(unittest.TestCase):
+    def setUp(self):
+        self.site_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.site_dir, True)
+
+        write_dist_info(self.site_dir, "aiohttp", "3.14.1",
+                        requires=["multidict>=4.5",
+                                  "yarl>=1.17",
+                                  'aiodns>=3.3.0; extra == "speedups"',
+                                  'brotli; platform_python_implementation == "CPython" and extra == "speedups"',
+                                  'brotlicffi; platform_python_implementation != "CPython" and extra == "speedups"',
+                                  'sphinx; extra == "Docs Only"',
+                                  ],
+                        provides_extras=["speedups", "Docs Only"])
+        write_dist_info(self.site_dir, "multidict", "6.0.0")
+        write_dist_info(self.site_dir, "yarl", "1.18.0")
+
+    def packages(self, marker_env=CPYTHON_MARKER_ENV):
+        return pip_utils.get_packages_info([self.site_dir], marker_env=marker_env)
+
+    def test_should_report_every_installed_distribution(self):
+        # The vendor importer makes PyBuilder's own vendored distributions visible to any discovery,
+        # so the result is a superset of what was installed into the entry path under test.
+        packages = self.packages()
+
+        for name in ("aiohttp", "multidict", "yarl"):
+            self.assertIn(name, packages)
+        self.assertEqual("3.14.1", packages["aiohttp"].version)
+        self.assertEqual("6.0.0", packages["multidict"].version)
+
+    def test_should_report_only_unconditional_requirements_as_requires(self):
+        self.assertEqual(["multidict", "yarl"], sorted(self.packages()["aiohttp"].requires))
+
+    def test_should_report_requirements_of_each_declared_extra(self):
+        extra_requires = self.packages()["aiohttp"].extra_requires
+
+        self.assertEqual(["docs_only", "speedups"], sorted(extra_requires))
+        self.assertEqual(["aiodns", "brotli"], sorted(extra_requires["speedups"]))
+        self.assertEqual(["sphinx"], sorted(extra_requires["docs_only"]))
+
+    def test_should_resolve_extra_requirements_against_the_given_marker_environment(self):
+        cpython = self.packages(CPYTHON_MARKER_ENV)["aiohttp"].extra_requires
+        pypy = self.packages(PYPY_MARKER_ENV)["aiohttp"].extra_requires
+
+        self.assertEqual(["aiodns", "brotli"], sorted(cpython["speedups"]))
+        self.assertEqual(["aiodns", "brotlicffi"], sorted(pypy["speedups"]))
+
+    def test_should_report_no_extras_for_a_distribution_declaring_none(self):
+        self.assertEqual({}, self.packages()["multidict"].extra_requires)
+
+    def test_should_reject_an_extra_the_distribution_does_not_provide(self):
+        aiohttp = [dist for dist in WorkingSet([self.site_dir], CPYTHON_MARKER_ENV)
+                   if dist.project_name == "aiohttp"][0]
+
+        self.assertEqual(["aiodns", "brotli"], sorted(r.name for r in aiohttp.extra_requires("speedups")))
+        self.assertRaises(UnknownExtra, aiohttp.extra_requires, "telemetry")

@@ -17,11 +17,16 @@
 #   limitations under the License.
 
 import os
+import platform
 import shutil
+import sys
 import tempfile
 import unittest
-from os.path import join as jp, exists
+from os.path import join as jp, exists, dirname
 
+import pybuilder._vendor
+from pybuilder import extern
+from pybuilder.pip_common import default_environment
 from pybuilder.plugins.python._coverage_util import (COVERAGE_PROCESS_CONFIG_ENV,
                                                      PYB_COVERAGE_PROCESS_CONFIG_ENV,
                                                      BOOTSTRAP_MODULE_NAME,
@@ -30,6 +35,8 @@ from pybuilder.plugins.python._coverage_util import (COVERAGE_PROCESS_CONFIG_ENV
                                                      )
 from pybuilder.python_env import PythonEnv, PythonEnvRegistry
 from test_utils import patch, Mock
+
+_extern = extern
 
 COVERAGE_ENV = {COVERAGE_PROCESS_CONFIG_ENV: "serialized-config",
                 PYB_COVERAGE_PROCESS_CONFIG_ENV: "{'cov_source_path': 'src'}",
@@ -106,6 +113,45 @@ class PythonEnvCoverageBootstrapTests(unittest.TestCase):
         for site_path in self.site_paths:
             self._assert_planted(site_path)
         self.assertFalse(exists(missing))
+
+
+class PythonEnvMarkerEnvTests(unittest.TestCase):
+    def setUp(self):
+        self.python_env = PythonEnv(sys.exec_prefix, Mock()).populate()
+
+    def test_should_probe_every_marker_variable_of_the_target_interpreter(self):
+        self.assertEqual(sorted(default_environment()), sorted(self.python_env.marker_env))
+
+    def test_should_probe_marker_values_of_the_target_interpreter(self):
+        marker_env = self.python_env.marker_env
+
+        self.assertEqual(platform.system(), marker_env["platform_system"])
+        self.assertEqual(sys.platform, marker_env["sys_platform"])
+        self.assertEqual(".".join(platform.python_version_tuple()[:2]), marker_env["python_version"])
+        self.assertEqual(platform.python_implementation(), marker_env["platform_python_implementation"])
+
+    def test_should_return_marker_variables_as_plain_strings(self):
+        for name, value in self.python_env.marker_env.items():
+            self.assertIsInstance(value, str, "marker variable %r is not a string" % name)
+
+    def test_should_not_leak_the_vendor_directory_into_the_probed_environment(self):
+        # The vendored packaging reaches the probe as an argument rather than on PYTHONPATH,
+        # because what the probe captures is reused for every later command run in this
+        # environment. Only PYTHONPATH can carry that leak; other variables may name the
+        # vendor directory for reasons of their own, as the coverage hand-off does.
+        vendor_dir = dirname(pybuilder._vendor.__file__)
+        python_path = self.python_env.environ.get("PYTHONPATH", "")
+
+        self.assertNotIn(vendor_dir, python_path.split(os.pathsep))
+        self.assertEqual(os.environ.get("PYTHONPATH", ""), python_path)
+
+    def test_should_reject_overwriting_an_unknown_property(self):
+        self.assertRaises(KeyError, self.python_env.overwrite, "not_a_property", {})
+
+    def test_should_allow_overwriting_the_marker_environment(self):
+        self.python_env.overwrite("marker_env", {"sys_platform": "win32", "os_name": "nt"})
+
+        self.assertEqual({"sys_platform": "win32", "os_name": "nt"}, self.python_env.marker_env)
 
 
 class PythonEnvRegistryTests(unittest.TestCase):

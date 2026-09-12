@@ -30,6 +30,10 @@ from pybuilder.utils import assert_can_execute, execute_command, jp, np
 __all__ = ["PythonEnv", "PythonEnvRegistry"]
 
 _PYTHON_INFO_SCRIPT = """import platform, sys, os, sysconfig
+sys.path.insert(0, sys.argv[1])
+from packaging.markers import default_environment
+del sys.path[0]
+_marker_env = dict(default_environment())
 _base_executable = getattr(sys, "_base_executable", None)
 _sys_executable = sys.executable
 _executable = sys.executable
@@ -55,12 +59,13 @@ print({
                                   "t" if _free_threaded else "",
                                   "-debug" if hasattr(sys, "abiflags") and "d" in sys.abiflags else ""),
 "_environ": dict(os.environ),
+"_marker_env": _marker_env,
 "_darwin_python_framework": sysconfig.get_config_var("PYTHONFRAMEWORK")
 })
 """
 
 _FIELDS = {"platform", "executable", "name", "type", "version", "env_dir", "versioned_dir_name", "os_name",
-           "site_paths", "is_pypy", "is_64bit", "environ", "exec_dir"}
+           "site_paths", "is_pypy", "is_64bit", "environ", "exec_dir", "marker_env"}
 
 
 class PythonEnv(object):
@@ -87,7 +92,11 @@ class PythonEnv(object):
         self._check_populated()
 
         python_exec_path = _venv_python_executable(self._env_dir, self._platform)
-        result = subprocess.check_output([python_exec_path, "-c", _PYTHON_INFO_SCRIPT], universal_newlines=True)
+        # The vendor directory travels as an argument rather than on PYTHONPATH: the probe captures
+        # os.environ verbatim and PyBuilder reuses that capture for every later command run in this
+        # environment, so anything put on PYTHONPATH here would leak into all of them.
+        result = subprocess.check_output([python_exec_path, "-c", _PYTHON_INFO_SCRIPT, _vendor_dir()],
+                                         universal_newlines=True)
         python_info = ast.literal_eval(result)
 
         for k, v in python_info.items():
@@ -202,6 +211,16 @@ class PythonEnv(object):
     def environ(self):
         self._check_not_populated()
         return dict(self._environ)
+
+    @property
+    def marker_env(self):
+        """PEP 508 marker variables of this interpreter, as `packaging` reports them.
+
+        This is the environment a dependency's markers must be evaluated against to decide whether
+        it applies to this venv, rather than to the interpreter running the build.
+        """
+        self._check_not_populated()
+        return dict(self._marker_env)
 
     def overwrite(self, prop, value):
         if prop not in _FIELDS:
@@ -482,6 +501,13 @@ _windows_exec_candidates = (lambda env_dir: jp(env_dir, "Scripts", _venv_python_
                             lambda env_dir: jp(env_dir, "Scripts", "python.exe"),
                             lambda env_dir: jp(env_dir, "python.exe"),
                             )
+
+
+def _vendor_dir():
+    """Directory to add to a probe's sys.path so that it can import PyBuilder's vendored packages"""
+    import pybuilder._vendor
+
+    return np(os.path.dirname(pybuilder._vendor.__file__))
 
 
 def _venv_python_executable(env_dir, platform):

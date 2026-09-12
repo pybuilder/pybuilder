@@ -23,6 +23,7 @@ except NameError:
 
     TYPE_FILE = FileIO
 
+import ast
 import unittest
 
 from pybuilder.core import Project, Author, Logger
@@ -234,6 +235,77 @@ class ExtrasRequireTest(unittest.TestCase):
         self.project.depends_on("pywin32", ">=300", markers="sys_platform == 'win32'")
         result = build_install_dependencies_string(self.project)
         self.assertIn("pywin32>=300; sys_platform == 'win32'", result)
+
+    def test_should_include_extras_of_a_dependency_in_install_dependencies(self):
+        self.project.depends_on("spam[security]", ">=0.7")
+        self.project.depends_on("eggs[speedups,docs]")
+
+        result = build_install_dependencies_string(self.project)
+
+        self.assertIn("spam[security]>=0.7", result)
+        self.assertRegex(result, r"eggs\[(speedups,docs|docs,speedups)\]")
+
+    def test_should_include_extras_of_a_dependency_in_extras_require(self):
+        self.project.depends_on("spam[security]", ">=0.7", extra="dev")
+        self.project.depends_on("eggs", extra="dev")
+
+        result = build_extras_require_string(self.project)
+
+        self.assertIn("spam[security]>=0.7", result)
+        self.assertIn("'eggs'", result)
+
+    def test_should_not_include_selected_extras_in_install_dependencies(self):
+        self.project.depends_on("spam")
+        self.project.depends_on("ham")
+        self.project.depends_on("eggs", extra="dev")
+        self.project.depends_on("cheese", extra="dev")
+        self.project.set_property("install_dependencies_extras", "*")
+
+        result = build_install_dependencies_string(self.project)
+
+        self.assertIn("'spam'", result)
+        self.assertIn("'ham'", result)
+        self.assertNotIn("eggs", result)
+        self.assertNotIn("cheese", result)
+
+    def test_should_render_a_single_quoted_marker_as_valid_python(self):
+        self.project.depends_on("pywin32", ">=300", markers="sys_platform == 'win32'")
+
+        rendered = build_install_dependencies_string(self.project)
+
+        self.assertEqual(["pywin32>=300; sys_platform == 'win32'"], ast.literal_eval(rendered))
+
+    def test_should_render_several_quoted_markers_as_valid_python(self):
+        self.project.depends_on("numpy", "==1.26.4", markers="python_version < '3.12'")
+        self.project.depends_on("numpy", "==2.1.0", markers="python_version >= '3.12'")
+
+        rendered = build_install_dependencies_string(self.project)
+
+        self.assertEqual(["numpy==1.26.4; python_version < '3.12'",
+                          "numpy==2.1.0; python_version >= '3.12'"],
+                         sorted(ast.literal_eval(rendered)))
+
+    def test_should_render_quoted_markers_in_extras_require_as_valid_python(self):
+        self.project.depends_on("pywin32", ">=300", extra="windows", markers="sys_platform == 'win32'")
+        self.project.depends_on("wmi", extra="windows", markers="sys_platform == 'win32'")
+
+        rendered = build_extras_require_string(self.project)
+
+        self.assertEqual({"windows": ["pywin32>=300; sys_platform == 'win32'",
+                                      "wmi; sys_platform == 'win32'"]},
+                         ast.literal_eval(rendered))
+
+    def test_should_not_include_selected_extras_in_dependency_links(self):
+        self.project.depends_on("spam", url="https://example.org/spam.tar.gz")
+        self.project.depends_on("ham", url="https://example.org/ham.tar.gz")
+        self.project.depends_on("eggs", url="https://example.org/eggs.tar.gz", extra="dev")
+        self.project.set_property("install_dependencies_extras", "*")
+
+        result = build_dependency_links_string(self.project)
+
+        self.assertIn("https://example.org/spam.tar.gz", result)
+        self.assertIn("https://example.org/ham.tar.gz", result)
+        self.assertNotIn("eggs", result)
 
 
 class DependencyLinksTest(unittest.TestCase):

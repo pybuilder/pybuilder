@@ -54,6 +54,8 @@ def init_python_directories(project):
     project.set_property_if_unset("install_dependencies_extra_index_url", None)
     project.set_property_if_unset("install_dependencies_trusted_host", None)
     project.set_property_if_unset("install_dependencies_constraints", "constraints_file")
+    # Also declared by initialize_install_dependencies_plugin; create_venvs below needs it from here
+    project.set_property_if_unset("install_dependencies_extras", [])
     # Deprecated - has no effect
     project.set_property_if_unset("install_dependencies_upgrade", False)
     project.set_property_if_unset("install_dependencies_insecure_installation", [])

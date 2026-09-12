@@ -457,6 +457,7 @@ def _serialize_dependency(dep):
         "version": dep.version,
         "url": dep.url,
         "extras": dep.extras,
+        "extra": dep.extra,
         "markers": dep.markers,
         "declaration_only": dep.declaration_only,
         "type": "dependency"

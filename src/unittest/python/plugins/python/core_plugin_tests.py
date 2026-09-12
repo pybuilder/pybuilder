@@ -24,8 +24,8 @@ from pybuilder.plugins.python.core_plugin import (DISTRIBUTION_PROPERTY,
                                                   PYTHON_SOURCES_PROPERTY,
                                                   SCRIPTS_SOURCES_PROPERTY,
                                                   SCRIPTS_TARGET_PROPERTY)
-from pybuilder.plugins.python.core_plugin import init_python_directories
-from test_utils import patch
+from pybuilder.plugins.python.core_plugin import init_python_directories, create_venvs
+from test_utils import patch, Mock
 
 
 class InitPythonDirectoriesTest(unittest.TestCase):
@@ -138,3 +138,58 @@ class InitPythonDirectoriesTest(unittest.TestCase):
         init_python_directories(self.project)
         self.assertEqual("$dir_target/dist/.-1.0.dev0",
                          self.project.get_property(DISTRIBUTION_PROPERTY, "caboom"))
+
+
+class CreateVenvsDependenciesTest(unittest.TestCase):
+    def setUp(self):
+        self.project = Project(".")
+        self.project.set_property("dir_target", "target")
+        self.project.set_property("dir_logs", "$dir_target/logs")
+        init_python_directories(self.project)
+
+        self.project.build_depends_on("pytest", ">=8")
+        self.project.build_depends_on("coverage", ">=7")
+        self.project.depends_on("spam", ">=0.7")
+        self.project.depends_on("eggs")
+        self.project.depends_on("cryptography", ">=42", extra="security")
+        self.project.depends_on("sphinx", ">=7", extra="docs")
+
+        self.reactor = Mock()
+        self.reactor.python_env_registry = {"system": Mock(is_pypy=False)}
+        self.project.set_property("venv_names", [])
+
+    def venv_dependencies(self):
+        with patch("pybuilder.plugins.python.core_plugin.mkdir"):
+            create_venvs(Mock(), self.project, self.reactor)
+        venv_map = self.project.get_property("venv_dependencies")
+        return {name: sorted(d.name for d in dependencies) for name, dependencies in venv_map.items()}
+
+    def test_should_default_to_no_extras_in_either_venv(self):
+        self.assertEqual({"build": ["coverage", "eggs", "pytest", "spam"],
+                          "test": ["eggs", "spam"]},
+                         self.venv_dependencies())
+
+    def test_should_install_selected_extras_into_both_venvs(self):
+        self.project.set_property("install_dependencies_extras", ["security"])
+
+        self.assertEqual({"build": ["coverage", "cryptography", "eggs", "pytest", "spam"],
+                          "test": ["cryptography", "eggs", "spam"]},
+                         self.venv_dependencies())
+
+    def test_should_install_all_extras_into_both_venvs_when_selecting_all(self):
+        self.project.set_property("install_dependencies_extras", "*")
+
+        self.assertEqual({"build": ["coverage", "cryptography", "eggs", "pytest", "spam", "sphinx"],
+                          "test": ["cryptography", "eggs", "spam", "sphinx"]},
+                         self.venv_dependencies())
+
+    def test_should_leave_an_explicit_venv_dependencies_entry_alone(self):
+        self.project.set_property("install_dependencies_extras", "*")
+        self.project.set_property("venv_dependencies", {"test": list(self.project.base_dependencies)})
+
+        self.assertEqual({"build": ["coverage", "cryptography", "eggs", "pytest", "spam", "sphinx"],
+                          "test": ["eggs", "spam"]},
+                         self.venv_dependencies())
+
+    def test_should_declare_the_extras_selection_property(self):
+        self.assertEqual([], self.project.get_property("install_dependencies_extras"))
