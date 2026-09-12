@@ -16,16 +16,22 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import os
 from os.path import join as jp
 from unittest import TestCase
 
 from pybuilder.core import Project, Logger
+from pybuilder.errors import BuildFailedException
+from pybuilder.plugins.python._coverage_util import (COVERAGE_PROCESS_CONFIG_ENV,
+                                                     PYB_COVERAGE_PROCESS_CONFIG_ENV,
+                                                     )
 from pybuilder.plugins.python.coverage_plugin import (init_coverage_properties,
                                                       _build_module_report,
                                                       _build_coverage_report,
                                                       _optimize_omit_module_files,
+                                                      _subprocess_coverage,
                                                       )
-from test_utils import patch, MagicMock, Mock
+from test_utils import patch, MagicMock, Mock, ANY
 
 import_patch = "builtins.__import__"
 
@@ -188,3 +194,114 @@ class CoveragePluginTests(TestCase):
 
         self.assertEqual(_optimize_omit_module_files(module_files, ["/a/b/c/d/x.py"]),
                          ["/a/b/c/d/x.py"])
+
+
+class SubprocessCoverageTests(TestCase):
+    """Exercises how a covered task hands subprocess measurement to what it spawns."""
+
+    def setUp(self):
+        # These very tests can run as a measured subprocess of a covered build, which
+        # means the hand-off is already in the environment
+        environ = {name: value for name, value in os.environ.items()
+                   if name not in (COVERAGE_PROCESS_CONFIG_ENV, PYB_COVERAGE_PROCESS_CONFIG_ENV)}
+        environ_patch = patch.dict(os.environ, environ, clear=True)
+        environ_patch.start()
+        self.addCleanup(environ_patch.stop)
+
+        self.project = Project("basedir")
+        init_coverage_properties(self.project)
+        self.logger = MagicMock(Logger)
+
+        self.system_env = Mock(name="system")
+        self.build_env = Mock(name="build")
+        self.test_env = Mock(name="test")
+
+        self.envs = {"system": self.system_env, "build": self.build_env, "test": self.test_env}
+        self.reactor = Mock()
+        self.reactor.python_env_registry = self.envs
+
+        self.coverage = Mock()
+        self.coverage.config.serialize.return_value = "serialized-config"
+
+    def _subprocess_coverage(self):
+        return _subprocess_coverage(self.project, self.logger, self.reactor, "ut_",
+                                    self.coverage, jp("basedir", "src", "main", "python", ""),
+                                    [jp("basedir", "omitted", "*"), jp("basedir", "also_omitted.py")])
+
+    def test_should_be_on_by_default(self):
+        self.assertTrue(self.project.get_property("coverage_subprocesses"))
+
+    def test_should_hand_off_to_the_venvs_pybuilder_built(self):
+        with self._subprocess_coverage():
+            pass
+
+        for python_env in (self.build_env, self.test_env):
+            python_env.install_coverage_bootstrap.assert_called_once_with(
+                {COVERAGE_PROCESS_CONFIG_ENV: "serialized-config",
+                 PYB_COVERAGE_PROCESS_CONFIG_ENV: ANY})
+
+    def test_should_not_touch_a_python_pybuilder_did_not_build(self):
+        with self._subprocess_coverage():
+            pass
+
+        self.assertFalse(self.system_env.install_coverage_bootstrap.called)
+
+    def test_should_plant_nothing_when_venvs_are_disabled(self):
+        # With `--no-venvs` every name in the registry is the Python PyBuilder was
+        # started with, which is nothing we may plant into. The hand-off still goes
+        # into the environment, where Coverage's own startup hook - installed in that
+        # very Python alongside Coverage itself - is what picks it up.
+        self.envs.update({name: self.system_env for name in self.envs})
+
+        with self._subprocess_coverage():
+            self.assertEqual(os.environ[COVERAGE_PROCESS_CONFIG_ENV], "serialized-config")
+            self.assertIn(PYB_COVERAGE_PROCESS_CONFIG_ENV, os.environ)
+
+        self.assertFalse(self.system_env.install_coverage_bootstrap.called)
+
+    def test_should_hand_off_through_the_environment_while_the_task_runs(self):
+        with self._subprocess_coverage():
+            self.assertEqual(os.environ[COVERAGE_PROCESS_CONFIG_ENV], "serialized-config")
+            self.assertIn(PYB_COVERAGE_PROCESS_CONFIG_ENV, os.environ)
+
+    def test_should_take_the_hand_off_back_out_of_the_environment_afterwards(self):
+        with self._subprocess_coverage():
+            pass
+
+        self.assertNotIn(COVERAGE_PROCESS_CONFIG_ENV, os.environ)
+        self.assertNotIn(PYB_COVERAGE_PROCESS_CONFIG_ENV, os.environ)
+
+    def test_should_take_the_hand_off_back_out_when_the_task_fails(self):
+        with self.assertRaises(BuildFailedException):
+            with self._subprocess_coverage():
+                raise BuildFailedException("task failed")
+
+        self.assertNotIn(COVERAGE_PROCESS_CONFIG_ENV, os.environ)
+        self.assertNotIn(PYB_COVERAGE_PROCESS_CONFIG_ENV, os.environ)
+
+    def test_should_restore_a_hand_off_that_was_already_in_the_environment(self):
+        outer = {COVERAGE_PROCESS_CONFIG_ENV: "outer-config", PYB_COVERAGE_PROCESS_CONFIG_ENV: "outer-pyb-config"}
+        with patch.dict(os.environ, outer):
+            with self._subprocess_coverage():
+                self.assertEqual(os.environ[COVERAGE_PROCESS_CONFIG_ENV], "serialized-config")
+
+            for name, value in outer.items():
+                self.assertEqual(os.environ[name], value)
+
+    def test_should_be_turned_off_for_one_task_on_its_own(self):
+        self.project.set_property("ut_coverage_subprocesses", False)
+
+        with self._subprocess_coverage():
+            self.assertNotIn(COVERAGE_PROCESS_CONFIG_ENV, os.environ)
+
+        for python_env in self.envs.values():
+            self.assertFalse(python_env.install_coverage_bootstrap.called)
+
+    def test_should_be_turned_off_for_every_task_at_once(self):
+        self.project.set_property("coverage_subprocesses", False)
+
+        with self._subprocess_coverage():
+            self.assertNotIn(COVERAGE_PROCESS_CONFIG_ENV, os.environ)
+
+        for python_env in self.envs.values():
+            self.assertFalse(python_env.install_coverage_bootstrap.called)

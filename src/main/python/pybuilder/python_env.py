@@ -232,7 +232,9 @@ class PythonEnv(object):
                     offline=offline,
                     logger=self.logger)
 
-        return self.populate()
+        self.populate()
+        self._install_coverage_bootstrap_if_covered()
+        return self
 
     def recreate_venv(self, system_site_packages=False,
                       clear=False,
@@ -253,7 +255,36 @@ class PythonEnv(object):
                     offline=offline,
                     logger=self.logger)
 
+        self._install_coverage_bootstrap_if_covered()
         return self
+
+    def install_coverage_bootstrap(self, coverage_env):
+        """Plants the coverage startup hook into this VEnv's site directories.
+
+        A subprocess spawned from this VEnv only measures itself if something runs at
+        its interpreter startup, and `coverage` is not installed here. The hand-off
+        also goes into this environment's variables, since those - and not the current
+        process' - are what `execute_command` passes on.
+        """
+        from pybuilder.plugins.python._coverage_util import install_coverage_bootstrap
+
+        for site_path in self.site_paths:
+            if install_coverage_bootstrap(site_path, self.version):
+                self.logger.debug("Installed coverage bootstrap into '%s'", site_path)
+
+        self._environ.update(coverage_env)
+
+    def _install_coverage_bootstrap_if_covered(self):
+        """Plants the coverage startup hook when this VEnv is built during a covered task.
+
+        This is what carries subprocess measurement into nested builds, whose VEnvs are
+        created by a PyBuilder that is itself running as a measured subprocess.
+        """
+        from pybuilder.plugins.python._coverage_util import subprocess_coverage_env_from_environ
+
+        coverage_env = subprocess_coverage_env_from_environ()
+        if coverage_env:
+            self.install_coverage_bootstrap(coverage_env)
 
     def install_dependencies(self, pip_batch,
                              install_log_path=None,
@@ -370,6 +401,10 @@ class PythonEnvRegistry(object):
         if not existing_env:
             raise KeyError("no environment '%s' registered" % item)
         return self._registry[item][-1]
+
+    def items(self):
+        """type: () -> list"""
+        return [(key, envs[-1]) for key, envs in self._registry.items()]
 
     def push_override(self, key, value):
         registry = self._registry

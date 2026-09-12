@@ -31,9 +31,15 @@ class CoverageTool(Tool):
 
     def start(self, pipe):
         # type: (RemoteObjectPipe) -> None
-        from .._coverage_util import patch_coverage
+        from .._coverage_util import patch_coverage, adopt_subprocess_coverage
 
         patch_coverage()
+
+        # A startup hook may already be measuring this process, from earlier than we
+        # can manage. Adopting it - rather than stacking a second Coverage on top -
+        # is what gets its data normalized when the hook was Coverage's own.
+        if adopt_subprocess_coverage(self.source_path, self.omit_patterns) is not None:
+            return
 
         from coverage import coverage as coverage_factory
 
@@ -44,6 +50,9 @@ class CoverageTool(Tool):
     def stop(self, pipe):
         # type: (RemoteObjectPipe) -> None
         from .._coverage_util import save_normalized_coverage
+
+        if self.coverage is None:
+            return
 
         self.coverage.stop()
         save_normalized_coverage(self.coverage, self.source_path, self.omit_patterns)
