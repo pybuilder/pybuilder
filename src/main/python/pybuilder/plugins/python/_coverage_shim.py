@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     sys.path.append(main_file_dir)
 
-    from _coverage_util import save_normalized_coverage, patch_coverage
+    from _coverage_util import save_normalized_coverage, patch_coverage, adopt_subprocess_coverage
 
     del sys.path[-1]
 
@@ -116,7 +116,6 @@ if __name__ == "__main__":
     from coverage import coverage as coverage_factory
     from coverage.execfile import PyRunner
 
-    coverage = coverage_factory(*(config.get("cov_args", ())), **(config.get("cov_kwargs", {})))
     source_path = config["cov_source_path"]
     omit_patterns = config["cov_omit_patterns"]
 
@@ -129,9 +128,16 @@ if __name__ == "__main__":
     runner = PyRunner(args, as_module=module)
     runner.prepare()
 
-    coverage.start()
-    try:
+    # A startup hook may already be measuring this process, from earlier than we can
+    # manage. Adopting it - rather than stacking a second Coverage on top - is what
+    # gets its data normalized when the hook was Coverage's own.
+    if adopt_subprocess_coverage(source_path, omit_patterns) is not None:
         runner.run()
-    finally:
-        coverage.stop()
-        save_normalized_coverage(coverage, source_path, omit_patterns)
+    else:
+        coverage = coverage_factory(*(config.get("cov_args", ())), **(config.get("cov_kwargs", {})))
+        coverage.start()
+        try:
+            runner.run()
+        finally:
+            coverage.stop()
+            save_normalized_coverage(coverage, source_path, omit_patterns)

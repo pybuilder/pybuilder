@@ -123,6 +123,8 @@ def initialize(project):
     project.set_property("coverage_break_build", False)
     project.get_property("coverage_exceptions").extend(["pybuilder._vendor",
                                                         "pybuilder._vendor.*",
+                                                        # Only ever runs as a copy planted in a VEnv's site directory
+                                                        "pybuilder.plugins.python._coverage_bootstrap",
                                                         "setup"])
 
     project.set_property("flake8_break_build", True)

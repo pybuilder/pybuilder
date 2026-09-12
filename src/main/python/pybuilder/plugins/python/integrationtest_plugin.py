@@ -20,6 +20,7 @@ import os
 import sys
 
 from pybuilder.core import init, use_plugin, task, description, before
+from pybuilder.plugins.python._coverage_util import subprocess_coverage_env_from_environ
 from pybuilder.plugins.python.test_plugin_helper import ReportsProcessor
 from pybuilder.python_utils import mp_get_context
 from pybuilder.terminal import print_text_line, print_file_content, print_text
@@ -196,6 +197,11 @@ def prepare_environment(project):
         "PYTHONPATH": os.pathsep.join((project.expand_path("$dir_dist"),
                                        project.expand_path("$dir_source_integrationtest_python")))
     }
+
+    # Integration tests do not inherit the environment by default, so the coverage
+    # hand-off has to be carried over explicitly or the test - and everything it
+    # spawns - goes unmeasured.
+    env.update(subprocess_coverage_env_from_environ())
 
     add_additional_environment_keys(env, project)
 

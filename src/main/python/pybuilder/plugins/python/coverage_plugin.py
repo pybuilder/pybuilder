@@ -18,6 +18,8 @@
 
 import ast
 import copy
+import os
+from contextlib import contextmanager
 from os.path import dirname, join
 
 import sys
@@ -25,7 +27,9 @@ import sys
 from pybuilder.core import init, use_plugin, task, depends, dependents, optional
 from pybuilder.errors import BuildFailedException
 from pybuilder.execution import ExecutionManager
-from pybuilder.plugins.python._coverage_util import patch_coverage
+from pybuilder.plugins.python._coverage_util import (patch_coverage, subprocess_coverage_env,
+                                                     coverage_parent_dir, canonical_path,
+                                                     combine_subprocess_coverage)
 from pybuilder.plugins.python.remote_tools.coverage_tool import CoverageTool
 from pybuilder.python_utils import StringIO, IS_WIN
 from pybuilder.utils import discover_module_files, discover_modules, render_report, as_list, jp, ap, nc
@@ -41,7 +45,10 @@ use_plugin("analysis")
 
 @init
 def init_coverage_properties(project):
-    project.plugin_depends_on("coverage", ">=6.0")
+    # `COVERAGE_PROCESS_CONFIG` and `CoverageConfig.serialize` carry the configuration
+    # into a subprocess, and Coverage's own startup hook - the only thing that acts on
+    # them under `--no-venvs`, where nothing of ours may be planted - ships from 7.13.
+    project.plugin_depends_on("coverage", ">=7.13")
 
     # These settings are for aggregate coverage
     project.set_property_if_unset("coverage_threshold_warn", 70)
@@ -50,6 +57,7 @@ def init_coverage_properties(project):
     project.set_property_if_unset("coverage_break_build", True)
     project.set_property_if_unset("coverage_exceptions", [])
     project.set_property_if_unset("coverage_concurrency", ["thread"])
+    project.set_property_if_unset("coverage_subprocesses", True)
     project.set_property_if_unset("coverage_debug", [])
     project.set_property_if_unset("coverage_source_path", "$dir_source_main_python")
     project.set_property_if_unset("coverage_name", project.name.capitalize())
@@ -104,7 +112,11 @@ def prepare(project, logger, reactor):
 def coverage(project, logger, reactor):
     em = reactor.execution_manager  # type: ExecutionManager
 
-    source_path = nc(project.expand_path(project.get_property("coverage_source_path")))
+    # Canonical, since every judgement about what was measured is made by comparing a
+    # path Coverage produced against this one. The build can perfectly well have reached
+    # its own sources by a name Coverage will not use - through a symlink, or the /var
+    # a macOS temp directory is handed out as, or the 8.3 short name of a Windows one.
+    source_path = canonical_path(project.expand_path(project.get_property("coverage_source_path")))
 
     # Add a trailing / or \ if not present, for correct `coverage` path interpretation
     source_path = join(source_path, "")
@@ -202,27 +214,17 @@ def run_coverage(project, logger, reactor, covered_task, source_path, module_nam
 
     reactor.add_tool(cov_tool)
     try:
-        coverage_env_name = project.get_property("%scoverage_python_env" % config_prefix)
-        if coverage_env_name:
-            current_python_env = reactor.python_env_registry[coverage_env_name]
-            reactor.python_env_registry.push_override(coverage_env_name,
-                                                      _override_python_env_for_coverage(current_python_env,
-                                                                                        coverage_config,
-                                                                                        source_path,
-                                                                                        omit_patterns))
-        try:
+        with _subprocess_coverage(project, logger, reactor, config_prefix, cov, source_path, omit_patterns), \
+                _covered_python_env(project, reactor, config_prefix, coverage_config, source_path, omit_patterns):
             em.execute_task(covered_task.task,
                             logger=logger,
                             project=project,
                             reactor=reactor,
                             _executable=covered_task.executable)
-        finally:
-            if coverage_env_name:
-                reactor.python_env_registry.pop_override(coverage_env_name)
     finally:
         reactor.remove_tool(cov_tool)
 
-    cov.combine()
+    combine_subprocess_coverage(cov, source_path)
     cov.save()
 
     failure = _build_coverage_report(project, logger,
@@ -235,15 +237,71 @@ def run_coverage(project, logger, reactor, covered_task, source_path, module_nam
     return cov
 
 
-def _override_python_env_for_coverage(current_python_env, coverage_config, source_path, omit_patterns):
-    import coverage as cov_module
-    cov_parent_dir = ap(jp(dirname(cov_module.__file__), ".."))
+@contextmanager
+def _covered_python_env(project, reactor, config_prefix, coverage_config, source_path, omit_patterns):
+    """Runs the covered task against a Python that starts measuring what it is told to run."""
+    coverage_env_name = project.get_property("%scoverage_python_env" % config_prefix)
+    if not coverage_env_name:
+        yield
+        return
 
+    per = reactor.python_env_registry
+    per.push_override(coverage_env_name, _override_python_env_for_coverage(per[coverage_env_name],
+                                                                           coverage_config,
+                                                                           source_path,
+                                                                           omit_patterns))
+    try:
+        yield
+    finally:
+        per.pop_override(coverage_env_name)
+
+
+@contextmanager
+def _subprocess_coverage(project, logger, reactor, config_prefix, cov, source_path, omit_patterns):
+    """Makes the Python subprocesses spawned by a covered task measure themselves.
+
+    The hand-off has to reach three places: this process' environment, which anything
+    spawned from here inherits; the site directories of the VEnvs PyBuilder built,
+    which is where the startup hook that acts on it has to live; and those VEnvs' own
+    environment snapshots, which are what `execute_command` passes on rather than the
+    current environment.
+    """
+    if not project.get_property("%scoverage_subprocesses" % config_prefix,
+                                project.get_property("coverage_subprocesses")):
+        logger.debug("Coverage will not be collected for subprocesses of %r", config_prefix)
+        yield
+        return
+
+    coverage_env = subprocess_coverage_env(cov, source_path, omit_patterns)
+
+    per = reactor.python_env_registry
+    system_env = per["system"]
+
+    for env_name, python_env in per.items():
+        if python_env is system_env:
+            # Never plant anything into a Python that PyBuilder did not build
+            continue
+        logger.debug("Installing coverage bootstrap into '%s' VEnv", env_name)
+        python_env.install_coverage_bootstrap(coverage_env)
+
+    old_environ = {name: os.environ.get(name) for name in coverage_env}
+    os.environ.update(coverage_env)
+    try:
+        yield
+    finally:
+        for name, old_value in old_environ.items():
+            if old_value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = old_value
+
+
+def _override_python_env_for_coverage(current_python_env, coverage_config, source_path, omit_patterns):
     new_python_env = copy.copy(current_python_env)
     new_python_env.overwrite("executable", tuple(
         current_python_env.executable +
         [ap(jp(dirname(sys.modules[_override_python_env_for_coverage.__module__].__file__), "_coverage_shim.py")),
-         repr({"cov_parent_dir": cov_parent_dir,
+         repr({"cov_parent_dir": coverage_parent_dir(),
                "cov_kwargs": coverage_config,
                "cov_source_path": source_path,
                "cov_omit_patterns": omit_patterns,

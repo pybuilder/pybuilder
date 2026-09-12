@@ -16,6 +16,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import os
 import unittest
 
 from queue import Empty
@@ -23,11 +24,14 @@ from queue import Empty
 from test_utils import patch, Mock
 
 from pybuilder.core import Project
+from pybuilder.plugins.python._coverage_util import (COVERAGE_PROCESS_CONFIG_ENV,
+                                                     PYB_COVERAGE_PROCESS_CONFIG_ENV)
 from pybuilder.plugins.python.integrationtest_plugin import (
     TaskPoolProgress,
     add_additional_environment_keys,
     ConsumingQueue,
-    initialize_integrationtest_plugin
+    initialize_integrationtest_plugin,
+    prepare_environment
 )
 
 
@@ -275,3 +279,39 @@ class ConsumingQueueTests(unittest.TestCase):
         queue.consume_available_items()
 
         self.assertEqual(queue.size, 3)
+
+
+class PrepareEnvironmentTests(unittest.TestCase):
+    """An integration test is given an environment built from scratch rather than an
+    inherited one, so anything it is meant to know has to be put there on purpose."""
+
+    def setUp(self):
+        self.project = Project("basedir")
+        initialize_integrationtest_plugin(self.project)
+        # Normally the core plugins' doing, and all `prepare_environment` needs of them
+        self.project.set_property("dir_dist", "target/dist/project")
+        self.project.set_property("dir_source_integrationtest_python", "src/integrationtest/python")
+
+    def test_should_carry_the_coverage_hand_off_over(self):
+        hand_off = {COVERAGE_PROCESS_CONFIG_ENV: "config",
+                    PYB_COVERAGE_PROCESS_CONFIG_ENV: "pyb-config",
+                    }
+        with patch.dict(os.environ, hand_off):
+            env = prepare_environment(self.project)
+
+        for name, value in hand_off.items():
+            self.assertEqual(env[name], value)
+
+    def test_should_carry_nothing_over_when_the_build_is_not_measuring(self):
+        with patch.dict(os.environ, {}, clear=True):
+            env = prepare_environment(self.project)
+
+        self.assertNotIn(COVERAGE_PROCESS_CONFIG_ENV, env)
+        self.assertNotIn(PYB_COVERAGE_PROCESS_CONFIG_ENV, env)
+
+    def test_should_still_put_the_distribution_and_the_tests_on_the_path(self):
+        with patch.dict(os.environ, {COVERAGE_PROCESS_CONFIG_ENV: "config"}):
+            env = prepare_environment(self.project)
+
+        self.assertIn("PYTHONPATH", env)
+        self.assertEqual(len(env["PYTHONPATH"].split(os.pathsep)), 2)
