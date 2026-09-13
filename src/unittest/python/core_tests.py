@@ -180,6 +180,59 @@ class ProjectTest(unittest.TestCase):
         self.assertIn("windows", extras)
         self.assertEqual("sys_platform == 'win32'", extras["windows"][0].markers)
 
+    def test_should_keep_same_dependency_with_disjoint_markers(self):
+        self.project.depends_on("spam", markers="sys_platform == 'win32'")
+        self.project.depends_on("spam", markers="sys_platform == 'linux'")
+
+        self.assertEqual(2, len(self.project.dependencies))
+        self.assertEqual({"sys_platform == 'win32'", "sys_platform == 'linux'"},
+                         set(d.markers for d in self.project.dependencies))
+
+    def test_should_keep_same_dependency_with_different_versions_and_disjoint_markers(self):
+        self.project.depends_on("spam", "==1.0", markers="python_version < '3.12'")
+        self.project.depends_on("spam", "==2.0", markers="python_version >= '3.12'")
+
+        self.assertEqual(2, len(self.project.dependencies))
+        self.assertEqual({("==1.0", "python_version < '3.12'"),
+                          ("==2.0", "python_version >= '3.12'")},
+                         set((d.version, d.markers) for d in self.project.dependencies))
+
+    def test_should_keep_unmarked_and_marked_dependency_separately(self):
+        self.project.depends_on("spam", "==1.0")
+        self.project.depends_on("spam", "==1.0", markers="sys_platform == 'win32'")
+
+        self.assertEqual(2, len(self.project.dependencies))
+        self.assertEqual({None, "sys_platform == 'win32'"},
+                         set(d.markers for d in self.project.dependencies))
+
+    def test_should_treat_equivalent_markers_as_the_same_dependency(self):
+        self.project.depends_on("spam", "0.7", markers="sys_platform=='win32'")
+        self.project.depends_on("spam", "0.7", markers='sys_platform  ==  "win32"')
+
+        self.assertEqual(1, len(self.project.dependencies))
+
+    def test_should_keep_extra_dependency_with_disjoint_markers(self):
+        self.project.depends_on("spam", extra="dev", markers="sys_platform == 'win32'")
+        self.project.depends_on("spam", extra="dev", markers="sys_platform == 'linux'")
+
+        self.assertEqual(2, len(self.project.extras_dependencies["dev"]))
+
+    def test_should_normalize_extra_group_names(self):
+        self.project.depends_on("spam", "0.7", extra="Security")
+        self.project.depends_on("eggs", "1.0", extra="security")
+
+        extras = self.project.extras_dependencies
+        self.assertEqual(["security"], list(extras.keys()))
+        self.assertEqual(2, len(extras["security"]))
+
+    def test_should_normalize_extra_group_names_with_punctuation(self):
+        self.project.depends_on("spam", "0.7", extra="My Extra")
+        self.project.depends_on("eggs", "1.0", extra="my_extra")
+
+        extras = self.project.extras_dependencies
+        self.assertEqual(["my_extra"], list(extras.keys()))
+        self.assertEqual(2, len(extras["my_extra"]))
+
 
 class ProjectManifestTests(unittest.TestCase):
     def setUp(self):
@@ -444,6 +497,162 @@ class ProjectValidationTest(unittest.TestCase):
         validation_messages = self.project.validate()
         self.assertFalse(validation_messages)
 
+    def test_should_validate_project_with_conditionally_duplicated_runtime_dependency(self):
+        self.project.depends_on('spam', version='==1.0', markers="python_version < '3.12'")
+        self.project.depends_on('spam', version='==2.0', markers="python_version >= '3.12'")
+        validation_messages = self.project.validate()
+        self.assertEqual([], validation_messages)
+
+    def test_should_validate_project_with_conditionally_duplicated_build_dependency(self):
+        self.project.build_depends_on('spam', version='==1.0', markers="python_version < '3.12'")
+        self.project.build_depends_on('spam', version='==2.0', markers="python_version >= '3.12'")
+        validation_messages = self.project.validate()
+        self.assertEqual([], validation_messages)
+
+    def test_should_validate_project_with_conditionally_duplicated_extra_dependency(self):
+        self.project.depends_on('spam', version='==1.0', extra='dev', markers="python_version < '3.12'")
+        self.project.depends_on('spam', version='==2.0', extra='dev', markers="python_version >= '3.12'")
+        validation_messages = self.project.validate()
+        self.assertEqual([], validation_messages)
+
+    def test_should_validate_runtime_and_build_dependency_with_disjoint_markers(self):
+        self.project.depends_on('spam', markers="python_version < '3.12'")
+        self.project.build_depends_on('spam', markers="python_version >= '3.12'")
+        validation_messages = self.project.validate()
+        self.assertEqual([], validation_messages)
+
+    def test_should_not_validate_project_with_duplicate_dependency_when_both_markers_apply(self):
+        self.project.depends_on('spam', version='==1.0', markers="python_version >= '3.10'")
+        self.project.depends_on('spam', version='==2.0', markers="python_version >= '3'")
+        validation_messages = self.project.validate()
+        self.assertIn("Runtime dependency 'spam' has been defined multiple times.", validation_messages)
+
+    def test_should_not_validate_project_with_duplicate_dependency_when_markers_are_identical(self):
+        self.project.depends_on('spam', version='==1.0', markers="python_version < '3'")
+        self.project.depends_on('spam', version='==2.0', markers="python_version < '3'")
+        validation_messages = self.project.validate()
+        self.assertIn("Runtime dependency 'spam' has been defined multiple times.", validation_messages)
+
+    def test_should_not_validate_project_with_duplicate_dependency_when_only_one_is_marked(self):
+        self.project.depends_on('spam', version='==1.0')
+        self.project.depends_on('spam', version='==2.0', markers="python_version >= '3'")
+        validation_messages = self.project.validate()
+        self.assertIn("Runtime dependency 'spam' has been defined multiple times.", validation_messages)
+
+    def test_should_not_validate_project_with_duplicate_build_dependency_when_markers_are_identical(self):
+        self.project.build_depends_on('spam', version='==1.0', markers="python_version < '3'")
+        self.project.build_depends_on('spam', version='==2.0', markers="python_version < '3'")
+        validation_messages = self.project.validate()
+        self.assertIn("Build dependency 'spam' has been defined multiple times.", validation_messages)
+
+    def test_should_not_validate_project_with_duplicate_extra_dependency_when_markers_are_identical(self):
+        self.project.depends_on('spam', version='==1.0', extra='dev', markers="python_version < '3'")
+        self.project.depends_on('spam', version='==2.0', extra='dev', markers="python_version < '3'")
+        validation_messages = self.project.validate()
+        self.assertIn("Extra 'dev' dependency 'spam' has been defined multiple times.", validation_messages)
+
+    def test_should_not_validate_project_with_unknown_selected_extra(self):
+        self.project.depends_on('spam', version='1', extra='dev')
+        self.project.depends_on('eggs', version='1', extra='security')
+        self.project.set_property("install_dependencies_extras", ["securty", "dev"])
+        validation_messages = self.project.validate()
+        self.assertIn("Extra 'securty' selected by 'install_dependencies_extras' is not declared "
+                      "by this project. Declared extras are: dev, security.", validation_messages)
+
+    def test_should_validate_project_selecting_all_extras(self):
+        self.project.depends_on('spam', version='1', extra='dev')
+        self.project.depends_on('eggs', version='1', extra='security')
+        self.project.set_property("install_dependencies_extras", "*")
+        validation_messages = self.project.validate()
+        self.assertEqual([], validation_messages)
+
+    def test_should_validate_selected_extra_tightening_a_runtime_dependency(self):
+        self.project.depends_on('spam', version='>=1.0')
+        self.project.depends_on('spam', version='>=2.0', extra='security')
+        self.project.set_property("install_dependencies_extras", ["security"])
+        validation_messages = self.project.validate()
+        self.assertEqual([], validation_messages)
+
+    def test_should_not_validate_selected_extra_conflicting_with_a_runtime_dependency(self):
+        self.project.depends_on('spam', version='==1.0')
+        self.project.depends_on('spam', version='==2.0', extra='security')
+        self.project.set_property("install_dependencies_extras", ["security"])
+        validation_messages = self.project.validate()
+        self.assertIn("Runtime dependency 'spam==1.0' conflicts with extra 'security' "
+                      "dependency 'spam==2.0' in this environment.", validation_messages)
+
+    def test_should_not_validate_two_selected_extras_conflicting_with_each_other(self):
+        self.project.depends_on('spam', version='==1.0', extra='dev')
+        self.project.depends_on('spam', version='==2.0', extra='security')
+        self.project.set_property("install_dependencies_extras", "*")
+        validation_messages = self.project.validate()
+        self.assertIn("Extra 'dev' dependency 'spam==1.0' conflicts with extra 'security' "
+                      "dependency 'spam==2.0' in this environment.", validation_messages)
+
+    def test_should_validate_unselected_extra_conflicting_with_a_runtime_dependency(self):
+        self.project.depends_on('spam', version='==1.0')
+        self.project.depends_on('spam', version='==2.0', extra='security')
+        validation_messages = self.project.validate()
+        self.assertEqual([], validation_messages)
+
+    def test_should_validate_conflicting_extras_that_cannot_both_apply(self):
+        self.project.depends_on('spam', version='==1.0', extra='dev', markers="python_version < '3'")
+        self.project.depends_on('spam', version='==2.0', extra='security')
+        self.project.set_property("install_dependencies_extras", "*")
+        validation_messages = self.project.validate()
+        self.assertEqual([], validation_messages)
+
+
+class ProjectExtrasSelectionTest(unittest.TestCase):
+    def setUp(self):
+        self.project = Project(basedir="/imaginary", name="Unittest")
+        self.project.depends_on("spam", "1.0")
+        self.project.depends_on("eggs", "2.0")
+        self.project.depends_on("cryptography", "42.0", extra="security")
+        self.project.depends_on("pyopenssl", "24.0", extra="security")
+        self.project.depends_on("sphinx", "7.0", extra="docs")
+        self.project.depends_on("myst-parser", "3.0", extra="docs")
+
+    def dependency_names(self):
+        return sorted(d.name for d in self.project.dependencies)
+
+    def test_should_not_select_any_extras_by_default(self):
+        self.assertEqual(["eggs", "spam"], self.dependency_names())
+
+    def test_should_not_select_any_extras_when_selection_is_none(self):
+        self.project.set_property("install_dependencies_extras", None)
+        self.assertEqual(["eggs", "spam"], self.dependency_names())
+
+    def test_should_not_select_any_extras_when_selection_is_empty(self):
+        self.project.set_property("install_dependencies_extras", [])
+        self.assertEqual(["eggs", "spam"], self.dependency_names())
+
+    def test_should_select_single_extra_given_as_string(self):
+        self.project.set_property("install_dependencies_extras", "security")
+        self.assertEqual(["cryptography", "eggs", "pyopenssl", "spam"], self.dependency_names())
+
+    def test_should_select_extras_given_as_list(self):
+        self.project.set_property("install_dependencies_extras", ["docs", "security"])
+        self.assertEqual(["cryptography", "eggs", "myst-parser", "pyopenssl", "spam", "sphinx"],
+                         self.dependency_names())
+
+    def test_should_select_all_extras_given_a_star(self):
+        self.project.set_property("install_dependencies_extras", "*")
+        self.assertEqual(["cryptography", "eggs", "myst-parser", "pyopenssl", "spam", "sphinx"],
+                         self.dependency_names())
+
+    def test_should_normalize_selected_extra_names(self):
+        self.project.set_property("install_dependencies_extras", ["Security"])
+        self.assertEqual(["cryptography", "eggs", "pyopenssl", "spam"], self.dependency_names())
+
+    def test_should_ignore_unknown_selected_extra_when_composing(self):
+        self.project.set_property("install_dependencies_extras", ["securty", "docs"])
+        self.assertEqual(["eggs", "myst-parser", "spam", "sphinx"], self.dependency_names())
+
+    def test_base_dependencies_should_never_contain_extras(self):
+        self.project.set_property("install_dependencies_extras", "*")
+        self.assertEqual(["eggs", "spam"], sorted(d.name for d in self.project.base_dependencies))
+
 
 class LoggerTest(unittest.TestCase):
     class LoggerMock(Logger):
@@ -644,6 +853,20 @@ class DependencyTests(unittest.TestCase):
         dependency = Dependency("foo")
         other_dependency = Dependency("foa")
         self.assertTrue(dependency > other_dependency)
+
+    def test_dependencies_sharing_a_name_should_order_deterministically(self):
+        win32 = Dependency("foo", "==1.0", markers="sys_platform == 'win32'")
+        linux = Dependency("foo", "==1.0", markers="sys_platform == 'linux'")
+        unmarked = Dependency("foo", "==1.0")
+
+        self.assertEqual([unmarked, linux, win32], sorted([win32, linux, unmarked]))
+        self.assertEqual([unmarked, linux, win32], sorted([linux, unmarked, win32]))
+
+    def test_dependencies_sharing_a_name_should_order_by_version(self):
+        older = Dependency("foo", "==1.0")
+        newer = Dependency("foo", "==2.0")
+
+        self.assertEqual([older, newer], sorted([newer, older]))
 
 
 class DependencyAndRequirementsFileTests(unittest.TestCase):

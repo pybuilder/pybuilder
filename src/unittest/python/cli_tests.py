@@ -472,6 +472,13 @@ class SerializeDependencyTests(unittest.TestCase):
         self.assertEqual(result["name"], "mock")
         self.assertIsNone(result["version"])
 
+    def test_should_serialize_the_extras_group_a_dependency_belongs_to(self):
+        grouped = _serialize_dependency(Dependency("cryptography", ">=42", extra="security"))
+        ungrouped = _serialize_dependency(Dependency("requests", ">=2.28"))
+
+        self.assertEqual("security", grouped["extra"])
+        self.assertIsNone(ungrouped["extra"])
+
     def test_should_serialize_requirements_file(self):
         req = RequirementsFile("requirements.txt")
         result = _serialize_dependency(req)

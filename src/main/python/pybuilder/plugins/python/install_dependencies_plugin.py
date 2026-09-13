@@ -40,6 +40,10 @@ def initialize_install_dependencies_plugin(project):
     project.set_property_if_unset("install_dependencies_extra_index_url", None)
     project.set_property_if_unset("install_dependencies_trusted_host", None)
     project.set_property_if_unset("install_dependencies_constraints", "constraints_file")
+    # Extras groups to install into the target environments: a list of names, a single name, or "*"
+    # for every declared group. Note that init_python_directories in the python core plugin declares
+    # this too, because create_venvs reads it from there while the tasks below read it from here.
+    project.set_property_if_unset("install_dependencies_extras", [])
     # Deprecated - has no effect
     project.set_property_if_unset("install_dependencies_upgrade", False)
     project.set_property_if_unset("install_dependencies_insecure_installation", [])
@@ -84,9 +88,18 @@ def install_runtime_dependencies(logger, project, reactor):
 @task
 @description("Displays all dependencies the project requires")
 def list_dependencies(project):
-    print("\n".join(
-        map(lambda d: "{0}".format(" ".join(pip_utils.as_pip_install_target(d))),
-            project.build_dependencies + project.dependencies)))
+    def render(dependency):
+        return " ".join(pip_utils.as_pip_install_target(dependency))
+
+    lines = [render(d) for d in project.build_dependencies + project.base_dependencies]
+
+    selected_extras = project.selected_extras
+    for extra_name, extra_dependencies in project.extras_dependencies.items():
+        lines.append("[%s]%s" % (extra_name,
+                                 "" if extra_name in selected_extras else " (not selected for installation)"))
+        lines.extend("    " + render(d) for d in extra_dependencies)
+
+    print("\n".join(lines))
 
 
 @task("prepare")

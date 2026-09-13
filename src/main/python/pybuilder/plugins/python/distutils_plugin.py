@@ -455,7 +455,10 @@ def flatten_and_quote(requirements_file):
 
 
 def format_single_dependency(dependency):
-    result = '%s%s' % (dependency.name, pip_utils.build_dependency_version_string(dependency))
+    extras = getattr(dependency, 'extras', None)
+    result = '%s%s%s' % (dependency.name,
+                         ('[%s]' % ','.join(extras)) if extras else '',
+                         pip_utils.build_dependency_version_string(dependency))
     markers = getattr(dependency, 'markers', None)
     if markers:
         result = '%s; %s' % (result, markers)
@@ -463,11 +466,14 @@ def format_single_dependency(dependency):
 
 
 def build_install_dependencies_string(project):
+    # Deliberately the base dependencies rather than project.dependencies: the extras a build
+    # selects for installation are a build-time decision and must not become mandatory
+    # requirements of the distribution being published.
     dependencies = [
-        dependency for dependency in project.dependencies
+        dependency for dependency in project.base_dependencies
         if isinstance(dependency, Dependency) and not dependency.url]
     requirements = [
-        requirement for requirement in project.dependencies
+        requirement for requirement in project.base_dependencies
         if isinstance(requirement, RequirementsFile)]
     if not dependencies and not requirements:
         return "[]"
@@ -507,10 +513,10 @@ def build_extras_require_string(project):
 
 def build_dependency_links_string(project):
     dependency_links = [
-        dependency for dependency in project.dependencies
+        dependency for dependency in project.base_dependencies
         if isinstance(dependency, Dependency) and dependency.url]
     requirements = [
-        requirement for requirement in project.dependencies
+        requirement for requirement in project.base_dependencies
         if isinstance(requirement, RequirementsFile)]
 
     editable_links_from_requirements = []
@@ -668,6 +674,15 @@ def build_classifiers_string(project):
     return build_string_from_array(classifiers, indent=12)
 
 
+def as_python_literal(value):
+    """Render a value as a Python source literal.
+
+    Naive interpolation into single quotes breaks on anything that contains a quote of its own,
+    which PEP 508 markers routinely do (``sys_platform == 'win32'``).
+    """
+    return repr(value) if isinstance(value, str) else "'%s'" % value
+
+
 def build_string_from_array(arr, indent=12):
     result = ""
 
@@ -679,7 +694,7 @@ def build_string_from_array(arr, indent=12):
             if is_notstr_iterable(arr[0]):
                 result += "[" + build_string_from_array(arr[0], indent + 4) + "]"
             else:
-                result += "['%s']" % arr[0]
+                result += "[%s]" % as_python_literal(arr[0])
         else:
             result = '[[]]'
     elif len(arr) > 1:
@@ -689,7 +704,7 @@ def build_string_from_array(arr, indent=12):
             if is_notstr_iterable(item):
                 result += (" " * indent) + build_string_from_array(item, indent + 4) + ",\n"
             else:
-                result += (" " * indent) + "'" + item + "',\n"
+                result += (" " * indent) + as_python_literal(item) + ",\n"
         result = result[:-2] + "\n"
         result += " " * (indent - 4)
         result += "]"

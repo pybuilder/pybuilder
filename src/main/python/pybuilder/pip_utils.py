@@ -258,22 +258,28 @@ def get_package_version(mixed, logger=None, entry_paths=None):
     return {result['name'].lower(): result['version'] for result in search_packages_results}
 
 
-_PackageInfo = namedtuple("PackageInfo", ["name", "version", "location", "requires"])
+_PackageInfo = namedtuple("PackageInfo", ["name", "version", "location", "requires", "extra_requires"])
 
 
-def get_packages_info(entry_paths=None):
+def get_packages_info(entry_paths=None, marker_env=None):
     """
     Gather details from installed distributions. Print distribution name,
     version, location, and installed files.
+
+    `extra_requires` maps each extra the distribution declares to the distributions that extra
+    pulls in. Nothing in installed metadata records which extras were *requested* at install time,
+    so this is the only way to tell after the fact whether an extra was actually satisfied.
     """
     entry_paths = as_list(entry_paths) if entry_paths is not None else None
     installed = {}
-    ws = WorkingSet(entry_paths)
+    ws = WorkingSet(entry_paths, marker_env)
     for dist in ws:
         package = _PackageInfo(canonicalize_name(dist.project_name),
                                dist.version,
                                dist.location,
-                               [dep.name for dep in dist.requires()])
+                               [dep.name for dep in dist.requires()],
+                               {extra: [canonicalize_name(dep.name) for dep in dist.extra_requires(extra)]
+                                for extra in dist.extras})
 
         installed[package.name] = package
 
