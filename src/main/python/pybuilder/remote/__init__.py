@@ -484,8 +484,6 @@ class _RemoteObjectSession:
         self._remote_types = set()  # classes to be proxied
 
     def new_pipe(self):
-        # type:(object) -> _RemoteObjectPipe
-
         return _RemoteObjectPipe(self)
 
     def expose(self, name, obj, remote=True, methods=None, fields=None, error=False):
@@ -653,7 +651,7 @@ class _RemoteObjectPipe(RemoteObjectPipe):
 
     def get_exposed(self, exposed_name):
         self._send_obj((ROP_GET_EXPOSED, exposed_name))
-        return self._recv()  # type: _BaseProxy
+        return self._recv()
 
     def get_remote_proxy_def(self, remote_id):
         remote_proxy_defs = self._remote_proxy_defs

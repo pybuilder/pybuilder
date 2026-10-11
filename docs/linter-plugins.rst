@@ -28,5 +28,8 @@ pychecker
 pep8
 -----
 
+mypy
+-----
+
 pymetrics
 ----------
