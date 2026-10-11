@@ -17,12 +17,11 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
-          - '3.15-dev'
+          - '3.15'
           - '3.14'
           - '3.13'
           - '3.12'
           - '3.11'
-          - '3.10'
         with-venv:
           - 'true'
           - 'false'
@@ -55,12 +54,11 @@ jobs:
           - windows-latest
           - macos-15-intel
         python-version:
-          - '3.15-dev'
+          - '3.15'
           - '3.14'
           - '3.13'
           - '3.12'
           - '3.11'
-          - '3.10'
         with-venv:
           - 'true'
           - 'false'
@@ -91,11 +89,11 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
-          - '3.15t-dev'
+          - '3.15t'
           - '3.14t'
           - '3.13t'
-          - 'pypy-3.10'
           - 'pypy-3.11'
+          - 'pypy-3.12'
         with-venv:
           - 'true'
           - 'false'

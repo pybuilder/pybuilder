@@ -74,16 +74,16 @@ subprocess with `PYTHONPATH` pointing to `target/dist/` (the built distribution)
 
 ## Python Version Support
 
-- Required: Python >= 3.10
-- Supported: CPython 3.10, 3.11, 3.12, 3.13, 3.14, 3.15
-- Experimental: free-threaded 3.15t/3.14t/3.13t, PyPy 3.10/3.11
+- Required: Python >= 3.11
+- Supported: CPython 3.11, 3.12, 3.13, 3.14, 3.15
+- Experimental: free-threaded 3.15t/3.14t/3.13t, PyPy 3.11/3.12
 
 ## CI
 
 GitHub Actions workflow at `.github/workflows/pybuilder.yml`:
 - `build-primary`: Ubuntu, all supported Python versions, with/without venv
 - `build-secondary`: Windows + macOS, all supported Python versions
-- `build-experimental`: dev/free-threaded/PyPy builds (allowed to fail)
+- `build-experimental`: free-threaded/PyPy builds (allowed to fail)
 - Deployment happens from `master` branch on Python 3.13 Linux only
 
 ## Vendored Dependencies
